@@ -125,7 +125,9 @@ export default function Course() {
 
   const [ctx, setCtx] = useState<CourseContext | null>(null);
   const [courseData, setCourseData] = useState<CourseData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [dataReady, setDataReady] = useState(false);
+  const [animReady, setAnimReady] = useState(false);
+  const [msgIndex, setMsgIndex] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>("roadmap");
 
@@ -154,6 +156,23 @@ export default function Course() {
 
   const hasFetched = useRef(false);
 
+  const LOAD_MSGS = [
+    "Mapping your learning path...",
+    "Building lesson modules...",
+    "Crafting flashcards...",
+    "Writing quiz questions...",
+    "Personalising the content...",
+    "Almost ready...",
+  ];
+  const MIN_ANIM_MS = 3000;
+
+  // ── Animation clock — rotates messages and enforces minimum display time ────
+  useEffect(() => {
+    const msgTimer = setInterval(() => setMsgIndex(i => (i + 1) % LOAD_MSGS.length), 520);
+    const doneTimer = setTimeout(() => setAnimReady(true), MIN_ANIM_MS);
+    return () => { clearInterval(msgTimer); clearTimeout(doneTimer); };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── Init ───────────────────────────────────────────────────────────────────
   useEffect(() => {
     const raw = sessionStorage.getItem("courseContext");
@@ -170,7 +189,7 @@ export default function Course() {
     const cached = localStorage.getItem(cacheKey);
     if (cached) {
       setCourseData(JSON.parse(cached));
-      setLoading(false);
+      setDataReady(true);
       return;
     }
 
@@ -188,10 +207,10 @@ export default function Course() {
         const data: CourseData = await resp.json();
         localStorage.setItem(cacheKey, JSON.stringify(data));
         setCourseData(data);
+        setDataReady(true);
       } catch {
         setError("Couldn't generate course. Please try again.");
-      } finally {
-        setLoading(false);
+        setDataReady(true);
       }
     })();
   }, [setLocation]);
@@ -282,18 +301,103 @@ export default function Course() {
 
   const color = ctx.domainColor;
   const bg = ctx.domainBg;
+  const isLoading = !dataReady || !animReady;
 
-  // ── Loading ────────────────────────────────────────────────────────────────
-  if (loading) {
+  // ── Live-generation animation ──────────────────────────────────────────────
+  if (isLoading) {
+    const steps = [
+      { label: "Analysing domain", done: msgIndex >= 1 },
+      { label: "Building lesson modules", done: msgIndex >= 2 },
+      { label: "Creating flashcards", done: msgIndex >= 4 },
+      { label: "Writing quiz questions", done: msgIndex >= 5 },
+    ];
+    const progressPct = Math.min(100, Math.round((msgIndex / (LOAD_MSGS.length - 1)) * 100));
+
     return (
-      <div className="min-h-screen bg-[#f5f3ff] flex flex-col items-center justify-center px-6 pb-28">
-        <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-          className="w-16 h-16 rounded-full border-4 border-t-transparent mb-6"
-          style={{ borderColor: `${color}40`, borderTopColor: color }} />
-        <h2 className="text-lg font-extrabold text-[#1e1b4b] mb-2">Building your course...</h2>
-        <p className="text-sm text-[#6b7280] text-center">
-          AI is creating lessons, flashcards and quiz for {ctx.subDomainName}
-        </p>
+      <div className="min-h-screen bg-[#f5f3ff] flex flex-col px-6 pb-28 pt-16">
+        {/* Domain pill */}
+        <div className="flex justify-center mb-8">
+          <span className="text-xs font-extrabold px-3 py-1 rounded-full" style={{ background: bg, color }}>
+            {ctx.domainEmoji} {ctx.domainName}
+          </span>
+        </div>
+
+        {/* Pulsing emoji */}
+        <div className="flex justify-center mb-6">
+          <motion.div
+            animate={{ scale: [1, 1.15, 1], opacity: [0.85, 1, 0.85] }}
+            transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+            className="w-24 h-24 rounded-3xl flex items-center justify-center text-5xl shadow-lg"
+            style={{ background: bg }}
+          >
+            {ctx.domainEmoji}
+          </motion.div>
+        </div>
+
+        {/* Title */}
+        <h2 className="text-xl font-extrabold text-[#1e1b4b] text-center mb-1">
+          {ctx.subDomainName} Course
+        </h2>
+        <p className="text-[13px] text-[#6b7280] text-center mb-8">AI is building your personalised course</p>
+
+        {/* Progress bar */}
+        <div className="w-full bg-white rounded-full h-2 mb-3 shadow-inner overflow-hidden">
+          <motion.div
+            className="h-full rounded-full"
+            style={{ background: color }}
+            initial={{ width: "4%" }}
+            animate={{ width: `${progressPct}%` }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+          />
+        </div>
+        <p className="text-[11px] font-extrabold text-center mb-8" style={{ color }}>{progressPct}%</p>
+
+        {/* Rotating message */}
+        <div className="h-8 flex items-center justify-center mb-10">
+          <AnimatePresence mode="wait">
+            <motion.p
+              key={msgIndex}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.25 }}
+              className="text-sm font-extrabold text-[#1e1b4b] text-center"
+            >
+              ✦ {LOAD_MSGS[msgIndex]}
+            </motion.p>
+          </AnimatePresence>
+        </div>
+
+        {/* Step checklist */}
+        <div className="space-y-3">
+          {steps.map((step, i) => (
+            <motion.div
+              key={step.label}
+              initial={{ opacity: 0, x: -12 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: i * 0.12 }}
+              className="flex items-center gap-3 bg-white rounded-2xl px-4 py-3 shadow-sm"
+            >
+              <div className={cn(
+                "w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-500",
+                step.done ? "bg-[#10b981]" : "border-2"
+              )} style={!step.done ? { borderColor: `${color}50` } : {}}>
+                {step.done && (
+                  <motion.svg initial={{ scale: 0 }} animate={{ scale: 1 }} viewBox="0 0 12 12" className="w-3 h-3">
+                    <polyline points="1.5,6 5,9.5 10.5,2.5" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </motion.svg>
+                )}
+              </div>
+              <p className={cn("text-[13px] font-bold", step.done ? "text-[#1e1b4b]" : "text-[#9ca3af]")}>
+                {step.label}
+              </p>
+              {!step.done && (
+                <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ duration: 1.2, repeat: Infinity }}
+                  className="ml-auto w-1.5 h-1.5 rounded-full" style={{ background: color }} />
+              )}
+            </motion.div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -304,7 +408,7 @@ export default function Course() {
         <div className="text-5xl mb-4">😕</div>
         <h2 className="text-lg font-extrabold text-[#1e1b4b] mb-2">Something went wrong</h2>
         <p className="text-sm text-[#6b7280] text-center mb-6">{error}</p>
-        <Button onClick={() => { setError(null); setLoading(true); hasFetched.current = false; }} style={{ background: color }} className="text-white rounded-xl px-6">
+        <Button onClick={() => { setDataReady(false); setAnimReady(false); setMsgIndex(0); hasFetched.current = false; }} style={{ background: color }} className="text-white rounded-xl px-6">
           Try again
         </Button>
       </div>
