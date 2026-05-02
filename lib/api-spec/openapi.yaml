@@ -3,20 +3,33 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: KodeTalent API specification
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: students
+    description: Student profile operations
+  - name: quests
+    description: Quest and roadmap operations
+  - name: interview
+    description: Mock interview operations
+  - name: test
+    description: Mock test operations
+  - name: jobs
+    description: Job matching operations
+  - name: leaderboard
+    description: Leaderboard operations
+  - name: anthropic
+    description: Anthropic AI chat operations
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +37,596 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /students:
+    post:
+      operationId: createStudent
+      tags: [students]
+      summary: Create a new student profile (onboarding)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateStudentBody"
+      responses:
+        "201":
+          description: Created student
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Student"
+
+  /students/{id}:
+    get:
+      operationId: getStudent
+      tags: [students]
+      summary: Get student by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Student profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Student"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    patch:
+      operationId: updateStudent
+      tags: [students]
+      summary: Update student profile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateStudentBody"
+      responses:
+        "200":
+          description: Updated student
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Student"
+
+  /students/by-email/{email}:
+    get:
+      operationId: getStudentByEmail
+      tags: [students]
+      summary: Get student by email
+      parameters:
+        - name: email
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Student profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Student"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /students/{id}/dashboard:
+    get:
+      operationId: getStudentDashboard
+      tags: [students]
+      summary: Get full dashboard data for a student
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Dashboard data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardData"
+
+  /students/{id}/wrapped:
+    get:
+      operationId: getStudentWrapped
+      tags: [students]
+      summary: Get career wrapped data for a student
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Career wrapped data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CareerWrapped"
+
+  /quests:
+    get:
+      operationId: listQuests
+      tags: [quests]
+      summary: List quests filtered by field and year
+      parameters:
+        - name: field
+          in: query
+          schema:
+            type: string
+        - name: year
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of quests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Quest"
+
+  /students/{id}/quests:
+    get:
+      operationId: getStudentQuests
+      tags: [quests]
+      summary: Get quest progress for a student
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of student quest statuses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StudentQuestStatus"
+
+  /students/{id}/quests/{questId}/complete:
+    post:
+      operationId: completeQuest
+      tags: [quests]
+      summary: Mark a quest as complete and award XP
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: questId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Updated student after XP award
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Student"
+
+  /ai/analyze-github:
+    post:
+      operationId: analyzeGithub
+      tags: [students]
+      summary: Analyze GitHub profile and return skills
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnalyzeGithubBody"
+      responses:
+        "200":
+          description: Analyzed skills
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SkillsResult"
+
+  /ai/generate-roadmap:
+    post:
+      operationId: generateRoadmap
+      tags: [quests]
+      summary: Generate personalized roadmap milestones
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateRoadmapBody"
+      responses:
+        "200":
+          description: Generated roadmap
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoadmapResult"
+
+  /interview/sessions:
+    post:
+      operationId: createInterviewSession
+      tags: [interview]
+      summary: Start a new mock interview session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateInterviewSessionBody"
+      responses:
+        "201":
+          description: Created session with first question
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InterviewSession"
+
+  /interview/sessions/{id}/question:
+    post:
+      operationId: getNextInterviewQuestion
+      tags: [interview]
+      summary: Get next interview question based on previous answers
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmitAnswerBody"
+      responses:
+        "200":
+          description: Next question or completion
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InterviewQuestionResponse"
+
+  /interview/sessions/{id}/evaluate:
+    post:
+      operationId: evaluateInterview
+      tags: [interview]
+      summary: Evaluate completed interview session
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Interview evaluation results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InterviewEvaluation"
+
+  /interview/sessions/{id}:
+    get:
+      operationId: getInterviewSession
+      tags: [interview]
+      summary: Get interview session details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Interview session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InterviewSession"
+
+  /test/sessions:
+    post:
+      operationId: createTestSession
+      tags: [test]
+      summary: Generate and start a mock test
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTestSessionBody"
+      responses:
+        "201":
+          description: Created test session with questions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TestSession"
+
+  /test/sessions/{id}/submit:
+    post:
+      operationId: submitTest
+      tags: [test]
+      summary: Submit test answers and get results
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmitTestBody"
+      responses:
+        "200":
+          description: Test results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TestResult"
+
+  /test/sessions/{id}:
+    get:
+      operationId: getTestSession
+      tags: [test]
+      summary: Get test session details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Test session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TestSession"
+
+  /jobs:
+    get:
+      operationId: listJobs
+      tags: [jobs]
+      summary: List available jobs
+      responses:
+        "200":
+          description: List of jobs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Job"
+
+  /students/{id}/job-matches:
+    get:
+      operationId: getJobMatches
+      tags: [jobs]
+      summary: Get job matches for a student
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Job matches
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/JobMatch"
+    post:
+      operationId: generateJobMatches
+      tags: [jobs]
+      summary: Generate/refresh job matches for a student using AI
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Generated job matches
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/JobMatch"
+
+  /leaderboard/college:
+    get:
+      operationId: getCollegeLeaderboard
+      tags: [leaderboard]
+      summary: Get college-wise leaderboard
+      parameters:
+        - name: college
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: College leaderboard
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LeaderboardEntry"
+
+  /leaderboard/india:
+    get:
+      operationId: getIndiaLeaderboard
+      tags: [leaderboard]
+      summary: Get India college-wise leaderboard
+      responses:
+        "200":
+          description: India leaderboard by college
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CollegeLeaderboardEntry"
+
+  /anthropic/conversations:
+    get:
+      operationId: listAnthropicConversations
+      tags: [anthropic]
+      summary: List all conversations
+      responses:
+        "200":
+          description: List of conversations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AnthropicConversation"
+    post:
+      operationId: createAnthropicConversation
+      tags: [anthropic]
+      summary: Create a new conversation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAnthropicConversationBody"
+      responses:
+        "201":
+          description: Created conversation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnthropicConversation"
+  /anthropic/conversations/{id}:
+    get:
+      operationId: getAnthropicConversation
+      tags: [anthropic]
+      summary: Get conversation with messages
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Conversation with messages
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnthropicConversationWithMessages"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnthropicError"
+    delete:
+      operationId: deleteAnthropicConversation
+      tags: [anthropic]
+      summary: Delete a conversation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnthropicError"
+  /anthropic/conversations/{id}/messages:
+    get:
+      operationId: listAnthropicMessages
+      tags: [anthropic]
+      summary: List messages in a conversation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of messages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AnthropicMessage"
+    post:
+      operationId: sendAnthropicMessage
+      tags: [anthropic]
+      summary: Send a message and receive an AI response (SSE stream)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SendAnthropicMessageBody"
+      responses:
+        "200":
+          description: SSE stream of assistant response chunks
+          content:
+            text/event-stream: {}
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +637,723 @@ components:
       required:
         - status
 
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    Student:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        college:
+          type: string
+        city:
+          type: string
+        year:
+          type: integer
+        field:
+          type: string
+        githubUrl:
+          type: string
+          nullable: true
+        overallScore:
+          type: integer
+        xp:
+          type: integer
+        level:
+          type: integer
+        streakCount:
+          type: integer
+        lastActiveDate:
+          type: string
+          nullable: true
+        skills:
+          type: object
+          additionalProperties:
+            type: integer
+        isPro:
+          type: boolean
+        createdAt:
+          type: string
+      required:
+        - id
+        - name
+        - email
+        - college
+        - city
+        - year
+        - field
+        - overallScore
+        - xp
+        - level
+        - streakCount
+        - skills
+        - isPro
+        - createdAt
+
+    CreateStudentBody:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        college:
+          type: string
+        city:
+          type: string
+        year:
+          type: integer
+        field:
+          type: string
+        githubUrl:
+          type: string
+          nullable: true
+      required:
+        - name
+        - email
+        - college
+        - city
+        - year
+        - field
+
+    UpdateStudentBody:
+      type: object
+      properties:
+        name:
+          type: string
+        college:
+          type: string
+        city:
+          type: string
+        year:
+          type: integer
+        field:
+          type: string
+        githubUrl:
+          type: string
+          nullable: true
+        isPro:
+          type: boolean
+
+    DashboardData:
+      type: object
+      properties:
+        student:
+          $ref: "#/components/schemas/Student"
+        todayQuest:
+          $ref: "#/components/schemas/Quest"
+          nullable: true
+        questProgress:
+          type: object
+          properties:
+            completed:
+              type: integer
+            total:
+              type: integer
+          required:
+            - completed
+            - total
+        topSkills:
+          type: array
+          items:
+            $ref: "#/components/schemas/SkillEntry"
+        collegeRank:
+          type: object
+          properties:
+            rank:
+              type: integer
+            total:
+              type: integer
+            percentile:
+              type: integer
+          required:
+            - rank
+            - total
+            - percentile
+        xpToNextLevel:
+          type: integer
+      required:
+        - student
+        - questProgress
+        - topSkills
+        - collegeRank
+        - xpToNextLevel
+
+    CareerWrapped:
+      type: object
+      properties:
+        studentId:
+          type: integer
+        name:
+          type: string
+        college:
+          type: string
+        streakDays:
+          type: integer
+        xpGained:
+          type: integer
+        scoreStart:
+          type: integer
+        scoreEnd:
+          type: integer
+        indiaPercentile:
+          type: integer
+        month:
+          type: string
+      required:
+        - studentId
+        - name
+        - college
+        - streakDays
+        - xpGained
+        - scoreStart
+        - scoreEnd
+        - indiaPercentile
+        - month
+
+    SkillEntry:
+      type: object
+      properties:
+        name:
+          type: string
+        score:
+          type: integer
+      required:
+        - name
+        - score
+
+    Quest:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        field:
+          type: string
+        year:
+          type: integer
+        xpReward:
+          type: integer
+        minutes:
+          type: integer
+        whyItMatters:
+          type: string
+        howToDoIt:
+          type: string
+      required:
+        - id
+        - title
+        - description
+        - field
+        - year
+        - xpReward
+        - minutes
+
+    StudentQuestStatus:
+      type: object
+      properties:
+        quest:
+          $ref: "#/components/schemas/Quest"
+        status:
+          type: string
+          enum: [not_started, in_progress, completed]
+        completedAt:
+          type: string
+          nullable: true
+      required:
+        - quest
+        - status
+
+    AnalyzeGithubBody:
+      type: object
+      properties:
+        githubUrl:
+          type: string
+        studentId:
+          type: integer
+      required:
+        - githubUrl
+        - studentId
+
+    SkillsResult:
+      type: object
+      properties:
+        skills:
+          type: object
+          additionalProperties:
+            type: integer
+      required:
+        - skills
+
+    GenerateRoadmapBody:
+      type: object
+      properties:
+        year:
+          type: integer
+        field:
+          type: string
+      required:
+        - year
+        - field
+
+    RoadmapMilestone:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        year:
+          type: integer
+        order:
+          type: integer
+        whyItMatters:
+          type: string
+        howToDoIt:
+          type: string
+        estimatedMinutes:
+          type: integer
+      required:
+        - title
+        - description
+        - year
+        - order
+
+    RoadmapResult:
+      type: object
+      properties:
+        milestones:
+          type: array
+          items:
+            $ref: "#/components/schemas/RoadmapMilestone"
+      required:
+        - milestones
+
+    CreateInterviewSessionBody:
+      type: object
+      properties:
+        studentId:
+          type: integer
+        company:
+          type: string
+        round:
+          type: string
+      required:
+        - studentId
+        - company
+        - round
+
+    InterviewSession:
+      type: object
+      properties:
+        id:
+          type: integer
+        studentId:
+          type: integer
+        company:
+          type: string
+        round:
+          type: string
+        questions:
+          type: array
+          items:
+            type: string
+        answers:
+          type: array
+          items:
+            type: string
+        overallScore:
+          type: integer
+          nullable: true
+        currentQuestion:
+          type: string
+          nullable: true
+        questionNumber:
+          type: integer
+        completed:
+          type: boolean
+        createdAt:
+          type: string
+      required:
+        - id
+        - studentId
+        - company
+        - round
+        - questions
+        - answers
+        - questionNumber
+        - completed
+        - createdAt
+
+    SubmitAnswerBody:
+      type: object
+      properties:
+        answer:
+          type: string
+      required:
+        - answer
+
+    InterviewQuestionResponse:
+      type: object
+      properties:
+        question:
+          type: string
+          nullable: true
+        questionNumber:
+          type: integer
+        completed:
+          type: boolean
+      required:
+        - questionNumber
+        - completed
+
+    InterviewEvaluation:
+      type: object
+      properties:
+        overallScore:
+          type: integer
+        communicationScore:
+          type: integer
+        technicalScore:
+          type: integer
+        confidenceScore:
+          type: integer
+        weakPoint:
+          type: string
+        strongPoint:
+          type: string
+        questionFeedback:
+          type: array
+          items:
+            $ref: "#/components/schemas/QuestionFeedback"
+      required:
+        - overallScore
+        - communicationScore
+        - technicalScore
+        - confidenceScore
+        - weakPoint
+        - strongPoint
+        - questionFeedback
+
+    QuestionFeedback:
+      type: object
+      properties:
+        question:
+          type: string
+        studentAnswer:
+          type: string
+        betterAnswer:
+          type: string
+        score:
+          type: integer
+      required:
+        - question
+        - studentAnswer
+        - betterAnswer
+        - score
+
+    CreateTestSessionBody:
+      type: object
+      properties:
+        studentId:
+          type: integer
+        testType:
+          type: string
+        difficulty:
+          type: string
+      required:
+        - studentId
+        - testType
+        - difficulty
+
+    MCQQuestion:
+      type: object
+      properties:
+        question:
+          type: string
+        options:
+          type: array
+          items:
+            type: string
+        correctIndex:
+          type: integer
+        topic:
+          type: string
+      required:
+        - question
+        - options
+        - correctIndex
+        - topic
+
+    TestSession:
+      type: object
+      properties:
+        id:
+          type: integer
+        studentId:
+          type: integer
+        testType:
+          type: string
+        difficulty:
+          type: string
+        questions:
+          type: array
+          items:
+            $ref: "#/components/schemas/MCQQuestion"
+        score:
+          type: integer
+          nullable: true
+        total:
+          type: integer
+        completed:
+          type: boolean
+        createdAt:
+          type: string
+      required:
+        - id
+        - studentId
+        - testType
+        - difficulty
+        - questions
+        - total
+        - completed
+        - createdAt
+
+    SubmitTestBody:
+      type: object
+      properties:
+        answers:
+          type: array
+          items:
+            type: integer
+      required:
+        - answers
+
+    TestResult:
+      type: object
+      properties:
+        score:
+          type: integer
+        total:
+          type: integer
+        percentage:
+          type: number
+        sectionBreakdown:
+          type: array
+          items:
+            $ref: "#/components/schemas/SectionScore"
+        weakTopics:
+          type: array
+          items:
+            type: string
+        averageComparison:
+          type: string
+      required:
+        - score
+        - total
+        - percentage
+        - sectionBreakdown
+        - weakTopics
+        - averageComparison
+
+    SectionScore:
+      type: object
+      properties:
+        topic:
+          type: string
+        correct:
+          type: integer
+        total:
+          type: integer
+      required:
+        - topic
+        - correct
+        - total
+
+    Job:
+      type: object
+      properties:
+        id:
+          type: integer
+        companyName:
+          type: string
+        role:
+          type: string
+        requiredSkills:
+          type: array
+          items:
+            type: string
+        ctcMin:
+          type: number
+        ctcMax:
+          type: number
+        location:
+          type: string
+        remote:
+          type: boolean
+      required:
+        - id
+        - companyName
+        - role
+        - requiredSkills
+        - ctcMin
+        - ctcMax
+        - location
+        - remote
+
+    JobMatch:
+      type: object
+      properties:
+        job:
+          $ref: "#/components/schemas/Job"
+        matchScore:
+          type: integer
+        matchReason:
+          type: string
+        isLocked:
+          type: boolean
+      required:
+        - job
+        - matchScore
+        - matchReason
+        - isLocked
+
+    LeaderboardEntry:
+      type: object
+      properties:
+        rank:
+          type: integer
+        studentId:
+          type: integer
+        name:
+          type: string
+        college:
+          type: string
+        overallScore:
+          type: integer
+        xp:
+          type: integer
+        level:
+          type: integer
+        streakCount:
+          type: integer
+        isCurrentUser:
+          type: boolean
+      required:
+        - rank
+        - studentId
+        - name
+        - college
+        - overallScore
+        - xp
+        - level
+        - streakCount
+        - isCurrentUser
+
+    CollegeLeaderboardEntry:
+      type: object
+      properties:
+        rank:
+          type: integer
+        college:
+          type: string
+        city:
+          type: string
+        avgScore:
+          type: number
+        studentCount:
+          type: integer
+      required:
+        - rank
+        - college
+        - city
+        - avgScore
+        - studentCount
+
+    AnthropicConversation:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - title
+        - createdAt
+    AnthropicMessage:
+      type: object
+      properties:
+        id:
+          type: integer
+        conversationId:
+          type: integer
+        role:
+          type: string
+        content:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - conversationId
+        - role
+        - content
+        - createdAt
+    CreateAnthropicConversationBody:
+      type: object
+      properties:
+        title:
+          type: string
+      required:
+        - title
+    SendAnthropicMessageBody:
+      type: object
+      properties:
+        content:
+          type: string
+      required:
+        - content
+    AnthropicConversationWithMessages:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/AnthropicMessage"
+      required:
+        - id
+        - title
+        - createdAt
+        - messages
+    AnthropicError:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error

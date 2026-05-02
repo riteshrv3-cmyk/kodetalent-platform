@@ -1,0 +1,244 @@
+Build KodeTalent — India ka AI Career Companion for engineering students.
+1st year se placement tak. Duolingo jaisa habit loop, Spotify Wrapped jaisi shareability.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TECH STACK
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Next.js 14 App Router, Supabase (PostgreSQL + Auth),
+Anthropic API (claude-haiku-4-5), Tailwind CSS
+Secrets: ANTHROPIC_API_KEY, GITHUB_TOKEN,
+NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY,
+SUPABASE_SERVICE_ROLE_KEY
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+DESIGN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Background: #0f172a | Primary: #6366f1 | Success: #22c55e
+Streak color: #f59e0b | Achievement: #ec4899 | Text: #f8fafc
+Card bg: #1e293b | Font: Inter
+Mobile-first (375px base). Smooth 300ms animations.
+Loading skeletons everywhere. No blank screens.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SCREEN 1: CHATBOT ONBOARDING — Route: /
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+No traditional landing page. Build a WhatsApp-style chat UI.
+Messages appear one by one with typing animation.
+
+Bot: "Hey! 👋 Main hoon KodeTalent AI.
+60 seconds mein batata hoon tu India ke
+job market mein kahan khada hai. Shuru karein?"
+→ Button: [Haan, Shuru Karo 🚀]
+
+Bot: "Kaunsa year hai tera?"
+→ Buttons: [1st Year] [2nd Year] [3rd Year] [4th Year]
+
+Bot: "Konsa field?"
+→ Buttons: [Web Dev] [AI/ML] [App Dev] [Cybersecurity] [Data]
+
+Bot: "College ka naam aur city?"
+→ Text input
+
+Bot (only if 3rd/4th year): "GitHub URL? (optional)"
+→ Text input + [Skip] button
+
+Bot: "Email do — tera roadmap wahan bhejta hoon"
+→ Email input + [Submit]
+
+Bot: "Perfect! Tera profile ban raha hai... ⚡"
+→ 2 second loading animation → redirect /dashboard
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SCREEN 2: DASHBOARD — Route: /dashboard
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Top bar:
+"Hey [Name] 👋" — left
+Level badge (Level 12) — right, indigo pill
+
+Streak bar (amber):
+🔥 15 Day Streak | ⚡ 420 XP | Next level: 80 XP away
+
+TODAY'S QUEST card (most prominent, indigo border):
+Quest title | "~10 min" | "+50 XP"
+[Start Quest →] full-width button
+Progress: 0/1 complete
+
+Skills snapshot — 3 horizontal bars:
+Python 74 | React 61 | DSA 45
+
+Score card at bottom:
+"KodeTalent Score: 68/100"
+Progress bar | "Top 18% in PICT Pune"
+
+Bottom nav (fixed): 🏠 Home | 🗺️ Roadmap | 🎯 Prep | 💼 Jobs | 👤 Profile
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SCREEN 3: ROADMAP — Route: /roadmap
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Vertical timeline. Current year expanded, others collapsed.
+
+Each milestone:
+✅ green = done | 🔄 blue = in progress | 🔒 grey = locked
+
+Example (2nd year, AI/ML):
+1st Year ✅ collapsed
+2nd Year — CURRENT (expanded)
+  ✅ Python OOP
+  ✅ Git basics
+  🔄 NumPy & Pandas ← active quest
+  🔒 First ML Model
+  🔒 Kaggle entry
+3rd Year 🔒
+4th Year 🔒
+
+Tap any milestone → bottom sheet shows:
+Title | Why it matters | How to do it | Time estimate
+[Start This Quest] button
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SCREEN 4: PREP — Route: /prep
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4 cards in grid:
+
+CARD 1 — AI Mock Interview (FREE: 1/month)
+Select: Company (TCS/Zerodha/Razorpay/Startup/Any)
+Select: Round (HR / Technical / DSA)
+→ Route: /prep/interview
+Full screen chat-style interview.
+AI asks 5 questions one by one.
+Student types answers.
+After all 5:
+Results screen:
+  Overall: 72/100
+  Communication 7/10 | Technical 5/10 | Confidence 6/10
+  Weak point (red card) | Strong point (green card)
+  Each question: student answer + "better answer would be:"
+  [Practice Again] [Share Result]
+
+CARD 2 — AI Mock Test (FREE: 2/month)
+Select: Type (TCS NQT / AMCAT / Python / DSA / Aptitude)
+Select: Difficulty (Easy / Medium / Hard)
+→ Route: /prep/test
+20 MCQ questions. 20-minute countdown timer.
+One question at a time. Cannot go back.
+After submit:
+  Score: 14/20
+  Section breakdown bars
+  Weak topics highlighted
+  "Above/Below average vs similar students"
+  [Practice Weak Topics]
+
+CARD 3 — Mentor Chat 🔒 PRO ₹299/mo
+Show 3 mentor avatars + "Avg reply: 4 hrs"
+Locked overlay → [Upgrade to Pro]
+
+CARD 4 — Mentor Meeting 🔒 PRO ₹299/mo
+"30-min 1:1 video call"
+Locked overlay → [Upgrade to Pro]
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SCREEN 5: JOBS — Route: /jobs
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Top: Score meter "Job Ready: 68/100"
+
+3 FREE job match cards:
+Company + Role | Match % green badge
+Salary range | Location/Remote tag
+[View] [Apply]
+
+Below: 3 blurred locked cards
+"+9 more matches — Go Pro ₹299/mo"
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SCREEN 6: PROFILE — Route: /profile
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Avatar (initials) | Name | College | Year
+Level + XP bar | Streak count 🔥
+
+Skills section:
+Each skill as progress bar with color:
+Green >70 | Yellow 40-70 | Red <40
+
+MONTHLY CAREER WRAPPED button (indigo, prominent):
+→ Generates shareable card:
+┌─────────────────────────┐
+│ KodeTalent May Wrapped  │
+│ [Name] · [College]      │
+│                         │
+│ 🔥 Streak: 21 days      │
+│ ⚡ XP gained: 840        │
+│ 📈 Score: 58 → 68       │
+│ 🏆 Top 18% in India     │
+│                         │
+│ kodetalent.com          │
+└─────────────────────────┘
+Bold colors. Full screen. [Share on WhatsApp] button.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SCREEN 7: LEADERBOARD — Route: /leaderboard
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Toggle: [My College] [India]
+
+My College: ranked list of students, current user highlighted
+India: college-wise rankings by avg score
+Subtitle: "Based on real skills — not NIRF ranking"
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+DATABASE (Supabase)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+students: id, name, email, college, city, year, field,
+github_url, overall_score, xp, level, streak_count,
+last_active_date, skills JSONB, is_pro BOOLEAN
+
+quests: id, title, description, field, year, xp_reward, minutes
+
+student_quests: id, student_id, quest_id, status, completed_at
+
+jobs: id, company_name, role, required_skills JSONB,
+ctc_min, ctc_max, location, remote
+
+matches: id, student_id, job_id, match_score, match_reason
+
+interview_sessions: id, student_id, company, round,
+questions JSONB, answers JSONB, overall_score, completed_at
+
+test_sessions: id, student_id, test_type, score,
+total, questions JSONB, completed_at
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+AI ROUTES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+POST /api/analyze-github
+→ Fetch repos via GitHub API → Claude analyzes
+→ Returns skills JSONB with scores
+
+POST /api/generate-roadmap
+→ Input: year, field → Claude returns milestone list
+
+POST /api/generate-interview-question
+→ Input: company, round, question_number, previous_answers
+→ Claude returns next interview question
+
+POST /api/evaluate-interview
+→ Input: all questions + answers → Claude evaluates
+→ Returns scores + feedback + better answers
+
+POST /api/generate-test
+→ Input: type, difficulty → Claude returns 20 MCQs
+
+POST /api/match-jobs
+→ Input: student skills → Claude matches against jobs table
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+BUILD ORDER
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. Chatbot onboarding (/) + Supabase schema
+2. Dashboard + bottom nav
+3. Roadmap tab
+4. Mock Interview flow (most valuable feature)
+5. Mock Test flow
+6. Jobs tab
+7. Profile + Career Wrapped card
+8. College Leaderboard
+9. Seed dummy jobs data for matching
+10. Deploy — get live URL
