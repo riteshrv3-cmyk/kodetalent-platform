@@ -24,6 +24,9 @@ export interface Student {
   year: number;
   field: string;
   githubUrl?: string | null;
+  cgpa?: string | null;
+  targetPackage?: string | null;
+  dreamCompany?: string | null;
   overallScore: number;
   xp: number;
   level: number;
@@ -42,6 +45,9 @@ export interface CreateStudentBody {
   year: number;
   field: string;
   githubUrl?: string | null;
+  cgpa?: string | null;
+  targetPackage?: string | null;
+  dreamCompany?: string | null;
 }
 
 export interface UpdateStudentBody {
@@ -51,6 +57,9 @@ export interface UpdateStudentBody {
   year?: number;
   field?: string;
   githubUrl?: string | null;
+  cgpa?: string | null;
+  targetPackage?: string | null;
+  dreamCompany?: string | null;
   isPro?: boolean;
 }
 
@@ -170,6 +179,15 @@ export interface InterviewSession {
 
 export interface SubmitAnswerBody {
   answer: string;
+}
+
+export interface InterviewFeedbackBody {
+  /**
+   * @minimum 1
+   * @maximum 5
+   */
+  selfConfidenceRating: number;
+  realInterviewUpcoming?: string | null;
 }
 
 export interface InterviewQuestionResponse {
@@ -313,6 +331,10 @@ export interface AnthropicError {
 export type ListQuestsParams = {
   field?: string;
   year?: number;
+};
+
+export type SubmitInterviewFeedback200 = {
+  ok: boolean;
 };
 
 export type GetCollegeLeaderboardParams = {

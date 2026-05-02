@@ -34,6 +34,7 @@ import type {
   GetCollegeLeaderboardParams,
   HealthStatus,
   InterviewEvaluation,
+  InterviewFeedbackBody,
   InterviewQuestionResponse,
   InterviewSession,
   Job,
@@ -47,6 +48,7 @@ import type {
   Student,
   StudentQuestStatus,
   SubmitAnswerBody,
+  SubmitInterviewFeedback200,
   SubmitTestBody,
   TestResult,
   TestSession,
@@ -1356,6 +1358,97 @@ export const useEvaluateInterview = <
   TContext
 > => {
   return useMutation(getEvaluateInterviewMutationOptions(options));
+};
+
+/**
+ * @summary Submit post-interview confidence feedback
+ */
+export const getSubmitInterviewFeedbackUrl = (id: number) => {
+  return `/api/interview/sessions/${id}/feedback`;
+};
+
+export const submitInterviewFeedback = async (
+  id: number,
+  interviewFeedbackBody: InterviewFeedbackBody,
+  options?: RequestInit,
+): Promise<SubmitInterviewFeedback200> => {
+  return customFetch<SubmitInterviewFeedback200>(
+    getSubmitInterviewFeedbackUrl(id),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(interviewFeedbackBody),
+    },
+  );
+};
+
+export const getSubmitInterviewFeedbackMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof submitInterviewFeedback>>,
+    TError,
+    { id: number; data: BodyType<InterviewFeedbackBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof submitInterviewFeedback>>,
+  TError,
+  { id: number; data: BodyType<InterviewFeedbackBody> },
+  TContext
+> => {
+  const mutationKey = ["submitInterviewFeedback"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof submitInterviewFeedback>>,
+    { id: number; data: BodyType<InterviewFeedbackBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return submitInterviewFeedback(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SubmitInterviewFeedbackMutationResult = NonNullable<
+  Awaited<ReturnType<typeof submitInterviewFeedback>>
+>;
+export type SubmitInterviewFeedbackMutationBody =
+  BodyType<InterviewFeedbackBody>;
+export type SubmitInterviewFeedbackMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Submit post-interview confidence feedback
+ */
+export const useSubmitInterviewFeedback = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof submitInterviewFeedback>>,
+    TError,
+    { id: number; data: BodyType<InterviewFeedbackBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof submitInterviewFeedback>>,
+  TError,
+  { id: number; data: BodyType<InterviewFeedbackBody> },
+  TContext
+> => {
+  return useMutation(getSubmitInterviewFeedbackMutationOptions(options));
 };
 
 /**

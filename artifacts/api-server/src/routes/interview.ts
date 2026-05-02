@@ -6,6 +6,7 @@ import { anthropic } from "@workspace/integrations-anthropic-ai";
 import {
   CreateInterviewSessionBody,
   GetNextInterviewQuestionBody,
+  SubmitInterviewFeedbackBody,
 } from "@workspace/api-zod";
 
 const router = Router();
@@ -32,6 +33,25 @@ router.post("/interview/sessions", async (req, res) => {
   } catch (err) {
     req.log.error({ err }, "Failed to create interview session");
     return res.status(500).json({ error: "Failed to create interview session" });
+  }
+});
+
+// PATCH /interview/sessions/:id/feedback
+router.patch("/interview/sessions/:id/feedback", async (req, res) => {
+  const id = Number(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
+  const parsed = SubmitInterviewFeedbackBody.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
+  const { selfConfidenceRating, realInterviewUpcoming } = parsed.data;
+  try {
+    await db.update(interviewSessionsTable).set({
+      selfConfidenceRating,
+      realInterviewUpcoming: realInterviewUpcoming ?? null,
+    }).where(eq(interviewSessionsTable.id, id));
+    return res.json({ ok: true });
+  } catch (err) {
+    req.log.error({ err }, "Failed to save feedback");
+    return res.status(500).json({ error: "Failed to save feedback" });
   }
 });
 

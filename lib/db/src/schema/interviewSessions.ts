@@ -13,6 +13,8 @@ export const interviewSessionsTable = pgTable("interview_sessions", {
   overallScore: integer("overall_score"),
   evaluation: jsonb("evaluation"),
   completed: boolean("completed").notNull().default(false),
+  selfConfidenceRating: integer("self_confidence_rating"),
+  realInterviewUpcoming: text("real_interview_upcoming"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

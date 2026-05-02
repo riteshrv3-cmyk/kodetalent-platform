@@ -25,6 +25,9 @@ export const CreateStudentBody = zod.object({
   year: zod.number(),
   field: zod.string(),
   githubUrl: zod.string().nullish(),
+  cgpa: zod.string().nullish(),
+  targetPackage: zod.string().nullish(),
+  dreamCompany: zod.string().nullish(),
 });
 
 /**
@@ -43,6 +46,9 @@ export const GetStudentResponse = zod.object({
   year: zod.number(),
   field: zod.string(),
   githubUrl: zod.string().nullish(),
+  cgpa: zod.string().nullish(),
+  targetPackage: zod.string().nullish(),
+  dreamCompany: zod.string().nullish(),
   overallScore: zod.number(),
   xp: zod.number(),
   level: zod.number(),
@@ -67,6 +73,9 @@ export const UpdateStudentBody = zod.object({
   year: zod.number().optional(),
   field: zod.string().optional(),
   githubUrl: zod.string().nullish(),
+  cgpa: zod.string().nullish(),
+  targetPackage: zod.string().nullish(),
+  dreamCompany: zod.string().nullish(),
   isPro: zod.boolean().optional(),
 });
 
@@ -79,6 +88,9 @@ export const UpdateStudentResponse = zod.object({
   year: zod.number(),
   field: zod.string(),
   githubUrl: zod.string().nullish(),
+  cgpa: zod.string().nullish(),
+  targetPackage: zod.string().nullish(),
+  dreamCompany: zod.string().nullish(),
   overallScore: zod.number(),
   xp: zod.number(),
   level: zod.number(),
@@ -105,6 +117,9 @@ export const GetStudentByEmailResponse = zod.object({
   year: zod.number(),
   field: zod.string(),
   githubUrl: zod.string().nullish(),
+  cgpa: zod.string().nullish(),
+  targetPackage: zod.string().nullish(),
+  dreamCompany: zod.string().nullish(),
   overallScore: zod.number(),
   xp: zod.number(),
   level: zod.number(),
@@ -132,6 +147,9 @@ export const GetStudentDashboardResponse = zod.object({
     year: zod.number(),
     field: zod.string(),
     githubUrl: zod.string().nullish(),
+    cgpa: zod.string().nullish(),
+    targetPackage: zod.string().nullish(),
+    dreamCompany: zod.string().nullish(),
     overallScore: zod.number(),
     xp: zod.number(),
     level: zod.number(),
@@ -253,6 +271,9 @@ export const CompleteQuestResponse = zod.object({
   year: zod.number(),
   field: zod.string(),
   githubUrl: zod.string().nullish(),
+  cgpa: zod.string().nullish(),
+  targetPackage: zod.string().nullish(),
+  dreamCompany: zod.string().nullish(),
   overallScore: zod.number(),
   xp: zod.number(),
   level: zod.number(),
@@ -345,6 +366,27 @@ export const EvaluateInterviewResponse = zod.object({
       score: zod.number(),
     }),
   ),
+});
+
+/**
+ * @summary Submit post-interview confidence feedback
+ */
+export const SubmitInterviewFeedbackParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const submitInterviewFeedbackBodySelfConfidenceRatingMax = 5;
+
+export const SubmitInterviewFeedbackBody = zod.object({
+  selfConfidenceRating: zod
+    .number()
+    .min(1)
+    .max(submitInterviewFeedbackBodySelfConfidenceRatingMax),
+  realInterviewUpcoming: zod.string().nullish(),
+});
+
+export const SubmitInterviewFeedbackResponse = zod.object({
+  ok: zod.boolean(),
 });
 
 /**

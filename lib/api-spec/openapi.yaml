@@ -338,6 +338,36 @@ paths:
               schema:
                 $ref: "#/components/schemas/InterviewEvaluation"
 
+  /interview/sessions/{id}/feedback:
+    patch:
+      operationId: submitInterviewFeedback
+      tags: [interview]
+      summary: Submit post-interview confidence feedback
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InterviewFeedbackBody"
+      responses:
+        "200":
+          description: Feedback saved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                required:
+                  - ok
+
   /interview/sessions/{id}:
     get:
       operationId: getInterviewSession
@@ -665,6 +695,15 @@ components:
         githubUrl:
           type: string
           nullable: true
+        cgpa:
+          type: string
+          nullable: true
+        targetPackage:
+          type: string
+          nullable: true
+        dreamCompany:
+          type: string
+          nullable: true
         overallScore:
           type: integer
         xp:
@@ -718,6 +757,15 @@ components:
         githubUrl:
           type: string
           nullable: true
+        cgpa:
+          type: string
+          nullable: true
+        targetPackage:
+          type: string
+          nullable: true
+        dreamCompany:
+          type: string
+          nullable: true
       required:
         - name
         - email
@@ -740,6 +788,15 @@ components:
         field:
           type: string
         githubUrl:
+          type: string
+          nullable: true
+        cgpa:
+          type: string
+          nullable: true
+        targetPackage:
+          type: string
+          nullable: true
+        dreamCompany:
           type: string
           nullable: true
         isPro:
@@ -1005,6 +1062,19 @@ components:
           type: string
       required:
         - answer
+
+    InterviewFeedbackBody:
+      type: object
+      properties:
+        selfConfidenceRating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        realInterviewUpcoming:
+          type: string
+          nullable: true
+      required:
+        - selfConfidenceRating
 
     InterviewQuestionResponse:
       type: object

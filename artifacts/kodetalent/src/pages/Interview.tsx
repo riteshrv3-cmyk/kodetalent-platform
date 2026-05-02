@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, ArrowLeft, RefreshCw, Share2, Clock, ChevronDown, ChevronUp, Mic, MicOff, Volume2, VolumeX } from "lucide-react";
-import { useGetNextInterviewQuestion, useEvaluateInterview, useGetInterviewSession } from "@workspace/api-client-react";
+import { Send, ArrowLeft, RefreshCw, Share2, Clock, ChevronDown, ChevronUp, Mic, Volume2, VolumeX } from "lucide-react";
+import { useGetNextInterviewQuestion, useEvaluateInterview, useGetInterviewSession, useSubmitInterviewFeedback } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -56,6 +56,14 @@ function ScoreRing({ score, max, label, color }: { score: number; max: number; l
   );
 }
 
+const CONFIDENCE_EMOJIS = [
+  { emoji: "😰", label: "Very nervous" },
+  { emoji: "😟", label: "Nervous" },
+  { emoji: "😐", label: "Neutral" },
+  { emoji: "🙂", label: "Confident" },
+  { emoji: "😎", label: "Very confident" },
+];
+
 export default function Interview() {
   const { id } = useParams();
   const [, setLocation] = useLocation();
@@ -69,6 +77,12 @@ export default function Interview() {
   const [evalData, setEvalData] = useState<EvalData | null>(null);
   const [expandedFeedback, setExpandedFeedback] = useState<number | null>(null);
   const maxQuestions = 5;
+
+  // Confidence micro-survey
+  const [confidenceSent, setConfidenceSent] = useState(false);
+  const [pendingRating, setPendingRating] = useState<number | null>(null);
+  const [showRealInterviewQ, setShowRealInterviewQ] = useState(false);
+  const submitFeedback = useSubmitInterviewFeedback();
 
   // Timer
   const [timerSeconds, setTimerSeconds] = useState(0);
@@ -94,12 +108,10 @@ export default function Interview() {
   const getNextQuestion = useGetNextInterviewQuestion();
   const evaluateInterview = useEvaluateInterview();
 
-  // Sync refs
   useEffect(() => { voiceModeRef.current = voiceMode; }, [voiceMode]);
   useEffect(() => { isTypingRef.current = isTyping; }, [isTyping]);
   useEffect(() => { timerSecondsRef.current = timerSeconds; }, [timerSeconds]);
 
-  // Load voice mode from localStorage
   useEffect(() => {
     const vm = localStorage.getItem("voiceMode") === "true";
     setVoiceMode(vm);
@@ -110,7 +122,6 @@ export default function Interview() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping]);
 
-  // Timer: start when bot finishes a message
   useEffect(() => {
     if (!isTyping && messages.length > 0 && !isFinished) {
       const last = messages[messages.length - 1];
@@ -130,7 +141,6 @@ export default function Interview() {
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [timerRunning]);
 
-  // TTS: speak new bot messages in voice mode
   useEffect(() => {
     if (!voiceMode || isTyping || messages.length === 0) return;
     const last = messages[messages.length - 1];
@@ -167,7 +177,6 @@ export default function Interview() {
     setIsSpeaking(false);
   };
 
-  // Session load
   useEffect(() => {
     if (session && messages.length === 0 && !session.completed) {
       if (session.currentQuestion) {
@@ -182,7 +191,6 @@ export default function Interview() {
     }
   }, [session]);
 
-  // Core submit logic (shared by text & voice)
   const submitAnswer = useCallback((text: string) => {
     if (!text.trim() || isTypingRef.current) return;
     questionTimesRef.current.push(timerSecondsRef.current);
@@ -233,49 +241,53 @@ export default function Interview() {
     submitAnswer(inputValue);
   };
 
-  // Voice recording
+  const handleConfidenceRating = (rating: number) => {
+    setPendingRating(rating);
+    setShowRealInterviewQ(true);
+  };
+
+  const handleRealInterview = async (answer: "yes" | "no") => {
+    if (!pendingRating) return;
+    try {
+      await submitFeedback.mutateAsync({
+        id: sessionId,
+        data: { selfConfidenceRating: pendingRating, realInterviewUpcoming: answer }
+      });
+    } catch (e) {
+      // silently ignore — don't block UX
+    }
+    setConfidenceSent(true);
+  };
+
   const toggleRecording = () => {
     if (isRecording) {
       recognitionRef.current?.stop();
       if (autoSubmitTimerRef.current) clearTimeout(autoSubmitTimerRef.current);
       return;
     }
-
     stopSpeaking();
-
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SR) {
       alert("Voice recognition is not supported in this browser. Try Chrome on Android or desktop.");
       return;
     }
-
     const recognition = new SR();
     recognition.lang = "en-IN";
     recognition.continuous = false;
     recognition.interimResults = true;
     recognition.maxAlternatives = 1;
-
     let latestFinal = "";
-
-    recognition.onstart = () => {
-      setIsRecording(true);
-      setInputValue("");
-    };
-
+    recognition.onstart = () => { setIsRecording(true); setInputValue(""); };
     recognition.onresult = (event: any) => {
       let interim = "";
       let final = "";
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const t = event.results[i][0].transcript;
-        if (event.results[i].isFinal) {
-          final += t;
-        } else {
-          interim += t;
-        }
+        if (event.results[i].isFinal) final += t;
+        else interim += t;
       }
       latestFinal = final || latestFinal;
       setInputValue(latestFinal || interim);
-
       if (latestFinal) {
         if (autoSubmitTimerRef.current) clearTimeout(autoSubmitTimerRef.current);
         autoSubmitTimerRef.current = setTimeout(() => {
@@ -283,19 +295,8 @@ export default function Interview() {
         }, 1400);
       }
     };
-
-    recognition.onerror = (e: any) => {
-      console.error("Speech recognition error:", e.error);
-      setIsRecording(false);
-    };
-
-    recognition.onend = () => {
-      setIsRecording(false);
-      if (!latestFinal && !autoSubmitTimerRef.current) {
-        // no speech detected
-      }
-    };
-
+    recognition.onerror = (e: any) => { console.error("Speech recognition error:", e.error); setIsRecording(false); };
+    recognition.onend = () => setIsRecording(false);
     recognitionRef.current = recognition;
     recognition.start();
   };
@@ -308,13 +309,12 @@ export default function Interview() {
     if (!next) stopSpeaking();
   };
 
-  const timerColor = timerSeconds < 120 ? "#10b981" : timerSeconds < 240 ? "#f97316" : "#ef4444";
-
-  // ─── Results screen ───────────────────────────────────────────────────────────
+  // ─── Loading ────────────────────────────────────────────────────────────────
   if (sessionLoading) {
     return <div className="p-4 flex justify-center items-center h-screen bg-white font-bold text-primary">Loading...</div>;
   }
 
+  // ─── Results screen ──────────────────────────────────────────────────────────
   if (isFinished) {
     const times = questionTimesRef.current;
     const avg = times.length ? Math.round(times.reduce((a, b) => a + b, 0) / times.length) : 0;
@@ -325,10 +325,12 @@ export default function Interview() {
       : evalData.overallRating.includes("No") ? "#ef4444"
       : evalData.overallRating.includes("Lean") ? "#f97316"
       : "#7c3aed";
-    const interviewTypeLabel = session?.interviewType || "Technical";
+    const [interviewTypeLabel] = (session?.round || "Technical").includes("|")
+      ? (session?.round || "Technical|Standard").split("|")
+      : [session?.round || "Technical"];
 
     return (
-      <div className="p-4 pb-24 max-w-md mx-auto space-y-5 min-h-screen bg-[#f5f3ff]">
+      <div className="p-4 pb-24 max-w-md mx-auto space-y-4 min-h-screen bg-[#f5f3ff]">
         <Button variant="ghost" onClick={() => setLocation("/prep")} className="mb-2 -ml-2 text-[#6b7280] font-bold">
           <ArrowLeft className="w-5 h-5 mr-2" /> Back
         </Button>
@@ -337,6 +339,7 @@ export default function Interview() {
           <p className="text-[#6b7280] font-bold">{interviewTypeLabel} · {session?.company}</p>
         </div>
 
+        {/* Main score card */}
         <Card className="border-0 shadow-[0_4px_24px_rgba(124,58,237,0.12)] rounded-3xl bg-white overflow-hidden">
           <div className="h-2 w-full" style={{ background: "linear-gradient(90deg,#7c3aed,#ec4899)" }} />
           <CardContent className="p-6 text-center">
@@ -352,6 +355,69 @@ export default function Interview() {
           </CardContent>
         </Card>
 
+        {/* Confidence micro-survey */}
+        <AnimatePresence>
+          {!confidenceSent && (
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ delay: 0.3 }}
+            >
+              <Card className="border-0 border-l-4 border-l-primary shadow-sm rounded-2xl bg-white">
+                <CardContent className="p-4">
+                  {!showRealInterviewQ ? (
+                    <>
+                      <p className="text-sm font-bold text-[#1e1b4b] mb-1">How confident did you feel?</p>
+                      <p className="text-xs text-[#9ca3af] mb-3">This helps us personalise your practice.</p>
+                      <div className="flex justify-around">
+                        {CONFIDENCE_EMOJIS.map(({ emoji, label }, i) => (
+                          <button
+                            key={i}
+                            onClick={() => handleConfidenceRating(i + 1)}
+                            title={label}
+                            className="text-2xl w-11 h-11 rounded-full hover:bg-[#f5f3ff] transition active:scale-90 flex items-center justify-center"
+                          >
+                            {emoji}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }}>
+                      <p className="text-sm font-bold text-[#1e1b4b] mb-3">Do you have a real interview coming up?</p>
+                      <div className="flex gap-3">
+                        <button
+                          onClick={() => handleRealInterview("yes")}
+                          className="flex-1 py-2.5 rounded-xl bg-primary text-white font-bold text-sm hover:bg-[#6d28d9] transition"
+                        >
+                          Yes, soon!
+                        </button>
+                        <button
+                          onClick={() => handleRealInterview("no")}
+                          className="flex-1 py-2.5 rounded-xl bg-[#f5f3ff] text-[#6b7280] font-bold text-sm hover:bg-[#ede9fe] transition"
+                        >
+                          Not yet
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+          {confidenceSent && (
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
+              <Card className="border-0 shadow-sm rounded-2xl bg-white">
+                <CardContent className="p-4 text-center">
+                  <p className="text-sm font-bold text-[#10b981]">✓ Thanks for the feedback!</p>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Category scores */}
         {evalData && (
           <Card className="border-0 shadow-sm rounded-2xl bg-white">
             <CardContent className="p-5">
@@ -375,7 +441,7 @@ export default function Interview() {
             </Card>
             <Card className="border-0 border-l-4 border-l-[#f97316] shadow-sm rounded-2xl bg-white">
               <CardContent className="p-4">
-                <p className="text-[11px] font-extrabold text-[#f97316] uppercase tracking-wider mb-1">⚡ Improve</p>
+                <p className="text-[11px] font-extrabold text-[#f97316] uppercase tracking-wider mb-1">⚡ Work on this</p>
                 <p className="text-sm font-medium text-[#1e1b4b]">{evalData.weakPoint}</p>
               </CardContent>
             </Card>
@@ -385,7 +451,9 @@ export default function Interview() {
         {times.length > 0 && (
           <Card className="border-0 shadow-sm rounded-2xl bg-white">
             <CardContent className="p-4">
-              <p className="text-[11px] font-extrabold text-[#6b7280] uppercase tracking-wider mb-3">⏱ Response Times</p>
+              <p className="text-[11px] font-extrabold text-[#6b7280] uppercase tracking-wider mb-3">
+                <Clock className="w-3 h-3 inline mr-1" /> Response Times
+              </p>
               <div className="grid grid-cols-3 gap-2 text-center">
                 <div><div className="text-lg font-black text-[#1e1b4b]">{formatTime(avg)}</div><div className="text-[10px] font-bold text-[#6b7280]">Average</div></div>
                 <div><div className="text-lg font-black text-[#10b981]">{formatTime(fastest)}</div><div className="text-[10px] font-bold text-[#6b7280]">Fastest</div></div>
@@ -464,14 +532,12 @@ export default function Interview() {
             <h1 className="font-extrabold text-base text-[#1e1b4b]">{interviewType} Interview</h1>
             <p className="text-[11px] text-[#6b7280] font-medium">{session?.company} · Q{questionCount}/{maxQuestions}</p>
           </div>
-          {/* Voice mode toggle */}
           <button
             onClick={toggleVoiceMode}
             className={cn(
               "w-9 h-9 rounded-full flex items-center justify-center transition-all",
               voiceMode ? "bg-primary text-white shadow-[0_0_0_3px_rgba(124,58,237,0.2)]" : "bg-[#f5f3ff] text-[#6b7280]"
             )}
-            title={voiceMode ? "Voice mode on — tap to disable" : "Enable voice mode"}
           >
             {voiceMode ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
           </button>
@@ -486,6 +552,15 @@ export default function Interview() {
           ))}
         </div>
       </div>
+
+      {/* Timer */}
+      {timerRunning && (
+        <div className="flex justify-end px-4 pt-1">
+          <div className="flex items-center gap-1 text-xs font-bold" style={{ color: timerSeconds < 120 ? "#10b981" : timerSeconds < 240 ? "#f97316" : "#ef4444" }}>
+            <Clock className="w-3 h-3" /> {formatTime(timerSeconds)}
+          </div>
+        </div>
+      )}
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-40">
@@ -512,22 +587,18 @@ export default function Interview() {
               </div>
             </motion.div>
           )}
-          {/* Speaking indicator */}
           {isSpeaking && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start">
               <div className="bg-[#f5f3ff] border border-[#ede9fe] rounded-2xl px-4 py-2 flex items-center gap-2">
                 <Volume2 className="w-3.5 h-3.5 text-primary" />
                 <div className="flex gap-0.5">
                   {[0, 0.15, 0.3, 0.15, 0].map((delay, i) => (
-                    <motion.div key={i} className="w-1 bg-primary rounded-full"
-                      animate={{ height: ["8px", "18px", "8px"] }}
-                      transition={{ duration: 0.7, repeat: Infinity, delay }} />
+                    <motion.div key={i} className="w-0.5 rounded-full bg-primary"
+                      animate={{ height: ["4px", "14px", "4px"] }}
+                      transition={{ duration: 0.6, repeat: Infinity, delay }} />
                   ))}
                 </div>
-                <span className="text-[11px] font-bold text-primary">Speaking...</span>
-                <button onClick={stopSpeaking} className="text-[#6b7280] hover:text-primary ml-1">
-                  <MicOff className="w-3 h-3" />
-                </button>
+                <span className="text-xs font-bold text-primary">Speaking…</span>
               </div>
             </motion.div>
           )}
@@ -536,99 +607,51 @@ export default function Interview() {
       </div>
 
       {/* Input area */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#ede9fe] p-4 pb-safe z-20 max-w-md mx-auto">
-        {/* Timer */}
-        {timerRunning && (
-          <div className="flex items-center justify-center mb-2 gap-1.5">
-            <Clock className="w-3.5 h-3.5" style={{ color: timerColor }} />
-            <span className="text-xs font-bold tabular-nums" style={{ color: timerColor }}>{formatTime(timerSeconds)}</span>
-          </div>
+      <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-white via-white to-transparent pt-6 pb-5 px-4 max-w-md mx-auto">
+        {isRecording && (
+          <motion.div animate={{ opacity: [0.5, 1, 0.5] }} transition={{ duration: 1, repeat: Infinity }}
+            className="text-center text-xs font-bold text-primary mb-2">
+            🎤 Listening… speak now
+          </motion.div>
         )}
-
-        {voiceMode ? (
-          /* Voice mode UI */
-          <div className="flex flex-col items-center gap-3">
-            <div className="relative flex items-center justify-center">
-              {isRecording && (
-                <>
-                  <motion.div className="absolute w-24 h-24 rounded-full bg-red-100"
-                    animate={{ scale: [1, 1.3, 1] }} transition={{ duration: 1.2, repeat: Infinity }} />
-                  <motion.div className="absolute w-20 h-20 rounded-full bg-red-200"
-                    animate={{ scale: [1, 1.15, 1] }} transition={{ duration: 1.2, repeat: Infinity, delay: 0.2 }} />
-                </>
+        <form onSubmit={handleTextSubmit} className="flex gap-2 items-center">
+          {voiceMode ? (
+            <motion.button
+              type="button"
+              whileTap={{ scale: 0.92 }}
+              onClick={toggleRecording}
+              className={cn(
+                "flex-1 h-14 rounded-full font-bold flex items-center justify-center gap-2 transition-all",
+                isRecording
+                  ? "bg-[#ef4444] text-white shadow-[0_0_0_6px_rgba(239,68,68,0.2)]"
+                  : "bg-primary text-white shadow-[0_4px_16px_rgba(124,58,237,0.3)]"
               )}
-              <motion.button
-                onClick={toggleRecording}
-                disabled={isTyping}
-                whileTap={{ scale: 0.93 }}
-                className={cn(
-                  "relative w-16 h-16 rounded-full flex items-center justify-center shadow-lg transition-all",
-                  isRecording
-                    ? "bg-red-500 text-white shadow-red-200 shadow-xl"
-                    : isTyping
-                    ? "bg-[#e5e7eb] text-[#9ca3af]"
-                    : "bg-primary text-white shadow-primary/30"
-                )}
-              >
-                {isRecording ? <MicOff className="w-7 h-7" /> : <Mic className="w-7 h-7" />}
-              </motion.button>
-            </div>
-
-            <p className="text-xs font-bold text-center" style={{ color: isRecording ? "#ef4444" : "#6b7280" }}>
-              {isRecording ? "Listening… tap to stop" : isTyping ? "AI is thinking…" : "Tap mic to speak your answer"}
-            </p>
-
-            {inputValue && (
-              <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
-                className="w-full bg-[#f5f3ff] rounded-2xl px-4 py-3 text-sm text-[#1e1b4b] font-medium border border-[#ede9fe]">
-                {inputValue}
-              </motion.div>
-            )}
-
-            <div className="flex gap-2 w-full">
-              <Input
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                placeholder="Or type your answer..."
-                disabled={isTyping}
-                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submitAnswer(inputValue); } }}
-                className="flex-1 rounded-2xl border-2 border-[#ede9fe] focus-visible:ring-primary h-10 text-sm text-[#1e1b4b] font-medium"
-              />
-              <Button onClick={() => submitAnswer(inputValue)} disabled={!inputValue.trim() || isTyping}
-                className="h-10 w-10 rounded-xl bg-primary text-white flex-shrink-0">
-                <Send className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-        ) : (
-          /* Text mode UI */
-          <form onSubmit={handleTextSubmit} className="flex space-x-2 relative">
+            >
+              <Mic className="w-5 h-5" />
+              {isRecording ? "Stop" : "Tap to speak"}
+            </motion.button>
+          ) : (
             <Input
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              placeholder="Type your answer..."
+              placeholder="Type your answer…"
               disabled={isTyping}
-              className="flex-1 rounded-2xl bg-white border-2 border-[#ede9fe] focus-visible:ring-primary focus-visible:border-primary h-[60px] px-5 text-[15px] shadow-sm pr-24 text-[#1e1b4b] font-medium"
+              className="flex-1 h-14 rounded-full border-2 border-[#ede9fe] focus-visible:border-primary focus-visible:ring-0 px-5 text-[15px] bg-[#fafaf9] text-[#1e1b4b]"
             />
-            <div className="absolute right-2 top-2 flex gap-1">
-              <motion.button type="button" whileTap={{ scale: 0.9 }}
-                onClick={toggleRecording}
-                disabled={isTyping}
-                className={cn(
-                  "h-11 w-11 rounded-xl flex items-center justify-center transition-colors",
-                  isRecording ? "bg-red-500 text-white" : "bg-[#f5f3ff] text-primary hover:bg-[#ede9fe]"
-                )}>
-                {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-              </motion.button>
-              <motion.div whileTap={{ scale: 0.9 }}>
-                <Button type="submit" disabled={!inputValue.trim() || isTyping}
-                  className="h-11 w-11 rounded-xl bg-primary text-white shadow-md">
-                  <Send className="w-5 h-5 ml-0.5" />
-                </Button>
-              </motion.div>
-            </div>
-          </form>
-        )}
+          )}
+          {!voiceMode && (
+            <motion.div whileTap={{ scale: 0.97 }}>
+              <Button
+                type="submit"
+                size="icon"
+                disabled={isTyping || !inputValue.trim()}
+                className="h-14 w-14 rounded-full bg-primary text-white shadow-[0_4px_16px_rgba(124,58,237,0.3)] flex-shrink-0"
+              >
+                <Send className="w-5 h-5" />
+              </Button>
+            </motion.div>
+          )}
+        </form>
       </div>
     </div>
   );

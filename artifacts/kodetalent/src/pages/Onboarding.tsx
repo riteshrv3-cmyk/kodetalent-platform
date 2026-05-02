@@ -22,7 +22,7 @@ export default function Onboarding() {
   const [formData, setFormData] = useState<any>({});
   const [inputValue, setInputValue] = useState("");
   const [loadingProfile, setLoadingProfile] = useState(false);
-  
+
   const createStudent = useCreateStudent();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -34,22 +34,28 @@ export default function Onboarding() {
     if (step === 0) {
       addBotMessage("Hey! I'm your AI Career Companion from KodeTalent. Ready to level up your engineering career?", ["Let's go!"]);
     } else if (step === 1) {
-      addBotMessage("Awesome! Which year of college are you in right now?", ["1st Year", "2nd Year", "3rd Year", "4th Year"]);
+      addBotMessage("Which year of college are you in right now?", ["1st Year", "2nd Year", "3rd Year", "4th Year"]);
     } else if (step === 2) {
-      addBotMessage("Got it. What field are you most interested in?", ["Web Dev", "AI/ML", "App Dev", "Cybersecurity", "Data"]);
+      addBotMessage("What field are you most interested in?", ["Web Dev", "AI/ML", "App Dev", "Cybersecurity", "Data"]);
     } else if (step === 3) {
-      addBotMessage("Nice choice! What's the name of your college and city? (e.g., PICT Pune)", [], "text");
+      addBotMessage("What's your college name and city? (e.g., PICT Pune)", [], "text");
     } else if (step === 4) {
       if (formData.year === "3rd Year" || formData.year === "4th Year") {
-        addBotMessage("Do you have a GitHub profile? Paste the URL or skip.", [], "text");
+        addBotMessage("Do you have a GitHub profile? Paste the URL or tap Send to skip.", [], "text");
       } else {
         setStep(5);
       }
     } else if (step === 5) {
-      addBotMessage("Almost done! What's your email?", [], "email");
+      addBotMessage("What's your email address?", [], "email");
     } else if (step === 6) {
-      addBotMessage("And finally, what's your name?", [], "text");
+      addBotMessage("And your name?", [], "text");
     } else if (step === 7) {
+      addBotMessage("What's your current CGPA? (e.g. 8.2 out of 10) — tap Send to skip", [], "text");
+    } else if (step === 8) {
+      addBotMessage("Which company do you dream of working at? — tap Send to skip", [], "text");
+    } else if (step === 9) {
+      addBotMessage("What salary package are you aiming for?", ["<6 LPA", "6–10 LPA", "10–20 LPA", "20+ LPA"]);
+    } else if (step === 10) {
       finishOnboarding();
     }
   }, [step]);
@@ -64,40 +70,43 @@ export default function Onboarding() {
 
   const handleOptionClick = (option: string) => {
     setMessages((prev) => [...prev, { id: Date.now().toString(), sender: "user", text: option }]);
-    
     if (step === 0) setStep(1);
-    else if (step === 1) {
-      setFormData({ ...formData, year: option });
-      setStep(2);
-    }
-    else if (step === 2) {
-      setFormData({ ...formData, field: option });
-      setStep(3);
-    }
+    else if (step === 1) { setFormData({ ...formData, year: option }); setStep(2); }
+    else if (step === 2) { setFormData({ ...formData, field: option }); setStep(3); }
+    else if (step === 9) { setFormData({ ...formData, targetPackage: option }); setStep(10); }
   };
 
   const handleSubmitText = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputValue.trim() && step !== 4) return;
 
-    setMessages((prev) => [...prev, { id: Date.now().toString(), sender: "user", text: inputValue || "Skipped" }]);
-    
+    const value = inputValue.trim();
+    const displayText = value || "Skipped";
+    setMessages((prev) => [...prev, { id: Date.now().toString(), sender: "user", text: displayText }]);
+
     if (step === 3) {
-      const parts = inputValue.split(" ");
-      const city = parts.length > 1 ? parts.pop() : "Unknown";
+      const parts = value.split(" ");
+      const city = parts.length > 1 ? parts.pop()! : "Unknown";
       setFormData({ ...formData, college: parts.join(" "), city });
       setStep(4);
     } else if (step === 4) {
-      setFormData({ ...formData, githubUrl: inputValue || undefined });
+      setFormData({ ...formData, githubUrl: value || undefined });
       setStep(5);
     } else if (step === 5) {
-      setFormData({ ...formData, email: inputValue });
+      if (!value) return;
+      setFormData({ ...formData, email: value });
       setStep(6);
     } else if (step === 6) {
-      setFormData({ ...formData, name: inputValue });
+      if (!value) return;
+      setFormData({ ...formData, name: value });
       setStep(7);
+    } else if (step === 7) {
+      setFormData({ ...formData, cgpa: value || undefined });
+      setStep(8);
+    } else if (step === 8) {
+      setFormData({ ...formData, dreamCompany: value || undefined });
+      setStep(9);
     }
-    
+
     setInputValue("");
   };
 
@@ -107,7 +116,6 @@ export default function Onboarding() {
       const yearMap: Record<string, number> = {
         "1st Year": 1, "2nd Year": 2, "3rd Year": 3, "4th Year": 4
       };
-      
       const year = yearMap[formData.year] || 1;
       const field = formData.field || "Web Dev";
 
@@ -117,18 +125,17 @@ export default function Onboarding() {
           email: formData.email || "student@example.com",
           college: formData.college || "College",
           city: formData.city || "City",
-          year: year,
-          field: field,
+          year,
+          field,
           githubUrl: formData.githubUrl,
+          cgpa: formData.cgpa,
+          dreamCompany: formData.dreamCompany,
+          targetPackage: formData.targetPackage,
         }
       });
-      
+
       localStorage.setItem("studentId", student.id.toString());
-      
-      setTimeout(() => {
-        setLocation("/dashboard");
-      }, 2000);
-      
+      setTimeout(() => { setLocation("/dashboard"); }, 2000);
     } catch (e) {
       console.error(e);
       setLoadingProfile(false);
@@ -140,11 +147,11 @@ export default function Onboarding() {
     return (
       <div className="min-h-screen bg-[#f5f3ff] flex flex-col items-center justify-center p-6 text-center space-y-6">
         <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center animate-pulse">
-          <span className="text-5xl">⚡</span>
+          <span className="text-5xl">⭐</span>
         </div>
-        <h2 className="text-2xl font-bold text-[#1e1b4b]">Tera profile ban raha hai... ⚡</h2>
+        <h2 className="text-2xl font-bold text-[#1e1b4b]">Building your career profile...</h2>
         <div className="w-full max-w-xs h-3 bg-[#ede9fe] rounded-full overflow-hidden">
-          <motion.div 
+          <motion.div
             className="h-full bg-primary"
             initial={{ width: "0%" }}
             animate={{ width: "100%" }}
@@ -168,7 +175,7 @@ export default function Onboarding() {
           <p className="text-sm font-semibold text-[#10b981]">Online</p>
         </div>
       </div>
-      
+
       <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-40">
         <AnimatePresence>
           {messages.map((msg) => (
@@ -180,8 +187,8 @@ export default function Onboarding() {
             >
               <div
                 className={`max-w-[85%] px-5 py-3 text-[15px] font-medium shadow-[0_4px_24px_rgba(124,58,237,0.10)] ${
-                  msg.sender === "user" 
-                    ? "bg-primary text-white rounded-2xl rounded-tr-none" 
+                  msg.sender === "user"
+                    ? "bg-primary text-white rounded-2xl rounded-tr-none"
                     : "bg-white text-[#1e1b4b] rounded-2xl rounded-tl-none border border-[#ede9fe]"
                 }`}
               >
@@ -190,11 +197,7 @@ export default function Onboarding() {
             </motion.div>
           ))}
           {isTyping && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="flex justify-start"
-            >
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start">
               <div className="bg-white border border-[#ede9fe] rounded-2xl rounded-tl-none px-5 py-4 flex space-x-1 shadow-[0_4px_24px_rgba(124,58,237,0.10)]">
                 <motion.div className="w-2 h-2 bg-primary/60 rounded-full" animate={{ y: [0, -5, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0 }} />
                 <motion.div className="w-2 h-2 bg-primary/60 rounded-full" animate={{ y: [0, -5, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }} />
@@ -213,8 +216,8 @@ export default function Onboarding() {
               <div className="flex flex-wrap gap-2 justify-end">
                 {currentBotMessage.options.map((opt) => (
                   <motion.div key={opt} whileTap={{ scale: 0.97 }}>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       className="rounded-full bg-white hover:bg-primary border-primary text-primary hover:text-white transition-colors h-12 px-6 font-bold text-[15px] shadow-[0_4px_24px_rgba(124,58,237,0.10)]"
                       onClick={() => handleOptionClick(opt)}
                     >

@@ -15,7 +15,7 @@ router.post("/students", async (req, res) => {
   if (!parsed.success) {
     return res.status(400).json({ error: parsed.error.message });
   }
-  const { name, email, college, city, year, field, githubUrl } = parsed.data;
+  const { name, email, college, city, year, field, githubUrl, cgpa, targetPackage, dreamCompany } = parsed.data;
   try {
     const existing = await db.select().from(studentsTable).where(eq(studentsTable.email, email)).limit(1);
     if (existing.length > 0) {
@@ -30,6 +30,9 @@ router.post("/students", async (req, res) => {
       year,
       field: field as string,
       githubUrl: githubUrl ?? null,
+      cgpa: cgpa ?? null,
+      targetPackage: targetPackage ?? null,
+      dreamCompany: dreamCompany ?? null,
       overallScore: 42 + Math.floor(Math.random() * 20),
       xp: Math.floor(Math.random() * 300) + 100,
       level: 1,
@@ -67,13 +70,16 @@ router.patch("/students/:id", async (req, res) => {
   if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
   try {
     const updateData: Record<string, unknown> = {};
-    const { name, college, city, year, field, githubUrl, isPro } = parsed.data;
+    const { name, college, city, year, field, githubUrl, cgpa, targetPackage, dreamCompany, isPro } = parsed.data;
     if (name !== undefined) updateData.name = name;
     if (college !== undefined) updateData.college = college;
     if (city !== undefined) updateData.city = city;
     if (year !== undefined) updateData.year = year;
     if (field !== undefined) updateData.field = field;
     if (githubUrl !== undefined) updateData.githubUrl = githubUrl;
+    if (cgpa !== undefined) updateData.cgpa = cgpa;
+    if (targetPackage !== undefined) updateData.targetPackage = targetPackage;
+    if (dreamCompany !== undefined) updateData.dreamCompany = dreamCompany;
     if (isPro !== undefined) updateData.isPro = isPro;
     const [student] = await db.update(studentsTable).set(updateData).where(eq(studentsTable.id, id)).returning();
     if (!student) return res.status(404).json({ error: "Student not found" });
@@ -217,6 +223,9 @@ function formatStudent(s: typeof studentsTable.$inferSelect) {
     year: s.year,
     field: s.field,
     githubUrl: s.githubUrl ?? null,
+    cgpa: s.cgpa ?? null,
+    targetPackage: s.targetPackage ?? null,
+    dreamCompany: s.dreamCompany ?? null,
     overallScore: s.overallScore,
     xp: s.xp,
     level: Math.max(1, Math.floor(s.xp / 500) + 1),
