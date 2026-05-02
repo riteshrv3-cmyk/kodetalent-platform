@@ -8,6 +8,7 @@ import jobsRouter from "./jobs";
 import leaderboardRouter from "./leaderboard";
 import aiRouter from "./ai";
 import anthropicRouter from "./anthropic";
+import courseRouter from "./course";
 
 const router: IRouter = Router();
 
@@ -20,5 +21,6 @@ router.use(jobsRouter);
 router.use(leaderboardRouter);
 router.use(aiRouter);
 router.use(anthropicRouter);
+router.use(courseRouter);
 
 export default router;

@@ -220,6 +220,20 @@ export default function Opportunities() {
   const [selectedSubDomain, setSelectedSubDomain] = useState<SubDomain | null>(null);
   const [activeTab, setActiveTab] = useState<OpportunityType>("jobs");
 
+  const navigateToCourse = () => {
+    if (!selectedDomain || !selectedSubDomain) return;
+    sessionStorage.setItem("courseContext", JSON.stringify({
+      subDomainId: selectedSubDomain.id,
+      subDomainName: selectedSubDomain.name,
+      domainName: selectedDomain.name,
+      domainColor: selectedDomain.color,
+      domainBg: selectedDomain.bg,
+      domainEmoji: selectedDomain.emoji,
+      skills: selectedSubDomain.skills,
+    }));
+    setLocation("/opportunities/course");
+  };
+
   const goBack = () => {
     if (selectedSubDomain) {
       setSelectedSubDomain(null);
@@ -267,7 +281,7 @@ export default function Opportunities() {
               </div>
               <div className="flex gap-2">
                 <Button
-                  onClick={() => setLocation("/prep")}
+                  onClick={navigateToCourse}
                   className="flex-1 h-10 rounded-xl text-white font-bold text-[13px]"
                   style={{ background: selectedDomain!.color }}
                 >
@@ -317,7 +331,7 @@ export default function Opportunities() {
               </div>
               <div className="flex gap-2">
                 <Button
-                  onClick={() => setLocation("/prep")}
+                  onClick={navigateToCourse}
                   className="flex-1 h-10 rounded-xl text-white font-bold text-[13px]"
                   style={{ background: selectedDomain!.color }}
                 >
@@ -367,7 +381,7 @@ export default function Opportunities() {
             </div>
             <div className="flex gap-2">
               <Button
-                onClick={() => setLocation("/prep")}
+                onClick={navigateToCourse}
                 className="flex-1 h-10 rounded-xl text-white font-bold text-[13px]"
                 style={{ background: selectedDomain!.color }}
               >
@@ -562,7 +576,7 @@ export default function Opportunities() {
                   Practice mock interviews tailored to {selectedSubDomain.name} roles and build your confidence first.
                 </p>
                 <Button
-                  onClick={() => setLocation("/prep")}
+                  onClick={navigateToCourse}
                   className="w-full h-10 rounded-xl font-bold text-[13px] text-white"
                   style={{ background: selectedDomain!.color }}
                 >

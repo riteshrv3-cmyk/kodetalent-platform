@@ -11,6 +11,7 @@ import Prep from "@/pages/Prep";
 import Interview from "@/pages/Interview";
 import Test from "@/pages/Test";
 import Opportunities from "@/pages/Opportunities";
+import Course from "@/pages/Course";
 import Profile from "@/pages/Profile";
 import Leaderboard from "@/pages/Leaderboard";
 import Resume from "@/pages/Resume";
@@ -31,6 +32,7 @@ function Router() {
             <Route path="/prep/interview/:id" component={Interview} />
             <Route path="/prep/test/:id" component={Test} />
             <Route path="/opportunities" component={Opportunities} />
+            <Route path="/opportunities/course" component={Course} />
             <Route path="/profile" component={Profile} />
             <Route path="/leaderboard" component={Leaderboard} />
             <Route path="/resume" component={Resume} />
