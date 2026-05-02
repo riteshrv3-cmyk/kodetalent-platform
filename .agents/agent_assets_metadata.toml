@@ -6,3 +6,9 @@ id = "WcWAWrbeMu5azVY-Xy9GF"
 uri = "file://KODETALENT_DOCS.md"
 type = "text"
 title = "KodeTalent Documentation"
+
+[[outputs]]
+id = "FDs3MSQUbmnNUoM3JP2bg"
+uri = "file://replit.md"
+type = "text"
+title = "KodeTalent — Full Project Documentation"
