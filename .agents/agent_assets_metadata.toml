@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "WcWAWrbeMu5azVY-Xy9GF"
+uri = "file://KODETALENT_DOCS.md"
+type = "text"
+title = "KodeTalent Documentation"
