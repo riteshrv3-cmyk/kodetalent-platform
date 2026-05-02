@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { Target, Lock, ChevronRight, MessageSquare, Briefcase, X, Cpu, Users, Shuffle, Building2, Flame } from "lucide-react";
+import { Target, Lock, ChevronRight, MessageSquare, Briefcase, X, Cpu, Users, Shuffle, Building2, Flame, Mic } from "lucide-react";
 import { useCreateInterviewSession, useCreateTestSession } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 
 type InterviewType = "Technical" | "Behavioral" | "Mixed";
 type Difficulty = "Standard" | "Challenging";
+
 
 const INTERVIEW_TYPES: { type: InterviewType; icon: React.ElementType; label: string; desc: string; color: string }[] = [
   { type: "Technical", icon: Cpu, label: "Technical", desc: "DSA, system design, CS fundamentals", color: "#7c3aed" },
@@ -27,6 +28,7 @@ export default function Prep() {
   const [company, setCompany] = useState("");
   const [interviewType, setInterviewType] = useState<InterviewType>("Technical");
   const [difficulty, setDifficulty] = useState<Difficulty>("Standard");
+  const [voiceMode, setVoiceMode] = useState(false);
 
   const createInterview = useCreateInterviewSession();
   const createTest = useCreateTestSession();
@@ -44,6 +46,7 @@ export default function Prep() {
     if (!studentId) return;
     const targetCompany = company.trim() || "Any Tech Company";
     const round = `${interviewType}|${difficulty}`;
+    localStorage.setItem("voiceMode", voiceMode ? "true" : "false");
     try {
       const session = await createInterview.mutateAsync({
         data: { studentId, company: targetCompany, round }
@@ -247,13 +250,46 @@ export default function Prep() {
                       )}
                     </div>
 
+                    <button
+                      onClick={() => setVoiceMode(!voiceMode)}
+                      className={cn(
+                        "w-full flex items-center justify-between px-4 py-3 rounded-2xl border-2 transition-all",
+                        voiceMode
+                          ? "border-primary bg-[#f5f3ff] shadow-[0_0_0_3px_rgba(124,58,237,0.12)]"
+                          : "border-[#e5e7eb] bg-white hover:border-[#ede9fe]"
+                      )}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={cn(
+                          "w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0",
+                          voiceMode ? "bg-primary text-white" : "bg-[#f3f4f6] text-[#6b7280]"
+                        )}>
+                          <Mic className="w-4 h-4" />
+                        </div>
+                        <div className="text-left">
+                          <div className="text-sm font-bold text-[#1e1b4b]">Voice Mode</div>
+                          <div className="text-[11px] text-[#6b7280]">AI reads questions · speak your answers</div>
+                        </div>
+                      </div>
+                      <div className={cn(
+                        "w-11 h-6 rounded-full transition-colors relative flex-shrink-0",
+                        voiceMode ? "bg-primary" : "bg-[#d1d5db]"
+                      )}>
+                        <motion.div
+                          className="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow"
+                          animate={{ x: voiceMode ? 20 : 2 }}
+                          transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                        />
+                      </div>
+                    </button>
+
                     <motion.div whileTap={{ scale: 0.97 }}>
                       <Button
                         onClick={handleStartInterview}
                         disabled={createInterview.isPending}
                         className="w-full bg-primary hover:bg-[#6d28d9] text-white font-bold h-14 rounded-full text-lg shadow-[0_8px_16px_rgba(124,58,237,0.2)]"
                       >
-                        {createInterview.isPending ? "Setting up..." : "Begin Interview →"}
+                        {createInterview.isPending ? "Setting up..." : voiceMode ? "🎤 Begin Voice Interview →" : "Begin Interview →"}
                       </Button>
                     </motion.div>
                   </div>
