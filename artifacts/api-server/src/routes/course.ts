@@ -12,11 +12,11 @@ router.post("/course/generate", async (req, res) => {
   try {
     const response = await anthropic.messages.create({
       model: "claude-haiku-4-5",
-      max_tokens: 3500,
+      max_tokens: 5000,
       messages: [
         {
           role: "user",
-          content: `You are a world-class course creator for Indian engineering students preparing for tech jobs. Create a focused mini-course for "${subDomainName}" in ${domainName}.
+          content: `You are a world-class course creator for Indian engineering students preparing for tech jobs. Create a complete Coursera-style course for "${subDomainName}" in ${domainName}.
 
 Key skills to cover: ${Array.isArray(skills) ? skills.join(", ") : skills || "core fundamentals"}
 
@@ -24,7 +24,25 @@ Return ONLY valid JSON — no markdown, no explanation, no code fences — in EX
 
 {
   "modules": [
-    { "id": "m1", "title": "string", "description": "string", "duration": "string", "emoji": "string", "topics": ["string"] }
+    {
+      "id": "m1",
+      "title": "string",
+      "description": "string",
+      "duration": "string",
+      "emoji": "string",
+      "topics": ["string"],
+      "lessons": [
+        {
+          "id": "m1l1",
+          "title": "string",
+          "type": "video",
+          "duration": "string",
+          "description": "string",
+          "keyPoints": ["string", "string", "string"],
+          "searchQuery": "string"
+        }
+      ]
+    }
   ],
   "flashcards": [
     { "id": "f1", "front": "string", "back": "string", "topic": "string" }
@@ -34,12 +52,24 @@ Return ONLY valid JSON — no markdown, no explanation, no code fences — in EX
   ]
 }
 
-Rules:
-- 5 modules (beginner → advanced) with relevant emoji, 2-3 topics each, realistic duration like "45 min" or "1.5 hrs"
-- 12 flashcards: mix of concept definitions, how-to questions, and "why/when" application questions tailored to interview prep at Indian product companies (TCS, Flipkart, Swiggy, Razorpay, etc.)
-- 5 quiz questions: 2 easy (recall), 2 medium (understanding), 1 hard (application/analysis); "answer" must be ONLY the letter "A", "B", "C", or "D"
-- All content specific to ${subDomainName} — practical, concise, interview-relevant
-- No filler — every word should help the student get hired`,
+Rules for modules:
+- Exactly 5 modules progressing beginner → advanced, each with a relevant emoji
+- Each module has 3-4 lessons
+- lesson "type" must be one of: "video", "reading", "exercise", "project"
+- lesson "duration" like "12 min", "20 min", "45 min"
+- lesson "description": 2-3 sentence explanation of what the student will learn
+- lesson "keyPoints": exactly 3 concise bullet-point takeaways (no bullet symbol, just text)
+- lesson "searchQuery": a precise YouTube search query to find the best free tutorial for this lesson, e.g. "React hooks useState useEffect tutorial 2024" — make it specific and searchable
+
+Rules for flashcards:
+- Exactly 12 flashcards covering core concepts, tools, and interview Q&A
+- Mix: definitions, how-to, why/when, common mistakes, real interview questions at Indian companies
+
+Rules for quiz:
+- Exactly 5 questions: 2 easy, 2 medium, 1 hard
+- "answer" must be ONLY the letter A, B, C, or D
+
+All content specific to ${subDomainName} — practical, interview-relevant, zero filler.`,
         },
       ],
     });
