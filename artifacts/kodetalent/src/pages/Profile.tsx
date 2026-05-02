@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { User as UserIcon, Share2, Award, Zap, Trophy, TrendingUp, X } from "lucide-react";
+import { User as UserIcon, Share2, Award, Zap, Trophy, TrendingUp, X, FileText } from "lucide-react";
 import { useGetStudentDashboard, getGetStudentDashboardQueryKey, useGetStudentWrapped } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -101,16 +101,27 @@ export default function Profile() {
         </Card>
       </div>
 
-      <motion.div whileTap={{ scale: 0.97 }}>
-        <Button 
-          className="w-full text-white font-bold h-16 rounded-full shadow-[0_8px_24px_rgba(124,58,237,0.25)] border-0 text-[16px] relative overflow-hidden group"
-          style={{ background: 'linear-gradient(135deg, #7c3aed, #ec4899)' }}
-          onClick={() => setShowWrapped(true)}
-        >
-          <div className="absolute inset-0 bg-white/20 transform -skew-x-12 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
-          ✨ See My {new Date().toLocaleString('default', { month: 'long' })} Wrapped
-        </Button>
-      </motion.div>
+      <div className="flex gap-3">
+        <motion.div whileTap={{ scale: 0.97 }} className="flex-1">
+          <Button 
+            className="w-full text-white font-bold h-14 rounded-full shadow-[0_8px_24px_rgba(124,58,237,0.25)] border-0 text-[15px] relative overflow-hidden group"
+            style={{ background: 'linear-gradient(135deg, #7c3aed, #ec4899)' }}
+            onClick={() => setShowWrapped(true)}
+          >
+            <div className="absolute inset-0 bg-white/20 transform -skew-x-12 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
+            ✨ Wrapped
+          </Button>
+        </motion.div>
+        <motion.div whileTap={{ scale: 0.97 }} className="flex-1">
+          <Button
+            variant="outline"
+            className="w-full h-14 rounded-full font-bold border-2 border-primary text-primary text-[15px] bg-white"
+            onClick={() => setLocation("/resume")}
+          >
+            <FileText className="w-4 h-4 mr-2" /> My Resume
+          </Button>
+        </motion.div>
+      </div>
 
       <Card className="border-0 bg-white shadow-[0_4px_24px_rgba(124,58,237,0.05)] rounded-2xl">
         <CardContent className="p-5">

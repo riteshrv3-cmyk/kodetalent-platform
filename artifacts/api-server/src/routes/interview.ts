@@ -17,7 +17,8 @@ router.post("/interview/sessions", async (req, res) => {
   const { studentId, company, round } = parsed.data;
 
   try {
-    const firstQuestion = await generateQuestion(company, round, 1, []);
+    const [interviewType, difficulty] = round.includes("|") ? round.split("|") : [round, "Standard"];
+    const firstQuestion = await generateQuestion(company, interviewType, difficulty, 1, [], []);
     const [session] = await db.insert(interviewSessionsTable).values({
       studentId,
       company,
@@ -69,21 +70,15 @@ router.post("/interview/sessions/:id/question", async (req, res) => {
     const completed = questionNumber > 5;
 
     if (completed) {
-      await db.update(interviewSessionsTable).set({
-        answers,
-        completed: true,
-      }).where(eq(interviewSessionsTable.id, id));
+      await db.update(interviewSessionsTable).set({ answers, completed: true }).where(eq(interviewSessionsTable.id, id));
       return res.json({ question: null, questionNumber: 5, completed: true });
     }
 
-    const nextQuestion = await generateQuestion(session.company, session.round, questionNumber, answers);
+    const [interviewType, difficulty] = session.round.includes("|") ? session.round.split("|") : [session.round, "Standard"];
+    const nextQuestion = await generateQuestion(session.company, interviewType, difficulty, questionNumber, questions, answers);
     questions.push(nextQuestion);
 
-    await db.update(interviewSessionsTable).set({
-      questions,
-      answers,
-    }).where(eq(interviewSessionsTable.id, id));
-
+    await db.update(interviewSessionsTable).set({ questions, answers }).where(eq(interviewSessionsTable.id, id));
     return res.json({ question: nextQuestion, questionNumber, completed: false });
   } catch (err) {
     req.log.error({ err }, "Failed to get next question");
@@ -101,25 +96,27 @@ router.post("/interview/sessions/:id/evaluate", async (req, res) => {
 
     const questions = session.questions as string[];
     const answers = session.answers as string[];
+    const [interviewType] = session.round.includes("|") ? session.round.split("|") : [session.round];
 
-    const evaluationPrompt = `You are an expert interviewer. Evaluate this mock interview for a ${session.company} ${session.round} interview.
+    const evaluationPrompt = `You are an expert campus placement interviewer. Evaluate this mock ${interviewType} interview for ${session.company}.
 
 Questions and Answers:
-${questions.map((q, i) => `Q${i+1}: ${q}\nA${i+1}: ${answers[i] || "(no answer)"}`).join("\n\n")}
+${questions.map((q, i) => `Q${i + 1}: ${q}\nA${i + 1}: ${answers[i] || "(no answer)"}`).join("\n\n")}
 
-Respond with a JSON object (no markdown) with this exact structure:
+Respond ONLY with a JSON object (no markdown, no explanation) with this exact structure:
 {
   "overallScore": <number 0-100>,
   "communicationScore": <number 0-10>,
   "technicalScore": <number 0-10>,
   "confidenceScore": <number 0-10>,
-  "weakPoint": "<one sentence about main weakness>",
-  "strongPoint": "<one sentence about main strength>",
+  "overallRating": "<Strong Hire | Hire | Lean Hire | No Hire>",
+  "weakPoint": "<one specific sentence about the main weakness>",
+  "strongPoint": "<one specific sentence about the main strength>",
   "questionFeedback": [
     {
       "question": "<question text>",
       "studentAnswer": "<answer text>",
-      "betterAnswer": "<improved answer>",
+      "betterAnswer": "<a concise improved model answer>",
       "score": <number 0-10>
     }
   ]
@@ -150,27 +147,64 @@ Respond with a JSON object (no markdown) with this exact structure:
 
 async function generateQuestion(
   company: string,
-  round: string,
+  interviewType: string,
+  difficulty: string,
   questionNumber: number,
+  previousQuestions: string[],
   previousAnswers: string[]
 ): Promise<string> {
-  const context = previousAnswers.length > 0
-    ? `Previous answers: ${previousAnswers.slice(-2).join("; ")}`
-    : "";
+  const isFirst = questionNumber === 1;
+  const lastQ = previousQuestions[previousQuestions.length - 1] || "";
+  const lastA = previousAnswers[previousAnswers.length - 1] || "";
 
-  const prompt = `You are an interviewer at ${company} conducting a ${round} interview for a software engineering position.
-${context}
-Generate question ${questionNumber} of 5 for this interview. Make it specific and realistic.
-Return ONLY the question text, nothing else.`;
+  const difficultyInstruction = difficulty === "Challenging"
+    ? "Be demanding. Push back on vague answers. Probe with sharp follow-ups. Simulate a high-pressure placement interview."
+    : "Be professional and constructive. Give the candidate room to think.";
+
+  const typeInstructions: Record<string, string> = {
+    Technical: "Focus on DSA, system design concepts, coding patterns, time/space complexity, and CS fundamentals relevant to Indian engineering placement rounds.",
+    Behavioral: "Focus on STAR-method behavioral questions: leadership, teamwork, conflict resolution, failure & learning, initiative, communication.",
+    Mixed: "Alternate between technical (DSA, CS concepts) and behavioral (STAR-method) questions. Be holistic.",
+  };
+  const typeInstruction = typeInstructions[interviewType] || typeInstructions["Mixed"];
+
+  let prompt: string;
+
+  if (isFirst) {
+    prompt = `You are a senior interviewer at ${company} conducting a ${interviewType} campus placement interview for an Indian engineering student.
+
+${difficultyInstruction}
+${typeInstruction}
+
+Briefly introduce yourself as the interviewer at ${company} (1 short sentence), then ask Question 1 of 5.
+Be specific and realistic. Return ONLY the intro + question. No extra commentary.`;
+  } else {
+    prompt = `You are a senior interviewer at ${company} conducting a ${interviewType} campus placement interview.
+
+${difficultyInstruction}
+${typeInstruction}
+
+Previous Question: ${lastQ}
+Candidate's Answer: ${lastA || "(no answer given)"}
+
+Your tasks:
+1. Give specific, actionable feedback on the answer above (2-3 sentences). End with a rating: **Strong** / **Adequate** / **Needs Improvement**.
+2. Then ask Question ${questionNumber} of 5. Make it logically flow from this conversation.
+
+Format your response EXACTLY like this:
+**Feedback:** [your feedback here]
+
+**Question ${questionNumber}:** [your question here]`;
+  }
 
   const message = await anthropic.messages.create({
     model: "claude-haiku-4-5",
-    max_tokens: 256,
+    max_tokens: 512,
     messages: [{ role: "user", content: prompt }],
   });
 
   const content = message.content[0];
-  return content.type === "text" ? content.text.trim() : "Tell me about yourself.";
+  return content.type === "text" ? content.text.trim() : "Tell me about a challenging technical problem you solved.";
 }
 
 function formatSession(
@@ -178,14 +212,17 @@ function formatSession(
   currentQuestion: string | null,
   questionNumber: number
 ) {
+  const [interviewType] = (s.round || "Technical").includes("|") ? s.round.split("|") : [s.round];
   return {
     id: s.id,
     studentId: s.studentId,
     company: s.company,
     round: s.round,
+    interviewType,
     questions: s.questions as string[],
     answers: s.answers as string[],
     overallScore: s.overallScore ?? null,
+    evaluation: s.evaluation ?? null,
     currentQuestion,
     questionNumber,
     completed: s.completed,

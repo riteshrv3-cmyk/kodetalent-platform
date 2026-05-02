@@ -13,6 +13,7 @@ import Test from "@/pages/Test";
 import Jobs from "@/pages/Jobs";
 import Profile from "@/pages/Profile";
 import Leaderboard from "@/pages/Leaderboard";
+import Resume from "@/pages/Resume";
 import { AppLayout } from "@/components/layout/AppLayout";
 
 const queryClient = new QueryClient();
@@ -32,6 +33,7 @@ function Router() {
             <Route path="/jobs" component={Jobs} />
             <Route path="/profile" component={Profile} />
             <Route path="/leaderboard" component={Leaderboard} />
+            <Route path="/resume" component={Resume} />
             <Route component={NotFound} />
           </Switch>
         </AppLayout>
