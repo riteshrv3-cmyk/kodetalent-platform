@@ -1,20 +1,19 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { motion } from "framer-motion";
-import { CheckCircle2, Circle, Lock, Play, Clock, Zap, BookOpen } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { CheckCircle2, Circle, Lock, Clock, Zap, BookOpen, ChevronDown } from "lucide-react";
 import { useGetStudentQuests, getGetStudentQuestsQueryKey, useCompleteQuest } from "@workspace/api-client-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerFooter, DrawerClose } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQueryClient } from "@tanstack/react-query";
+import confetti from "canvas-confetti";
 
 export default function Roadmap() {
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
   const [studentId, setStudentId] = useState<number | null>(null);
   const [selectedQuest, setSelectedQuest] = useState<any>(null);
-  const [drawerOpen, setDrawerOpen] = useState(false);
 
   useEffect(() => {
     const id = localStorage.getItem("studentId");
@@ -38,10 +37,9 @@ export default function Roadmap() {
     return (
       <div className="p-4 space-y-4">
         <Skeleton className="h-8 w-40 mb-6" />
-        <Skeleton className="h-16 w-full" />
-        <Skeleton className="h-24 w-full" />
-        <Skeleton className="h-24 w-full" />
-        <Skeleton className="h-16 w-full mt-8" />
+        <Skeleton className="h-20 w-full rounded-2xl" />
+        <Skeleton className="h-40 w-full rounded-2xl" />
+        <Skeleton className="h-40 w-full rounded-2xl" />
       </div>
     );
   }
@@ -56,7 +54,6 @@ export default function Roadmap() {
   });
 
   const years = Object.keys(questsByYear).map(Number).sort((a, b) => a - b);
-  // Find current year (first year with incomplete quests, or last year)
   let defaultYear = years[0];
   for (const year of years) {
     if (questsByYear[year].some(qs => qs.status !== "completed")) {
@@ -67,7 +64,6 @@ export default function Roadmap() {
 
   const handleQuestClick = (qs: any) => {
     setSelectedQuest(qs);
-    setDrawerOpen(true);
   };
 
   const handleStartQuest = async () => {
@@ -80,21 +76,43 @@ export default function Roadmap() {
           questId: selectedQuest.quest.id
         }
       });
-      // Update local state or invalidate
+
+      // Fire confetti and XP animation
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#7c3aed', '#06b6d4', '#10b981', '#ec4899']
+      });
+
+      // Create floating +XP element
+      const el = document.createElement("div");
+      el.innerText = `+${selectedQuest.quest.xpReward} XP`;
+      el.className = "fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-4xl font-black text-[#7c3aed] z-50 pointer-events-none drop-shadow-lg";
+      document.body.appendChild(el);
+      
+      const animation = el.animate([
+        { transform: "translate(-50%, -50%) scale(0.5)", opacity: 0 },
+        { transform: "translate(-50%, -100%) scale(1.2)", opacity: 1, offset: 0.2 },
+        { transform: "translate(-50%, -200%) scale(1)", opacity: 0 }
+      ], { duration: 1500, easing: "ease-out" });
+      
+      animation.onfinish = () => el.remove();
+
       queryClient.invalidateQueries({ queryKey: getGetStudentQuestsQueryKey(studentId) });
-      setDrawerOpen(false);
+      setSelectedQuest(null);
     } catch (e) {
       console.error(e);
     }
   };
 
   return (
-    <div className="p-4 pb-24 max-w-md mx-auto">
+    <div className="p-4 pb-28 max-w-md mx-auto min-h-screen bg-[#f5f3ff]">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold flex items-center">
+        <h1 className="text-2xl font-bold flex items-center text-[#1e1b4b]">
           <BookOpen className="mr-2" /> Career Roadmap
         </h1>
-        <p className="text-muted-foreground text-sm mt-1">
+        <p className="text-[#6b7280] font-medium text-sm mt-1">
           Complete quests to level up and get placement ready.
         </p>
       </div>
@@ -104,24 +122,32 @@ export default function Roadmap() {
           const yearQuests = questsByYear[year];
           const completedCount = yearQuests.filter(q => q.status === "completed").length;
           const progress = Math.round((completedCount / yearQuests.length) * 100);
+          const isCurrentYear = year === defaultYear;
           
           return (
-            <AccordionItem key={year} value={`year-${year}`} className="border-none bg-card rounded-xl overflow-hidden shadow-sm">
-              <AccordionTrigger className="px-4 py-3 hover:no-underline [&[data-state=open]]:bg-card/80">
-                <div className="flex flex-col items-start w-full">
-                  <div className="flex justify-between w-full mb-1">
-                    <span className="font-bold text-lg">Year {year}</span>
-                    <span className="text-sm font-medium bg-primary/20 text-primary px-2 py-0.5 rounded-md">
-                      {progress}%
-                    </span>
+            <AccordionItem key={year} value={`year-${year}`} className={`border-0 bg-white rounded-2xl shadow-[0_4px_24px_rgba(124,58,237,0.05)] overflow-hidden ${isCurrentYear ? 'border-l-4 border-l-primary' : ''}`}>
+              <AccordionTrigger className="px-5 py-4 hover:no-underline [&[data-state=open]>div>svg]:rotate-180">
+                <div className="flex flex-col items-start w-full relative">
+                  <div className="flex justify-between w-full mb-3 items-center pr-2">
+                    <span className="font-bold text-lg text-[#1e1b4b]">Year {year}</span>
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-bold bg-primary/10 text-primary px-3 py-1 rounded-full">
+                        {progress}%
+                      </span>
+                      <ChevronDown className="h-5 w-5 shrink-0 text-[#6b7280] transition-transform duration-200" />
+                    </div>
                   </div>
-                  <div className="w-full bg-muted rounded-full h-1.5 overflow-hidden">
-                    <div className="bg-primary h-full transition-all duration-500" style={{ width: `${progress}%` }} />
+                  <div className="w-full bg-[#ede9fe] rounded-full h-2 overflow-hidden">
+                    <motion.div 
+                      className="bg-primary h-full transition-all duration-500" 
+                      initial={{ width: 0 }}
+                      animate={{ width: `${progress}%` }}
+                    />
                   </div>
                 </div>
               </AccordionTrigger>
-              <AccordionContent className="pt-0 pb-4 px-4">
-                <div className="space-y-4 mt-4 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-border before:to-transparent">
+              <AccordionContent className="pt-0 pb-5 px-5">
+                <div className="space-y-1 mt-2 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px before:h-full before:w-[2px] before:bg-[#ede9fe]">
                   {yearQuests.map((qs, index) => {
                     const isCompleted = qs.status === "completed";
                     const isInProgress = qs.status === "in_progress";
@@ -130,38 +156,32 @@ export default function Roadmap() {
                     return (
                       <motion.div 
                         key={qs.quest.id}
-                        initial={{ opacity: 0, x: -20 }}
+                        initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.1 }}
-                        className={`relative flex items-center justify-between p-3 rounded-lg border ${
-                          isCompleted ? "bg-secondary/10 border-secondary/30" : 
-                          isInProgress ? "bg-primary/10 border-primary/30" : 
-                          "bg-card/50 border-border/50 opacity-70"
-                        } ${!isLocked ? "cursor-pointer" : ""}`}
+                        transition={{ delay: index * 0.05 }}
+                        className={`relative flex items-center justify-between py-4 group ${!isLocked ? "cursor-pointer" : ""}`}
                         onClick={() => !isLocked && handleQuestClick(qs)}
                       >
-                        <div className="flex items-center space-x-3 w-full">
-                          <div className={`shrink-0 z-10 flex items-center justify-center w-6 h-6 rounded-full bg-background ring-4 ring-card ${
-                            isCompleted ? "text-secondary" : 
-                            isInProgress ? "text-primary" : 
-                            "text-muted-foreground"
+                        <div className="flex items-center space-x-4 w-full">
+                          <div className={`shrink-0 z-10 flex items-center justify-center w-10 h-10 rounded-full bg-white border-[3px] ${
+                            isCompleted ? "border-[#10b981]" : 
+                            isInProgress ? "border-primary" : 
+                            "border-[#ede9fe]"
                           }`}>
-                            {isCompleted ? <CheckCircle2 className="w-5 h-5 fill-current" /> :
-                             isLocked ? <Lock className="w-4 h-4" /> :
-                             <Circle className="w-5 h-5" />}
+                            {isCompleted ? <CheckCircle2 className="w-6 h-6 text-[#10b981]" /> :
+                             isLocked ? <Lock className="w-4 h-4 text-[#6b7280]" /> :
+                             <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 8, ease: "linear" }}>
+                               <Circle className="w-5 h-5 text-primary border-t-2 border-primary rounded-full border-r-transparent" />
+                             </motion.div>}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h4 className={`text-sm font-semibold truncate ${isCompleted ? "text-foreground" : "text-foreground"}`}>
+                            <h4 className={`text-[15px] truncate ${isCompleted ? "text-[#6b7280] line-through font-medium" : isLocked ? "text-[#6b7280] font-medium" : "text-[#1e1b4b] font-bold"}`}>
                               {qs.quest.title}
                             </h4>
-                            <p className="text-xs text-muted-foreground truncate">
-                              {qs.quest.description}
-                            </p>
                           </div>
                           {!isCompleted && !isLocked && (
-                            <div className="shrink-0 text-xs font-bold flex items-center text-primary">
-                              <Zap className="w-3 h-3 mr-1" />
-                              {qs.quest.xpReward}
+                            <div className="shrink-0 text-[13px] font-extrabold flex items-center text-primary bg-primary/10 px-2 py-1 rounded-md">
+                              +{qs.quest.xpReward} XP
                             </div>
                           )}
                         </div>
@@ -175,58 +195,79 @@ export default function Roadmap() {
         })}
       </Accordion>
 
-      <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
-        <DrawerContent className="bg-card border-border">
-          {selectedQuest && (
-            <div className="mx-auto w-full max-w-md">
-              <DrawerHeader>
-                <div className="flex justify-between items-start mb-2">
-                  <div className="bg-primary/20 text-primary px-2 py-1 rounded text-xs font-bold flex items-center">
+      <AnimatePresence>
+        {selectedQuest && (
+          <>
+            <motion.div 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-[#1e1b4b]/40 backdrop-blur-sm z-50"
+              onClick={() => setSelectedQuest(null)}
+            />
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl z-50 p-6 shadow-[0_-10px_40px_rgba(124,58,237,0.15)] max-w-md mx-auto"
+            >
+              <div className="w-12 h-1.5 bg-[#ede9fe] rounded-full mx-auto mb-6" />
+              
+              <div className="flex justify-between items-start mb-4">
+                <div className="flex gap-2">
+                  <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-bold flex items-center">
                     <Zap className="w-3 h-3 mr-1" />
-                    {selectedQuest.quest.xpReward} XP
+                    +{selectedQuest.quest.xpReward} XP
                   </div>
-                  <div className="flex items-center text-xs text-muted-foreground">
+                  <div className="bg-[#ede9fe] text-[#6b7280] px-3 py-1 rounded-full text-xs font-bold flex items-center">
                     <Clock className="w-3 h-3 mr-1" />
-                    ~{selectedQuest.quest.minutes} mins
+                    ~{selectedQuest.quest.minutes}m
                   </div>
                 </div>
-                <DrawerTitle className="text-xl">{selectedQuest.quest.title}</DrawerTitle>
-                <DrawerDescription className="text-base mt-2">
-                  {selectedQuest.quest.description}
-                </DrawerDescription>
-              </DrawerHeader>
-              <div className="p-4 space-y-4">
+              </div>
+              
+              <h2 className="text-2xl font-bold text-[#1e1b4b] leading-tight mb-2">{selectedQuest.quest.title}</h2>
+              <p className="text-[#6b7280] font-medium text-[15px] mb-6 leading-relaxed">
+                {selectedQuest.quest.description}
+              </p>
+              
+              <div className="space-y-4 mb-8">
                 {selectedQuest.quest.whyItMatters && (
-                  <div className="bg-background rounded-lg p-3 border border-border">
-                    <h4 className="text-sm font-bold mb-1 text-primary">Why it matters</h4>
-                    <p className="text-sm text-muted-foreground">{selectedQuest.quest.whyItMatters}</p>
+                  <div className="bg-[#f5f3ff] rounded-2xl p-4 border border-[#ede9fe]">
+                    <h4 className="text-sm font-bold mb-1 text-primary flex items-center">
+                      <span className="w-1.5 h-1.5 rounded-full bg-primary mr-2" /> Why it matters
+                    </h4>
+                    <p className="text-[14px] font-medium text-[#6b7280] leading-relaxed">{selectedQuest.quest.whyItMatters}</p>
                   </div>
                 )}
                 {selectedQuest.quest.howToDoIt && (
-                  <div className="bg-background rounded-lg p-3 border border-border">
-                    <h4 className="text-sm font-bold mb-1 text-accent">How to do it</h4>
-                    <p className="text-sm text-muted-foreground">{selectedQuest.quest.howToDoIt}</p>
+                  <div className="bg-[#f5f3ff] rounded-2xl p-4 border border-[#ede9fe]">
+                    <h4 className="text-sm font-bold mb-1 text-[#06b6d4] flex items-center">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#06b6d4] mr-2" /> How to do it
+                    </h4>
+                    <p className="text-[14px] font-medium text-[#6b7280] leading-relaxed">{selectedQuest.quest.howToDoIt}</p>
                   </div>
                 )}
               </div>
-              <DrawerFooter>
+              
+              <div className="pb-safe">
                 {selectedQuest.status !== "completed" ? (
-                  <Button onClick={handleStartQuest} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold">
-                    Mark as Completed
-                  </Button>
+                  <motion.div whileTap={{ scale: 0.97 }}>
+                    <Button onClick={handleStartQuest} className="w-full bg-primary hover:bg-[#6d28d9] text-white font-bold h-14 rounded-full text-lg shadow-[0_8px_16px_rgba(124,58,237,0.2)]">
+                      Start Quest
+                    </Button>
+                  </motion.div>
                 ) : (
-                  <Button disabled variant="outline" className="w-full border-secondary text-secondary">
-                    <CheckCircle2 className="w-4 h-4 mr-2" /> Completed
+                  <Button disabled variant="outline" className="w-full border-[#10b981] text-[#10b981] bg-[#10b981]/5 h-14 rounded-full font-bold text-lg">
+                    <CheckCircle2 className="w-5 h-5 mr-2" /> Completed
                   </Button>
                 )}
-                <DrawerClose asChild>
-                  <Button variant="ghost">Close</Button>
-                </DrawerClose>
-              </DrawerFooter>
-            </div>
-          )}
-        </DrawerContent>
-      </Drawer>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

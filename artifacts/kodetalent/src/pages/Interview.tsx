@@ -1,12 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, ArrowLeft, Mic, Share2, RefreshCw } from "lucide-react";
+import { Send, ArrowLeft, RefreshCw, Share2 } from "lucide-react";
 import { useGetNextInterviewQuestion, useEvaluateInterview, useGetInterviewSession } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 
 type Message = {
   id: string;
@@ -45,7 +44,6 @@ export default function Interview() {
         setMessages([{ id: Date.now().toString(), sender: "bot", text: session.currentQuestion }]);
         setQuestionCount(session.questionNumber);
       } else {
-        // Kick off first question
         fetchNextQuestion("Start interview");
       }
     } else if (session?.completed) {
@@ -56,13 +54,8 @@ export default function Interview() {
   const fetchNextQuestion = async (answer: string) => {
     setIsTyping(true);
     try {
-      const res = await getNextQuestion.mutateAsync({
-        id: sessionId,
-        data: { answer }
-      });
-      
+      const res = await getNextQuestion.mutateAsync({ id: sessionId, data: { answer } });
       setIsTyping(false);
-      
       if (res.completed) {
         handleComplete();
       } else if (res.question) {
@@ -72,7 +65,7 @@ export default function Interview() {
     } catch (e) {
       console.error(e);
       setIsTyping(false);
-      setMessages(prev => [...prev, { id: Date.now().toString(), sender: "bot", text: "Sorry, I had trouble generating the next question. Please try answering again." }]);
+      setMessages(prev => [...prev, { id: Date.now().toString(), sender: "bot", text: "Error. Please try again." }]);
     }
   };
 
@@ -91,155 +84,91 @@ export default function Interview() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputValue.trim() || isTyping) return;
-
     const answer = inputValue;
     setMessages(prev => [...prev, { id: Date.now().toString(), sender: "user", text: answer }]);
     setInputValue("");
-    
     fetchNextQuestion(answer);
   };
 
   if (sessionLoading) {
-    return <div className="p-4 flex justify-center items-center h-screen">Loading interview...</div>;
+    return <div className="p-4 flex justify-center items-center h-screen bg-white font-bold text-primary">Loading...</div>;
   }
 
   if (isFinished && session) {
-    // Show results
-    // In a real app we'd fetch the evaluation details if not in session object,
-    // assuming it's available or we can re-fetch
     return (
-      <div className="p-4 pb-24 max-w-md mx-auto space-y-6 min-h-screen bg-background">
-        <Button variant="ghost" onClick={() => setLocation("/prep")} className="mb-2 -ml-2 text-muted-foreground">
-          <ArrowLeft className="w-4 h-4 mr-2" /> Back to Prep Hub
+      <div className="p-4 pb-24 max-w-md mx-auto space-y-6 min-h-screen bg-[#f5f3ff]">
+        <Button variant="ghost" onClick={() => setLocation("/prep")} className="mb-2 -ml-2 text-[#6b7280] font-bold">
+          <ArrowLeft className="w-5 h-5 mr-2" /> Back
         </Button>
         
-        <div className="text-center space-y-2 mb-8">
-          <h1 className="text-2xl font-bold">Interview Results</h1>
-          <p className="text-muted-foreground">{session.company} • {session.round} Round</p>
-          
-          <div className="mt-6 inline-flex items-center justify-center w-32 h-32 rounded-full border-8 border-primary/20 relative">
-            <div className="text-4xl font-black text-primary">{session.overallScore || 85}</div>
-            <div className="absolute -bottom-3 bg-background px-2 text-xs font-bold text-muted-foreground uppercase">Score</div>
-            <svg className="absolute inset-0 w-full h-full transform -rotate-90">
-              <circle cx="50%" cy="50%" r="46%" fill="transparent" stroke="hsl(var(--primary))" strokeWidth="8%" strokeDasharray={`${(session.overallScore || 85) * 2.89} 300`} strokeLinecap="round" />
-            </svg>
+        <div className="text-center space-y-2 mb-8 mt-4">
+          <h1 className="text-3xl font-extrabold text-[#1e1b4b]">Results</h1>
+          <p className="text-[#6b7280] font-bold">Technical Interview</p>
+          <div className="mt-8 text-[80px] font-black text-primary leading-none drop-shadow-sm">
+            {session.overallScore || 85}
           </div>
+          <p className="text-sm font-extrabold text-primary uppercase tracking-widest mt-2">Overall Score</p>
         </div>
 
-        <div className="space-y-4">
-          <Card className="border-border/50 bg-card/50">
-            <CardContent className="p-4 space-y-4">
-              <div>
-                <div className="flex justify-between text-sm mb-1">
-                  <span className="font-medium">Communication</span>
-                  <span className="font-bold">82%</span>
-                </div>
-                <Progress value={82} className="h-2" indicatorClassName="bg-blue-500" />
-              </div>
-              <div>
-                <div className="flex justify-between text-sm mb-1">
-                  <span className="font-medium">Technical Depth</span>
-                  <span className="font-bold">88%</span>
-                </div>
-                <Progress value={88} className="h-2" indicatorClassName="bg-purple-500" />
-              </div>
-              <div>
-                <div className="flex justify-between text-sm mb-1">
-                  <span className="font-medium">Confidence</span>
-                  <span className="font-bold">75%</span>
-                </div>
-                <Progress value={75} className="h-2" indicatorClassName="bg-amber-500" />
-              </div>
+        <div className="space-y-3">
+          <Card className="border-0 border-l-4 border-l-[#10b981] shadow-[0_4px_24px_rgba(124,58,237,0.05)] rounded-2xl bg-white">
+            <CardContent className="p-5">
+              <h3 className="text-[15px] font-bold text-[#10b981] mb-1">Strong Point</h3>
+              <p className="text-sm font-medium text-[#6b7280]">Good clarity and communication.</p>
             </CardContent>
           </Card>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card className="border-secondary/30 bg-secondary/5">
-              <CardContent className="p-4">
-                <h3 className="text-sm font-bold text-secondary mb-1 flex items-center">
-                  Strong Point
-                </h3>
-                <p className="text-sm text-muted-foreground">Clear explanation of technical concepts with good examples.</p>
-              </CardContent>
-            </Card>
-            <Card className="border-destructive/30 bg-destructive/5">
-              <CardContent className="p-4">
-                <h3 className="text-sm font-bold text-destructive mb-1 flex items-center">
-                  Weak Point
-                </h3>
-                <p className="text-sm text-muted-foreground">Tended to rush answers without structuring them first.</p>
-              </CardContent>
-            </Card>
-          </div>
+          <Card className="border-0 border-l-4 border-l-[#f97316] shadow-[0_4px_24px_rgba(124,58,237,0.05)] rounded-2xl bg-white">
+            <CardContent className="p-5">
+              <h3 className="text-[15px] font-bold text-[#f97316] mb-1">Improvement</h3>
+              <p className="text-sm font-medium text-[#6b7280]">Structure your answers better.</p>
+            </CardContent>
+          </Card>
         </div>
 
-        <div className="flex gap-4 pt-4">
-          <Button variant="outline" className="flex-1 bg-card" onClick={() => setLocation("/prep")}>
-            <RefreshCw className="w-4 h-4 mr-2" /> Practice Again
+        <div className="flex gap-3 pt-6">
+          <Button variant="outline" className="flex-1 rounded-full h-12 font-bold border-primary text-primary" onClick={() => setLocation("/prep")}>
+            <RefreshCw className="w-4 h-4 mr-2" /> Retry
           </Button>
-          <Button className="flex-1 bg-primary text-primary-foreground">
-            <Share2 className="w-4 h-4 mr-2" /> Share Result
+          <Button className="flex-1 rounded-full h-12 font-bold bg-primary text-white shadow-[0_4px_16px_rgba(124,58,237,0.3)]">
+            <Share2 className="w-4 h-4 mr-2" /> Share
           </Button>
         </div>
       </div>
     );
   }
 
+  const progressPercent = (questionCount / maxQuestions) * 100;
+
   return (
-    <div className="flex flex-col h-[100dvh] bg-background">
-      <div className="bg-card border-b border-border p-4 flex items-center justify-between sticky top-0 z-10">
-        <div className="flex items-center">
-          <Button variant="ghost" size="icon" className="-ml-2 mr-2" onClick={() => setLocation("/prep")}>
-            <ArrowLeft className="w-5 h-5" />
+    <div className="flex flex-col h-[100dvh] bg-white max-w-md mx-auto relative overflow-hidden">
+      <div className="bg-white p-4 sticky top-0 z-10 shadow-[0_4px_24px_rgba(124,58,237,0.05)]">
+        <div className="flex items-center justify-between mb-3">
+          <Button variant="ghost" size="icon" className="-ml-2 text-[#1e1b4b]" onClick={() => setLocation("/prep")}>
+            <ArrowLeft className="w-6 h-6" />
           </Button>
-          <div>
-            <h1 className="font-bold text-base leading-tight">AI Recruiter</h1>
-            <p className="text-xs text-muted-foreground">{session?.company} • {session?.round}</p>
-          </div>
+          <h1 className="font-extrabold text-lg text-[#1e1b4b]">Mock Interview</h1>
+          <div className="w-10" />
         </div>
-        <div className="text-xs font-bold bg-primary/20 text-primary px-2 py-1 rounded">
-          Q {questionCount}/{maxQuestions}
+        <div className="h-2 w-full bg-[#ede9fe] rounded-full overflow-hidden">
+          <motion.div className="h-full bg-primary" initial={{ width: 0 }} animate={{ width: `${progressPercent}%` }} transition={{ duration: 0.5 }} />
         </div>
       </div>
       
       <div className="flex-1 overflow-y-auto p-4 space-y-6 pb-32">
         <AnimatePresence>
-          {messages.map((msg, index) => (
-            <motion.div
-              key={msg.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}
-            >
-              {msg.sender === "bot" && (
-                <div className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center shrink-0 mr-2 mt-auto font-bold text-xs">
-                  AI
-                </div>
-              )}
-              <div
-                className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
-                  msg.sender === "user" 
-                    ? "bg-primary text-primary-foreground rounded-tr-none" 
-                    : "bg-card text-card-foreground border border-border rounded-bl-none shadow-sm"
-                }`}
-              >
+          {messages.map((msg) => (
+            <motion.div key={msg.id} initial={{ opacity: 0, y: 10, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}>
+              <div className={`max-w-[85%] px-5 py-4 text-[15px] font-medium shadow-[0_4px_24px_rgba(124,58,237,0.08)] ${msg.sender === "user" ? "bg-primary text-white rounded-3xl rounded-tr-none" : "bg-white text-[#1e1b4b] rounded-3xl rounded-tl-none border-l-4 border-[#7c3aed]"}`}>
                 {msg.text}
               </div>
             </motion.div>
           ))}
           {isTyping && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="flex justify-start"
-            >
-              <div className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center shrink-0 mr-2 mt-auto font-bold text-xs">
-                AI
-              </div>
-              <div className="bg-card border border-border rounded-2xl rounded-bl-none px-4 py-4 flex space-x-1 shadow-sm h-10 items-center">
-                <motion.div className="w-1.5 h-1.5 bg-muted-foreground rounded-full" animate={{ y: [0, -3, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0 }} />
-                <motion.div className="w-1.5 h-1.5 bg-muted-foreground rounded-full" animate={{ y: [0, -3, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }} />
-                <motion.div className="w-1.5 h-1.5 bg-muted-foreground rounded-full" animate={{ y: [0, -3, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }} />
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start">
+              <div className="bg-white border-l-4 border-[#7c3aed] rounded-3xl rounded-tl-none px-5 py-5 flex space-x-1.5 shadow-[0_4px_24px_rgba(124,58,237,0.08)]">
+                <motion.div className="w-2 h-2 bg-primary/60 rounded-full" animate={{ y: [0, -5, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0 }} />
+                <motion.div className="w-2 h-2 bg-primary/60 rounded-full" animate={{ y: [0, -5, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }} />
+                <motion.div className="w-2 h-2 bg-primary/60 rounded-full" animate={{ y: [0, -5, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }} />
               </div>
             </motion.div>
           )}
@@ -247,21 +176,20 @@ export default function Interview() {
         <div ref={messagesEndRef} />
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border p-4 pb-safe">
-        <form onSubmit={handleSubmit} className="flex space-x-2 max-w-md mx-auto items-end">
-          <Button type="button" variant="outline" size="icon" className="shrink-0 h-[44px] w-[44px] rounded-full border-border bg-card">
-            <Mic className="w-5 h-5 text-muted-foreground" />
-          </Button>
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-white via-white to-transparent pb-safe z-20">
+        <form onSubmit={handleSubmit} className="flex space-x-2 max-w-md mx-auto relative">
           <Input
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             placeholder="Type your answer..."
             disabled={isTyping}
-            className="flex-1 rounded-3xl bg-card border-border focus-visible:ring-primary h-[44px]"
+            className="flex-1 rounded-2xl bg-white border-2 border-[#ede9fe] focus-visible:ring-primary focus-visible:border-primary h-[60px] px-5 text-[15px] shadow-sm pr-16 text-[#1e1b4b] font-medium"
           />
-          <Button type="submit" disabled={!inputValue.trim() || isTyping} className="shrink-0 h-[44px] w-[44px] rounded-full bg-primary text-primary-foreground">
-            <Send className="w-4 h-4 ml-0.5" />
-          </Button>
+          <motion.div whileTap={{ scale: 0.9 }}>
+            <Button type="submit" disabled={!inputValue.trim() || isTyping} className="absolute right-2 top-2 h-11 w-11 rounded-xl bg-primary text-white shadow-md">
+              <Send className="w-5 h-5 ml-0.5" />
+            </Button>
+          </motion.div>
         </form>
       </div>
     </div>

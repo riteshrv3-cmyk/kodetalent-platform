@@ -29,47 +29,48 @@ export default function Jobs() {
 
   if (isLoading || !jobMatches) {
     return (
-      <div className="p-4 space-y-4">
+      <div className="p-4 space-y-4 bg-[#f5f3ff] min-h-screen">
         <Skeleton className="h-8 w-40 mb-6" />
-        <Skeleton className="h-12 w-full rounded-xl mb-6" />
-        <Skeleton className="h-40 w-full" />
-        <Skeleton className="h-40 w-full" />
-        <Skeleton className="h-40 w-full" />
+        <Skeleton className="h-32 w-full rounded-2xl mb-6" />
+        {[1,2,3].map(i => <Skeleton key={i} className="h-48 w-full rounded-2xl" />)}
       </div>
     );
   }
 
-  // Calculate average score for job ready meter
   const topMatches = jobMatches.filter(m => !m.isLocked);
   const avgMatchScore = topMatches.length > 0 
     ? Math.round(topMatches.reduce((acc, m) => acc + m.matchScore, 0) / topMatches.length)
     : 0;
 
   return (
-    <div className="p-4 pb-24 max-w-md mx-auto space-y-6">
+    <div className="p-4 pb-28 max-w-md mx-auto space-y-6 min-h-screen bg-[#f5f3ff]">
       <div className="mb-2">
-        <h1 className="text-2xl font-bold flex items-center">
-          <Briefcase className="mr-2" /> Job Matches
+        <h1 className="text-2xl font-bold flex items-center text-[#1e1b4b]">
+          <Briefcase className="mr-2 text-primary" /> Job Matches
         </h1>
-        <p className="text-muted-foreground text-sm mt-1">
+        <p className="text-[#6b7280] font-medium text-sm mt-1">
           Opportunities tailored to your verified skills.
         </p>
       </div>
 
-      <Card className="border-secondary/50 bg-secondary/10 overflow-hidden">
-        <CardContent className="p-4">
-          <div className="flex justify-between items-end mb-2">
-            <span className="font-bold text-sm">Job Readiness Score</span>
-            <span className="text-2xl font-black text-secondary">{avgMatchScore}/100</span>
-          </div>
-          <div className="w-full bg-background rounded-full h-2 overflow-hidden border border-border">
-            <div className="bg-secondary h-full transition-all duration-1000 ease-out" style={{ width: `${avgMatchScore}%` }} />
-          </div>
-          <p className="text-xs text-muted-foreground mt-2">
-            Based on your skills, projects, and test scores.
-          </p>
-        </CardContent>
-      </Card>
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} whileHover={{ y: -2 }}>
+        <Card className="border-0 shadow-[0_4px_24px_rgba(124,58,237,0.10)] rounded-2xl overflow-hidden" style={{ background: 'linear-gradient(135deg, #7c3aed, #06b6d4)' }}>
+          <CardContent className="p-5 text-white">
+            <div className="flex justify-between items-center mb-4">
+              <span className="font-bold text-sm">Job Readiness Score</span>
+              <span className="text-3xl font-black">{avgMatchScore}</span>
+            </div>
+            <div className="w-full bg-white/20 rounded-full h-2.5 overflow-hidden">
+              <motion.div 
+                className="bg-white h-full" 
+                initial={{ width: 0 }} 
+                animate={{ width: `${avgMatchScore}%` }} 
+                transition={{ duration: 1, ease: "easeOut" }} 
+              />
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
 
       <div className="space-y-4 relative">
         {jobMatches.map((match, index) => {
@@ -82,50 +83,46 @@ export default function Jobs() {
               transition={{ delay: index * 0.1 }}
               className="relative"
             >
-              <Card className={`border-border/50 ${match.isLocked ? 'blur-[2px] opacity-70' : ''}`}>
-                <CardContent className="p-4">
-                  <div className="flex justify-between items-start mb-2">
+              <Card className={`border-0 shadow-[0_4px_24px_rgba(124,58,237,0.06)] rounded-2xl bg-white ${match.isLocked ? 'blur-[3px] opacity-60' : ''}`}>
+                <CardContent className="p-5">
+                  <div className="flex justify-between items-start mb-3">
                     <div>
-                      <h3 className="font-bold text-lg leading-tight">{job.role}</h3>
-                      <p className="text-primary font-medium text-sm">{job.companyName}</p>
+                      <h3 className="font-extrabold text-[18px] text-[#1e1b4b] leading-tight mb-1">{job.companyName}</h3>
+                      <p className="text-[#6b7280] font-bold text-sm">{job.role}</p>
                     </div>
                     {!match.isLocked && (
-                      <div className="bg-secondary/20 text-secondary border border-secondary/30 px-2 py-1 rounded text-xs font-bold whitespace-nowrap">
+                      <div className="bg-[#10b981]/10 text-[#10b981] px-3 py-1 rounded-full text-xs font-extrabold whitespace-nowrap">
                         {match.matchScore}% Match
                       </div>
                     )}
                   </div>
                   
-                  <div className="flex flex-wrap gap-2 mb-3 mt-3">
-                    <div className="flex items-center text-xs text-muted-foreground bg-background px-2 py-1 rounded border border-border">
-                      <MapPin className="w-3 h-3 mr-1" /> {job.remote ? "Remote" : job.location}
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    <div className="flex items-center text-xs font-bold text-primary bg-primary/5 px-2 py-1.5 rounded-md">
+                      <DollarSign className="w-3.5 h-3.5 mr-1" /> {job.ctcMin}-{job.ctcMax} LPA
                     </div>
-                    <div className="flex items-center text-xs text-muted-foreground bg-background px-2 py-1 rounded border border-border">
-                      <DollarSign className="w-3 h-3 mr-1" /> {job.ctcMin}-{job.ctcMax} LPA
+                    <div className="flex items-center text-xs font-bold text-[#6b7280] bg-[#f5f3ff] px-2 py-1.5 rounded-md">
+                      <MapPin className="w-3.5 h-3.5 mr-1" /> {job.remote ? "Remote" : job.location}
                     </div>
                   </div>
 
-                  {!match.isLocked && (
-                    <div className="bg-card/50 p-2 rounded text-xs text-muted-foreground mb-4 border border-border/50">
-                      <span className="font-semibold text-foreground">Why you match:</span> {match.matchReason}
-                    </div>
-                  )}
-
-                  <div className="flex gap-1.5 flex-wrap mb-4">
+                  <div className="flex gap-1.5 flex-wrap mb-5">
                     {job.requiredSkills.map(skill => (
-                      <span key={skill} className="text-[10px] bg-accent/10 text-accent px-1.5 py-0.5 rounded border border-accent/20">
+                      <span key={skill} className="text-[10px] bg-[#06b6d4]/10 text-[#06b6d4] font-extrabold px-2 py-1 rounded-full">
                         {skill}
                       </span>
                     ))}
                   </div>
 
-                  <Button 
-                    className="w-full text-sm font-bold" 
-                    variant={match.isLocked ? "outline" : "default"}
-                    disabled={match.isLocked}
-                  >
-                    Apply Now <ExternalLink className="w-3 h-3 ml-1" />
-                  </Button>
+                  <motion.div whileTap={{ scale: match.isLocked ? 1 : 0.97 }}>
+                    <Button 
+                      className={`w-full font-bold h-12 rounded-full text-[15px] ${!match.isLocked ? 'bg-white text-primary border-2 border-primary hover:bg-primary hover:text-white' : 'bg-[#ede9fe] text-[#6b7280] border-0'}`}
+                      variant="outline"
+                      disabled={match.isLocked}
+                    >
+                      Apply Now <ExternalLink className="w-4 h-4 ml-1.5" />
+                    </Button>
+                  </motion.div>
                 </CardContent>
               </Card>
             </motion.div>
@@ -133,11 +130,13 @@ export default function Jobs() {
         })}
 
         {jobMatches.some(m => m.isLocked) && (
-          <div className="absolute bottom-0 left-0 w-full h-48 bg-gradient-to-t from-background via-background/80 to-transparent flex items-end justify-center pb-8 z-10">
-            <Button className="bg-accent hover:bg-accent/90 text-accent-foreground font-bold shadow-lg shadow-accent/20 px-8 py-6 rounded-full text-lg">
-              <Lock className="w-5 h-5 mr-2" />
-              Go Pro for ₹299/mo to unlock all
-            </Button>
+          <div className="absolute bottom-0 left-0 w-full h-64 bg-gradient-to-t from-[#f5f3ff] via-[#f5f3ff]/90 to-transparent flex items-end justify-center pb-6 z-10">
+            <motion.div whileTap={{ scale: 0.97 }} className="w-full px-4">
+              <Button className="w-full text-white font-bold h-14 rounded-full text-[16px] shadow-[0_8px_16px_rgba(124,58,237,0.25)] border-0" style={{ background: 'linear-gradient(135deg, #7c3aed, #ec4899)' }}>
+                <Lock className="w-5 h-5 mr-2" />
+                Go Pro to Unlock All
+              </Button>
+            </motion.div>
           </div>
         )}
       </div>

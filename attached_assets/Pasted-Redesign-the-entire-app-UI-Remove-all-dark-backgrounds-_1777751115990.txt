@@ -1,0 +1,138 @@
+Redesign the entire app UI. Remove all dark backgrounds completely.
+Take inspiration from Duolingo + Linear + Notion — clean, light, modern.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+NEW COLOR SYSTEM
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Page background:     #f5f3ff  (soft lavender white)
+Card background:     #ffffff  (pure white)
+Card border:         #ede9fe  (light purple border)
+Primary:             #7c3aed  (rich violet)
+Primary hover:       #6d28d9
+Secondary:           #06b6d4  (cyan — for badges, tags)
+Success:             #10b981  (emerald green)
+Warning/Streak:      #f97316  (vivid orange)
+Achievement:         #ec4899  (hot pink)
+Text primary:        #1e1b4b  (deep indigo black)
+Text secondary:      #6b7280  (grey)
+Shadow:              0 4px 24px rgba(124,58,237,0.10)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+GRADIENT CARDS (use these everywhere)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Quest card:      linear-gradient(135deg, #7c3aed, #06b6d4)
+Streak card:     linear-gradient(135deg, #f97316, #ec4899)
+Score card:      linear-gradient(135deg, #10b981, #06b6d4)
+Level card:      linear-gradient(135deg, #7c3aed, #ec4899)
+All gradient cards: white text, rounded-2xl, soft shadow
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TYPOGRAPHY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Font: "Plus Jakarta Sans" from Google Fonts
+Headings: font-bold, text-[#1e1b4b]
+Body: font-medium, text-[#6b7280]
+Numbers/Stats: font-extrabold, text-[#7c3aed]
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+COMPONENT REDESIGNS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+DASHBOARD:
+- Page bg: #f5f3ff
+- Top greeting: "Hey Rahul 👋" in bold #1e1b4b
+- 2-column stat row at top:
+  Left card (streak gradient): "🔥 15 Days" white text
+  Right card (score gradient): "⚡ 420 XP" white text
+  Both cards: rounded-2xl, padding 16px
+- Quest card: white bg, violet left border (4px),
+  soft shadow, rounded-2xl
+  Quest title bold | time + XP in cyan pill badges
+  [Start Quest →] button: solid #7c3aed, white text,
+  rounded-full, full width
+- Skills: 3 white cards in a row, each with
+  skill name + colored progress bar
+
+BOTTOM NAV:
+- White background, top border #ede9fe
+- Active tab: violet icon + violet underline dot
+- Inactive: grey icon
+
+ROADMAP:
+- Each year: white card, rounded-2xl, soft shadow
+- Current year: violet left border
+- Milestone icons: colored circles
+  ✅ emerald | 🔄 violet animated | 🔒 grey
+
+PREP CARDS:
+- White cards with colored top border
+- Mock Interview: violet top border
+- Mock Test: cyan top border
+- Mentor Chat (locked): grey, opacity-60,
+  "PRO" badge in pink pill top-right corner
+- [Unlock Pro] button: gradient violet→pink,
+  rounded-full
+
+JOBS:
+- Score bar: gradient violet→cyan on white card
+- Job cards: white, rounded-2xl, shadow-sm
+  Company name bold | Role in grey
+  Match % : emerald green pill badge
+  Salary: violet text
+  [Apply] button: violet outline → fills on hover
+- Locked cards: blur-sm + white overlay +
+  lock icon centered
+
+PROFILE:
+- Avatar: large circle, gradient bg violet→pink,
+  white initials, centered
+- Stats row: 3 white mini cards
+- Skills: white card, each skill with
+  color-coded bar (emerald/amber/red)
+- Career Wrapped button:
+  Full width, gradient violet→pink, rounded-full,
+  "✨ See My May Wrapped"
+
+LEADERBOARD:
+- Tabs: pill-style toggle (violet active, grey inactive)
+- Top 3: special cards with 🥇🥈🥉 gradient backgrounds
+- Rest: white rows with rank number in violet circle
+- Current user row: soft violet highlight #ede9fe
+
+ONBOARDING CHAT:
+- Page bg: #f5f3ff
+- Chat bubbles:
+  Bot: white card, #1e1b4b text, soft shadow
+  User: violet (#7c3aed), white text
+- Option buttons: white bg, violet border,
+  violet text → fills violet on select
+- "KodeTalent AI" label with small violet circle avatar
+
+CAREER WRAPPED CARD:
+- Full screen modal
+- Background: linear-gradient(135deg, #7c3aed, #ec4899)
+- All text white
+- Big bold numbers
+- Confetti animation on open (use canvas-confetti)
+  npm install canvas-confetti
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+MICRO-INTERACTIONS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+- All buttons: scale(0.97) on press
+- Cards: slight lift shadow on hover (desktop)
+- Quest complete: confetti burst + 
+  "+50 XP" floats up in violet then fades
+- Page transitions: 200ms fade slide up
+- Progress bars: animate width on mount (600ms ease)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+INSTALL THESE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+npm install canvas-confetti html2canvas
+
+Add to index.html <head>:
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+In tailwind.config:
+fontFamily: { sans: ['Plus Jakarta Sans', 'sans-serif'] }
