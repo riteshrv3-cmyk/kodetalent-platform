@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Home, BookOpen, Zap, Briefcase, User } from "lucide-react";
+import { Home, BookOpen, Zap, Sparkles, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 
@@ -10,7 +10,7 @@ export function BottomNav() {
     { href: "/dashboard", icon: Home, label: "Home" },
     { href: "/roadmap", icon: BookOpen, label: "Roadmap" },
     { href: "/prep", icon: Zap, label: "Practice" },
-    { href: "/jobs", icon: Briefcase, label: "Jobs" },
+    { href: "/opportunities", icon: Sparkles, label: "Opportunities" },
     { href: "/profile", icon: User, label: "Profile" },
   ];
 
@@ -29,7 +29,7 @@ export function BottomNav() {
                 isActive ? "text-primary" : "text-[#9ca3af] hover:text-primary/70"
               )}
             >
-              <Icon className={cn("transition-all", isActive ? "h-5 w-5" : "h-5 w-5")} />
+              <Icon className="h-5 w-5 transition-all" />
               <span className={cn("text-[10px] font-bold transition-colors", isActive ? "text-primary" : "text-[#9ca3af]")}>
                 {item.label}
               </span>
