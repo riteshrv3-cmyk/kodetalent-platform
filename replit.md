@@ -33,6 +33,7 @@ artifacts/
   kodetalent/          # React + Vite frontend (previewPath /)
   api-server/          # Express API server (previewPath /api)
   recruiter-portal/    # React + Vite recruiter marketplace (previewPath /recruiter-portal/)
+  tpo-portal/          # React + Vite TPO portal (previewPath /tpo-portal/, port 21176)
   mockup-sandbox/      # Canvas/component preview server
 
 lib/

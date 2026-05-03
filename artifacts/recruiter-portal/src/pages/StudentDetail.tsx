@@ -4,8 +4,103 @@ import { motion } from "framer-motion";
 import {
   ArrowLeft, Github, Linkedin, Globe, Phone, MapPin, Briefcase, Award,
   Code2, BookmarkCheck, Bookmark, ExternalLink, Star, TrendingUp, Zap,
-  GraduationCap, Building2, Mail, Check
+  GraduationCap, Building2, Mail, Check, X, Send, Loader2
 } from "lucide-react";
+
+const BASE_API = "";
+
+interface InviteModalProps { studentId: number; studentName: string; onClose: () => void; }
+function InviteModal({ studentId, studentName, onClose }: InviteModalProps) {
+  const [form, setForm] = useState({ recruiterName: "", recruiterCompany: "", recruiterEmail: "", role: "", message: "" });
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!form.recruiterName.trim() || !form.recruiterCompany.trim() || !form.recruiterEmail.trim()) return;
+    setSending(true);
+    try {
+      await fetch(`${BASE_API}/api/recruiter-invites`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ studentId, ...form }),
+      });
+      setSent(true);
+      setTimeout(onClose, 1500);
+    } finally {
+      setSending(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <motion.div initial={{ opacity: 0, y: 16, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }}
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+        <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-[#f0eeff]">
+          <div>
+            <h3 className="text-base font-bold text-[#1e1b4b]">Send Interview Invite</h3>
+            <p className="text-xs text-[#9ca3af] mt-0.5">to {studentName}</p>
+          </div>
+          <button onClick={onClose} className="text-[#9ca3af] hover:text-[#6b7280] transition"><X className="w-5 h-5" /></button>
+        </div>
+        {sent ? (
+          <div className="p-8 flex flex-col items-center text-center">
+            <div className="w-12 h-12 bg-[#10b981]/10 rounded-full flex items-center justify-center mb-3">
+              <Check className="w-6 h-6 text-[#10b981]" />
+            </div>
+            <p className="text-sm font-bold text-[#1e1b4b]">Invite sent!</p>
+            <p className="text-xs text-[#9ca3af] mt-1">The TPO and student will be notified</p>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-[#6b7280] mb-1.5 uppercase tracking-wide">Your Name *</label>
+                <input value={form.recruiterName} onChange={e => setForm(f => ({ ...f, recruiterName: e.target.value }))}
+                  placeholder="Priya Mehta" required
+                  className="w-full px-3.5 py-2.5 border border-[#f0eeff] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#7c3aed]/20 focus:border-[#7c3aed] transition" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-[#6b7280] mb-1.5 uppercase tracking-wide">Company *</label>
+                <input value={form.recruiterCompany} onChange={e => setForm(f => ({ ...f, recruiterCompany: e.target.value }))}
+                  placeholder="Google" required
+                  className="w-full px-3.5 py-2.5 border border-[#f0eeff] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#7c3aed]/20 focus:border-[#7c3aed] transition" />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-[#6b7280] mb-1.5 uppercase tracking-wide">Your Email *</label>
+              <input type="email" value={form.recruiterEmail} onChange={e => setForm(f => ({ ...f, recruiterEmail: e.target.value }))}
+                placeholder="priya@google.com" required
+                className="w-full px-3.5 py-2.5 border border-[#f0eeff] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#7c3aed]/20 focus:border-[#7c3aed] transition" />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-[#6b7280] mb-1.5 uppercase tracking-wide">Role</label>
+              <input value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value }))}
+                placeholder="SDE Intern / Full-stack Engineer…"
+                className="w-full px-3.5 py-2.5 border border-[#f0eeff] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#7c3aed]/20 focus:border-[#7c3aed] transition" />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-[#6b7280] mb-1.5 uppercase tracking-wide">Message</label>
+              <textarea value={form.message} onChange={e => setForm(f => ({ ...f, message: e.target.value }))}
+                rows={3} placeholder="Hi! We'd love to schedule a quick chat about an exciting opportunity at our company…"
+                className="w-full px-3.5 py-2.5 border border-[#f0eeff] rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#7c3aed]/20 focus:border-[#7c3aed] transition" />
+            </div>
+            <div className="flex gap-3 pt-1">
+              <button type="button" onClick={onClose}
+                className="flex-1 px-4 py-2.5 border border-[#f0eeff] rounded-xl text-sm font-bold text-[#6b7280] hover:bg-[#f8f7ff] transition">
+                Cancel
+              </button>
+              <button type="submit" disabled={sending}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-[#7c3aed] to-[#4f46e5] text-white rounded-xl text-sm font-bold shadow-sm disabled:opacity-60 transition">
+                {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Send className="w-4 h-4" /> Send Invite</>}
+              </button>
+            </div>
+          </form>
+        )}
+      </motion.div>
+    </div>
+  );
+}
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "").replace("/recruiter-portal", "");
 
@@ -67,6 +162,7 @@ export default function StudentDetail({ id }: { id: number }) {
   const [loading, setLoading] = useState(true);
   const [shortlisted, setShortlisted] = useState<boolean>(false);
   const [contactRequested, setContactRequested] = useState(false);
+  const [showInvite, setShowInvite] = useState(false);
 
   useEffect(() => {
     const list = JSON.parse(localStorage.getItem("shortlist") || "[]");
@@ -110,6 +206,7 @@ export default function StudentDetail({ id }: { id: number }) {
 
   return (
     <div className="min-h-screen bg-[#f8f7ff]">
+      {showInvite && profile && <InviteModal studentId={profile.id} studentName={profile.name} onClose={() => setShowInvite(false)} />}
       {/* Sticky top bar */}
       <div className="bg-white border-b border-[#f0eeff] sticky top-0 z-30">
         <div className="max-w-4xl mx-auto px-6 py-3 flex items-center justify-between">
@@ -123,6 +220,12 @@ export default function StudentDetail({ id }: { id: number }) {
             >
               {shortlisted ? <BookmarkCheck className="w-4 h-4" /> : <Bookmark className="w-4 h-4" />}
               {shortlisted ? "Shortlisted" : "Shortlist"}
+            </button>
+            <button
+              onClick={() => setShowInvite(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-white border border-[#7c3aed] text-[#7c3aed] rounded-xl text-sm font-bold hover:bg-[#f5f3ff] transition-colors"
+            >
+              <Send className="w-4 h-4" /> Send Invite
             </button>
             <button
               onClick={() => setContactRequested(true)}

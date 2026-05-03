@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/tpo-portal/"
+title = "KodeTalent TPO Portal"
+version = "1.0.0"
+id = "artifacts/tpo-portal"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/tpo-portal/" ]
+localPort = 21176
+
+[services.development]
+run = "pnpm --filter @workspace/tpo-portal run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/tpo-portal", "run", "build" ]
+publicDir = "artifacts/tpo-portal/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "21176"
+BASE_PATH = "/tpo-portal/"
