@@ -42,63 +42,79 @@ type Step = {
 const STEPS: Step[] = [
   {
     key: "name", icon: User, emoji: "👋",
-    title: "What's your name?",
-    subtitle: "Let's start with the basics",
-    type: "text", placeholder: "e.g. Aarav Sharma",
+    title: "What should we call you?",
+    subtitle: "First name works. No formal vibes here.",
+    type: "text", placeholder: "e.g. Aarav", optional: true,
   },
   {
-    key: "email", icon: Mail, emoji: "📧",
-    title: "Your email address",
-    subtitle: "We'll use this to save your progress",
-    type: "email", placeholder: "you@college.edu",
+    key: "email", icon: Mail, emoji: "📬",
+    title: "Drop your email",
+    subtitle: "So you can come back to your progress anytime",
+    type: "email", placeholder: "you@college.edu", optional: true,
   },
   {
     key: "year", icon: GraduationCap, emoji: "🎓",
     title: "Which year are you in?",
-    subtitle: "So we tailor the right opportunities",
+    subtitle: "Tap the one that fits — no judgement",
     type: "chips", options: ["1st Year", "2nd Year", "3rd Year", "4th Year"],
+    optional: true,
   },
   {
     key: "field", icon: Code2, emoji: "💻",
-    title: "Pick your field",
-    subtitle: "Don't worry, you can change this later",
+    title: "What's your jam?",
+    subtitle: "Pick the one that excites you most. Change it anytime.",
     type: "chips",
     options: ["Web Dev", "AI/ML", "App Dev", "Cybersecurity", "Data"],
+    optional: true,
   },
   {
     key: "collegeFull", icon: Building2, emoji: "🏫",
-    title: "Your college and city",
-    subtitle: "e.g. PICT Pune or VIT Vellore",
-    type: "text", placeholder: "College name + City",
+    title: "Where you studying?",
+    subtitle: "College + city, like PICT Pune or VIT Vellore",
+    type: "text", placeholder: "College name + City", optional: true,
   },
   {
     key: "cgpa", icon: Trophy, emoji: "📊",
     title: "Current CGPA?",
-    subtitle: "Out of 10 — recruiters love seeing it",
+    subtitle: "Out of 10. Be honest, recruiters check 😉",
     type: "text", placeholder: "e.g. 8.4", optional: true,
   },
   {
     key: "githubUrl", icon: Github, emoji: "🐙",
     title: "GitHub profile?",
-    subtitle: "Paste the URL, we'll auto-analyze it later",
-    type: "text", placeholder: "https://github.com/username",
+    subtitle: "Paste the URL — our AI will analyse your repos",
+    type: "text", placeholder: "github.com/username",
     optional: true,
     showIf: d => d.year === "3rd Year" || d.year === "4th Year",
   },
   {
     key: "dreamCompany", icon: Sparkles, emoji: "✨",
     title: "Dream company?",
-    subtitle: "We'll tune your roadmap towards them",
+    subtitle: "We'll secretly bias your roadmap towards them 🤫",
     type: "text", placeholder: "e.g. Google, Razorpay, OpenAI",
     optional: true,
   },
   {
     key: "targetPackage", icon: Target, emoji: "🎯",
-    title: "Salary you're aiming for?",
-    subtitle: "Tap one — totally fine to dream big",
+    title: "Goal package?",
+    subtitle: "Dream big — we love an ambitious answer",
     type: "chips",
     options: ["<6 LPA", "6–10 LPA", "10–20 LPA", "20+ LPA"],
+    optional: true,
   },
+];
+
+// Hype line above each question — keeps energy up
+const HYPE_LINES = [
+  "Let's gooo 🚀",
+  "Nice. Two down.",
+  "Tell us your vibe ⚡",
+  "Ooh, this is the fun part",
+  "Halfway there, legend 🔥",
+  "You're crushing it ✨",
+  "Almost done — keep going",
+  "Last few questions",
+  "Final one. Make it count 💫",
 ];
 
 const FIELD_TONE: Record<string, string> = {
@@ -307,11 +323,30 @@ export default function Onboarding() {
             exit={{ opacity: 0, x: -24 }}
             transition={{ duration: 0.25, ease: "easeOut" }}
           >
-            <div className={`inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br ${tone} text-white text-2xl mb-5 shadow-lg`}>
-              <Icon className="w-7 h-7" />
-            </div>
-            <h1 className="text-[26px] font-black text-[#0f172a] leading-tight mb-2">
-              {step.emoji} {step.title}
+            <motion.div
+              initial={{ scale: 0.6, rotate: -10, opacity: 0 }}
+              animate={{ scale: 1, rotate: 0, opacity: 1 }}
+              transition={{ type: "spring", stiffness: 240, damping: 14 }}
+              className={`relative inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br ${tone} text-white mb-4 shadow-xl`}
+            >
+              <Icon className="w-8 h-8" />
+              <motion.div
+                className="absolute -top-2 -right-2 text-2xl"
+                animate={{ y: [0, -4, 0], rotate: [0, 8, -8, 0] }}
+                transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+              >
+                {step.emoji}
+              </motion.div>
+            </motion.div>
+            <motion.p
+              initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className={`inline-block text-[11px] font-extrabold uppercase tracking-wider mb-2 px-2.5 py-1 rounded-full bg-gradient-to-r ${tone} text-white`}
+            >
+              {HYPE_LINES[stepIdx] || "Keep going ✨"}
+            </motion.p>
+            <h1 className="text-[28px] font-black text-[#0f172a] leading-[1.15] mb-2">
+              {step.title}
             </h1>
             <p className="text-[15px] text-[#64748b] mb-6">{step.subtitle}</p>
 
@@ -368,9 +403,9 @@ export default function Onboarding() {
               <button
                 onClick={() => { setVal(""); next(); }}
                 data-testid="onboarding-skip"
-                className="mt-4 text-sm font-bold text-[#94a3b8] hover:text-[#64748b] transition"
+                className="mt-5 inline-flex items-center gap-1.5 text-[13px] font-bold text-[#94a3b8] hover:text-[#4f46e5] transition px-3 py-1.5 rounded-full hover:bg-[#eef2ff]"
               >
-                Skip for now →
+                Skip — I'll add it later
               </button>
             )}
 
