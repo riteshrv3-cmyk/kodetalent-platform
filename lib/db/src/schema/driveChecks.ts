@@ -19,6 +19,12 @@ export const driveChecksTable = pgTable("drive_checks", {
   gatesTotal: integer("gates_total").notNull().default(0),
   kodeScoreFit: integer("kode_score_fit").notNull().default(0),
   tpoMatch: text("tpo_match").notNull().default("unknown"),
+  // Application outcome tracking (ghost-rate intelligence)
+  // outcome: "pending" | "applied" | "called" | "ghosted" | "rejected" | "offer" | "skipped"
+  outcome: text("outcome").notNull().default("pending"),
+  appliedAt: timestamp("applied_at"),
+  outcomeAt: timestamp("outcome_at"),
+  nextPingAt: timestamp("next_ping_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

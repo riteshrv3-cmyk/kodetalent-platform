@@ -1,13 +1,25 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { ShieldCheck, AlertTriangle, ShieldAlert, Sparkles, Download, ChevronRight, ArrowLeft, Clipboard } from "lucide-react";
+import { ShieldCheck, AlertTriangle, ShieldAlert, Sparkles, Download, ChevronRight, ArrowLeft, Clipboard, TrendingUp, CheckCircle2, XCircle, Award, Phone, Ghost } from "lucide-react";
 import { toPng } from "html-to-image";
 import { useToast } from "@/hooks/use-toast";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 interface Gate { open: boolean; label: string; }
+interface CompanyStats {
+  total: number;
+  applied?: number;
+  called?: number;
+  ghosted?: number;
+  rejected?: number;
+  offer?: number;
+  ghostRate: number | null;
+  callRate: number | null;
+  offerRate: number | null;
+}
+type Outcome = "pending" | "applied" | "called" | "ghosted" | "rejected" | "offer" | "skipped";
 interface DriveCheckRow {
   id: number;
   studentId: number;
@@ -27,7 +39,12 @@ interface DriveCheckRow {
   gatesTotal: number;
   kodeScoreFit: number;
   tpoMatch: string;
+  outcome: Outcome;
+  appliedAt: string | null;
+  outcomeAt: string | null;
+  nextPingAt: string | null;
   createdAt: string;
+  companyStats?: CompanyStats | null;
 }
 
 const VERDICT_META: Record<string, { emoji: string; bg: string; ring: string; chip: string; text: string; label: string; sub: string; Icon: typeof ShieldCheck }> = {
@@ -62,6 +79,56 @@ const VERDICT_META: Record<string, { emoji: string; bg: string; ring: string; ch
     Icon: ShieldAlert,
   },
 };
+
+function GhostRateBadge({ stats }: { stats: CompanyStats }) {
+  if (!stats || stats.total === 0) return null;
+  const decided =
+    (stats.called ?? 0) + (stats.ghosted ?? 0) + (stats.rejected ?? 0) + (stats.offer ?? 0);
+  if (decided === 0) {
+    return (
+      <div className="bg-[#f8fafc] rounded-2xl p-3 border border-[#e0e7ff] flex items-center gap-2.5">
+        <TrendingUp className="w-4 h-4 text-[#94a3b8] shrink-0" />
+        <p className="text-[11px] text-[#64748b] leading-snug">
+          {stats.applied ?? 0} KodeTalent users applied here. No outcomes reported yet.
+        </p>
+      </div>
+    );
+  }
+  const ghostRate = stats.ghostRate ?? 0;
+  const callRate = stats.callRate ?? 0;
+  const offerRate = stats.offerRate ?? 0;
+  const tone =
+    ghostRate >= 70
+      ? { bg: "from-[#ef4444]/15 to-[#dc2626]/5", border: "border-[#ef4444]/30", text: "text-[#7f1d1d]", emoji: "👻" }
+      : ghostRate >= 40
+      ? { bg: "from-[#f59e0b]/15 to-[#d97706]/5", border: "border-[#f59e0b]/30", text: "text-[#78350f]", emoji: "⚠️" }
+      : { bg: "from-[#10b981]/15 to-[#059669]/5", border: "border-[#10b981]/30", text: "text-[#065f46]", emoji: "📞" };
+
+  return (
+    <div className={`bg-gradient-to-br ${tone.bg} rounded-2xl p-3.5 border ${tone.border}`}>
+      <div className="flex items-center justify-between mb-2">
+        <p className={`text-[10px] font-black uppercase tracking-wider ${tone.text}`}>
+          {tone.emoji} Real outcomes from KodeTalent users
+        </p>
+        <span className="text-[9px] font-bold text-[#64748b]">n={decided}</span>
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        <div className="text-center">
+          <p className={`text-lg font-black ${tone.text}`}>{ghostRate}%</p>
+          <p className="text-[9px] font-bold text-[#64748b] uppercase">Ghosted</p>
+        </div>
+        <div className="text-center">
+          <p className="text-lg font-black text-[#0f172a]">{callRate}%</p>
+          <p className="text-[9px] font-bold text-[#64748b] uppercase">Got Call</p>
+        </div>
+        <div className="text-center">
+          <p className="text-lg font-black text-[#10b981]">{offerRate}%</p>
+          <p className="text-[9px] font-bold text-[#64748b] uppercase">Offer</p>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function VerdictCard({ row, studentName, college, kodeScore }: {
   row: DriveCheckRow;
@@ -149,6 +216,11 @@ function VerdictCard({ row, studentName, college, kodeScore }: {
           </div>
         )}
 
+        {/* Ghost rate badge */}
+        {row.companyStats && row.companyStats.total > 0 && (
+          <GhostRateBadge stats={row.companyStats} />
+        )}
+
         {/* TPO line */}
         <div className="flex items-center gap-2 text-[11px] text-[#64748b]">
           <Sparkles className="w-3 h-3 text-[#4f46e5]" />
@@ -182,7 +254,16 @@ export default function DriveCheck() {
   const [loading, setLoading] = useState(false);
   const [verdict, setVerdict] = useState<DriveCheckRow | null>(null);
   const [recent, setRecent] = useState<DriveCheckRow[]>([]);
+  const [pendingPings, setPendingPings] = useState<DriveCheckRow[]>([]);
+  const [actionLoading, setActionLoading] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
+
+  const refreshPendingPings = (id: string) => {
+    fetch(`${BASE}/api/students/${id}/pending-pings`)
+      .then((r) => r.json())
+      .then((rows) => Array.isArray(rows) && setPendingPings(rows))
+      .catch(() => {});
+  };
 
   useEffect(() => {
     const id = localStorage.getItem("studentId");
@@ -200,7 +281,65 @@ export default function DriveCheck() {
       .then((r) => r.json())
       .then((rows) => Array.isArray(rows) && setRecent(rows))
       .catch(() => {});
+    refreshPendingPings(id);
   }, [setLocation]);
+
+  const fetchCompanyStats = async (company: string): Promise<CompanyStats | null> => {
+    try {
+      const r = await fetch(`${BASE}/api/drive-checks/company-stats?company=${encodeURIComponent(company)}`);
+      return await r.json();
+    } catch {
+      return null;
+    }
+  };
+
+  const markApplied = async (row: DriveCheckRow) => {
+    if (!studentId || actionLoading) return;
+    setActionLoading(true);
+    try {
+      const res = await fetch(`${BASE}/api/students/${studentId}/drive-checks/${row.id}/applied`, { method: "POST" });
+      if (!res.ok) throw new Error("Failed");
+      const updated = await res.json() as DriveCheckRow;
+      const stats = row.company ? await fetchCompanyStats(row.company) : null;
+      const merged = { ...row, ...updated, companyStats: stats };
+      setVerdict((v) => (v?.id === row.id ? merged : v));
+      setRecent((prev) => prev.map((r) => (r.id === row.id ? { ...r, ...updated } : r)));
+      if (row.applyLink) window.open(row.applyLink, "_blank", "noopener,noreferrer");
+      toast({ title: "Marked applied!", description: "We'll ping you in 7 days for the outcome 🎯" });
+    } catch {
+      toast({ title: "Couldn't update", description: "Try again", variant: "destructive" });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const setOutcome = async (row: DriveCheckRow, outcome: "called" | "ghosted" | "rejected" | "offer" | "skipped") => {
+    if (!studentId || actionLoading) return;
+    setActionLoading(true);
+    try {
+      const res = await fetch(`${BASE}/api/students/${studentId}/drive-checks/${row.id}/outcome`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ outcome }),
+      });
+      if (!res.ok) throw new Error("Failed");
+      const updated = await res.json() as DriveCheckRow;
+      const stats = row.company ? await fetchCompanyStats(row.company) : null;
+      const merged = { ...row, ...updated, companyStats: stats };
+      setVerdict((v) => (v?.id === row.id ? merged : v));
+      setRecent((prev) => prev.map((r) => (r.id === row.id ? { ...r, ...updated } : r)));
+      setPendingPings((prev) => prev.filter((p) => p.id !== row.id));
+      const labels: Record<string, string> = {
+        called: "Got call recorded 📞", ghosted: "Ghost noted 👻",
+        rejected: "Rejection noted", offer: "OFFER 🎉 mast!", skipped: "Skipped",
+      };
+      toast({ title: labels[outcome] ?? "Saved", description: "Thanks — this helps the next student." });
+    } catch {
+      toast({ title: "Couldn't update", description: "Try again", variant: "destructive" });
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
   const checkDrive = async () => {
     if (!text.trim() || loading || !studentId) return;
@@ -256,12 +395,16 @@ export default function DriveCheck() {
     }
   };
 
-  const loadRecent = (r: DriveCheckRow) => {
+  const loadRecent = async (r: DriveCheckRow) => {
     setVerdict(r);
     setText(r.rawText);
     setTimeout(() => {
       document.getElementById("verdict-anchor")?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 100);
+    if (r.company) {
+      const stats = await fetchCompanyStats(r.company);
+      setVerdict((v) => (v?.id === r.id ? { ...v, companyStats: stats } : v));
+    }
   };
 
   return (
@@ -286,8 +429,65 @@ export default function DriveCheck() {
         </p>
       </div>
 
+      {/* Pending pings — drives student applied to 7+ days ago */}
+      {pendingPings.length > 0 && (
+        <div className="px-4 -mt-4 mb-2">
+          <div className="bg-gradient-to-br from-[#fef3c7] to-[#fde68a] rounded-2xl p-3.5 border border-[#f59e0b]/30 shadow-md">
+            <p className="text-[10px] font-black uppercase tracking-wider text-[#78350f] mb-2">
+              ⏰ Quick check — kya hua in drives ka?
+            </p>
+            <div className="space-y-2">
+              {pendingPings.slice(0, 3).map((p) => (
+                <div key={p.id} className="bg-white/80 rounded-xl p-2.5">
+                  <p className="text-[12px] font-black text-[#0f172a] truncate">
+                    {p.company ?? "Unknown"} {p.role ? `· ${p.role}` : ""}
+                  </p>
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    <button
+                      onClick={() => setOutcome(p, "called")}
+                      disabled={actionLoading}
+                      className="text-[10px] font-bold bg-[#10b981] text-white px-2 py-1 rounded-lg active:scale-95 disabled:opacity-50"
+                    >
+                      📞 Got call
+                    </button>
+                    <button
+                      onClick={() => setOutcome(p, "offer")}
+                      disabled={actionLoading}
+                      className="text-[10px] font-bold bg-[#059669] text-white px-2 py-1 rounded-lg active:scale-95 disabled:opacity-50"
+                    >
+                      🎉 Got offer
+                    </button>
+                    <button
+                      onClick={() => setOutcome(p, "ghosted")}
+                      disabled={actionLoading}
+                      className="text-[10px] font-bold bg-[#475569] text-white px-2 py-1 rounded-lg active:scale-95 disabled:opacity-50"
+                    >
+                      👻 Ghosted
+                    </button>
+                    <button
+                      onClick={() => setOutcome(p, "rejected")}
+                      disabled={actionLoading}
+                      className="text-[10px] font-bold bg-[#94a3b8] text-white px-2 py-1 rounded-lg active:scale-95 disabled:opacity-50"
+                    >
+                      ❌ Rejected
+                    </button>
+                    <button
+                      onClick={() => setOutcome(p, "skipped")}
+                      disabled={actionLoading}
+                      className="text-[10px] font-bold bg-transparent text-[#78350f] px-2 py-1 rounded-lg active:scale-95 disabled:opacity-50"
+                    >
+                      Skip
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Paste box */}
-      <div className="px-4 -mt-4">
+      <div className={pendingPings.length > 0 ? "px-4" : "px-4 -mt-4"}>
         <div className="bg-white rounded-3xl p-4 shadow-xl border border-[#e0e7ff]">
           <textarea
             value={text}
@@ -349,6 +549,75 @@ export default function DriveCheck() {
                 kodeScore={kodeScore}
               />
             </div>
+            {/* Outcome actions — only for non-scam verdicts */}
+            {verdict.scamVerdict !== "scam" && (
+              <div className="mt-3 bg-white rounded-2xl p-3.5 border border-[#e0e7ff] shadow-sm">
+                {verdict.outcome === "pending" && (
+                  <>
+                    <p className="text-[11px] font-black uppercase tracking-wider text-[#64748b] mb-2">
+                      Apply karega is drive ko?
+                    </p>
+                    <button
+                      onClick={() => markApplied(verdict)}
+                      disabled={actionLoading}
+                      className="w-full bg-gradient-to-br from-[#4f46e5] to-[#3730a3] text-white font-black text-sm py-2.5 rounded-xl active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
+                    >
+                      <CheckCircle2 className="w-4 h-4" /> Maine apply kiya
+                      {verdict.applyLink && <span className="text-[10px] opacity-80">+ open link</span>}
+                    </button>
+                    <p className="text-[10px] text-[#94a3b8] text-center mt-2">
+                      We'll ping you in 7 days to ask kya hua — your reply helps every other student.
+                    </p>
+                  </>
+                )}
+                {verdict.outcome === "applied" && (
+                  <>
+                    <p className="text-[11px] font-black uppercase tracking-wider text-[#64748b] mb-2">
+                      Status update — kya hua?
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => setOutcome(verdict, "called")}
+                        disabled={actionLoading}
+                        className="text-[11px] font-bold bg-[#10b981] text-white px-2 py-2 rounded-xl active:scale-95 disabled:opacity-50 flex items-center justify-center gap-1"
+                      >
+                        <Phone className="w-3.5 h-3.5" /> Got call
+                      </button>
+                      <button
+                        onClick={() => setOutcome(verdict, "offer")}
+                        disabled={actionLoading}
+                        className="text-[11px] font-bold bg-[#059669] text-white px-2 py-2 rounded-xl active:scale-95 disabled:opacity-50 flex items-center justify-center gap-1"
+                      >
+                        <Award className="w-3.5 h-3.5" /> Got offer
+                      </button>
+                      <button
+                        onClick={() => setOutcome(verdict, "ghosted")}
+                        disabled={actionLoading}
+                        className="text-[11px] font-bold bg-[#475569] text-white px-2 py-2 rounded-xl active:scale-95 disabled:opacity-50 flex items-center justify-center gap-1"
+                      >
+                        <Ghost className="w-3.5 h-3.5" /> Ghosted
+                      </button>
+                      <button
+                        onClick={() => setOutcome(verdict, "rejected")}
+                        disabled={actionLoading}
+                        className="text-[11px] font-bold bg-[#94a3b8] text-white px-2 py-2 rounded-xl active:scale-95 disabled:opacity-50 flex items-center justify-center gap-1"
+                      >
+                        <XCircle className="w-3.5 h-3.5" /> Rejected
+                      </button>
+                    </div>
+                  </>
+                )}
+                {["called", "ghosted", "rejected", "offer", "skipped"].includes(verdict.outcome) && (
+                  <div className="flex items-center gap-2 text-[12px] text-[#0f172a] font-bold">
+                    <CheckCircle2 className="w-4 h-4 text-[#10b981]" />
+                    <span>
+                      Outcome saved: <span className="capitalize">{verdict.outcome}</span> · Thanks for sharing 🙏
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+
             <button
               onClick={downloadCard}
               className="w-full mt-3 bg-[#0f172a] text-white font-black text-sm py-3 rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-transform shadow-md"
