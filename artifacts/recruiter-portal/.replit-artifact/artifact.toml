@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/recruiter-portal/"
+title = "KodeTalent Recruiter Portal"
+version = "1.0.0"
+id = "artifacts/recruiter-portal"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/recruiter-portal/" ]
+localPort = 18709
+
+[services.development]
+run = "pnpm --filter @workspace/recruiter-portal run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/recruiter-portal", "run", "build" ]
+publicDir = "artifacts/recruiter-portal/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "18709"
+BASE_PATH = "/recruiter-portal/"

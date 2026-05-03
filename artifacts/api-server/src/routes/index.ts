@@ -9,11 +9,13 @@ import leaderboardRouter from "./leaderboard";
 import aiRouter from "./ai";
 import anthropicRouter from "./anthropic";
 import courseRouter from "./course";
+import profileRouter from "./profile";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
 router.use(studentsRouter);
+router.use(profileRouter);
 router.use(questsRouter);
 router.use(interviewRouter);
 router.use(testRouter);

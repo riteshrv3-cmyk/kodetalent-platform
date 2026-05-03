@@ -10,10 +10,36 @@ export const studentsTable = pgTable("students", {
   city: text("city").notNull(),
   year: integer("year").notNull(),
   field: text("field").notNull(),
+
+  // ─── Career links ─────────────────────────────────────────────────────────
   githubUrl: text("github_url"),
+  linkedinUrl: text("linkedin_url"),
+  portfolioUrl: text("portfolio_url"),
+  phone: text("phone"),
+  bio: text("bio"),
+
+  // ─── Academic / goals ─────────────────────────────────────────────────────
   cgpa: text("cgpa"),
   targetPackage: text("target_package"),
   dreamCompany: text("dream_company"),
+
+  // ─── Rich profile data ────────────────────────────────────────────────────
+  projects: jsonb("projects").notNull().default([]),
+  certifications: jsonb("certifications").notNull().default([]),
+
+  // ─── Job preferences ──────────────────────────────────────────────────────
+  openToWork: boolean("open_to_work").notNull().default(true),
+  workMode: text("work_mode").default("hybrid"),
+  preferredLocations: jsonb("preferred_locations").notNull().default([]),
+  expectedSalary: text("expected_salary"),
+
+  // ─── AI-analyzed data ────────────────────────────────────────────────────
+  githubStats: jsonb("github_stats"),
+  linkedinData: jsonb("linkedin_data"),
+
+  // ─── Scores ───────────────────────────────────────────────────────────────
+  profileStrength: integer("profile_strength").notNull().default(0),
+  commitmentScore: integer("commitment_score").notNull().default(0),
   overallScore: integer("overall_score").notNull().default(0),
   xp: integer("xp").notNull().default(0),
   level: integer("level").notNull().default(1),

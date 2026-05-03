@@ -32,6 +32,7 @@ Full-stack AI career companion for Indian engineering students (1st year → pla
 artifacts/
   kodetalent/          # React + Vite frontend (previewPath /)
   api-server/          # Express API server (previewPath /api)
+  recruiter-portal/    # React + Vite recruiter marketplace (previewPath /recruiter-portal/)
   mockup-sandbox/      # Canvas/component preview server
 
 lib/
@@ -71,7 +72,7 @@ scripts/               # Shared utility scripts
 | `/practice/test/:id` | Mock Test | Timed 10-question MCQ test with results |
 | `/opportunities` | Opportunities | 12-domain career explorer (domain grid → sub-domain list → Jobs/Internship/Freelancing cards + Prepare button) |
 | `/opportunities/course` | Course | Full Coursera-style AI course for the selected sub-domain |
-| `/profile` | Profile | Stats, skills, Career Wrapped shareable card |
+| `/profile` | Profile | Rich profile: strength ring, open-to-work toggle, GitHub/LinkedIn AI analyzer, bio, projects, certifications, work preferences, commitment score |
 
 ---
 
@@ -165,6 +166,15 @@ All routes under `/api`:
 | POST | `/test/sessions` | Create test session |
 | POST | `/test/sessions/:id/submit` | Submit answers, get score |
 
+### Profile (new)
+| Method | Route | Description |
+|---|---|---|
+| GET | `/students/:id/full-profile` | Full enriched profile (all 14 new columns) |
+| PATCH | `/students/:id/profile` | Update bio, projects, certs, links, preferences |
+| POST | `/students/:id/analyze-github` | Fetch real GitHub API stats + compute profileStrength |
+| POST | `/students/:id/analyze-linkedin` | AI (claude-haiku-4-5) LinkedIn profile analysis |
+| GET | `/talent-pool` | All students for recruiter portal (includes githubStats, scores) |
+
 ### Jobs & Matches
 | Method | Route | Description |
 |---|---|---|
@@ -197,6 +207,12 @@ Both results are merged and returned as one JSON object.
 
 Tables: `students`, `quests`, `student_quests`, `jobs`, `matches`, `interview_sessions`, `test_sessions`, `conversations`, `messages`
 
+### New columns on `students` (added for data-collection / recruiter marketplace)
+`linkedinUrl`, `portfolioUrl`, `phone`, `bio`, `projects` (JSONB), `certifications` (JSONB), `openToWork`, `workMode`, `preferredLocations` (JSONB), `expectedSalary`, `githubStats` (JSONB), `linkedinData` (JSONB), `profileStrength`, `commitmentScore`
+
+**profileStrength** — computed server-side (max 100): github+10, linkedin+15, portfolio+5, phone+5, bio+10, projects≥1+20, projects≥3+5, certs+10, locations+5, salary+5, githubStats+5, linkedinData+5
+**commitmentScore** — `min(xp/25,40) + min(streakCount×3,30) + overallScore×0.3`
+
 ---
 
 ## Key Commands
@@ -226,6 +242,13 @@ pnpm --filter @workspace/db run push
 | `artifacts/api-server/src/routes/course.ts` | POST /api/course/generate (two-call AI strategy) |
 | `artifacts/api-server/src/routes/interview.ts` | AI interview with feedback |
 | `artifacts/api-server/src/routes/index.ts` | Route registration |
+| `artifacts/api-server/src/routes/profile.ts` | Profile API + talent-pool route |
+| `artifacts/kodetalent/src/pages/Profile.tsx` | Rich 851-line profile page (strength ring, GitHub/LinkedIn AI, projects, certs) |
+| `artifacts/recruiter-portal/src/App.tsx` | Recruiter portal routing (wouter) |
+| `artifacts/recruiter-portal/src/pages/Login.tsx` | Recruiter login (company/name/email → localStorage) |
+| `artifacts/recruiter-portal/src/pages/TalentPool.tsx` | Browse + filter all candidates (search, work mode, field, CGPA, strength) |
+| `artifacts/recruiter-portal/src/pages/StudentDetail.tsx` | Full candidate view (scores, GitHub, skills, projects, certs, LinkedIn AI) |
+| `artifacts/recruiter-portal/src/pages/Shortlist.tsx` | Shortlisted candidates + CSV export |
 
 ---
 
