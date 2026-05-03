@@ -137,7 +137,7 @@ export default function Prep() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-[#0f172a]/40 backdrop-blur-sm z-50"
+              className="fixed inset-0 bg-[#0f172a]/40 backdrop-blur-sm z-[60]"
               onClick={closeDrawers}
             />
             <motion.div
@@ -145,7 +145,7 @@ export default function Prep() {
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl z-50 shadow-[0_-10px_40px_rgba(124,58,237,0.15)] max-w-md mx-auto overflow-y-auto max-h-[90vh]"
+              className="fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl z-[60] shadow-[0_-10px_40px_rgba(124,58,237,0.15)] max-w-md mx-auto overflow-y-auto max-h-[90vh] pb-[env(safe-area-inset-bottom)]"
             >
               <div className="p-6 pb-8">
                 <div className="w-12 h-1.5 bg-[#e0e7ff] rounded-full mx-auto mb-5" />
