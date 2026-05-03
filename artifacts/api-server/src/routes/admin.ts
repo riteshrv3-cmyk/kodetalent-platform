@@ -1,0 +1,311 @@
+import { Router } from "express";
+import { db } from "@workspace/db";
+import {
+  studentsTable,
+  recruitersTable,
+  recruiterJobsTable,
+  recruiterInvites,
+  driveChecksTable,
+  jobsTable,
+  mentors,
+  interviewSessionsTable,
+  testSessionsTable,
+} from "@workspace/db";
+import { desc, sql, gte } from "drizzle-orm";
+
+const router = Router();
+
+router.get("/admin/overview", async (_req, res) => {
+  const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+  const [
+    studentCountRow,
+    recruiterCountRow,
+    jobCountRow,
+    inviteCountRow,
+    driveCheckCountRow,
+    mentorCountRow,
+    interviewCountRow,
+    testCountRow,
+    collegeCountRow,
+    openToWorkRow,
+    proRow,
+    inviteStatusRows,
+    driveVerdictRows,
+    studentsLast24Row,
+    invitesLast24Row,
+    driveChecksLast24Row,
+    interviewsLast24Row,
+    testsLast24Row,
+    avgScoresRow,
+  ] = await Promise.all([
+    db.select({ c: sql<number>`count(*)::int` }).from(studentsTable),
+    db.select({ c: sql<number>`count(*)::int` }).from(recruitersTable),
+    db.select({ c: sql<number>`count(*)::int` }).from(recruiterJobsTable),
+    db.select({ c: sql<number>`count(*)::int` }).from(recruiterInvites),
+    db.select({ c: sql<number>`count(*)::int` }).from(driveChecksTable),
+    db.select({ c: sql<number>`count(*)::int` }).from(mentors),
+    db.select({ c: sql<number>`count(*)::int` }).from(interviewSessionsTable),
+    db.select({ c: sql<number>`count(*)::int` }).from(testSessionsTable),
+    db.select({ c: sql<number>`count(distinct ${studentsTable.college})::int` }).from(studentsTable),
+    db.select({ c: sql<number>`count(*)::int` }).from(studentsTable).where(sql`${studentsTable.openToWork} = true`),
+    db.select({ c: sql<number>`count(*)::int` }).from(studentsTable).where(sql`${studentsTable.isPro} = true`),
+    db
+      .select({ status: recruiterInvites.status, c: sql<number>`count(*)::int` })
+      .from(recruiterInvites)
+      .groupBy(recruiterInvites.status),
+    db
+      .select({ verdict: driveChecksTable.scamVerdict, c: sql<number>`count(*)::int` })
+      .from(driveChecksTable)
+      .groupBy(driveChecksTable.scamVerdict),
+    db.select({ c: sql<number>`count(*)::int` }).from(studentsTable).where(gte(studentsTable.createdAt, since)),
+    db.select({ c: sql<number>`count(*)::int` }).from(recruiterInvites).where(gte(recruiterInvites.createdAt, since)),
+    db.select({ c: sql<number>`count(*)::int` }).from(driveChecksTable).where(gte(driveChecksTable.createdAt, since)),
+    db.select({ c: sql<number>`count(*)::int` }).from(interviewSessionsTable).where(gte(interviewSessionsTable.createdAt, since)),
+    db.select({ c: sql<number>`count(*)::int` }).from(testSessionsTable).where(gte(testSessionsTable.createdAt, since)),
+    db
+      .select({
+        avgScore: sql<number>`coalesce(round(avg(${studentsTable.overallScore}))::int, 0)`,
+        avgStrength: sql<number>`coalesce(round(avg(${studentsTable.profileStrength}))::int, 0)`,
+        avgCommitment: sql<number>`coalesce(round(avg(${studentsTable.commitmentScore}))::int, 0)`,
+        totalXp: sql<number>`coalesce(sum(${studentsTable.xp})::int, 0)`,
+      })
+      .from(studentsTable),
+  ]);
+
+  res.json({
+    counts: {
+      students: studentCountRow[0]?.c ?? 0,
+      recruiters: recruiterCountRow[0]?.c ?? 0,
+      jobs: jobCountRow[0]?.c ?? 0,
+      invites: inviteCountRow[0]?.c ?? 0,
+      driveChecks: driveCheckCountRow[0]?.c ?? 0,
+      mentors: mentorCountRow[0]?.c ?? 0,
+      interviews: interviewCountRow[0]?.c ?? 0,
+      tests: testCountRow[0]?.c ?? 0,
+      colleges: collegeCountRow[0]?.c ?? 0,
+      openToWork: openToWorkRow[0]?.c ?? 0,
+      pro: proRow[0]?.c ?? 0,
+    },
+    last24h: {
+      students: studentsLast24Row[0]?.c ?? 0,
+      invites: invitesLast24Row[0]?.c ?? 0,
+      driveChecks: driveChecksLast24Row[0]?.c ?? 0,
+      interviews: interviewsLast24Row[0]?.c ?? 0,
+      tests: testsLast24Row[0]?.c ?? 0,
+    },
+    averages: avgScoresRow[0] ?? { avgScore: 0, avgStrength: 0, avgCommitment: 0, totalXp: 0 },
+    inviteBreakdown: inviteStatusRows,
+    driveVerdictBreakdown: driveVerdictRows,
+  });
+});
+
+router.get("/admin/students", async (_req, res) => {
+  const rows = await db.select().from(studentsTable).orderBy(desc(studentsTable.createdAt)).limit(500);
+  res.json(rows);
+});
+
+router.get("/admin/recruiters", async (_req, res) => {
+  const rows = await db.select().from(recruitersTable).orderBy(desc(recruitersTable.createdAt)).limit(500);
+  res.json(rows);
+});
+
+router.get("/admin/jobs", async (_req, res) => {
+  const rows = await db
+    .select({
+      id: recruiterJobsTable.id,
+      title: recruiterJobsTable.title,
+      status: recruiterJobsTable.status,
+      invitesSent: recruiterJobsTable.invitesSent,
+      createdAt: recruiterJobsTable.createdAt,
+      parsedRequirements: recruiterJobsTable.parsedRequirements,
+      recruiterId: recruiterJobsTable.recruiterId,
+      recruiterName: recruitersTable.name,
+      recruiterCompany: recruitersTable.company,
+    })
+    .from(recruiterJobsTable)
+    .leftJoin(recruitersTable, sql`${recruiterJobsTable.recruiterId} = ${recruitersTable.id}`)
+    .orderBy(desc(recruiterJobsTable.createdAt))
+    .limit(500);
+  res.json(rows);
+});
+
+router.get("/admin/invites", async (_req, res) => {
+  const rows = await db
+    .select({
+      id: recruiterInvites.id,
+      studentId: recruiterInvites.studentId,
+      studentName: studentsTable.name,
+      studentCollege: studentsTable.college,
+      recruiterCompany: recruiterInvites.recruiterCompany,
+      recruiterName: recruiterInvites.recruiterName,
+      role: recruiterInvites.role,
+      status: recruiterInvites.status,
+      createdAt: recruiterInvites.createdAt,
+    })
+    .from(recruiterInvites)
+    .leftJoin(studentsTable, sql`${recruiterInvites.studentId} = ${studentsTable.id}`)
+    .orderBy(desc(recruiterInvites.createdAt))
+    .limit(500);
+  res.json(rows);
+});
+
+router.get("/admin/drive-checks", async (_req, res) => {
+  const rows = await db
+    .select({
+      id: driveChecksTable.id,
+      studentId: driveChecksTable.studentId,
+      studentName: studentsTable.name,
+      studentCollege: studentsTable.college,
+      company: driveChecksTable.company,
+      role: driveChecksTable.role,
+      ctc: driveChecksTable.ctc,
+      scamScore: driveChecksTable.scamScore,
+      scamVerdict: driveChecksTable.scamVerdict,
+      outcome: driveChecksTable.outcome,
+      createdAt: driveChecksTable.createdAt,
+    })
+    .from(driveChecksTable)
+    .leftJoin(studentsTable, sql`${driveChecksTable.studentId} = ${studentsTable.id}`)
+    .orderBy(desc(driveChecksTable.createdAt))
+    .limit(500);
+  res.json(rows);
+});
+
+router.get("/admin/colleges", async (_req, res) => {
+  const rows = await db
+    .select({
+      college: studentsTable.college,
+      students: sql<number>`count(*)::int`,
+      avgScore: sql<number>`coalesce(round(avg(${studentsTable.overallScore}))::int, 0)`,
+      avgStrength: sql<number>`coalesce(round(avg(${studentsTable.profileStrength}))::int, 0)`,
+      openToWork: sql<number>`sum(case when ${studentsTable.openToWork} then 1 else 0 end)::int`,
+      totalXp: sql<number>`coalesce(sum(${studentsTable.xp})::int, 0)`,
+    })
+    .from(studentsTable)
+    .groupBy(studentsTable.college)
+    .orderBy(desc(sql`count(*)`));
+  res.json(rows);
+});
+
+router.get("/admin/job-listings", async (_req, res) => {
+  const rows = await db.select().from(jobsTable).limit(500);
+  res.json(rows);
+});
+
+router.get("/admin/activity", async (_req, res) => {
+  const [students, invites, drives, interviews, tests] = await Promise.all([
+    db
+      .select({ id: studentsTable.id, name: studentsTable.name, college: studentsTable.college, createdAt: studentsTable.createdAt })
+      .from(studentsTable)
+      .orderBy(desc(studentsTable.createdAt))
+      .limit(40),
+    db
+      .select({
+        id: recruiterInvites.id,
+        studentId: recruiterInvites.studentId,
+        studentName: studentsTable.name,
+        recruiterCompany: recruiterInvites.recruiterCompany,
+        status: recruiterInvites.status,
+        createdAt: recruiterInvites.createdAt,
+      })
+      .from(recruiterInvites)
+      .leftJoin(studentsTable, sql`${recruiterInvites.studentId} = ${studentsTable.id}`)
+      .orderBy(desc(recruiterInvites.createdAt))
+      .limit(40),
+    db
+      .select({
+        id: driveChecksTable.id,
+        studentId: driveChecksTable.studentId,
+        studentName: studentsTable.name,
+        company: driveChecksTable.company,
+        verdict: driveChecksTable.scamVerdict,
+        score: driveChecksTable.scamScore,
+        createdAt: driveChecksTable.createdAt,
+      })
+      .from(driveChecksTable)
+      .leftJoin(studentsTable, sql`${driveChecksTable.studentId} = ${studentsTable.id}`)
+      .orderBy(desc(driveChecksTable.createdAt))
+      .limit(40),
+    db
+      .select({
+        id: interviewSessionsTable.id,
+        studentId: interviewSessionsTable.studentId,
+        studentName: studentsTable.name,
+        company: interviewSessionsTable.company,
+        round: interviewSessionsTable.round,
+        createdAt: interviewSessionsTable.createdAt,
+      })
+      .from(interviewSessionsTable)
+      .leftJoin(studentsTable, sql`${interviewSessionsTable.studentId} = ${studentsTable.id}`)
+      .orderBy(desc(interviewSessionsTable.createdAt))
+      .limit(40),
+    db
+      .select({
+        id: testSessionsTable.id,
+        studentId: testSessionsTable.studentId,
+        studentName: studentsTable.name,
+        testType: testSessionsTable.testType,
+        difficulty: testSessionsTable.difficulty,
+        createdAt: testSessionsTable.createdAt,
+      })
+      .from(testSessionsTable)
+      .leftJoin(studentsTable, sql`${testSessionsTable.studentId} = ${studentsTable.id}`)
+      .orderBy(desc(testSessionsTable.createdAt))
+      .limit(40),
+  ]);
+
+  type Event = { kind: string; at: string; title: string; subtitle: string; entityId: number };
+  const events: Event[] = [];
+
+  for (const s of students) {
+    events.push({
+      kind: "student_signup",
+      at: s.createdAt.toISOString(),
+      title: `${s.name} joined`,
+      subtitle: s.college,
+      entityId: s.id,
+    });
+  }
+  for (const inv of invites) {
+    events.push({
+      kind: "recruiter_invite",
+      at: inv.createdAt.toISOString(),
+      title: `${inv.recruiterCompany} → ${inv.studentName ?? `student #${inv.studentId}`}`,
+      subtitle: `Invite ${inv.status}`,
+      entityId: inv.id,
+    });
+  }
+  for (const dc of drives) {
+    events.push({
+      kind: "drive_check",
+      at: dc.createdAt.toISOString(),
+      title: `Drive check: ${dc.company ?? "Unknown"}`,
+      subtitle: `${dc.studentName ?? `student #${dc.studentId}`} • ${dc.verdict} (${dc.score})`,
+      entityId: dc.id,
+    });
+  }
+  for (const it of interviews) {
+    events.push({
+      kind: "interview",
+      at: it.createdAt.toISOString(),
+      title: `Mock interview: ${it.company} · ${it.round}`,
+      subtitle: it.studentName ?? `student #${it.studentId}`,
+      entityId: it.id,
+    });
+  }
+  for (const t of tests) {
+    events.push({
+      kind: "test",
+      at: t.createdAt.toISOString(),
+      title: `Mock test: ${t.testType} (${t.difficulty})`,
+      subtitle: t.studentName ?? `student #${t.studentId}`,
+      entityId: t.id,
+    });
+  }
+
+  events.sort((a, b) => (a.at < b.at ? 1 : -1));
+  res.json(events.slice(0, 100));
+});
+
+export default router;
