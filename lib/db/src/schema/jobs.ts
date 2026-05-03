@@ -1,4 +1,4 @@
-import { pgTable, serial, text, real, boolean, jsonb } from "drizzle-orm/pg-core";
+import { index, pgTable, serial, text, real, boolean, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -11,7 +11,11 @@ export const jobsTable = pgTable("jobs", {
   ctcMax: real("ctc_max").notNull(),
   location: text("location").notNull(),
   remote: boolean("remote").notNull().default(false),
-});
+}, t => ({
+  companyIdx: index("jobs_company_idx").on(t.companyName),
+  roleIdx: index("jobs_role_idx").on(t.role),
+  remoteIdx: index("jobs_remote_idx").on(t.remote),
+}));
 
 export const insertJobSchema = createInsertSchema(jobsTable).omit({ id: true });
 export type InsertJob = z.infer<typeof insertJobSchema>;

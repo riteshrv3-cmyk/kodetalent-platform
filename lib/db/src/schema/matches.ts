@@ -1,4 +1,4 @@
-import { pgTable, serial, integer, real, text } from "drizzle-orm/pg-core";
+import { index, pgTable, serial, integer, real, text } from "drizzle-orm/pg-core";
 import { studentsTable } from "./students";
 import { jobsTable } from "./jobs";
 import { createInsertSchema } from "drizzle-zod";
@@ -11,7 +11,11 @@ export const matchesTable = pgTable("matches", {
   matchScore: real("match_score").notNull(),
   matchReason: text("match_reason").notNull(),
   isLocked: integer("is_locked").notNull().default(0),
-});
+}, t => ({
+  studentIdx: index("matches_student_idx").on(t.studentId),
+  jobIdx: index("matches_job_idx").on(t.jobId),
+  studentScoreIdx: index("matches_student_score_idx").on(t.studentId, t.matchScore),
+}));
 
 export const insertMatchSchema = createInsertSchema(matchesTable).omit({ id: true });
 export type InsertMatch = z.infer<typeof insertMatchSchema>;

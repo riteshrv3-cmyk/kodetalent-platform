@@ -3,19 +3,30 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { useEffect } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useEffect, lazy, Suspense } from "react";
 import Login from "@/pages/Login";
-import Dashboard from "@/pages/Dashboard";
-import Students from "@/pages/Students";
-import StudentProfile from "@/pages/StudentProfile";
-import ActivityFeed from "@/pages/ActivityFeed";
-import MentorHub from "@/pages/MentorHub";
-import Leaderboard from "@/pages/Leaderboard";
-import Insights from "@/pages/Insights";
-import DriveFeed from "@/pages/DriveFeed";
-import AnnounceDrives from "@/pages/AnnounceDrives";
 import { Layout } from "@/components/Layout";
 
+const Dashboard = lazy(() => import("@/pages/Dashboard"));
+const Students = lazy(() => import("@/pages/Students"));
+const StudentProfile = lazy(() => import("@/pages/StudentProfile"));
+const ActivityFeed = lazy(() => import("@/pages/ActivityFeed"));
+const MentorHub = lazy(() => import("@/pages/MentorHub"));
+const Leaderboard = lazy(() => import("@/pages/Leaderboard"));
+const Insights = lazy(() => import("@/pages/Insights"));
+const DriveFeed = lazy(() => import("@/pages/DriveFeed"));
+const AnnounceDrives = lazy(() => import("@/pages/AnnounceDrives"));
+
+function PageSkeleton() {
+  return (
+    <div className="p-6 space-y-4" data-testid="page-loading-skeleton">
+      <Skeleton className="h-8 w-1/3" />
+      <Skeleton className="h-32 w-full" />
+      <Skeleton className="h-24 w-full" />
+    </div>
+  );
+}
 
 function isLoggedIn() {
   return !!localStorage.getItem("tpo");
@@ -40,19 +51,21 @@ function CatchAll() {
 
 function Router() {
   return (
-    <Switch>
-      <Route path="/login" component={Login} />
-      <Route path="/dashboard"><Guard><Dashboard /></Guard></Route>
-      <Route path="/leaderboard"><Guard><Leaderboard /></Guard></Route>
-      <Route path="/insights"><Guard><Insights /></Guard></Route>
-      <Route path="/drives"><Guard><DriveFeed /></Guard></Route>
-      <Route path="/announce"><Guard><AnnounceDrives /></Guard></Route>
-      <Route path="/students"><Guard><Students /></Guard></Route>
-      <Route path="/students/:id" component={StudentProfileRoute} />
-      <Route path="/activity"><Guard><ActivityFeed /></Guard></Route>
-      <Route path="/mentors"><Guard><MentorHub /></Guard></Route>
-      <Route component={CatchAll} />
-    </Switch>
+    <Suspense fallback={<PageSkeleton />}>
+      <Switch>
+        <Route path="/login" component={Login} />
+        <Route path="/dashboard"><Guard><Dashboard /></Guard></Route>
+        <Route path="/leaderboard"><Guard><Leaderboard /></Guard></Route>
+        <Route path="/insights"><Guard><Insights /></Guard></Route>
+        <Route path="/drives"><Guard><DriveFeed /></Guard></Route>
+        <Route path="/announce"><Guard><AnnounceDrives /></Guard></Route>
+        <Route path="/students"><Guard><Students /></Guard></Route>
+        <Route path="/students/:id" component={StudentProfileRoute} />
+        <Route path="/activity"><Guard><ActivityFeed /></Guard></Route>
+        <Route path="/mentors"><Guard><MentorHub /></Guard></Route>
+        <Route component={CatchAll} />
+      </Switch>
+    </Suspense>
   );
 }
 

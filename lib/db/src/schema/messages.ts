@@ -1,4 +1,4 @@
-import { integer, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
+import { index, integer, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -12,7 +12,10 @@ export const messages = pgTable("messages", {
   role: text("role").notNull(),
   content: text("content").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-});
+}, t => ({
+  conversationIdx: index("messages_conversation_idx").on(t.conversationId),
+  conversationCreatedIdx: index("messages_conversation_created_idx").on(t.conversationId, t.createdAt),
+}));
 
 export const insertMessageSchema = createInsertSchema(messages).omit({
   id: true,
