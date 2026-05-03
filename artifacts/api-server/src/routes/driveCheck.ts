@@ -353,4 +353,21 @@ router.get("/students/:id/drive-checks", async (req, res) => {
   }
 });
 
+router.post("/drive-checks/:id/shared", async (req, res) => {
+  const id = Number(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
+  try {
+    const [updated] = await db
+      .update(driveChecksTable)
+      .set({ sharedCount: sql`${driveChecksTable.sharedCount} + 1` })
+      .where(eq(driveChecksTable.id, id))
+      .returning({ id: driveChecksTable.id, sharedCount: driveChecksTable.sharedCount });
+    if (!updated) return res.status(404).json({ error: "Not found" });
+    return res.json(updated);
+  } catch (err) {
+    req.log.error({ err }, "Failed to increment sharedCount");
+    return res.status(500).json({ error: "Server error" });
+  }
+});
+
 export default router;

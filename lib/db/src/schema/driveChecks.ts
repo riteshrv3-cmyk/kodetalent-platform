@@ -25,6 +25,7 @@ export const driveChecksTable = pgTable("drive_checks", {
   appliedAt: timestamp("applied_at"),
   outcomeAt: timestamp("outcome_at"),
   nextPingAt: timestamp("next_ping_at"),
+  sharedCount: integer("shared_count").notNull().default(0),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 }, t => ({
   studentIdx: index("dc_student_idx").on(t.studentId),

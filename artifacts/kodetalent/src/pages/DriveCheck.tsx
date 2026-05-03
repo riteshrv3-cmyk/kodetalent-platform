@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { ShieldCheck, AlertTriangle, ShieldAlert, Sparkles, Download, ChevronRight, ArrowLeft, Clipboard, TrendingUp, CheckCircle2, XCircle, Award, Phone, Ghost } from "lucide-react";
-import { toPng } from "html-to-image";
+import { ShieldCheck, AlertTriangle, ShieldAlert, Sparkles, Download, ChevronRight, ArrowLeft, Clipboard, TrendingUp, CheckCircle2, XCircle, Award, Phone, Ghost, Megaphone } from "lucide-react";
+import { toPng, toBlob } from "html-to-image";
 import { useToast } from "@/hooks/use-toast";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -43,6 +43,7 @@ interface DriveCheckRow {
   appliedAt: string | null;
   outcomeAt: string | null;
   nextPingAt: string | null;
+  sharedCount: number;
   createdAt: string;
   companyStats?: CompanyStats | null;
 }
@@ -395,6 +396,89 @@ export default function DriveCheck() {
     }
   };
 
+  const buildWarningMessage = (r: DriveCheckRow): string => {
+    const co = r.company ?? "Yeh drive";
+    const reasons = (r.scamReasons ?? []).slice(0, 3).map((x) => `• ${x}`).join("\n");
+    return `🚩 SCAM ALERT — ${co}${r.role ? ` (${r.role})` : ""}\n\nKodeTalent Drive Check ne flag kiya — Scam Score ${r.scamScore}/100.\n\n${reasons}\n\nMat apply karna, aur kisi ko paisa mat dena. Verify on company's official careers page first.\n\nChecked via KodeTalent Drive Check 🛡️`;
+  };
+
+  const recordShare = async (r: DriveCheckRow) => {
+    try {
+      const res = await fetch(`${BASE}/api/drive-checks/${r.id}/shared`, { method: "POST" });
+      if (!res.ok) return;
+      const data = (await res.json()) as { id: number; sharedCount: number };
+      setVerdict((cur) => (cur && cur.id === data.id ? { ...cur, sharedCount: data.sharedCount } : cur));
+      setRecent((prev) => prev.map((x) => (x.id === data.id ? { ...x, sharedCount: data.sharedCount } : x)));
+    } catch {
+      /* non-fatal */
+    }
+  };
+
+  const warnTheGroup = async (platform: "whatsapp" | "telegram") => {
+    if (!verdict || !cardRef.current) return;
+    const message = buildWarningMessage(verdict);
+
+    let pngFile: File | null = null;
+    try {
+      const blob = await toBlob(cardRef.current, {
+        cacheBust: true,
+        pixelRatio: 2,
+        backgroundColor: "#f8fafc",
+      });
+      if (blob) {
+        pngFile = new File([blob], `scam-warning-${verdict.company ?? "drive"}.png`, { type: "image/png" });
+      }
+    } catch {
+      /* fallback below */
+    }
+
+    const nav = navigator as Navigator & {
+      canShare?: (data: ShareData) => boolean;
+      share?: (data: ShareData) => Promise<void>;
+    };
+
+    // Primary path: native Web Share API with the PNG attached. Works for
+    // both WhatsApp and Telegram via the OS share sheet on iOS Safari and
+    // most modern Android browsers.
+    if (pngFile && nav.canShare && nav.share && nav.canShare({ files: [pngFile], text: message })) {
+      try {
+        await nav.share({ files: [pngFile], text: message, title: "Scam alert" });
+        await recordShare(verdict);
+        toast({ title: "Warning sent 🚨", description: "Drive group ko bata diya." });
+        return;
+      } catch (e) {
+        // AbortError = user cancelled — don't count, don't fall back.
+        if ((e as DOMException)?.name === "AbortError") return;
+        // Other errors → fall through to deep-link fallback.
+      }
+    }
+
+    // Fallback (desktop / unsupported): download PNG + open deep link
+    // with prefilled text. We do NOT count this as a confirmed share.
+    if (pngFile) {
+      const url = URL.createObjectURL(pngFile);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = pngFile.name;
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+    }
+
+    const encoded = encodeURIComponent(message);
+    const shareUrl =
+      platform === "whatsapp"
+        ? `https://wa.me/?text=${encoded}`
+        : `https://t.me/share/url?url=${encodeURIComponent("https://kodetalent.app")}&text=${encoded}`;
+    window.open(shareUrl, "_blank", "noopener,noreferrer");
+
+    toast({
+      title: "Share intent opened",
+      description: pngFile
+        ? "PNG download ho gayi — group mein attach kar de aur send dabade."
+        : "Message group mein paste kar de.",
+    });
+  };
+
   const loadRecent = async (r: DriveCheckRow) => {
     setVerdict(r);
     setText(r.rawText);
@@ -618,12 +702,52 @@ export default function DriveCheck() {
               </div>
             )}
 
+            {/* Warn the group — one tap; only for scam verdicts */}
+            {verdict.scamVerdict === "scam" && (
+              <div className="mt-3 bg-gradient-to-br from-[#fef2f2] to-[#fee2e2] border border-[#fecaca] rounded-2xl p-3.5">
+                <div className="flex items-start gap-2 mb-2.5">
+                  <Megaphone className="w-4 h-4 text-[#b91c1c] mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-[12px] font-black text-[#7f1d1d] leading-tight">
+                      Warn the group — one tap
+                    </p>
+                    <p className="text-[10px] text-[#7f1d1d]/80 mt-0.5">
+                      Prefilled message + verdict card. Saves friends from getting scammed.
+                    </p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => warnTheGroup("whatsapp")}
+                    data-testid="button-warn-whatsapp"
+                    className="bg-[#25d366] text-white font-black text-[12px] py-2.5 rounded-xl flex items-center justify-center gap-1.5 active:scale-95 transition-transform shadow-sm"
+                  >
+                    <Megaphone className="w-3.5 h-3.5" />
+                    WhatsApp group
+                  </button>
+                  <button
+                    onClick={() => warnTheGroup("telegram")}
+                    data-testid="button-warn-telegram"
+                    className="bg-[#229ed9] text-white font-black text-[12px] py-2.5 rounded-xl flex items-center justify-center gap-1.5 active:scale-95 transition-transform shadow-sm"
+                  >
+                    <Megaphone className="w-3.5 h-3.5" />
+                    Telegram group
+                  </button>
+                </div>
+                {verdict.sharedCount > 0 && (
+                  <p className="text-[10px] text-[#7f1d1d]/70 text-center mt-2 font-bold">
+                    Shared {verdict.sharedCount} {verdict.sharedCount === 1 ? "time" : "times"} 🙌
+                  </p>
+                )}
+              </div>
+            )}
             <button
               onClick={downloadCard}
+              data-testid="button-download-card"
               className="w-full mt-3 bg-[#0f172a] text-white font-black text-sm py-3 rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-transform shadow-md"
             >
               <Download className="w-4 h-4" />
-              Share verdict to drive group
+              {verdict.scamVerdict === "scam" ? "Just download PNG" : "Share verdict to drive group"}
             </button>
           </motion.div>
         )}
