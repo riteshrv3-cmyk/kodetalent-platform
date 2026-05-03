@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import {
   Briefcase, Trophy, FileText, Flame, Star,
   ChevronRight, Zap, BookOpen, TrendingUp, Mail,
-  Target, Users, ShieldCheck
+  Target, Users, ShieldCheck, PlayCircle
 } from "lucide-react";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -91,11 +91,81 @@ const categories = [
   },
 ];
 
+interface ResumeCourse {
+  subDomainId: string;
+  subDomainName: string;
+  domainName: string;
+  domainColor: string;
+  domainBg: string;
+  domainEmoji: string;
+  skills: string[];
+  openedAt?: string;
+  completed: number;
+  total: number;
+  pct: number;
+}
+
+function loadResumeCourse(): ResumeCourse | null {
+  try {
+    const raw = localStorage.getItem("lastCourseContext");
+    if (!raw) return null;
+    const ctx = JSON.parse(raw);
+    if (!ctx?.subDomainId) return null;
+
+    const completedRaw = localStorage.getItem(`lesson_progress_${ctx.subDomainId}`);
+    const completedArr: string[] = completedRaw ? JSON.parse(completedRaw) : [];
+    const completed = Array.isArray(completedArr) ? completedArr.length : 0;
+
+    let total = 0;
+    const cached = localStorage.getItem(`course_content_v2_${ctx.subDomainId}`);
+    if (cached) {
+      try {
+        const data = JSON.parse(cached);
+        const modules = Array.isArray(data?.modules) ? data.modules : [];
+        total = modules.reduce(
+          (acc: number, m: { lessons?: unknown[] }) => acc + (Array.isArray(m.lessons) ? m.lessons.length : 0),
+          0
+        );
+      } catch {/* ignore */}
+    }
+
+    const pct = total > 0 ? Math.min(100, Math.round((completed / total) * 100)) : 0;
+    return { ...ctx, completed, total, pct };
+  } catch {
+    return null;
+  }
+}
+
+function timeAgo(iso?: string): string {
+  if (!iso) return "";
+  const diff = Date.now() - new Date(iso).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return "just now";
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  const d = Math.floor(h / 24);
+  return d === 1 ? "yesterday" : `${d}d ago`;
+}
+
 export default function Home() {
   const [, setLocation] = useLocation();
   const [profile, setProfile] = useState<StudentProfile | null>(null);
   const [invites, setInvites] = useState<Invite[]>([]);
   const [loading, setLoading] = useState(true);
+  const [resume, setResume] = useState<ResumeCourse | null>(null);
+
+  useEffect(() => {
+    setResume(loadResumeCourse());
+  }, []);
+
+  const resumeCourse = () => {
+    if (!resume) return;
+    const { completed: _c, total: _t, pct: _p, openedAt: _o, ...ctx } = resume;
+    void _c; void _t; void _p; void _o;
+    sessionStorage.setItem("courseContext", JSON.stringify(ctx));
+    setLocation("/opportunities/course");
+  };
 
   useEffect(() => {
     const id = localStorage.getItem("studentId");
@@ -201,6 +271,62 @@ export default function Home() {
           <ChevronRight className="w-4 h-4 text-white/80 relative z-10 shrink-0" />
         </motion.button>
       </div>
+
+      {/* Resume Course — last opened course with progress ring */}
+      {resume && (
+        <div className="px-4">
+          <motion.button
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            onClick={resumeCourse}
+            className="w-full bg-white rounded-2xl p-4 flex items-center gap-3 shadow-sm border border-[#e2e8f0] active:scale-[0.98] transition-transform text-left"
+            data-testid="card-resume-course"
+          >
+            <div className="relative w-14 h-14 shrink-0">
+              <svg width="56" height="56" viewBox="0 0 56 56">
+                <circle cx="28" cy="28" r="24" fill="none" stroke="#e2e8f0" strokeWidth="4" />
+                <circle
+                  cx="28" cy="28" r="24"
+                  fill="none"
+                  stroke={resume.domainColor || "#4f46e5"}
+                  strokeWidth="4"
+                  strokeDasharray={`${(resume.pct / 100) * 150.8} 150.8`}
+                  strokeLinecap="round"
+                  transform="rotate(-90 28 28)"
+                  style={{ transition: "stroke-dasharray 0.6s ease" }}
+                />
+              </svg>
+              <div
+                className="absolute inset-0 flex items-center justify-center text-xl"
+                aria-hidden
+              >
+                {resume.domainEmoji || "📚"}
+              </div>
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5 mb-0.5">
+                <p className="text-[9px] font-black uppercase tracking-wider text-[#94a3b8]">Resume Course</p>
+                {resume.openedAt && (
+                  <span className="text-[9px] font-bold text-[#cbd5e1]">· {timeAgo(resume.openedAt)}</span>
+                )}
+              </div>
+              <p className="font-black text-[#0f172a] text-sm truncate">{resume.subDomainName}</p>
+              <p className="text-[11px] font-bold text-[#64748b] truncate">
+                {resume.domainName}
+                {resume.total > 0 && (
+                  <span className="text-[#94a3b8]"> · {resume.completed}/{resume.total} lessons</span>
+                )}
+              </p>
+            </div>
+            <div
+              className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-white"
+              style={{ background: resume.domainColor || "#4f46e5" }}
+            >
+              <PlayCircle className="w-5 h-5" />
+            </div>
+          </motion.button>
+        </div>
+      )}
 
       {/* Recruiter Interest Alert */}
       {pendingInvites.length > 0 && (

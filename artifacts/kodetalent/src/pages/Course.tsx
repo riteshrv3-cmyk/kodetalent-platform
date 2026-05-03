@@ -180,6 +180,11 @@ export default function Course() {
     const c: CourseContext = JSON.parse(raw);
     setCtx(c);
 
+    // Persist as "last opened course" for Home's Resume card
+    try {
+      localStorage.setItem("lastCourseContext", JSON.stringify({ ...c, openedAt: new Date().toISOString() }));
+    } catch {/* quota — ignore */}
+
     // Load lesson progress
     const lp = localStorage.getItem(`lesson_progress_${c.subDomainId}`);
     if (lp) setCompletedLessons(new Set(JSON.parse(lp)));
