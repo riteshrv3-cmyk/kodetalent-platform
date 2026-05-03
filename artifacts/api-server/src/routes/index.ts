@@ -18,6 +18,7 @@ import tpoAuthRouter from "./tpoAuth";
 import driveCheckRouter from "./driveCheck";
 import recruiterRouter from "./recruiter";
 import adminRouter from "./admin";
+import collegesRouter from "./colleges";
 
 const router: IRouter = Router();
 
@@ -40,5 +41,6 @@ router.use(tpoRouter);
 router.use(driveCheckRouter);
 router.use(recruiterRouter);
 router.use(adminRouter);
+router.use(collegesRouter);
 
 export default router;

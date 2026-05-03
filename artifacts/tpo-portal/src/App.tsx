@@ -17,6 +17,7 @@ const Leaderboard = lazy(() => import("@/pages/Leaderboard"));
 const Insights = lazy(() => import("@/pages/Insights"));
 const DriveFeed = lazy(() => import("@/pages/DriveFeed"));
 const AnnounceDrives = lazy(() => import("@/pages/AnnounceDrives"));
+const Invite = lazy(() => import("@/pages/Invite"));
 
 function PageSkeleton() {
   return (
@@ -55,6 +56,7 @@ function Router() {
       <Switch>
         <Route path="/login" component={Login} />
         <Route path="/dashboard"><Guard><Dashboard /></Guard></Route>
+        <Route path="/invite"><Guard><Invite /></Guard></Route>
         <Route path="/leaderboard"><Guard><Leaderboard /></Guard></Route>
         <Route path="/insights"><Guard><Insights /></Guard></Route>
         <Route path="/drives"><Guard><DriveFeed /></Guard></Route>

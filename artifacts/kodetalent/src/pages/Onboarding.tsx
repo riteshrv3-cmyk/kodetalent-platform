@@ -127,15 +127,21 @@ const FIELD_TONE: Record<string, string> = {
 
 export default function Onboarding() {
   const [, setLocation] = useLocation();
-  const [data, setData] = useState<FormData>(initialData);
+  const inviteCode = typeof window !== "undefined" ? sessionStorage.getItem("inviteCode") : null;
+  const inviteCollegeName = typeof window !== "undefined" ? sessionStorage.getItem("inviteCollegeName") : null;
+  const inviteCollegeCity = typeof window !== "undefined" ? sessionStorage.getItem("inviteCollegeCity") : null;
+  const [data, setData] = useState<FormData>(() => ({
+    ...initialData,
+    collegeFull: inviteCollegeName ? `${inviteCollegeName}${inviteCollegeCity ? " " + inviteCollegeCity : ""}`.trim() : "",
+  }));
   const [stepIdx, setStepIdx] = useState(-1); // -1 = welcome screen
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const createStudent = useCreateStudent();
 
   const visibleSteps = useMemo(
-    () => STEPS.filter(s => !s.showIf || s.showIf(data)),
-    [data]
+    () => STEPS.filter(s => !s.showIf || s.showIf(data)).filter(s => !(inviteCode && s.key === "collegeFull")),
+    [data, inviteCode]
   );
 
   const step = stepIdx >= 0 ? visibleSteps[stepIdx] : null;
@@ -187,6 +193,18 @@ export default function Onboarding() {
       });
       localStorage.setItem("studentId", student.id.toString());
       localStorage.setItem("studentCollege", student.college || college);
+      if (inviteCode) {
+        try {
+          await fetch(`/api/invite/${encodeURIComponent(inviteCode)}/claim`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ studentId: student.id }),
+          });
+        } catch (e) { console.warn("invite claim failed", e); }
+        sessionStorage.removeItem("inviteCode");
+        sessionStorage.removeItem("inviteCollegeName");
+        sessionStorage.removeItem("inviteCollegeCity");
+      }
       setTimeout(() => setLocation("/home"), 1400);
     } catch (e) {
       console.error(e);

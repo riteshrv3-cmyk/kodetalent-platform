@@ -1,8 +1,9 @@
 import { useLocation } from "wouter";
-import { LayoutDashboard, Users, Bell, GraduationCap, LogOut, BookOpen, Trophy, Target, ShieldAlert, Megaphone } from "lucide-react";
+import { LayoutDashboard, Users, Bell, GraduationCap, LogOut, BookOpen, Trophy, Target, ShieldAlert, Megaphone, Share2 } from "lucide-react";
 
 const navItems = [
   { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { path: "/invite", label: "Invite Students", icon: Share2 },
   { path: "/leaderboard", label: "Leaderboard", icon: Trophy },
   { path: "/insights", label: "Hiring Insights", icon: Target },
   { path: "/drives", label: "Drive Intel", icon: ShieldAlert },

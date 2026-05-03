@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useEffect, lazy, Suspense } from "react";
 import NotFound from "@/pages/not-found";
 import Onboarding from "@/pages/Onboarding";
+import Join from "@/pages/Join";
 import { AppLayout } from "@/components/layout/AppLayout";
 
 const Home = lazy(() => import("@/pages/Home"));
@@ -47,6 +48,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={RootRedirect} />
+      <Route path="/join/:code">{(p) => <Join code={p.code} />}</Route>
       <Route>
         <AppLayout>
           <Suspense fallback={<PageSkeleton />}>

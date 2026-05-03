@@ -47,8 +47,10 @@ export const studentsTable = pgTable("students", {
   lastActiveDate: text("last_active_date"),
   skills: jsonb("skills").notNull().default({}),
   isPro: boolean("is_pro").notNull().default(false),
+  collegeId: integer("college_id"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 }, t => ({
+  collegeIdIdx: index("students_college_id_idx").on(t.collegeId),
   collegeIdx: index("students_college_idx").on(t.college),
   openToWorkIdx: index("students_open_to_work_idx").on(t.openToWork),
   yearIdx: index("students_year_idx").on(t.year),
