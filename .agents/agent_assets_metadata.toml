@@ -12,3 +12,9 @@ id = "FDs3MSQUbmnNUoM3JP2bg"
 uri = "file://replit.md"
 type = "text"
 title = "KodeTalent — Full Project Documentation"
+
+[[outputs]]
+id = "lmDbQ9O_BUkemRZsEsFYJ"
+uri = "file://public/demo/kodetalent-demo.mp4"
+type = "video"
+title = "KodeTalent — Pitch Demo (43s, 1080p)"
