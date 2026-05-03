@@ -13,6 +13,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const [pendingCount, setPendingCount] = useState(0);
   const [initials, setInitials] = useState("?");
 
+  const isFullscreenRoute = location.startsWith("/practice/interview/");
+
   useEffect(() => {
     const name = localStorage.getItem("studentName") || "";
     const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -42,6 +44,10 @@ export function AppLayout({ children }: { children: ReactNode }) {
     const interval = setInterval(fetchCount, 30_000);
     return () => clearInterval(interval);
   }, []);
+
+  if (isFullscreenRoute) {
+    return <div className="min-h-[100dvh] bg-[#f8fafc]">{children}</div>;
+  }
 
   return (
     <div className="min-h-[100dvh] bg-[#f8fafc]">
