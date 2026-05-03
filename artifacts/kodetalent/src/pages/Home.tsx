@@ -41,7 +41,7 @@ const categories = [
     icon: Briefcase,
     href: "/opportunities",
     gradient: "from-[#4f46e5] to-[#3730a3]",
-    bg: "#e0e7ff",
+    bg: "#eef2ff",
     count: "200+ Jobs",
   },
   {
@@ -50,7 +50,7 @@ const categories = [
     icon: Trophy,
     href: "/leaderboard",
     gradient: "from-[#f59e0b] to-[#d97706]",
-    bg: "#fef3c7",
+    bg: "#fffbeb",
     count: "Your Rank",
   },
   {
@@ -59,7 +59,7 @@ const categories = [
     icon: FileText,
     href: "/resume",
     gradient: "from-[#10b981] to-[#059669]",
-    bg: "#d1fae5",
+    bg: "#ecfdf5",
     count: "AI Builder",
   },
   {
@@ -68,7 +68,7 @@ const categories = [
     icon: Zap,
     href: "/practice",
     gradient: "from-[#0ea5e9] to-[#0891b2]",
-    bg: "#cffafe",
+    bg: "#ecfeff",
     count: "Mock Tests",
   },
   {
@@ -77,7 +77,7 @@ const categories = [
     icon: BookOpen,
     href: "/opportunities/course",
     gradient: "from-[#f97316] to-[#ea580c]",
-    bg: "#ffedd5",
+    bg: "#fff7ed",
     count: "Level Up",
   },
   {
@@ -86,7 +86,7 @@ const categories = [
     icon: Code2,
     href: "/profile?addProject=1",
     gradient: "from-[#ec4899] to-[#db2777]",
-    bg: "#fce7f3",
+    bg: "#fdf2f8",
     count: "Show your work",
   },
 ];
@@ -201,50 +201,88 @@ export default function Home() {
     );
   }
 
+  const currentLevel = profile?.level ?? 1;
+  const xp = profile?.xp ?? 0;
+  const xpInLevel = xp % 1000;
+  const levelPct = Math.min(100, Math.round((xpInLevel / 1000) * 100));
+
   return (
-    <div className="pb-6 space-y-4 min-h-screen bg-[#f8fafc]">
+    <div className="pb-6 space-y-5 min-h-screen bg-[#f8fafc]">
 
-      {/* Score Banner */}
-      <div className="bg-gradient-to-br from-[#1e1b4b] via-[#3730a3] to-[#4f46e5] px-5 pt-5 pb-6 text-white">
-        <p className="text-white/70 text-sm font-medium">{greeting},</p>
-        <h1 className="text-2xl font-black mt-0.5">{firstName} 👋</h1>
-        <p className="text-white/60 text-xs mt-0.5">{profile?.college}</p>
+      {/* Score Banner — premium hero */}
+      <div className="relative bg-gradient-to-br from-[#1e1b4b] via-[#3730a3] to-[#4f46e5] px-5 pt-6 pb-7 text-white overflow-hidden rounded-b-[32px] shadow-[0_8px_32px_rgba(79,70,229,0.25)]">
+        {/* Decorative orbs */}
+        <div className="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-[#f97316]/15 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-20 -left-20 w-64 h-64 rounded-full bg-[#0ea5e9]/15 blur-3xl pointer-events-none" />
 
-        <div className="grid grid-cols-3 gap-3 mt-5">
-          <div className="bg-white/15 backdrop-blur-sm rounded-2xl p-3 text-center">
-            <div className="flex items-center justify-center gap-1 mb-1">
-              <TrendingUp className="w-3.5 h-3.5 text-white/80" />
+        <div className="relative z-10">
+          <div className="flex items-start justify-between mb-1">
+            <div>
+              <p className="text-white/70 text-sm font-medium">{greeting},</p>
+              <h1 className="text-2xl font-black mt-0.5">{firstName} 👋</h1>
+              <p className="text-white/60 text-xs mt-0.5 truncate max-w-[220px]">{profile?.college}</p>
             </div>
-            <p className="text-xl font-black">{Math.round(profile?.overallScore ?? 0)}</p>
-            <p className="text-[10px] text-white/60 font-bold uppercase mt-0.5">AI Score</p>
-          </div>
-          <div className="bg-white/15 backdrop-blur-sm rounded-2xl p-3 text-center">
-            <div className="flex items-center justify-center gap-1 mb-1">
-              <Flame className="w-3.5 h-3.5 text-[#fb923c]" />
-            </div>
-            <p className="text-xl font-black">{profile?.streakCount ?? 0}</p>
-            <p className="text-[10px] text-white/60 font-bold uppercase mt-0.5">Day Streak</p>
-          </div>
-          <div className="bg-white/15 backdrop-blur-sm rounded-2xl p-3 text-center">
-            <div className="flex items-center justify-center gap-1 mb-1">
-              <Star className="w-3.5 h-3.5 text-[#fbbf24]" />
-            </div>
-            <p className="text-xl font-black">
-              {profile ? (profile.xp >= 1000 ? `${(profile.xp / 1000).toFixed(1)}k` : profile.xp) : 0}
-            </p>
-            <p className="text-[10px] text-white/60 font-bold uppercase mt-0.5">XP Earned</p>
-          </div>
-        </div>
-
-        {topSkills.length > 0 && (
-          <div className="flex gap-1.5 mt-3 flex-wrap">
-            {topSkills.map(([skill]) => (
-              <span key={skill} className="text-[10px] font-bold bg-white/20 text-white px-2.5 py-1 rounded-full">
-                {skill}
+            <div className="flex flex-col items-center bg-white/15 backdrop-blur-sm rounded-2xl px-3 py-2 border border-white/10">
+              <span className="text-[9px] font-black text-white/70 uppercase tracking-wider">Level</span>
+              <span className="text-2xl font-black leading-none mt-0.5 bg-gradient-to-br from-white to-[#fbbf24] bg-clip-text text-transparent">
+                {currentLevel}
               </span>
-            ))}
+            </div>
           </div>
-        )}
+
+          {/* Level progress bar */}
+          <div className="mt-4">
+            <div className="flex items-center justify-between text-[10px] font-bold text-white/70 mb-1.5">
+              <span>{xpInLevel} / 1000 XP</span>
+              <span>{1000 - xpInLevel} XP to Lv {currentLevel + 1}</span>
+            </div>
+            <div className="h-2 bg-white/15 rounded-full overflow-hidden">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${levelPct}%` }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
+                className="h-full bg-gradient-to-r from-[#fbbf24] via-[#f97316] to-[#ec4899] rounded-full shadow-[0_0_12px_rgba(251,191,36,0.5)]"
+              />
+            </div>
+          </div>
+
+          {/* Stats row */}
+          <div className="grid grid-cols-3 gap-2.5 mt-4">
+            <div className="bg-white/12 backdrop-blur-sm rounded-2xl px-2 py-3 text-center border border-white/10">
+              <div className="flex items-center justify-center gap-1 mb-1">
+                <TrendingUp className="w-3.5 h-3.5 text-[#86efac]" />
+                <p className="text-[9px] text-white/70 font-black uppercase tracking-wider">AI Score</p>
+              </div>
+              <p className="text-xl font-black">{Math.round(profile?.overallScore ?? 0)}</p>
+            </div>
+            <div className="bg-white/12 backdrop-blur-sm rounded-2xl px-2 py-3 text-center border border-white/10">
+              <div className="flex items-center justify-center gap-1 mb-1">
+                <Flame className="w-3.5 h-3.5 text-[#fb923c]" />
+                <p className="text-[9px] text-white/70 font-black uppercase tracking-wider">Streak</p>
+              </div>
+              <p className="text-xl font-black">{profile?.streakCount ?? 0}<span className="text-[10px] text-white/60 font-bold ml-0.5">d</span></p>
+            </div>
+            <div className="bg-white/12 backdrop-blur-sm rounded-2xl px-2 py-3 text-center border border-white/10">
+              <div className="flex items-center justify-center gap-1 mb-1">
+                <Star className="w-3.5 h-3.5 text-[#fbbf24]" />
+                <p className="text-[9px] text-white/70 font-black uppercase tracking-wider">XP</p>
+              </div>
+              <p className="text-xl font-black">
+                {profile ? (profile.xp >= 1000 ? `${(profile.xp / 1000).toFixed(1)}k` : profile.xp) : 0}
+              </p>
+            </div>
+          </div>
+
+          {topSkills.length > 0 && (
+            <div className="flex gap-1.5 mt-3.5 flex-wrap">
+              {topSkills.map(([skill]) => (
+                <span key={skill} className="text-[10px] font-bold bg-white/15 backdrop-blur-sm text-white px-2.5 py-1 rounded-full border border-white/10">
+                  {skill}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Drive Check — hero feature */}
@@ -360,7 +398,7 @@ export default function Home() {
           <Target className="w-4 h-4 text-[#4f46e5]" />
           Quick Access
         </h2>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 gap-3">
           {categories.map((cat, i) => {
             const Icon = cat.icon;
             return (
@@ -369,17 +407,20 @@ export default function Home() {
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05 }}
-                whileTap={{ scale: 0.93 }}
+                whileTap={{ scale: 0.96 }}
                 onClick={() => setLocation(cat.href)}
-                className="bg-white rounded-2xl p-3.5 flex flex-col items-center gap-2 shadow-sm border border-white hover:shadow-md transition-shadow active:shadow-sm"
+                style={{ background: cat.bg }}
+                className="rounded-2xl p-4 flex items-center gap-3 shadow-sm border border-white/60 hover:shadow-md transition-all text-left"
               >
                 <div
-                  className={`w-11 h-11 rounded-xl bg-gradient-to-br ${cat.gradient} flex items-center justify-center shadow-sm`}
+                  className={`w-11 h-11 rounded-xl bg-gradient-to-br ${cat.gradient} flex items-center justify-center shadow-md shrink-0`}
                 >
                   <Icon className="w-5 h-5 text-white" />
                 </div>
-                <span className="font-black text-[#0f172a] text-[11px] text-center leading-tight">{cat.label}</span>
-                <span className="text-[9px] font-bold text-[#94a3b8] text-center">{cat.count}</span>
+                <div className="min-w-0 flex-1">
+                  <p className="font-black text-[#0f172a] text-[13px] leading-tight truncate">{cat.label}</p>
+                  <p className="text-[10px] font-bold text-[#64748b] mt-0.5 truncate">{cat.count}</p>
+                </div>
               </motion.button>
             );
           })}
