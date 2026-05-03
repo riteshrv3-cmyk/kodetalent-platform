@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, ChevronRight, ExternalLink, Target, Loader2 } from "lucide-react";
+import { ArrowLeft, ChevronRight, ExternalLink, Target, Loader2, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -42,6 +42,40 @@ export default function Opportunities() {
   const [selectedDomain, setSelectedDomain] = useState<Domain | null>(null);
   const [selectedSubDomain, setSelectedSubDomain] = useState<SubDomain | null>(null);
   const [activeTab, setActiveTab] = useState<OpportunityType>("jobs");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const searchResults = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return [] as { domain: Domain; sub: SubDomain; matchedSkill?: string }[];
+    const out: { domain: Domain; sub: SubDomain; matchedSkill?: string; score: number }[] = [];
+    for (const d of DOMAINS) {
+      const dHit = d.name.toLowerCase().includes(q);
+      for (const sd of d.subDomains) {
+        const nameHit = sd.name.toLowerCase().includes(q);
+        const exactName = sd.name.toLowerCase() === q;
+        const skillHit = sd.skills.find(s => s.toLowerCase().includes(q));
+        const exactSkill = sd.skills.find(s => s.toLowerCase() === q);
+        if (nameHit || skillHit || dHit) {
+          let score = 0;
+          if (exactName) score += 100;
+          else if (nameHit && sd.name.toLowerCase().startsWith(q)) score += 60;
+          else if (nameHit) score += 40;
+          if (exactSkill) score += 80;
+          else if (skillHit) score += 30;
+          if (dHit) score += 10;
+          out.push({ domain: d, sub: sd, matchedSkill: skillHit, score });
+        }
+      }
+    }
+    return out.sort((a, b) => b.score - a.score).slice(0, 8);
+  }, [searchQuery]);
+
+  const jumpToSubDomain = (domain: Domain, sub: SubDomain) => {
+    setSelectedDomain(domain);
+    setSelectedSubDomain(sub);
+    setSearchQuery("");
+    prefetchCourse(sub.id, sub.name, domain.name, sub.skills);
+  };
 
   // Silently pre-generate all 48 courses in the background
   useCoursePreloader();
@@ -226,8 +260,75 @@ export default function Opportunities() {
 
       <div className="px-4 pt-2">
         <AnimatePresence mode="wait">
-          {/* Level 0 — Domain grid */}
+          {/* Level 0 — Search bar + Domain grid */}
           {!selectedDomain && (
+            <motion.div key="search" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-4">
+              <div className="relative">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#94a3b8]" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search skills or roles… e.g. React, Python, ML"
+                  className="w-full pl-10 pr-10 py-3 rounded-2xl bg-white border border-[#e2e8f0] text-sm font-bold text-[#0f172a] placeholder:text-[#94a3b8] placeholder:font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 shadow-sm"
+                  data-testid="input-opportunity-search"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-[#f1f5f9] flex items-center justify-center text-[#64748b]"
+                    data-testid="button-clear-search"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+
+              {searchQuery.trim() && (
+                <div className="mt-2 bg-white rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] overflow-hidden">
+                  {searchResults.length === 0 ? (
+                    <div className="px-4 py-6 text-center">
+                      <p className="text-sm font-bold text-[#0f172a]">No matches</p>
+                      <p className="text-xs text-[#64748b] mt-1">Try "React", "Data", "Cloud", or browse all domains below.</p>
+                    </div>
+                  ) : (
+                    searchResults.map(({ domain, sub, matchedSkill }, i) => (
+                      <motion.button
+                        key={`${domain.id}-${sub.id}`}
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.03 }}
+                        onClick={() => jumpToSubDomain(domain, sub)}
+                        className={cn(
+                          "w-full px-4 py-3 flex items-center gap-3 text-left active:bg-[#f8fafc] transition-colors",
+                          i !== searchResults.length - 1 && "border-b border-[#f1f5f9]"
+                        )}
+                        data-testid={`search-result-${sub.id}`}
+                      >
+                        <div
+                          className="w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0"
+                          style={{ background: domain.bg }}
+                        >
+                          {domain.emoji}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-extrabold text-[#0f172a] text-sm truncate">{sub.name}</p>
+                          <p className="text-[11px] font-bold text-[#64748b] truncate">
+                            <span style={{ color: domain.color }}>{domain.name}</span>
+                            {matchedSkill && (
+                              <span className="text-[#94a3b8]"> · {matchedSkill}</span>
+                            )}
+                          </p>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-[#cbd5e1] shrink-0" />
+                      </motion.button>
+                    ))
+                  )}
+                </div>
+              )}
+            </motion.div>
+          )}
+          {!selectedDomain && !searchQuery.trim() && (
             <motion.div
               key="domains"
               initial={{ opacity: 0, x: -20 }}
