@@ -17,6 +17,7 @@ import Profile from "@/pages/Profile";
 import Leaderboard from "@/pages/Leaderboard";
 import Resume from "@/pages/Resume";
 import Inbox from "@/pages/Inbox";
+import DriveCheck from "@/pages/DriveCheck";
 import { AppLayout } from "@/components/layout/AppLayout";
 
 const queryClient = new QueryClient();
@@ -49,6 +50,7 @@ function Router() {
             <Route path="/leaderboard" component={Leaderboard} />
             <Route path="/resume" component={Resume} />
             <Route path="/inbox" component={Inbox} />
+            <Route path="/drive-check" component={DriveCheck} />
             <Route component={NotFound} />
           </Switch>
         </AppLayout>

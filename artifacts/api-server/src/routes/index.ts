@@ -11,6 +11,7 @@ import anthropicRouter from "./anthropic";
 import courseRouter from "./course";
 import profileRouter from "./profile";
 import tpoRouter from "./tpo";
+import driveCheckRouter from "./driveCheck";
 
 const router: IRouter = Router();
 
@@ -26,5 +27,6 @@ router.use(aiRouter);
 router.use(anthropicRouter);
 router.use(courseRouter);
 router.use(tpoRouter);
+router.use(driveCheckRouter);
 
 export default router;

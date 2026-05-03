@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import {
   Briefcase, Trophy, FileText, Flame, Star,
   ChevronRight, Zap, BookOpen, TrendingUp, Mail,
-  Target, Users
+  Target, Users, ShieldCheck
 } from "lucide-react";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -175,6 +175,31 @@ export default function Home() {
             ))}
           </div>
         )}
+      </div>
+
+      {/* Drive Check — hero feature */}
+      <div className="px-4">
+        <motion.button
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          onClick={() => setLocation("/drive-check")}
+          className="w-full bg-gradient-to-br from-[#0f172a] via-[#3730a3] to-[#4f46e5] rounded-2xl p-4 flex items-center gap-3 shadow-lg shadow-[#4f46e5]/20 active:scale-[0.98] transition-transform text-left relative overflow-hidden"
+        >
+          <div className="absolute -top-4 -right-4 w-24 h-24 bg-white/5 rounded-full blur-xl" />
+          <div className="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur flex items-center justify-center shrink-0 relative z-10">
+            <ShieldCheck className="w-6 h-6 text-white" />
+          </div>
+          <div className="flex-1 min-w-0 relative z-10">
+            <div className="flex items-center gap-1.5">
+              <p className="font-black text-white text-sm">Drive Check</p>
+              <span className="text-[8px] font-black bg-[#f59e0b] text-[#0f172a] px-1.5 py-0.5 rounded-full">NEW</span>
+            </div>
+            <p className="text-[11px] text-white/75 mt-0.5 leading-tight">
+              Paste any Telegram drive → instant scam + eligibility check
+            </p>
+          </div>
+          <ChevronRight className="w-4 h-4 text-white/80 relative z-10 shrink-0" />
+        </motion.button>
       </div>
 
       {/* Recruiter Interest Alert */}
