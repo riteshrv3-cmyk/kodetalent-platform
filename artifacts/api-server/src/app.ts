@@ -7,6 +7,8 @@ import { errorHandler, notFoundHandler } from "./middlewares/errorHandler";
 
 const app: Express = express();
 
+app.set("trust proxy", true);
+
 app.use(
   pinoHttp({
     logger,

@@ -3,6 +3,7 @@ import { db } from "@workspace/db";
 import { studentsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { anthropic } from "@workspace/integrations-anthropic-ai";
+import { rlAiHeavy, rlAiMedium } from "../middlewares/rateLimit";
 
 const router = Router();
 
@@ -89,7 +90,7 @@ router.patch("/students/:id/profile", async (req, res) => {
 
 // ─── POST /students/:id/analyze-github ───────────────────────────────────────
 
-router.post("/students/:id/analyze-github", async (req, res) => {
+router.post("/students/:id/analyze-github", rlAiHeavy, async (req, res) => {
   const id = Number(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
   const { githubUrl } = req.body as { githubUrl: string };
@@ -163,7 +164,7 @@ router.post("/students/:id/analyze-github", async (req, res) => {
 
 // ─── POST /students/:id/analyze-linkedin ─────────────────────────────────────
 
-router.post("/students/:id/analyze-linkedin", async (req, res) => {
+router.post("/students/:id/analyze-linkedin", rlAiHeavy, async (req, res) => {
   const id = Number(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
   const { linkedinUrl, headline, summary, skills: linkedinSkills, experience } = req.body as {
@@ -229,7 +230,7 @@ Return ONLY valid JSON with this structure:
 
 // ─── POST /students/:id/chat ─────────────────────────────────────────────────
 
-router.post("/students/:id/chat", async (req, res) => {
+router.post("/students/:id/chat", rlAiMedium, async (req, res) => {
   const id = Number(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
   const { message } = req.body as { message: string };

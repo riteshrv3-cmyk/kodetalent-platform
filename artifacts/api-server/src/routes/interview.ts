@@ -8,11 +8,12 @@ import {
   GetNextInterviewQuestionBody,
   SubmitInterviewFeedbackBody,
 } from "@workspace/api-zod";
+import { rlInterview } from "../middlewares/rateLimit";
 
 const router = Router();
 
 // POST /interview/sessions
-router.post("/interview/sessions", async (req, res) => {
+router.post("/interview/sessions", rlInterview, async (req, res) => {
   const parsed = CreateInterviewSessionBody.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
   const { studentId, company, round } = parsed.data;

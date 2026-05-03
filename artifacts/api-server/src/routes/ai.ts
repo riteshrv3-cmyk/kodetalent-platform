@@ -4,11 +4,12 @@ import { studentsTable, questsTable, studentQuestsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { anthropic } from "@workspace/integrations-anthropic-ai";
 import { AnalyzeGithubBody, GenerateRoadmapBody } from "@workspace/api-zod";
+import { rlAiHeavy, rlAiMedium } from "../middlewares/rateLimit";
 
 const router = Router();
 
 // POST /ai/analyze-github
-router.post("/ai/analyze-github", async (req, res) => {
+router.post("/ai/analyze-github", rlAiMedium, async (req, res) => {
   const parsed = AnalyzeGithubBody.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
   const { githubUrl, studentId } = parsed.data;
@@ -58,7 +59,7 @@ Include only skills you can actually infer from the repos. Include Git as a base
 });
 
 // POST /ai/generate-roadmap
-router.post("/ai/generate-roadmap", async (req, res) => {
+router.post("/ai/generate-roadmap", rlAiHeavy, async (req, res) => {
   const parsed = GenerateRoadmapBody.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
   const { year, field } = parsed.data;

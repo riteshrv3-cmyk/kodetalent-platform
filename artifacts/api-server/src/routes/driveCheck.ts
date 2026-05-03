@@ -3,6 +3,7 @@ import { db } from "@workspace/db";
 import { studentsTable, driveChecksTable, tpoDrivesTable } from "@workspace/db";
 import { eq, desc, and, sql, ilike, lte, isNotNull, gte } from "drizzle-orm";
 import { anthropic } from "@workspace/integrations-anthropic-ai";
+import { rlDriveCheck } from "../middlewares/rateLimit";
 
 const router = Router();
 
@@ -42,7 +43,7 @@ function normalizeBranch(b: string): string {
   return x;
 }
 
-router.post("/students/:id/drive-check", async (req, res) => {
+router.post("/students/:id/drive-check", rlDriveCheck, async (req, res) => {
   const id = Number(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
   const { rawText } = req.body as { rawText: string };

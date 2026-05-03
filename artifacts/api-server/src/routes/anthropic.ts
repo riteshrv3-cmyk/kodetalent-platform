@@ -3,6 +3,7 @@ import { db } from "@workspace/db";
 import { conversations as conversationsTable, messages as messagesTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { anthropic } from "@workspace/integrations-anthropic-ai";
+import { rlAiLight, rlAiMedium } from "../middlewares/rateLimit";
 
 const router = Router();
 
@@ -22,7 +23,7 @@ router.get("/anthropic/conversations", async (req, res) => {
 });
 
 // POST /anthropic/conversations
-router.post("/anthropic/conversations", async (req, res) => {
+router.post("/anthropic/conversations", rlAiLight, async (req, res) => {
   const { title } = req.body;
   if (!title) return res.status(400).json({ error: "title is required" });
   try {
@@ -95,7 +96,7 @@ router.get("/anthropic/conversations/:id/messages", async (req, res) => {
 });
 
 // POST /anthropic/conversations/:id/messages (SSE stream)
-router.post("/anthropic/conversations/:id/messages", async (req, res) => {
+router.post("/anthropic/conversations/:id/messages", rlAiMedium, async (req, res) => {
   const id = Number(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
   const { content } = req.body;

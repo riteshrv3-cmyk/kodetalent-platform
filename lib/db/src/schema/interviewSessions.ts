@@ -1,4 +1,4 @@
-import { pgTable, serial, integer, text, jsonb, boolean, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, serial, integer, text, jsonb, boolean, timestamp, index } from "drizzle-orm/pg-core";
 import { studentsTable } from "./students";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
@@ -16,7 +16,11 @@ export const interviewSessionsTable = pgTable("interview_sessions", {
   selfConfidenceRating: integer("self_confidence_rating"),
   realInterviewUpcoming: text("real_interview_upcoming"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
-});
+}, t => ({
+  studentIdx: index("is_student_idx").on(t.studentId),
+  studentCompletedIdx: index("is_student_completed_idx").on(t.studentId, t.completed),
+  createdIdx: index("is_created_idx").on(t.createdAt),
+}));
 
 export const insertInterviewSessionSchema = createInsertSchema(interviewSessionsTable).omit({ id: true, createdAt: true });
 export type InsertInterviewSession = z.infer<typeof insertInterviewSessionSchema>;
