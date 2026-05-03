@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import {
   Briefcase, Trophy, FileText, Flame, Star,
   ChevronRight, Zap, BookOpen, TrendingUp, Mail,
-  Target, Users, ShieldCheck, PlayCircle
+  Target, Users, ShieldCheck, PlayCircle, Code2, Plus
 } from "lucide-react";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -81,13 +81,13 @@ const categories = [
     count: "Level Up",
   },
   {
-    id: "score",
-    label: "AI Score",
-    icon: TrendingUp,
-    href: "/profile",
+    id: "projects",
+    label: "Projects",
+    icon: Code2,
+    href: "/profile?addProject=1",
     gradient: "from-[#ec4899] to-[#db2777]",
     bg: "#fce7f3",
-    count: "Track Growth",
+    count: "Show your work",
   },
 ];
 
@@ -384,6 +384,53 @@ export default function Home() {
             );
           })}
         </div>
+      </div>
+
+      {/* ── My Projects CTA ─────────────────────────────────────── */}
+      <div className="px-4">
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white rounded-2xl p-4 shadow-sm border border-[#fce7f3]"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-black text-[#0f172a] text-sm flex items-center gap-2">
+              <Code2 className="w-4 h-4 text-[#ec4899]" />
+              My Projects
+            </h2>
+            <button
+              onClick={() => setLocation("/profile")}
+              className="text-[11px] font-bold text-[#ec4899]"
+              data-testid="home-projects-view-all"
+            >
+              View all
+            </button>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={() => setLocation("/profile?addProject=1")}
+              data-testid="home-add-project"
+              className="rounded-xl p-3 text-left bg-gradient-to-br from-[#ec4899] to-[#db2777] text-white shadow-md active:scale-[0.98] transition-transform"
+            >
+              <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center mb-2">
+                <Plus className="w-4 h-4 text-white" />
+              </div>
+              <p className="text-[12px] font-black leading-tight">Add a project</p>
+              <p className="text-[10px] text-white/80 mt-0.5">Recruiters love proof of work</p>
+            </button>
+            <button
+              onClick={() => setLocation("/opportunities/course")}
+              data-testid="home-projects-from-courses"
+              className="rounded-xl p-3 text-left bg-[#fce7f3] active:scale-[0.98] transition-transform"
+            >
+              <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center mb-2">
+                <BookOpen className="w-4 h-4 text-[#ec4899]" />
+              </div>
+              <p className="text-[12px] font-black text-[#0f172a] leading-tight">Build from a course</p>
+              <p className="text-[10px] text-[#64748b] mt-0.5">Tech stack auto-filled</p>
+            </button>
+          </div>
+        </motion.div>
       </div>
 
       {/* Profile Strength CTA */}
