@@ -13,11 +13,16 @@ interface DashboardData {
     accepted: number;
     declined: number;
     pending: number;
+    interviewed: number;
+    hired: number;
     seenByStudent: number;
     responseRate: number;
     acceptRate: number;
+    hireRate: number;
     jobsPosted: number;
   };
+  funnel: Array<{ stage: string; count: number; conversionPct: number }>;
+  jobFunnels: Array<{ id: number; title: string; invited: number; accepted: number; hired: number; acceptRate: number }>;
   recentInvites: Array<{
     id: number; studentId: number; role: string | null;
     status: string; studentSeen: boolean; createdAt: string;
@@ -31,6 +36,16 @@ const STATUS_COLORS: Record<string, string> = {
   pending: "#f59e0b",
   accepted: "#10b981",
   declined: "#ef4444",
+  interviewed: "#8b5cf6",
+  hired: "#059669",
+};
+
+const STAGE_COLORS: Record<string, string> = {
+  Invited: "#4f46e5",
+  Seen: "#0ea5e9",
+  Accepted: "#10b981",
+  Interviewed: "#8b5cf6",
+  Hired: "#059669",
 };
 
 export default function Dashboard() {
@@ -118,35 +133,70 @@ export default function Dashboard() {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
               <div className="lg:col-span-2 bg-white rounded-2xl border border-[#f0f4ff] p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="font-black text-[#0f172a] text-lg">Pipeline</h2>
-                  <span className="text-xs font-bold text-[#94a3b8]">Total {data.stats.totalInvites}</span>
+                <div className="flex items-center justify-between mb-5">
+                  <div>
+                    <h2 className="font-black text-[#0f172a] text-lg">Hiring Funnel</h2>
+                    <p className="text-xs text-[#94a3b8]">From invite to hire — see where candidates drop off</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-2xl font-black text-[#059669]">{data.stats.hireRate}%</p>
+                    <p className="text-[10px] font-black uppercase text-[#94a3b8]">Hire Rate</p>
+                  </div>
                 </div>
-                <div className="space-y-3">
-                  {[
-                    { label: "Accepted", value: data.stats.accepted, color: "#10b981", icon: CheckCircle2 },
-                    { label: "Pending", value: data.stats.pending, color: "#f59e0b", icon: Clock },
-                    { label: "Declined", value: data.stats.declined, color: "#ef4444", icon: XCircle },
-                  ].map(row => {
-                    const pct = data.stats.totalInvites === 0 ? 0 : (row.value / data.stats.totalInvites) * 100;
-                    return (
-                      <div key={row.label}>
-                        <div className="flex items-center justify-between mb-1.5">
-                          <div className="flex items-center gap-2">
-                            <row.icon className="w-4 h-4" style={{ color: row.color }} />
-                            <span className="text-sm font-bold text-[#0f172a]">{row.label}</span>
+                {data.stats.totalInvites === 0 ? (
+                  <div className="text-center py-8">
+                    <div className="w-12 h-12 mx-auto bg-[#f1f5f9] rounded-2xl flex items-center justify-center mb-3">
+                      <TrendingUp className="w-6 h-6 text-[#94a3b8]" />
+                    </div>
+                    <p className="text-sm text-[#94a3b8]">No invites yet — post a job to get matched candidates instantly.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2.5">
+                    {data.funnel.map((stage, idx) => {
+                      const maxCount = data.funnel[0].count || 1;
+                      const widthPct = (stage.count / maxCount) * 100;
+                      const color = STAGE_COLORS[stage.stage] || "#64748b";
+                      return (
+                        <div key={stage.stage}>
+                          <div className="flex items-center justify-between mb-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-bold text-[#0f172a]">{stage.stage}</span>
+                              {idx > 0 && (
+                                <span className="text-[10px] font-black px-1.5 py-0.5 rounded" style={{ background: `${color}15`, color }}>
+                                  {stage.conversionPct}% from prev
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-sm font-black text-[#0f172a]">{stage.count}</span>
                           </div>
-                          <span className="text-sm font-black text-[#0f172a]">{row.value}</span>
+                          <div className="h-7 bg-[#f8fafc] rounded-lg overflow-hidden relative">
+                            <motion.div
+                              initial={{ width: 0 }}
+                              animate={{ width: `${widthPct}%` }}
+                              transition={{ delay: idx * 0.08, duration: 0.5, ease: "easeOut" }}
+                              className="h-full rounded-lg"
+                              style={{ background: `linear-gradient(90deg, ${color}, ${color}dd)` }}
+                            />
+                          </div>
                         </div>
-                        <div className="h-2 bg-[#f1f5f9] rounded-full overflow-hidden">
-                          <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: row.color }} />
+                      );
+                    })}
+                  </div>
+                )}
+                {data.jobFunnels.length > 0 && (
+                  <div className="mt-6 pt-5 border-t border-[#f1f5f9]">
+                    <h3 className="text-xs font-black uppercase text-[#94a3b8] mb-3">Per-Job Breakdown</h3>
+                    <div className="space-y-2">
+                      {data.jobFunnels.map(jf => (
+                        <div key={jf.id} className="flex items-center gap-3 text-sm">
+                          <span className="font-bold text-[#0f172a] truncate flex-1 min-w-0">{jf.title}</span>
+                          <span className="text-[#64748b] text-xs whitespace-nowrap">
+                            {jf.invited} invited · <span className="text-[#10b981] font-bold">{jf.accepted} accepted</span> · <span className="text-[#059669] font-bold">{jf.hired} hired</span>
+                          </span>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
-                {data.stats.totalInvites === 0 && (
-                  <p className="text-sm text-[#94a3b8] text-center mt-4">No invites yet — post a job to get matched candidates instantly.</p>
+                      ))}
+                    </div>
+                  </div>
                 )}
               </div>
 

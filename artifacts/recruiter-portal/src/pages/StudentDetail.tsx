@@ -165,6 +165,9 @@ export default function StudentDetail({ id }: { id: number }) {
   const [contactRequested, setContactRequested] = useState(false);
   const [showInvite, setShowInvite] = useState(false);
   const [showAIReport, setShowAIReport] = useState(false);
+  const [invite, setInvite] = useState<{ id: number; status: string } | null>(null);
+  const [statusBusy, setStatusBusy] = useState(false);
+  const recruiter = JSON.parse(typeof window !== "undefined" ? (localStorage.getItem("recruiter") || "{}") : "{}");
 
   useEffect(() => {
     const list = JSON.parse(localStorage.getItem("shortlist") || "[]");
@@ -174,7 +177,31 @@ export default function StudentDetail({ id }: { id: number }) {
       .then(setProfile)
       .catch(() => setProfile(null))
       .finally(() => setLoading(false));
+    if (recruiter?.id) {
+      fetch(`/api/recruiters/${recruiter.id}/invites/student/${id}`)
+        .then(r => r.json())
+        .then((rows: Array<{ id: number; status: string }>) => setInvite(rows[0] ?? null))
+        .catch(() => {});
+    }
   }, [id]);
+
+  async function updateInviteStatus(newStatus: string) {
+    if (!invite) return;
+    setStatusBusy(true);
+    try {
+      const r = await fetch(`/api/recruiter-invites/${invite.id}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (r.ok) {
+        const updated = await r.json();
+        setInvite({ id: updated.id, status: updated.status });
+      }
+    } finally {
+      setStatusBusy(false);
+    }
+  }
 
   const toggleShortlist = () => {
     const list: number[] = JSON.parse(localStorage.getItem("shortlist") || "[]");
@@ -210,6 +237,34 @@ export default function StudentDetail({ id }: { id: number }) {
     <div className="min-h-screen bg-[#f8fafc]">
       {showInvite && profile && <InviteModal studentId={profile.id} studentName={profile.name} onClose={() => setShowInvite(false)} />}
       {showAIReport && profile && <AIReportModal studentId={profile.id} studentName={profile.name} onClose={() => setShowAIReport(false)} />}
+      {/* Pipeline status banner — shows when this candidate has been invited */}
+      {invite && (
+        <div className="bg-gradient-to-r from-[#eef2ff] to-[#f5f3ff] border-b border-[#e0e7ff]">
+          <div className="max-w-4xl mx-auto px-6 py-3 flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-2 text-sm">
+              <span className="font-bold text-[#0f172a]">Pipeline:</span>
+              <span className="px-2.5 py-1 rounded-full text-[11px] font-black uppercase tracking-wide" style={{
+                background: invite.status === "hired" ? "#05966915" : invite.status === "interviewed" ? "#8b5cf615" : invite.status === "accepted" ? "#10b98115" : invite.status === "declined" ? "#ef444415" : "#f59e0b15",
+                color: invite.status === "hired" ? "#059669" : invite.status === "interviewed" ? "#8b5cf6" : invite.status === "accepted" ? "#10b981" : invite.status === "declined" ? "#ef4444" : "#f59e0b",
+              }}>{invite.status}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-[#64748b] font-bold mr-1">Move to:</span>
+              {(["accepted", "interviewed", "hired"] as const).map(s => (
+                <button key={s} disabled={statusBusy || invite.status === s}
+                  onClick={() => updateInviteStatus(s)}
+                  className="text-xs font-bold px-3 py-1.5 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  style={{
+                    background: s === "hired" ? "#059669" : s === "interviewed" ? "#8b5cf6" : "#10b981",
+                    color: "white",
+                  }}>
+                  {s === "hired" ? "✓ Hired" : s === "interviewed" ? "→ Interviewed" : "→ Accepted"}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
       {/* Sticky top bar */}
       <div className="bg-white border-b border-[#f0f4ff] sticky top-0 z-30">
         <div className="max-w-4xl mx-auto px-6 py-3 flex items-center justify-between">

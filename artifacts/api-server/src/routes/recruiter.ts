@@ -87,9 +87,39 @@ router.get("/recruiters/:id/dashboard", async (req, res) => {
   const accepted = invites.filter(i => i.status === "accepted").length;
   const declined = invites.filter(i => i.status === "declined").length;
   const pending = invites.filter(i => i.status === "pending").length;
+  const interviewed = invites.filter(i => i.status === "interviewed").length;
+  const hired = invites.filter(i => i.status === "hired").length;
   const seenByStudent = invites.filter(i => i.studentSeen).length;
-  const responseRate = total === 0 ? 0 : Math.round(((accepted + declined) / total) * 100);
-  const acceptRate = total === 0 ? 0 : Math.round((accepted / total) * 100);
+  const responseRate = total === 0 ? 0 : Math.round(((accepted + declined + interviewed + hired) / total) * 100);
+  const acceptRate = total === 0 ? 0 : Math.round(((accepted + interviewed + hired) / total) * 100);
+  const hireRate = total === 0 ? 0 : Math.round((hired / total) * 100);
+
+  // Funnel: Invited → Seen → Accepted → Interviewed → Hired
+  const acceptedOrLater = accepted + interviewed + hired;
+  const interviewedOrLater = interviewed + hired;
+  const funnel = [
+    { stage: "Invited", count: total, conversionPct: 100 },
+    { stage: "Seen", count: seenByStudent, conversionPct: total === 0 ? 0 : Math.round((seenByStudent / total) * 100) },
+    { stage: "Accepted", count: acceptedOrLater, conversionPct: seenByStudent === 0 ? 0 : Math.round((acceptedOrLater / seenByStudent) * 100) },
+    { stage: "Interviewed", count: interviewedOrLater, conversionPct: acceptedOrLater === 0 ? 0 : Math.round((interviewedOrLater / acceptedOrLater) * 100) },
+    { stage: "Hired", count: hired, conversionPct: interviewedOrLater === 0 ? 0 : Math.round((hired / interviewedOrLater) * 100) },
+  ];
+
+  // Per-job funnel breakdown
+  const jobFunnels = jobs.slice(0, 5).map(j => {
+    const jobInvites = invites.filter(i => i.jobId === j.id);
+    const jt = jobInvites.length;
+    const jh = jobInvites.filter(i => i.status === "hired").length;
+    const ja = jobInvites.filter(i => ["accepted", "interviewed", "hired"].includes(i.status)).length;
+    return {
+      id: j.id,
+      title: j.title,
+      invited: jt,
+      accepted: ja,
+      hired: jh,
+      acceptRate: jt === 0 ? 0 : Math.round((ja / jt) * 100),
+    };
+  });
 
   res.json({
     recruiter,
@@ -98,14 +128,51 @@ router.get("/recruiters/:id/dashboard", async (req, res) => {
       accepted,
       declined,
       pending,
+      interviewed,
+      hired,
       seenByStudent,
       responseRate,
       acceptRate,
+      hireRate,
       jobsPosted: jobs.length,
     },
+    funnel,
+    jobFunnels,
     recentInvites: invites.slice(0, 8),
     jobs: jobs.slice(0, 10),
   });
+});
+
+// PATCH invite status — recruiter marks "interviewed" / "hired" / etc.
+router.patch("/recruiter-invites/:id/status", async (req, res) => {
+  const id = Number(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
+  const { status } = (req.body ?? {}) as { status?: string };
+  const ALLOWED = ["pending", "accepted", "declined", "interviewed", "hired"];
+  if (!status || !ALLOWED.includes(status)) {
+    return res.status(400).json({ error: `status must be one of: ${ALLOWED.join(", ")}` });
+  }
+  const [updated] = await db
+    .update(recruiterInvites)
+    .set({ status })
+    .where(eq(recruiterInvites.id, id))
+    .returning();
+  if (!updated) return res.status(404).json({ error: "Invite not found" });
+  res.json(updated);
+});
+
+// GET invites for a specific student from a specific recruiter (for status buttons in StudentDetail)
+router.get("/recruiters/:recruiterId/invites/student/:studentId", async (req, res) => {
+  const recruiterId = Number(req.params.recruiterId);
+  const studentId = Number(req.params.studentId);
+  if (isNaN(recruiterId) || isNaN(studentId)) return res.status(400).json({ error: "Invalid id" });
+  const rows = await db
+    .select()
+    .from(recruiterInvites)
+    .where(and(eq(recruiterInvites.recruiterId, recruiterId), eq(recruiterInvites.studentId, studentId)))
+    .orderBy(desc(recruiterInvites.createdAt))
+    .limit(5);
+  res.json(rows);
 });
 
 router.get("/recruiters/:id/jobs", async (req, res) => {
