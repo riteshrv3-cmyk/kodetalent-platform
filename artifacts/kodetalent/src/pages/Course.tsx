@@ -500,6 +500,34 @@ export default function Course() {
                 </div>
               </div>
 
+              {/* ── Build a Project CTA ─────────────────────────────── */}
+              <button
+                onClick={() => {
+                  const params = new URLSearchParams({
+                    addProject: "1",
+                    from: ctx.subDomainName,
+                    tech: ctx.skills.slice(0, 4).join(","),
+                  });
+                  setLocation(`/profile?${params.toString()}`);
+                }}
+                data-testid="cta-build-project"
+                className="w-full mb-4 rounded-2xl p-4 text-left bg-white border-2 border-dashed hover:bg-[#fafbff] transition-colors flex items-center gap-3 group"
+                style={{ borderColor: `${color}55` }}
+              >
+                <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 text-white text-lg" style={{ background: color }}>
+                  🚀
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-extrabold text-[#0f172a] text-[14px] leading-tight">
+                    {overallPct === 100 ? "Course complete! Ship a project →" : "Build a project with what you've learned →"}
+                  </p>
+                  <p className="text-[11px] text-[#64748b] mt-0.5 truncate">
+                    Add a {ctx.subDomainName} project to your profile — recruiters &amp; TPOs will see it
+                  </p>
+                </div>
+                <ArrowLeft className="w-4 h-4 text-[#94a3b8] rotate-180 group-hover:text-[#4f46e5] flex-shrink-0" />
+              </button>
+
               {/* Module accordion */}
               <div className="space-y-3">
                 {courseData.modules.map((mod, modIdx) => {

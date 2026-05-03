@@ -163,6 +163,29 @@ export default function Profile() {
     setStudentId(parseInt(id, 10));
   }, [setLocation]);
 
+  // Course → Project bridge: open Add Project modal with course context pre-filled
+  useEffect(() => {
+    if (!profile) return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("addProject") !== "1") return;
+    const from = params.get("from") || "";
+    const tech = (params.get("tech") || "").split(",").map(s => s.trim()).filter(Boolean);
+    setNewProject({
+      title: from ? `${from} project` : "",
+      description: from ? `A project I built while learning ${from}.` : "",
+      techStack: tech,
+      githubUrl: "",
+      liveUrl: "",
+    });
+    setShowAddProject(true);
+    setTimeout(() => {
+      document.getElementById("projects-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 200);
+    // strip the query so refreshes don't re-trigger
+    const cleanUrl = window.location.pathname + window.location.hash;
+    window.history.replaceState({}, "", cleanUrl);
+  }, [profile]);
+
   const loadProfile = useCallback(async (id: number) => {
     setLoading(true);
     try {
@@ -547,7 +570,7 @@ export default function Profile() {
         </Card>
 
         {/* ── Projects ── */}
-        <Card className="border-0 shadow-[0_4px_24px_rgba(124,58,237,0.06)] rounded-2xl bg-white">
+        <Card id="projects-section" className="border-0 shadow-[0_4px_24px_rgba(124,58,237,0.06)] rounded-2xl bg-white scroll-mt-4">
           <CardContent className="p-5">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-black text-[#0f172a] flex items-center gap-2"><Code2 className="w-4 h-4 text-[#4f46e5]" /> Projects</h3>
