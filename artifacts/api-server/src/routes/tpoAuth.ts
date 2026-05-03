@@ -46,7 +46,8 @@ router.post("/tpo/signup", async (req, res): Promise<void> => {
     const [existing] = await db.select().from(tpoAccountsTable).where(eq(tpoAccountsTable.email, normEmail)).limit(1);
     if (existing) { res.status(409).json({ error: "Email already registered" }); return; }
     const trimmedCollege = college.trim();
-    const autoVerified = emailDomainMatchesCollege(normEmail, trimmedCollege);
+    // Early-traction mode: auto-verify all signups so TPOs can immediately
+    // post drives. Re-enable strict verification later once we have scale.
     const [acct] = await db
       .insert(tpoAccountsTable)
       .values({
@@ -55,9 +56,9 @@ router.post("/tpo/signup", async (req, res): Promise<void> => {
         name: name.trim(),
         college: trimmedCollege,
         dept: dept?.trim() || null,
-        verified: autoVerified,
-        verifiedAt: autoVerified ? new Date() : null,
-        verifiedBy: autoVerified ? "auto:institutional-email" : null,
+        verified: true,
+        verifiedAt: new Date(),
+        verifiedBy: "auto:open-signup",
       })
       .returning();
     const session = await issueSession(acct.id);

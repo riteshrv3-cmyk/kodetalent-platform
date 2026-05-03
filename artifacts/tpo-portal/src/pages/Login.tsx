@@ -50,11 +50,6 @@ export default function Login() {
       }
       localStorage.setItem("tpoToken", data.token);
       localStorage.setItem("tpo", JSON.stringify(data.tpo));
-      if (data.tpo && data.tpo.verified === false) {
-        setError("Account created but pending admin verification. Drives you post will NOT appear as official to students until an admin approves your account. Sign up using your institutional email (e.g. @iitb.ac.in) to be auto-verified.");
-        setLoading(false);
-        return;
-      }
       nav("/dashboard");
     } catch {
       setError("Network error. Try again.");
