@@ -630,32 +630,40 @@ export default function Course() {
 
                                                 {/* Actions */}
                                                 <div className="flex gap-2">
-                                                  {/* Watch on YouTube — resolves to top video, falls back to search */}
-                                                  {(lesson.type === "video" || lesson.searchQuery) && (
-                                                    <button
-                                                      onClick={async () => {
-                                                        const q = lesson.searchQuery || lesson.title;
-                                                        const fallback = `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`;
-                                                        const win = window.open("about:blank", "_blank");
-                                                        try {
-                                                          const r = await fetch(`/api/course/best-video?q=${encodeURIComponent(q)}`);
-                                                          const data = await r.json();
-                                                          const target = data?.watchUrl || fallback;
-                                                          if (win) win.location.href = target;
-                                                          else window.location.href = target;
-                                                        } catch {
-                                                          if (win) win.location.href = fallback;
-                                                          else window.location.href = fallback;
-                                                        }
-                                                      }}
-                                                      className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl font-bold text-[12px] text-white"
-                                                      style={{ background: "#ef4444" }}
-                                                    >
-                                                      <PlayCircle className="w-4 h-4" />
-                                                      Watch on YouTube
-                                                      <ExternalLink className="w-3 h-3 opacity-70" />
-                                                    </button>
-                                                  )}
+                                                  {/* Type-aware resource link — routes to the right platform per lesson type */}
+                                                  {(() => {
+                                                    const q = lesson.searchQuery || lesson.title;
+                                                    const ACTION = {
+                                                      video:    { label: "Watch on YouTube", bg: "#ef4444", endpoint: `/api/course/best-video?q=${encodeURIComponent(q)}`,                       fallback: `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`,                                                                     pickUrl: (d: { watchUrl?: string | null }) => d?.watchUrl ?? null },
+                                                      reading:  { label: "Read tutorial",    bg: "#3b82f6", endpoint: `/api/course/best-link?kind=reading&q=${encodeURIComponent(q)}`,            fallback: `https://www.google.com/search?q=${encodeURIComponent(`${q} tutorial site:w3schools.com OR site:developer.mozilla.org OR site:geeksforgeeks.org`)}`, pickUrl: (d: { url?: string | null }) => d?.url ?? null },
+                                                      exercise: { label: "Try exercises",    bg: "#10b981", endpoint: `/api/course/best-link?kind=exercise&q=${encodeURIComponent(q)}`,           fallback: `https://www.google.com/search?q=${encodeURIComponent(`${q} practice site:leetcode.com OR site:hackerrank.com OR site:geeksforgeeks.org`)}`,         pickUrl: (d: { url?: string | null }) => d?.url ?? null },
+                                                      project:  { label: "Find project",     bg: "#f97316", endpoint: `/api/course/best-link?kind=project&q=${encodeURIComponent(q)}`,            fallback: `https://www.google.com/search?q=${encodeURIComponent(`${q} project ideas site:github.com OR site:freecodecamp.org`)}`,                              pickUrl: (d: { url?: string | null }) => d?.url ?? null },
+                                                    } as const;
+                                                    const a = ACTION[lesson.type] ?? ACTION.video;
+                                                    return (
+                                                      <button
+                                                        onClick={async () => {
+                                                          const win = window.open("about:blank", "_blank");
+                                                          try {
+                                                            const r = await fetch(a.endpoint);
+                                                            const data = r.ok ? await r.json() : null;
+                                                            const target = (data && a.pickUrl(data)) || a.fallback;
+                                                            if (win) win.location.href = target;
+                                                            else window.location.href = target;
+                                                          } catch {
+                                                            if (win) win.location.href = a.fallback;
+                                                            else window.location.href = a.fallback;
+                                                          }
+                                                        }}
+                                                        className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl font-bold text-[12px] text-white"
+                                                        style={{ background: a.bg }}
+                                                      >
+                                                        <PlayCircle className="w-4 h-4" />
+                                                        {a.label}
+                                                        <ExternalLink className="w-3 h-3 opacity-70" />
+                                                      </button>
+                                                    );
+                                                  })()}
                                                   {/* Mark complete */}
                                                   <button
                                                     onClick={() => toggleLesson(lesson.id)}
