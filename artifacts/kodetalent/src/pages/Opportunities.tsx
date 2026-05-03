@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { DOMAINS, type Domain, type SubDomain } from "@/data/domains";
-import { useCoursePreloader } from "@/hooks/useCoursePreloader";
+import { useCoursePreloader, prefetchCourse } from "@/hooks/useCoursePreloader";
 
 type OpportunityType = "jobs" | "internship" | "freelancing";
 
@@ -284,7 +284,13 @@ export default function Opportunities() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.06 }}
                   whileTap={{ scale: 0.97 }}
-                  onClick={() => setSelectedSubDomain(sd)}
+                  onClick={() => {
+                    setSelectedSubDomain(sd);
+                    // Eagerly generate the course in the background so that
+                    // by the time the student clicks "Prepare" on a job card
+                    // the Course page loads from cache in <1s.
+                    prefetchCourse(sd.id, sd.name, selectedDomain.name, sd.skills);
+                  }}
                   className="w-full bg-white rounded-2xl p-4 flex items-center justify-between shadow-[0_2px_12px_rgba(0,0,0,0.05)] text-left"
                 >
                   <div>

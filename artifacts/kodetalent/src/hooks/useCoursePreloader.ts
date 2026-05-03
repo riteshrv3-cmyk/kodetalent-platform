@@ -76,6 +76,30 @@ export function isCourseReady(subDomainId: string): boolean {
   return !!localStorage.getItem(getCacheKey(subDomainId));
 }
 
+// Track in-flight prefetches so we never fire the same request twice.
+const inflight = new Map<string, Promise<void>>();
+
+/**
+ * Eagerly generate (or confirm cached) a single course. Call this the moment
+ * the user shows intent — e.g. picks a subdomain on the Opportunities page —
+ * so that by the time they click "Prepare" the course loads from localStorage
+ * in <1s instead of waiting 5-15s for the AI.
+ */
+export function prefetchCourse(
+  subDomainId: string,
+  subDomainName: string,
+  domainName: string,
+  skills: string[],
+): Promise<void> {
+  if (localStorage.getItem(getCacheKey(subDomainId))) return Promise.resolve();
+  const existing = inflight.get(subDomainId);
+  if (existing) return existing;
+  const p = generateOne(subDomainId, subDomainName, domainName, skills)
+    .finally(() => inflight.delete(subDomainId));
+  inflight.set(subDomainId, p);
+  return p;
+}
+
 export function useCoursePreloader() {
   useEffect(() => {
     // Defer start so the page renders first
