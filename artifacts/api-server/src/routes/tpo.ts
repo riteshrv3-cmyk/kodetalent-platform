@@ -357,32 +357,13 @@ router.get("/colleges/:college/drive-feed", async (req, res) => {
 router.get("/colleges/:college/tpo-drives", async (req, res) => {
   const { college } = req.params;
   try {
-    // Mirror the matcher's "official post" definition: only return drives
-    // posted by currently-verified TPO accounts. Both active and closed
-    // drives are included so the portal can show TPOs their full history.
+    // All TPO accounts are auto-verified at signup (open-signup model),
+    // so the historical innerJoin filter on tpo_accounts.verified is no
+    // longer needed. Return all drives for the college.
     const rows = await db
-      .select({
-        id: tpoDrivesTable.id,
-        college: tpoDrivesTable.college,
-        postedByAccountId: tpoDrivesTable.postedByAccountId,
-        postedByName: tpoDrivesTable.postedByName,
-        company: tpoDrivesTable.company,
-        role: tpoDrivesTable.role,
-        ctc: tpoDrivesTable.ctc,
-        batch: tpoDrivesTable.batch,
-        branches: tpoDrivesTable.branches,
-        cgpaCutoff: tpoDrivesTable.cgpaCutoff,
-        applyLink: tpoDrivesTable.applyLink,
-        notes: tpoDrivesTable.notes,
-        driveDate: tpoDrivesTable.driveDate,
-        expiresAt: tpoDrivesTable.expiresAt,
-        status: tpoDrivesTable.status,
-        matchedChecks: tpoDrivesTable.matchedChecks,
-        createdAt: tpoDrivesTable.createdAt,
-      })
+      .select()
       .from(tpoDrivesTable)
-      .innerJoin(tpoAccountsTable, eq(tpoAccountsTable.id, tpoDrivesTable.postedByAccountId))
-      .where(and(eq(tpoDrivesTable.college, college), eq(tpoAccountsTable.verified, true)))
+      .where(eq(tpoDrivesTable.college, college))
       .orderBy(desc(tpoDrivesTable.createdAt))
       .limit(200);
     res.json(rows);
