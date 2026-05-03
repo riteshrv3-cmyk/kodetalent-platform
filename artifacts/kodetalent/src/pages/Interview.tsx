@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, ArrowLeft, RefreshCw, Share2, Clock, ChevronDown, ChevronUp, Mic, Volume2, VolumeX } from "lucide-react";
+import { Send, ArrowLeft, RefreshCw, Share2, Clock, ChevronDown, ChevronUp, Mic, Volume2, VolumeX, Camera, CameraOff } from "lucide-react";
 import { useGetNextInterviewQuestion, useEvaluateInterview, useGetInterviewSession, useSubmitInterviewFeedback } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -95,6 +95,12 @@ export default function Interview() {
   const [isRecording, setIsRecording] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const voiceModeRef = useRef(false);
+
+  // Camera mode (live self-view, no recording)
+  const [cameraMode, setCameraMode] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const cameraStreamRef = useRef<MediaStream | null>(null);
   const isTypingRef = useRef(false);
   const timerSecondsRef = useRef(0);
   const recognitionRef = useRef<any>(null);
@@ -116,7 +122,58 @@ export default function Interview() {
     const vm = localStorage.getItem("voiceMode") === "true";
     setVoiceMode(vm);
     voiceModeRef.current = vm;
+    const cm = localStorage.getItem("cameraMode") === "true";
+    setCameraMode(cm);
   }, []);
+
+  // Camera lifecycle: turn on/off based on cameraMode + interview not finished
+  useEffect(() => {
+    let cancelled = false;
+    async function start() {
+      if (!cameraMode || isFinished) return;
+      if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
+        setCameraError("Camera not supported on this device");
+        return;
+      }
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "user", width: { ideal: 320 }, height: { ideal: 240 } },
+          audio: false,
+        });
+        if (cancelled) {
+          stream.getTracks().forEach(t => t.stop());
+          return;
+        }
+        cameraStreamRef.current = stream;
+        setCameraError(null);
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          videoRef.current.play().catch(() => undefined);
+        }
+      } catch (err) {
+        const msg = err instanceof Error && err.name === "NotAllowedError"
+          ? "Camera permission denied"
+          : "Couldn't start camera";
+        setCameraError(msg);
+      }
+    }
+    function stop() {
+      if (cameraStreamRef.current) {
+        cameraStreamRef.current.getTracks().forEach(t => t.stop());
+        cameraStreamRef.current = null;
+      }
+      if (videoRef.current) videoRef.current.srcObject = null;
+    }
+    if (cameraMode && !isFinished) start();
+    else stop();
+    return () => { cancelled = true; stop(); };
+  }, [cameraMode, isFinished]);
+
+  const toggleCameraMode = () => {
+    const next = !cameraMode;
+    setCameraMode(next);
+    localStorage.setItem("cameraMode", next ? "true" : "false");
+  };
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -532,15 +589,28 @@ export default function Interview() {
             <h1 className="font-extrabold text-base text-[#0f172a]">{interviewType} Interview</h1>
             <p className="text-[11px] text-[#64748b] font-medium">{session?.company} · Q{questionCount}/{maxQuestions}</p>
           </div>
-          <button
-            onClick={toggleVoiceMode}
-            className={cn(
-              "w-9 h-9 rounded-full flex items-center justify-center transition-all",
-              voiceMode ? "bg-primary text-white shadow-[0_0_0_3px_rgba(124,58,237,0.2)]" : "bg-[#f8fafc] text-[#64748b]"
-            )}
-          >
-            {voiceMode ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-          </button>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={toggleCameraMode}
+              className={cn(
+                "w-9 h-9 rounded-full flex items-center justify-center transition-all",
+                cameraMode ? "bg-[#ec4899] text-white shadow-[0_0_0_3px_rgba(236,72,153,0.2)]" : "bg-[#f8fafc] text-[#64748b]"
+              )}
+              aria-label="Toggle camera"
+            >
+              {cameraMode ? <Camera className="w-4 h-4" /> : <CameraOff className="w-4 h-4" />}
+            </button>
+            <button
+              onClick={toggleVoiceMode}
+              className={cn(
+                "w-9 h-9 rounded-full flex items-center justify-center transition-all",
+                voiceMode ? "bg-primary text-white shadow-[0_0_0_3px_rgba(124,58,237,0.2)]" : "bg-[#f8fafc] text-[#64748b]"
+              )}
+              aria-label="Toggle voice"
+            >
+              {voiceMode ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+            </button>
+          </div>
         </div>
         <div className="h-1.5 w-full bg-[#e0e7ff] rounded-full overflow-hidden">
           <motion.div className="h-full bg-primary rounded-full" initial={{ width: 0 }} animate={{ width: `${progressPercent}%` }} transition={{ duration: 0.5 }} />
@@ -552,6 +622,46 @@ export default function Interview() {
           ))}
         </div>
       </div>
+
+      {/* Camera PIP self-view (top-right floating) */}
+      <AnimatePresence>
+        {cameraMode && !isFinished && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.6, y: -10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.6 }}
+            className="fixed top-[88px] right-3 z-20 w-[110px] h-[140px] rounded-2xl overflow-hidden shadow-[0_8px_24px_rgba(0,0,0,0.25)] border-2 border-white bg-[#0f172a] max-w-[calc(50vw-1rem)]"
+          >
+            <video
+              ref={videoRef}
+              autoPlay
+              muted
+              playsInline
+              className="w-full h-full object-cover"
+              style={{ transform: "scaleX(-1)" }}
+            />
+            {!cameraError && (
+              <div className="absolute top-1.5 left-1.5 flex items-center gap-1 bg-black/40 backdrop-blur-sm rounded-full px-1.5 py-0.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#ef4444] animate-pulse" />
+                <span className="text-[8px] font-extrabold text-white tracking-wider">LIVE</span>
+              </div>
+            )}
+            {cameraError && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-2 bg-[#0f172a]/95">
+                <CameraOff className="w-5 h-5 text-[#ef4444] mb-1" />
+                <span className="text-[9px] font-bold text-white leading-tight">{cameraError}</span>
+              </div>
+            )}
+            <button
+              onClick={toggleCameraMode}
+              className="absolute bottom-1.5 right-1.5 w-6 h-6 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center text-white"
+              aria-label="Close camera"
+            >
+              <CameraOff className="w-3 h-3" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Timer */}
       {timerRunning && (

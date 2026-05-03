@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { Target, ChevronRight, MessageSquare, Briefcase, X, Cpu, Users, Shuffle, Building2, Flame, Mic } from "lucide-react";
+import { Target, ChevronRight, MessageSquare, Briefcase, X, Cpu, Users, Shuffle, Building2, Flame, Mic, Camera } from "lucide-react";
 import { useCreateInterviewSession, useCreateTestSession } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,7 @@ export default function Prep() {
   const [interviewType, setInterviewType] = useState<InterviewType>("Technical");
   const [difficulty, setDifficulty] = useState<Difficulty>("Standard");
   const [voiceMode, setVoiceMode] = useState(false);
+  const [cameraMode, setCameraMode] = useState(false);
 
   const createInterview = useCreateInterviewSession();
   const createTest = useCreateTestSession();
@@ -46,6 +47,7 @@ export default function Prep() {
     const targetCompany = company.trim() || "Any Tech Company";
     const round = `${interviewType}|${difficulty}`;
     localStorage.setItem("voiceMode", voiceMode ? "true" : "false");
+    localStorage.setItem("cameraMode", cameraMode ? "true" : "false");
     try {
       const session = await createInterview.mutateAsync({
         data: { studentId, company: targetCompany, round }
@@ -249,6 +251,33 @@ export default function Prep() {
                         <motion.div
                           className="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow"
                           animate={{ x: voiceMode ? 20 : 2 }}
+                          transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                        />
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => setCameraMode(!cameraMode)}
+                      className={cn(
+                        "w-full flex items-center justify-between px-4 py-3 rounded-2xl border-2 transition-all",
+                        cameraMode
+                          ? "border-[#ec4899] bg-[#fdf2f8] shadow-[0_0_0_3px_rgba(236,72,153,0.12)]"
+                          : "border-[#e5e7eb] bg-white hover:border-[#fce7f3]"
+                      )}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={cn("w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0", cameraMode ? "bg-[#ec4899] text-white" : "bg-[#f3f4f6] text-[#64748b]")}>
+                          <Camera className="w-4 h-4" />
+                        </div>
+                        <div className="text-left">
+                          <div className="text-sm font-bold text-[#0f172a]">Camera Mode</div>
+                          <div className="text-[11px] text-[#64748b]">See yourself · feels like the real thing</div>
+                        </div>
+                      </div>
+                      <div className={cn("w-11 h-6 rounded-full transition-colors relative flex-shrink-0", cameraMode ? "bg-[#ec4899]" : "bg-[#d1d5db]")}>
+                        <motion.div
+                          className="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow"
+                          animate={{ x: cameraMode ? 20 : 2 }}
                           transition={{ type: "spring", stiffness: 300, damping: 25 }}
                         />
                       </div>

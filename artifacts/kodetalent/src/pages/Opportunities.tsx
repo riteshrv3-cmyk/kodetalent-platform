@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, ChevronRight, ExternalLink, Target, Loader2, Search, X } from "lucide-react";
+import { ArrowLeft, ChevronRight, ExternalLink, Target, Loader2, Search, X, Sparkles, CheckCircle2, AlertCircle, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -37,12 +37,78 @@ function emojiFor(source: string): string {
   return "✨";
 }
 
+interface JdGap {
+  fitScore: number;
+  summary: string;
+  have: string[];
+  missing: string[];
+  plan: Array<{ title: string; hours: number; action: string }>;
+}
+
 export default function Opportunities() {
   const [, setLocation] = useLocation();
   const [selectedDomain, setSelectedDomain] = useState<Domain | null>(null);
   const [selectedSubDomain, setSelectedSubDomain] = useState<SubDomain | null>(null);
   const [activeTab, setActiveTab] = useState<OpportunityType>("jobs");
   const [searchQuery, setSearchQuery] = useState("");
+
+  // JD-gap analyser state
+  const [gapOpen, setGapOpen] = useState(false);
+  const [gapJobTitle, setGapJobTitle] = useState("");
+  const [gapData, setGapData] = useState<JdGap | null>(null);
+  const [gapLoading, setGapLoading] = useState(false);
+  const [gapError, setGapError] = useState<string | null>(null);
+
+  const checkFit = async (op: LiveOpportunity) => {
+    const studentId = Number(localStorage.getItem("studentId") || "0");
+    if (!studentId) {
+      setLocation("/");
+      return;
+    }
+    setGapOpen(true);
+    setGapJobTitle(op.title);
+    setGapData(null);
+    setGapError(null);
+    setGapLoading(true);
+    try {
+      const r = await fetch(`/api/ai/jd-gap`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          studentId,
+          jobTitle: op.title,
+          company: op.company,
+          tags: op.tags,
+          source: op.source,
+        }),
+      });
+      if (!r.ok) {
+        const e = await r.json().catch(() => ({}));
+        throw new Error(e.error || "Couldn't analyse fit");
+      }
+      const data: JdGap = await r.json();
+      setGapData(data);
+    } catch (err) {
+      setGapError(err instanceof Error ? err.message : "Failed to analyse fit");
+    } finally {
+      setGapLoading(false);
+    }
+  };
+
+  const closeGap = () => {
+    setGapOpen(false);
+    setGapData(null);
+    setGapError(null);
+  };
+
+  const goLearnGap = () => {
+    closeGap();
+    if (selectedDomain && selectedSubDomain) {
+      navigateToCourse();
+    } else {
+      setLocation("/opportunities");
+    }
+  };
 
   const searchResults = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -186,13 +252,13 @@ export default function Opportunities() {
                 </span>
               ))}
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 mb-2">
               <Button
-                onClick={navigateToCourse}
-                className="flex-1 h-10 rounded-xl text-white font-bold text-[13px]"
-                style={{ background: accent }}
+                onClick={() => checkFit(o)}
+                className="flex-1 h-10 rounded-xl font-bold text-[13px] text-white"
+                style={{ background: "linear-gradient(135deg,#8b5cf6,#ec4899)" }}
               >
-                <Target className="w-3.5 h-3.5 mr-1.5" /> Prepare
+                <Sparkles className="w-3.5 h-3.5 mr-1.5" /> Check fit
               </Button>
               <a href={o.url} target="_blank" rel="noopener noreferrer" className="flex-1">
                 <Button variant="outline" className="w-full h-10 rounded-xl font-bold text-[13px] border-2" style={{ borderColor: accent, color: accent }}>
@@ -200,6 +266,14 @@ export default function Opportunities() {
                 </Button>
               </a>
             </div>
+            <Button
+              onClick={navigateToCourse}
+              variant="ghost"
+              className="w-full h-8 rounded-lg font-bold text-[12px]"
+              style={{ color: accent }}
+            >
+              <Target className="w-3 h-3 mr-1" /> Prepare for this role
+            </Button>
           </CardContent>
         </Card>
       </motion.div>
@@ -465,6 +539,158 @@ export default function Opportunities() {
           )}
         </AnimatePresence>
       </div>
+
+      {/* JD-Gap bottom sheet */}
+      <AnimatePresence>
+        {gapOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={closeGap}
+              className="fixed inset-0 bg-black/50 z-40"
+            />
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 30, stiffness: 280 }}
+              className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl max-h-[85vh] overflow-y-auto max-w-md mx-auto shadow-[0_-8px_32px_rgba(0,0,0,0.2)]"
+              data-testid="jd-gap-sheet"
+            >
+              <div className="sticky top-0 bg-white rounded-t-3xl px-5 pt-3 pb-2 border-b border-[#f1f5f9]">
+                <div className="w-12 h-1 rounded-full bg-[#cbd5e1] mx-auto mb-3" />
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#8b5cf6]">AI Fit Check</p>
+                    <p className="text-base font-extrabold text-[#0f172a] line-clamp-2">{gapJobTitle}</p>
+                  </div>
+                  <button onClick={closeGap} className="w-8 h-8 rounded-full bg-[#f1f5f9] flex items-center justify-center flex-shrink-0">
+                    <X className="w-4 h-4 text-[#64748b]" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="px-5 py-4 pb-8">
+                {gapLoading && (
+                  <div className="flex flex-col items-center justify-center py-12 gap-3">
+                    <Loader2 className="w-7 h-7 animate-spin text-[#8b5cf6]" />
+                    <p className="text-xs text-[#64748b] font-bold">Analysing your fit…</p>
+                  </div>
+                )}
+                {gapError && !gapLoading && (
+                  <div className="flex flex-col items-center justify-center py-10 gap-2">
+                    <AlertCircle className="w-7 h-7 text-[#ef4444]" />
+                    <p className="text-sm font-bold text-[#0f172a]">{gapError}</p>
+                    <Button onClick={closeGap} variant="outline" className="mt-2">Close</Button>
+                  </div>
+                )}
+                {gapData && !gapLoading && (() => {
+                  const score = gapData.fitScore;
+                  const ringColor = score >= 70 ? "#10b981" : score >= 40 ? "#f97316" : "#ef4444";
+                  const ringBg = score >= 70 ? "#d1fae5" : score >= 40 ? "#ffedd5" : "#fee2e2";
+                  const verdict = score >= 70 ? "Strong fit — apply now" : score >= 40 ? "Decent fit — close the gaps first" : "Stretch role — build skills first";
+                  const r = 42, c = 2 * Math.PI * r;
+                  const offset = c - (score / 100) * c;
+                  return (
+                    <>
+                      <div className="flex items-center gap-4 mb-4">
+                        <div className="relative w-[110px] h-[110px] flex-shrink-0">
+                          <svg width="110" height="110" className="-rotate-90">
+                            <circle cx="55" cy="55" r={r} fill="none" stroke={ringBg} strokeWidth="10" />
+                            <motion.circle
+                              cx="55" cy="55" r={r} fill="none" stroke={ringColor} strokeWidth="10"
+                              strokeLinecap="round" strokeDasharray={c}
+                              initial={{ strokeDashoffset: c }}
+                              animate={{ strokeDashoffset: offset }}
+                              transition={{ duration: 1.1, ease: "easeOut" }}
+                            />
+                          </svg>
+                          <div className="absolute inset-0 flex flex-col items-center justify-center">
+                            <span className="text-2xl font-black" style={{ color: ringColor }}>{score}</span>
+                            <span className="text-[9px] font-extrabold text-[#64748b] uppercase">Fit</span>
+                          </div>
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-[11px] font-extrabold uppercase tracking-wider" style={{ color: ringColor }}>{verdict}</p>
+                          <p className="text-[13px] font-bold text-[#0f172a] mt-1 leading-snug">{gapData.summary}</p>
+                        </div>
+                      </div>
+
+                      {gapData.have.length > 0 && (
+                        <div className="mb-4">
+                          <p className="text-[11px] font-extrabold text-[#10b981] uppercase tracking-wider mb-2 flex items-center gap-1">
+                            <CheckCircle2 className="w-3.5 h-3.5" /> What you bring
+                          </p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {gapData.have.map(s => (
+                              <span key={s} className="text-[12px] font-bold px-2.5 py-1 rounded-full bg-[#d1fae5] text-[#047857]">
+                                ✓ {s}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {gapData.missing.length > 0 && (
+                        <div className="mb-4">
+                          <p className="text-[11px] font-extrabold text-[#ef4444] uppercase tracking-wider mb-2 flex items-center gap-1">
+                            <AlertCircle className="w-3.5 h-3.5" /> Gaps to close
+                          </p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {gapData.missing.map(s => (
+                              <span key={s} className="text-[12px] font-bold px-2.5 py-1 rounded-full bg-[#fee2e2] text-[#b91c1c]">
+                                ✗ {s}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {gapData.plan.length > 0 && (
+                        <div className="mb-4">
+                          <p className="text-[11px] font-extrabold text-[#8b5cf6] uppercase tracking-wider mb-2 flex items-center gap-1">
+                            <BookOpen className="w-3.5 h-3.5" /> Your action plan
+                          </p>
+                          <div className="space-y-2">
+                            {gapData.plan.map((p, i) => (
+                              <motion.div
+                                key={i}
+                                initial={{ opacity: 0, x: -8 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: i * 0.08 }}
+                                className="bg-gradient-to-br from-[#faf5ff] to-[#fdf2f8] rounded-2xl p-3 border border-[#f3e8ff]"
+                              >
+                                <div className="flex items-start justify-between gap-2 mb-1">
+                                  <p className="text-[13px] font-extrabold text-[#0f172a] leading-tight">{p.title}</p>
+                                  <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-[#8b5cf6] text-white whitespace-nowrap">
+                                    {p.hours}h
+                                  </span>
+                                </div>
+                                <p className="text-[12px] text-[#64748b] font-medium leading-snug">{p.action}</p>
+                              </motion.div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      <Button
+                        onClick={goLearnGap}
+                        className="w-full h-12 rounded-2xl font-extrabold text-white text-[14px] shadow-lg"
+                        style={{ background: "linear-gradient(135deg,#8b5cf6,#ec4899)" }}
+                        data-testid="button-learn-gap"
+                      >
+                        <Sparkles className="w-4 h-4 mr-1.5" /> Learn the gap →
+                      </Button>
+                    </>
+                  );
+                })()}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

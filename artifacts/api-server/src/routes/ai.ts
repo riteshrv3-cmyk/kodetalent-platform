@@ -5,8 +5,105 @@ import { eq } from "drizzle-orm";
 import { anthropic } from "@workspace/integrations-anthropic-ai";
 import { AnalyzeGithubBody, GenerateRoadmapBody } from "@workspace/api-zod";
 import { rlAiHeavy, rlAiMedium } from "../middlewares/rateLimit";
+import { cacheGetOrSet } from "../lib/aiCache";
 
 const router = Router();
+
+// POST /ai/jd-gap — given a job's title/company/tags, computes fit vs the student
+router.post("/ai/jd-gap", rlAiMedium, async (req, res) => {
+  const { studentId, jobTitle, company, tags, source } = req.body || {};
+  if (!studentId || !jobTitle) {
+    return res.status(400).json({ error: "studentId and jobTitle are required" });
+  }
+  try {
+    const [student] = await db.select().from(studentsTable).where(eq(studentsTable.id, Number(studentId))).limit(1);
+    if (!student) return res.status(404).json({ error: "Student not found" });
+
+    const skills = (student.skills as Record<string, number>) || {};
+    const skillEntries = Object.entries(skills).map(([k, v]) => `${k}:${Math.round(v)}`).sort();
+    const tagList: string[] = Array.isArray(tags) ? tags.slice(0, 12) : [];
+
+    const { value, cached } = await cacheGetOrSet<{
+      fitScore: number;
+      summary: string;
+      have: string[];
+      missing: string[];
+      plan: Array<{ title: string; hours: number; action: string }>;
+    }>(
+      {
+        namespace: "jd-gap",
+        keyParts: [skillEntries, jobTitle, company || "", tagList, student.field, student.year],
+        ttlSeconds: 60 * 60 * 24 * 7, // 7 days
+      },
+      async () => {
+        const prompt = `You are a career coach for an Indian engineering student. Analyse fit for this opening.
+
+STUDENT
+- Name: ${student.name}
+- Field: ${student.field} · Year ${student.year}
+- Skills (out of 100): ${skillEntries.join(", ") || "(no scored skills yet)"}
+
+JOB
+- Role: ${jobTitle}
+- Company: ${company || "Unknown"}
+- Skill tags from listing: ${tagList.join(", ") || "(none)"}
+- Source: ${source || "n/a"}
+
+Return STRICT JSON (no markdown) with this exact shape:
+{
+  "fitScore": <0-100 honest readiness for this role today>,
+  "summary": "<one punchy sentence, max 120 chars>",
+  "have": ["<skill student already has, max 5>"],
+  "missing": ["<skill the student must add to land this role, max 5>"],
+  "plan": [
+    { "title": "<concrete topic to learn>", "hours": <int 4-40>, "action": "<one-line concrete next step>" }
+  ]
+}
+Plan should have 2-3 items, totalling under 60 hours, focused on the highest-leverage gaps. Be specific and Indian-context aware. Be brutally honest with fitScore — do not inflate.`;
+
+        const message = await anthropic.messages.create({
+          model: "claude-haiku-4-5",
+          max_tokens: 800,
+          messages: [{ role: "user", content: prompt }],
+        });
+        const content = message.content[0];
+        const text = content.type === "text" ? content.text : "{}";
+        const stripped = text.replace(/```json\n?|\n?```/g, "").trim();
+        // Extract first balanced JSON object — Claude sometimes adds prose after
+        const start = stripped.indexOf("{");
+        let depth = 0, end = -1, inStr = false, esc = false;
+        for (let i = start; i < stripped.length; i++) {
+          const ch = stripped[i];
+          if (esc) { esc = false; continue; }
+          if (ch === "\\") { esc = true; continue; }
+          if (ch === '"') { inStr = !inStr; continue; }
+          if (inStr) continue;
+          if (ch === "{") depth++;
+          else if (ch === "}") { depth--; if (depth === 0) { end = i + 1; break; } }
+        }
+        const jsonStr = end > 0 ? stripped.slice(start, end) : stripped;
+        const parsed = JSON.parse(jsonStr);
+        return {
+          fitScore: Math.max(0, Math.min(100, Number(parsed.fitScore) || 0)),
+          summary: String(parsed.summary || "").slice(0, 200),
+          have: Array.isArray(parsed.have) ? parsed.have.slice(0, 5).map(String) : [],
+          missing: Array.isArray(parsed.missing) ? parsed.missing.slice(0, 5).map(String) : [],
+          plan: Array.isArray(parsed.plan) ? parsed.plan.slice(0, 4).map((p: any) => ({
+            title: String(p.title || "").slice(0, 80),
+            hours: Math.max(1, Math.min(60, Number(p.hours) || 8)),
+            action: String(p.action || "").slice(0, 160),
+          })) : [],
+        };
+      }
+    );
+
+    res.setHeader("X-Cache", cached ? "HIT" : "MISS");
+    return res.json(value);
+  } catch (err) {
+    req.log.error({ err }, "Failed JD gap analysis");
+    return res.status(500).json({ error: "Failed to analyse fit" });
+  }
+});
 
 // POST /ai/analyze-github
 router.post("/ai/analyze-github", rlAiMedium, async (req, res) => {
