@@ -4,8 +4,9 @@ import { motion } from "framer-motion";
 import {
   ArrowLeft, Github, Linkedin, Globe, Phone, MapPin, Briefcase, Award,
   Code2, BookmarkCheck, Bookmark, ExternalLink, Star, TrendingUp, Zap,
-  GraduationCap, Building2, Mail, Check, X, Send, Loader2
+  GraduationCap, Building2, Mail, Check, X, Send, Loader2, Sparkles
 } from "lucide-react";
+import AIReportModal from "@/components/AIReportModal";
 
 const BASE_API = "";
 
@@ -163,6 +164,7 @@ export default function StudentDetail({ id }: { id: number }) {
   const [shortlisted, setShortlisted] = useState<boolean>(false);
   const [contactRequested, setContactRequested] = useState(false);
   const [showInvite, setShowInvite] = useState(false);
+  const [showAIReport, setShowAIReport] = useState(false);
 
   useEffect(() => {
     const list = JSON.parse(localStorage.getItem("shortlist") || "[]");
@@ -207,6 +209,7 @@ export default function StudentDetail({ id }: { id: number }) {
   return (
     <div className="min-h-screen bg-[#f8fafc]">
       {showInvite && profile && <InviteModal studentId={profile.id} studentName={profile.name} onClose={() => setShowInvite(false)} />}
+      {showAIReport && profile && <AIReportModal studentId={profile.id} studentName={profile.name} onClose={() => setShowAIReport(false)} />}
       {/* Sticky top bar */}
       <div className="bg-white border-b border-[#f0f4ff] sticky top-0 z-30">
         <div className="max-w-4xl mx-auto px-6 py-3 flex items-center justify-between">
@@ -214,6 +217,14 @@ export default function StudentDetail({ id }: { id: number }) {
             <ArrowLeft className="w-4 h-4" /> Talent Pool
           </button>
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowAIReport(true)}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-extrabold text-white shadow-[0_4px_14px_rgba(124,58,237,0.4)] hover:shadow-[0_8px_22px_rgba(124,58,237,0.5)] transition-all"
+              style={{ background: "linear-gradient(135deg,#4f46e5,#7c3aed,#ec4899)" }}
+              data-testid="button-ai-report"
+            >
+              <Sparkles className="w-4 h-4" /> AI Report
+            </button>
             <button
               onClick={toggleShortlist}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-colors ${shortlisted ? "bg-[#4f46e5] text-white" : "bg-[#f8fafc] text-[#4f46e5] hover:bg-[#e0e7ff]"}`}
