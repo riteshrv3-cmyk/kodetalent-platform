@@ -1,7 +1,8 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { studentsTable, recruiterInvites, mentors, driveChecksTable, recruiterJobsTable } from "@workspace/db";
+import { studentsTable, recruiterInvites, mentors, driveChecksTable, recruiterJobsTable, tpoDrivesTable, tpoAccountsTable } from "@workspace/db";
 import { eq, inArray, desc, and, gte, sql } from "drizzle-orm";
+import { requireTpo, type TpoAuthedRequest } from "../middlewares/tpoAuth";
 
 const router = Router();
 
@@ -350,6 +351,142 @@ router.get("/colleges/:college/drive-feed", async (req, res) => {
     scamCount,
     totalChecks: checks.length,
   });
+});
+
+// ─── TPO-announced drives ──────────────────────────────────────────────────
+router.get("/colleges/:college/tpo-drives", async (req, res) => {
+  const { college } = req.params;
+  try {
+    // Mirror the matcher's "official post" definition: only return drives
+    // posted by currently-verified TPO accounts. Both active and closed
+    // drives are included so the portal can show TPOs their full history.
+    const rows = await db
+      .select({
+        id: tpoDrivesTable.id,
+        college: tpoDrivesTable.college,
+        postedByAccountId: tpoDrivesTable.postedByAccountId,
+        postedByName: tpoDrivesTable.postedByName,
+        company: tpoDrivesTable.company,
+        role: tpoDrivesTable.role,
+        ctc: tpoDrivesTable.ctc,
+        batch: tpoDrivesTable.batch,
+        branches: tpoDrivesTable.branches,
+        cgpaCutoff: tpoDrivesTable.cgpaCutoff,
+        applyLink: tpoDrivesTable.applyLink,
+        notes: tpoDrivesTable.notes,
+        driveDate: tpoDrivesTable.driveDate,
+        expiresAt: tpoDrivesTable.expiresAt,
+        status: tpoDrivesTable.status,
+        matchedChecks: tpoDrivesTable.matchedChecks,
+        createdAt: tpoDrivesTable.createdAt,
+      })
+      .from(tpoDrivesTable)
+      .innerJoin(tpoAccountsTable, eq(tpoAccountsTable.id, tpoDrivesTable.postedByAccountId))
+      .where(and(eq(tpoDrivesTable.college, college), eq(tpoAccountsTable.verified, true)))
+      .orderBy(desc(tpoDrivesTable.createdAt))
+      .limit(200);
+    res.json(rows);
+  } catch (err) {
+    req.log.error({ err }, "Failed to list TPO drives");
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+router.post("/colleges/:college/tpo-drives", requireTpo, async (req: TpoAuthedRequest, res): Promise<void> => {
+  const { college } = req.params;
+  // Authoritative identity comes from the auth middleware, NOT from the body.
+  const tpo = req.tpo!;
+  if (tpo.college !== college) {
+    res.status(403).json({ error: "Cannot post drives for another college" });
+    return;
+  }
+  const body = req.body as {
+    company?: string;
+    role?: string | null;
+    ctc?: string | null;
+    batch?: string | null;
+    branches?: string[];
+    cgpaCutoff?: string | null;
+    applyLink?: string | null;
+    notes?: string | null;
+    driveDate?: string | null;
+    expiresAt?: string | null;
+  };
+  if (!body.company?.trim()) {
+    res.status(400).json({ error: "company is required" });
+    return;
+  }
+  try {
+    const [row] = await db
+      .insert(tpoDrivesTable)
+      .values({
+        college: tpo.college,
+        postedByName: tpo.name,
+        company: body.company.trim(),
+        role: body.role?.trim() || null,
+        ctc: body.ctc?.trim() || null,
+        batch: body.batch?.trim() || null,
+        branches: Array.isArray(body.branches) ? body.branches : [],
+        cgpaCutoff: body.cgpaCutoff?.trim() || null,
+        applyLink: body.applyLink?.trim() || null,
+        notes: body.notes?.trim() || null,
+        driveDate: body.driveDate ? new Date(body.driveDate) : null,
+        expiresAt: body.expiresAt ? new Date(body.expiresAt) : null,
+      })
+      .returning();
+    res.status(201).json(row);
+  } catch (err) {
+    req.log.error({ err }, "Failed to create TPO drive");
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+router.delete("/tpo-drives/:id", requireTpo, async (req: TpoAuthedRequest, res): Promise<void> => {
+  const id = Number(req.params.id);
+  if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
+  const tpo = req.tpo!;
+  try {
+    const [existing] = await db.select().from(tpoDrivesTable).where(eq(tpoDrivesTable.id, id)).limit(1);
+    if (!existing) { res.status(404).json({ error: "Not found" }); return; }
+    if (existing.college !== tpo.college) {
+      res.status(403).json({ error: "Cannot modify another college's drive" });
+      return;
+    }
+    await db.delete(tpoDrivesTable).where(eq(tpoDrivesTable.id, id));
+    res.json({ ok: true });
+  } catch (err) {
+    req.log.error({ err }, "Failed to delete TPO drive");
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+router.patch("/tpo-drives/:id", requireTpo, async (req: TpoAuthedRequest, res): Promise<void> => {
+  const id = Number(req.params.id);
+  if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
+  const { status } = req.body as { status?: string };
+  if (status !== "active" && status !== "closed") {
+    res.status(400).json({ error: "Invalid status" });
+    return;
+  }
+  const tpo = req.tpo!;
+  try {
+    const [existing] = await db.select().from(tpoDrivesTable).where(eq(tpoDrivesTable.id, id)).limit(1);
+    if (!existing) { res.status(404).json({ error: "Not found" }); return; }
+    if (existing.college !== tpo.college) {
+      res.status(403).json({ error: "Cannot modify another college's drive" });
+      return;
+    }
+    const [row] = await db
+      .update(tpoDrivesTable)
+      .set({ status })
+      .where(eq(tpoDrivesTable.id, id))
+      .returning();
+    if (!row) { res.status(404).json({ error: "Not found" }); return; }
+    res.json(row);
+  } catch (err) {
+    req.log.error({ err }, "Failed to update TPO drive");
+    res.status(500).json({ error: "Server error" });
+  }
 });
 
 export default router;

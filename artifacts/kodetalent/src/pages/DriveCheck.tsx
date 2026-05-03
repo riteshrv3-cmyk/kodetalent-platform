@@ -46,6 +46,20 @@ interface DriveCheckRow {
   sharedCount: number;
   createdAt: string;
   companyStats?: CompanyStats | null;
+  tpoMatchedDrive?: {
+    id: number;
+    company: string;
+    role: string | null;
+    ctc: string | null;
+    batch: string | null;
+    branches: string[];
+    cgpaCutoff: string | null;
+    applyLink: string | null;
+    notes: string | null;
+    driveDate: string | null;
+    postedByName: string;
+    createdAt: string;
+  } | null;
 }
 
 const VERDICT_META: Record<string, { emoji: string; bg: string; ring: string; chip: string; text: string; label: string; sub: string; Icon: typeof ShieldCheck }> = {
@@ -222,17 +236,50 @@ function VerdictCard({ row, studentName, college, kodeScore }: {
           <GhostRateBadge stats={row.companyStats} />
         )}
 
-        {/* TPO line */}
-        <div className="flex items-center gap-2 text-[11px] text-[#64748b]">
-          <Sparkles className="w-3 h-3 text-[#4f46e5]" />
-          <span>
-            {row.tpoMatch === "matched"
-              ? "Your TPO has officially shared this drive ✓"
-              : row.tpoMatch === "not_matched"
-              ? "Not found in your TPO's official drives — verify before applying"
-              : "TPO cross-reference coming soon"}
-          </span>
-        </div>
+        {/* TPO match badge */}
+        {row.tpoMatch === "matched" ? (
+          <div className="bg-gradient-to-br from-[#10b981]/15 to-[#059669]/5 rounded-2xl p-3.5 border border-[#10b981]/30">
+            <div className="flex items-center gap-2 mb-1">
+              <CheckCircle2 className="w-4 h-4 text-[#065f46]" />
+              <p className="text-[11px] font-black uppercase tracking-wider text-[#065f46]">
+                ✓ Verified by your TPO
+              </p>
+            </div>
+            <p className="text-[12px] text-[#065f46] font-semibold leading-snug">
+              {row.tpoMatchedDrive?.postedByName ?? "Your TPO"} officially shared this drive
+              {row.tpoMatchedDrive?.createdAt
+                ? ` on ${new Date(row.tpoMatchedDrive.createdAt).toLocaleDateString(undefined, { day: "numeric", month: "short" })}`
+                : ""}.
+            </p>
+            {row.tpoMatchedDrive && (row.tpoMatchedDrive.role || row.tpoMatchedDrive.ctc || row.tpoMatchedDrive.driveDate) && (
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {row.tpoMatchedDrive.role && (
+                  <span className="text-[10px] font-bold bg-white/70 text-[#065f46] px-2 py-0.5 rounded-full">{row.tpoMatchedDrive.role}</span>
+                )}
+                {row.tpoMatchedDrive.ctc && (
+                  <span className="text-[10px] font-bold bg-white/70 text-[#065f46] px-2 py-0.5 rounded-full">💰 {row.tpoMatchedDrive.ctc}</span>
+                )}
+                {row.tpoMatchedDrive.driveDate && (
+                  <span className="text-[10px] font-bold bg-white/70 text-[#065f46] px-2 py-0.5 rounded-full">
+                    📅 {new Date(row.tpoMatchedDrive.driveDate).toLocaleDateString()}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+        ) : row.tpoMatch === "not_matched" ? (
+          <div className="bg-[#fef3c7] rounded-2xl p-3 border border-[#f59e0b]/30 flex items-start gap-2">
+            <AlertTriangle className="w-4 h-4 text-[#78350f] mt-0.5 shrink-0" />
+            <p className="text-[11px] text-[#78350f] leading-snug font-medium">
+              Your TPO has <span className="font-black">NOT</span> shared this drive. Verify the source before applying.
+            </p>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 text-[11px] text-[#64748b]">
+            <Sparkles className="w-3 h-3 text-[#4f46e5]" />
+            <span>Your TPO hasn't posted any drives recently — can't cross-check.</span>
+          </div>
+        )}
       </div>
 
       {/* Footer watermark */}

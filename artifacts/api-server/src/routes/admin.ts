@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, type Request, type Response, type NextFunction } from "express";
 import { db } from "@workspace/db";
 import {
   studentsTable,
@@ -10,10 +10,56 @@ import {
   mentors,
   interviewSessionsTable,
   testSessionsTable,
+  tpoAccountsTable,
 } from "@workspace/db";
-import { desc, sql, gte } from "drizzle-orm";
+import { desc, sql, gte, eq } from "drizzle-orm";
+import { timingSafeEqual } from "crypto";
 
 const router = Router();
+
+// Admin token gate: fail-closed if env not set; constant-time compare.
+function requireAdmin(req: Request, res: Response, next: NextFunction): void {
+  const expected = process.env.ADMIN_API_TOKEN;
+  if (!expected) {
+    res.status(503).json({ error: "Admin API disabled (ADMIN_API_TOKEN not configured)" });
+    return;
+  }
+  const provided = req.header("x-admin-token") || "";
+  const a = Buffer.from(expected);
+  const b = Buffer.from(provided);
+  if (a.length !== b.length || !timingSafeEqual(a, b)) {
+    res.status(401).json({ error: "Invalid admin token" });
+    return;
+  }
+  next();
+}
+
+// List pending TPO accounts (admin-only).
+router.get("/admin/tpo-accounts", requireAdmin, async (_req, res): Promise<void> => {
+  const rows = await db
+    .select({
+      id: tpoAccountsTable.id, email: tpoAccountsTable.email, name: tpoAccountsTable.name,
+      college: tpoAccountsTable.college, dept: tpoAccountsTable.dept,
+      verified: tpoAccountsTable.verified, verifiedAt: tpoAccountsTable.verifiedAt,
+      verifiedBy: tpoAccountsTable.verifiedBy, createdAt: tpoAccountsTable.createdAt,
+    })
+    .from(tpoAccountsTable)
+    .orderBy(desc(tpoAccountsTable.createdAt));
+  res.json(rows);
+});
+
+// Approve a TPO account (admin-only).
+router.post("/admin/tpo-accounts/:id/verify", requireAdmin, async (req, res): Promise<void> => {
+  const id = parseInt(req.params.id ?? "", 10);
+  if (!Number.isFinite(id)) { res.status(400).json({ error: "Invalid id" }); return; }
+  const [updated] = await db
+    .update(tpoAccountsTable)
+    .set({ verified: true, verifiedAt: new Date(), verifiedBy: "admin" })
+    .where(eq(tpoAccountsTable.id, id))
+    .returning();
+  if (!updated) { res.status(404).json({ error: "Not found" }); return; }
+  res.json({ ok: true, account: { id: updated.id, verified: updated.verified } });
+});
 
 router.get("/admin/overview", async (_req, res) => {
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000);

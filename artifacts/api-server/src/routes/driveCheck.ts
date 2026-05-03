@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { studentsTable, driveChecksTable } from "@workspace/db";
-import { eq, desc, and, sql, ilike, lte, isNotNull } from "drizzle-orm";
+import { studentsTable, driveChecksTable, tpoDrivesTable } from "@workspace/db";
+import { eq, desc, and, sql, ilike, lte, isNotNull, gte } from "drizzle-orm";
 import { anthropic } from "@workspace/integrations-anthropic-ai";
 
 const router = Router();
@@ -180,8 +180,10 @@ Return EXACTLY this JSON shape:
     // KodeScore fit (heuristic — % of users below this student's overall score)
     const kodeScoreFit = clamp(Math.round(student.overallScore || 0), 0, 100);
 
-    // TPO match (honest heuristic — we don't crawl, so we say unknown)
-    const tpoMatch = "unknown";
+    // TPO match — cross-reference TPO-posted drives for this student's college
+    const tpoMatchResult = await computeTpoMatch(student.college, parsed.company, parsed.role);
+    const tpoMatch = tpoMatchResult.status;
+    const tpoMatchedDriveId = tpoMatchResult.driveId;
 
     // ─── Persist ───────────────────────────────────────────────────────────
     const [saved] = await db.insert(driveChecksTable).values({
@@ -204,13 +206,147 @@ Return EXACTLY this JSON shape:
       tpoMatch,
     }).returning();
 
+    if (tpoMatchedDriveId) {
+      await db
+        .update(tpoDrivesTable)
+        .set({ matchedChecks: sql`${tpoDrivesTable.matchedChecks} + 1` })
+        .where(eq(tpoDrivesTable.id, tpoMatchedDriveId));
+    }
+
     const companyStats = parsed.company ? await getCompanyStats(parsed.company) : null;
-    return res.json({ ...saved, companyStats });
+    const tpoMatchedDrive = tpoMatchedDriveId
+      ? (await db.select().from(tpoDrivesTable).where(eq(tpoDrivesTable.id, tpoMatchedDriveId)).limit(1))[0] ?? null
+      : null;
+    return res.json({ ...saved, companyStats, tpoMatchedDrive });
   } catch (err) {
     req.log.error({ err }, "Drive check failed");
     return res.status(500).json({ error: "Couldn't check this drive. Try again." });
   }
 });
+
+// ─── TPO drive matcher ──────────────────────────────────────────────────────
+// Looks up TPO-posted drives for the student's college and fuzzy-matches by
+// company name + (optional) role. Returns "matched" / "not_matched" / "unknown".
+function normalizeText(s: string | null | undefined): string {
+  if (!s) return "";
+  return s
+    .toLowerCase()
+    .replace(/\b(pvt|private|ltd|limited|inc|llc|llp|technologies|technology|tech|solutions|systems|services|india|global|corp|corporation|co)\b/g, " ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function tokenSetSimilarity(a: string, b: string): number {
+  const at = new Set(a.split(/\s+/).filter(t => t.length >= 2));
+  const bt = new Set(b.split(/\s+/).filter(t => t.length >= 2));
+  if (at.size === 0 || bt.size === 0) return 0;
+  let inter = 0;
+  for (const t of at) if (bt.has(t)) inter++;
+  const union = new Set([...at, ...bt]).size;
+  return inter / union;
+}
+
+// Common Indian-recruiting company aliases. Maps every form to a canonical
+// key so "TCS", "Tata Consultancy Services" and "Tata Consultancy" all match.
+const COMPANY_ALIASES: Record<string, string> = {
+  "tcs": "tata consultancy",
+  "tata consultancy": "tata consultancy",
+  "tata consultancy services": "tata consultancy",
+  "infy": "infosys",
+  "infosys": "infosys",
+  "wipro": "wipro",
+  "hcl": "hcl",
+  "hcltech": "hcl",
+  "ibm": "ibm",
+  "google": "google",
+  "alphabet": "google",
+  "meta": "meta",
+  "facebook": "meta",
+  "amazon": "amazon",
+  "aws": "amazon",
+  "microsoft": "microsoft",
+  "msft": "microsoft",
+  "ms": "microsoft",
+  "accenture": "accenture",
+  "cognizant": "cognizant",
+  "ctsh": "cognizant",
+  "cts": "cognizant",
+  "capgemini": "capgemini",
+  "deloitte": "deloitte",
+  "jpmc": "jpmorgan chase",
+  "jp morgan": "jpmorgan chase",
+  "jpmorgan": "jpmorgan chase",
+  "jpmorgan chase": "jpmorgan chase",
+};
+
+function canonicalCompany(s: string): string {
+  return COMPANY_ALIASES[s] ?? s;
+}
+
+function companyMatch(a: string, b: string): boolean {
+  if (!a || !b) return false;
+  const ca = canonicalCompany(a);
+  const cb = canonicalCompany(b);
+  if (ca === cb) return true;
+  // Substring containment after normalization handles "google" vs "google india".
+  if (ca.length >= 3 && cb.includes(ca)) return true;
+  if (cb.length >= 3 && ca.includes(cb)) return true;
+  return tokenSetSimilarity(a, b) >= 0.7;
+}
+
+async function computeTpoMatch(
+  college: string | null | undefined,
+  company: string | null | undefined,
+  role: string | null | undefined,
+): Promise<{ status: "matched" | "not_matched" | "unknown"; driveId: number | null }> {
+  if (!college || !company) return { status: "unknown", driveId: null };
+
+  const sixtyDaysAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000);
+  const tpoPosts = await db
+    .select()
+    .from(tpoDrivesTable)
+    .where(
+      and(
+        eq(tpoDrivesTable.college, college),
+        eq(tpoDrivesTable.status, "active"),
+        gte(tpoDrivesTable.createdAt, sixtyDaysAgo),
+      ),
+    )
+    .orderBy(desc(tpoDrivesTable.createdAt))
+    .limit(200);
+
+  // If the TPO has posted nothing recently, we genuinely don't know.
+  if (tpoPosts.length === 0) return { status: "unknown", driveId: null };
+
+  const targetCompany = normalizeText(company);
+  const targetRole = normalizeText(role);
+
+  // Strong company match required: token-set similarity >= 0.7.
+  // When BOTH the pasted message and the TPO post specify a role, role
+  // similarity must also be >= 0.4 — otherwise we'd over-verify a different
+  // role at the same company. If either side has no role, company-only is OK.
+  let best: { id: number; score: number } | null = null;
+  for (const post of tpoPosts) {
+    const postCompany = normalizeText(post.company);
+    if (!companyMatch(targetCompany, postCompany)) continue;
+
+    if (targetRole && post.role) {
+      const roleScore = tokenSetSimilarity(targetRole, normalizeText(post.role));
+      if (roleScore < 0.4) continue;
+    }
+
+    // Score for picking the "best" candidate when multiple match — exact
+    // canonical hits win; otherwise fall back to token-set similarity.
+    const score =
+      canonicalCompany(targetCompany) === canonicalCompany(postCompany)
+        ? 1
+        : Math.max(tokenSetSimilarity(targetCompany, postCompany), 0.7);
+    if (!best || score > best.score) best = { id: post.id, score };
+  }
+
+  if (best) return { status: "matched", driveId: best.id };
+  return { status: "not_matched", driveId: null };
+}
 
 // ─── Ghost-rate aggregator ──────────────────────────────────────────────────
 // Returns: { total, applied, called, ghosted, rejected, offer, ghostRate, callRate, offerRate }
