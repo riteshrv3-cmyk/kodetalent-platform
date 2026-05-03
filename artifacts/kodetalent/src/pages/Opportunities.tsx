@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, ChevronRight, ExternalLink, Target } from "lucide-react";
+import { ArrowLeft, ChevronRight, ExternalLink, Target, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -10,36 +11,30 @@ import { useCoursePreloader } from "@/hooks/useCoursePreloader";
 
 type OpportunityType = "jobs" | "internship" | "freelancing";
 
-const JOB_CARDS = [
-  { company: "Google India", logo: "🟡", pay: "20–40 LPA", location: "Bangalore / Remote", title: "Senior {role}" },
-  { company: "Microsoft India", logo: "🔵", pay: "16–32 LPA", location: "Hyderabad / Hybrid", title: "{role} Engineer" },
-  { company: "Razorpay", logo: "💳", pay: "12–24 LPA", location: "Bangalore", title: "{role} Lead" },
-  { company: "Flipkart", logo: "🛒", pay: "10–22 LPA", location: "Bangalore / Remote", title: "{role} Developer" },
-];
-
-const INTERNSHIP_CARDS = [
-  { company: "CRED", logo: "💎", pay: "₹25,000/mo", duration: "6 months", platform: "LinkedIn", title: "{role} Intern" },
-  { company: "Zepto", logo: "⚡", pay: "₹20,000/mo", duration: "3 months", platform: "Internshala", title: "{role} Trainee" },
-  { company: "TCS", logo: "🏢", pay: "₹15,000/mo", duration: "6 months", platform: "Company Portal", title: "{role} Intern" },
-  { company: "BrowserStack", logo: "🌐", pay: "₹18,000/mo", duration: "3–6 months", platform: "AngelList", title: "{role} Intern" },
-];
-
-const FREELANCE_CARDS = [
-  { client: "US Startup", logo: "🌍", pay: "₹1,500–3,000/hr", platform: "Upwork", duration: "Ongoing", title: "{role} Consultant" },
-  { client: "Direct Client", logo: "🤝", pay: "₹50K–2L / project", platform: "LinkedIn", duration: "Project-based", title: "{role} Freelancer" },
-  { client: "European Agency", logo: "🏗️", pay: "$15–40/hr", platform: "Toptal", duration: "Part-time", title: "{role} Specialist" },
-  { client: "Remote Company", logo: "💻", pay: "$20–55/hr", platform: "Freelancer.com", duration: "Contract", title: "{role} Expert" },
-];
-
-function fillTitle(template: string, role: string) {
-  return template.replace("{role}", role);
+interface LiveOpportunity {
+  id: string;
+  title: string;
+  company: string;
+  logo: string | null;
+  location: string;
+  pay: string | null;
+  postedAt: string | null;
+  tags: string[];
+  url: string;
+  source: string;
 }
 
-function getApplyLink(type: OpportunityType, domain: Domain, subDomain: SubDomain) {
-  const q = encodeURIComponent(`${subDomain.name}`);
-  if (type === "jobs") return `https://naukri.com/jobs-listings?searchType=yourSearch&src=googsearchnaukri&keyword=${q}&jobAge=15&salary=0&industry=&noOfResults=20`;
-  if (type === "internship") return `https://internshala.com/internships/${q.toLowerCase().replace(/\s/g, "-")}-internship`;
-  return `https://www.upwork.com/nx/search/jobs/?q=${q}`;
+function emojiFor(source: string): string {
+  const s = source.toLowerCase();
+  if (s.includes("remote")) return "🌐";
+  if (s.includes("naukri")) return "🇮🇳";
+  if (s.includes("linkedin")) return "💼";
+  if (s.includes("internshala")) return "🎓";
+  if (s.includes("upwork")) return "💚";
+  if (s.includes("toptal")) return "💎";
+  if (s.includes("freelancer")) return "🛠";
+  if (s.includes("fiverr")) return "🟢";
+  return "✨";
 }
 
 export default function Opportunities() {
@@ -80,132 +75,79 @@ export default function Opportunities() {
     { id: "freelancing", label: "Freelancing", emoji: "🌍" },
   ];
 
-  const renderCards = () => {
-    if (!selectedSubDomain) return null;
-    const role = selectedSubDomain.name;
+  const skillsParam = selectedSubDomain?.skills.join(",") ?? "";
+  const roleParam = selectedSubDomain?.name ?? "";
+  const liveQuery = useQuery<{ items: LiveOpportunity[] }>({
+    queryKey: ["opportunities", activeTab, roleParam, skillsParam],
+    queryFn: async () => {
+      const url = `/api/opportunities?kind=${activeTab}&role=${encodeURIComponent(roleParam)}&skills=${encodeURIComponent(skillsParam)}`;
+      const r = await fetch(url);
+      if (!r.ok) throw new Error("fetch failed");
+      return r.json();
+    },
+    enabled: !!selectedSubDomain,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const renderLiveCards = () => {
+    if (!selectedSubDomain || !selectedDomain) return null;
     const skills = selectedSubDomain.skills.slice(0, 3);
+    const accent = selectedDomain.color;
+    const accentBg = selectedDomain.bg;
+    const payColor =
+      activeTab === "jobs" ? "#10b981"
+      : activeTab === "internship" ? "#4f46e5"
+      : "#f97316";
+    const payBg =
+      activeTab === "jobs" ? "#ecfdf5"
+      : activeTab === "internship" ? "#eef2ff"
+      : "#fff7ed";
 
-    if (activeTab === "jobs") {
-      return JOB_CARDS.map((t, i) => (
-        <motion.div key={i} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}>
-          <Card className="border-0 shadow-[0_4px_16px_rgba(0,0,0,0.07)] rounded-2xl bg-white overflow-hidden">
-            <CardContent className="p-4">
-              <div className="flex items-start justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl">{t.logo}</span>
-                  <div>
-                    <p className="text-xs text-[#64748b] font-bold">{t.company}</p>
-                    <p className="text-sm font-extrabold text-[#0f172a] leading-tight">{fillTitle(t.title, role)}</p>
-                  </div>
-                </div>
-                <span className="text-[11px] font-extrabold text-[#10b981] bg-[#ecfdf5] px-2.5 py-1 rounded-full whitespace-nowrap">
-                  {t.pay}
-                </span>
-              </div>
-              <p className="text-xs text-[#64748b] mb-3">📍 {t.location} · Full-time</p>
-              <div className="flex flex-wrap gap-1.5 mb-3">
-                {skills.map(s => (
-                  <span key={s} className="text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${selectedDomain!.bg}`, color: selectedDomain!.color }}>
-                    {s}
-                  </span>
-                ))}
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  onClick={navigateToCourse}
-                  className="flex-1 h-10 rounded-xl text-white font-bold text-[13px]"
-                  style={{ background: selectedDomain!.color }}
-                >
-                  <Target className="w-3.5 h-3.5 mr-1.5" /> Prepare
-                </Button>
-                <a
-                  href={getApplyLink("jobs", selectedDomain!, selectedSubDomain)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex-1"
-                >
-                  <Button variant="outline" className="w-full h-10 rounded-xl font-bold text-[13px] border-2" style={{ borderColor: selectedDomain!.color, color: selectedDomain!.color }}>
-                    Apply <ExternalLink className="w-3 h-3 ml-1" />
-                  </Button>
-                </a>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      ));
+    if (liveQuery.isLoading) {
+      return (
+        <div className="flex flex-col items-center justify-center py-12 gap-2">
+          <Loader2 className="w-6 h-6 animate-spin" style={{ color: accent }} />
+          <p className="text-xs text-[#64748b] font-bold">Fetching live {activeTab}…</p>
+        </div>
+      );
     }
 
-    if (activeTab === "internship") {
-      return INTERNSHIP_CARDS.map((t, i) => (
-        <motion.div key={i} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}>
-          <Card className="border-0 shadow-[0_4px_16px_rgba(0,0,0,0.07)] rounded-2xl bg-white overflow-hidden">
-            <CardContent className="p-4">
-              <div className="flex items-start justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl">{t.logo}</span>
-                  <div>
-                    <p className="text-xs text-[#64748b] font-bold">{t.company}</p>
-                    <p className="text-sm font-extrabold text-[#0f172a] leading-tight">{fillTitle(t.title, role)}</p>
-                  </div>
-                </div>
-                <span className="text-[11px] font-extrabold text-[#4f46e5] bg-[#f8fafc] px-2.5 py-1 rounded-full whitespace-nowrap">
-                  {t.pay}
-                </span>
-              </div>
-              <p className="text-xs text-[#64748b] mb-1">⏱ {t.duration} · via {t.platform}</p>
-              <div className="flex flex-wrap gap-1.5 mb-3">
-                {skills.map(s => (
-                  <span key={s} className="text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ background: selectedDomain!.bg, color: selectedDomain!.color }}>
-                    {s}
-                  </span>
-                ))}
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  onClick={navigateToCourse}
-                  className="flex-1 h-10 rounded-xl text-white font-bold text-[13px]"
-                  style={{ background: selectedDomain!.color }}
-                >
-                  <Target className="w-3.5 h-3.5 mr-1.5" /> Prepare
-                </Button>
-                <a
-                  href={getApplyLink("internship", selectedDomain!, selectedSubDomain)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex-1"
-                >
-                  <Button variant="outline" className="w-full h-10 rounded-xl font-bold text-[13px] border-2" style={{ borderColor: selectedDomain!.color, color: selectedDomain!.color }}>
-                    Apply <ExternalLink className="w-3 h-3 ml-1" />
-                  </Button>
-                </a>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      ));
+    const items = liveQuery.data?.items ?? [];
+    if (!items.length) {
+      return (
+        <div className="text-center py-10">
+          <p className="text-sm font-bold text-[#64748b]">No live results — try another specialisation.</p>
+        </div>
+      );
     }
 
-    // Freelancing
-    return FREELANCE_CARDS.map((t, i) => (
-      <motion.div key={i} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}>
+    return items.map((o, i) => (
+      <motion.div key={o.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i, 8) * 0.04 }}>
         <Card className="border-0 shadow-[0_4px_16px_rgba(0,0,0,0.07)] rounded-2xl bg-white overflow-hidden">
           <CardContent className="p-4">
-            <div className="flex items-start justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <span className="text-2xl">{t.logo}</span>
-                <div>
-                  <p className="text-xs text-[#64748b] font-bold">{t.client} · {t.platform}</p>
-                  <p className="text-sm font-extrabold text-[#0f172a] leading-tight">{fillTitle(t.title, role)}</p>
+            <div className="flex items-start justify-between mb-2 gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                {o.logo
+                  ? <img src={o.logo} alt={o.company} className="w-9 h-9 rounded-lg object-cover bg-[#f1f5f9] flex-shrink-0" onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+                  : <span className="text-2xl flex-shrink-0">{emojiFor(o.source)}</span>
+                }
+                <div className="min-w-0">
+                  <p className="text-xs text-[#64748b] font-bold truncate">{o.company} · {o.source}</p>
+                  <p className="text-sm font-extrabold text-[#0f172a] leading-tight line-clamp-2">{o.title}</p>
                 </div>
               </div>
-              <span className="text-[11px] font-extrabold text-[#f97316] bg-[#fff7ed] px-2.5 py-1 rounded-full whitespace-nowrap">
-                {t.pay}
-              </span>
+              {o.pay && (
+                <span className="text-[11px] font-extrabold px-2.5 py-1 rounded-full whitespace-nowrap" style={{ color: payColor, background: payBg }}>
+                  {o.pay}
+                </span>
+              )}
             </div>
-            <p className="text-xs text-[#64748b] mb-3">📅 {t.duration}</p>
+            <p className="text-xs text-[#64748b] mb-3">
+              📍 {o.location}{o.postedAt ? ` · ${o.postedAt}` : ""}
+            </p>
             <div className="flex flex-wrap gap-1.5 mb-3">
-              {skills.map(s => (
-                <span key={s} className="text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ background: selectedDomain!.bg, color: selectedDomain!.color }}>
+              {(o.tags.length ? o.tags : skills).slice(0, 4).map(s => (
+                <span key={s} className="text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ background: accentBg, color: accent }}>
                   {s}
                 </span>
               ))}
@@ -214,17 +156,12 @@ export default function Opportunities() {
               <Button
                 onClick={navigateToCourse}
                 className="flex-1 h-10 rounded-xl text-white font-bold text-[13px]"
-                style={{ background: selectedDomain!.color }}
+                style={{ background: accent }}
               >
                 <Target className="w-3.5 h-3.5 mr-1.5" /> Prepare
               </Button>
-              <a
-                href={getApplyLink("freelancing", selectedDomain!, selectedSubDomain)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex-1"
-              >
-                <Button variant="outline" className="w-full h-10 rounded-xl font-bold text-[13px] border-2" style={{ borderColor: selectedDomain!.color, color: selectedDomain!.color }}>
+              <a href={o.url} target="_blank" rel="noopener noreferrer" className="flex-1">
+                <Button variant="outline" className="w-full h-10 rounded-xl font-bold text-[13px] border-2" style={{ borderColor: accent, color: accent }}>
                   Apply <ExternalLink className="w-3 h-3 ml-1" />
                 </Button>
               </a>
@@ -234,6 +171,9 @@ export default function Opportunities() {
       </motion.div>
     ));
   };
+
+  const renderCards = () => renderLiveCards();
+
 
   return (
     <div className="min-h-screen bg-[#f8fafc] pb-28">
