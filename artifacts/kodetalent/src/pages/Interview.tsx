@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Send, ArrowLeft, RefreshCw, Share2, Clock, ChevronDown, ChevronUp, Mic, Volume2, VolumeX, Camera, CameraOff } from "lucide-react";
 import { useGetNextInterviewQuestion, useEvaluateInterview, useGetInterviewSession, useSubmitInterviewFeedback } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
@@ -673,7 +673,7 @@ export default function Interview() {
       )}
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-40">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-56">
         <AnimatePresence>
           {messages.map((msg) => (
             <motion.div key={msg.id} initial={{ opacity: 0, y: 10, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -724,7 +724,7 @@ export default function Interview() {
             🎤 Listening… speak now
           </motion.div>
         )}
-        <form onSubmit={handleTextSubmit} className="flex gap-2 items-center">
+        <form onSubmit={handleTextSubmit} className="flex gap-2 items-end">
           {voiceMode ? (
             <motion.button
               type="button"
@@ -741,12 +741,19 @@ export default function Interview() {
               {isRecording ? "Stop" : "Tap to speak"}
             </motion.button>
           ) : (
-            <Input
+            <Textarea
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              placeholder="Type your answer…"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  if (inputValue.trim() && !isTyping) submitAnswer(inputValue);
+                }
+              }}
+              placeholder="Type your answer… (Shift+Enter for new line)"
               disabled={isTyping}
-              className="flex-1 h-14 rounded-full border-2 border-[#e0e7ff] focus-visible:border-primary focus-visible:ring-0 px-5 text-[15px] bg-[#fafaf9] text-[#0f172a]"
+              rows={3}
+              className="flex-1 min-h-[88px] max-h-[200px] rounded-2xl border-2 border-[#e0e7ff] focus-visible:border-primary focus-visible:ring-0 px-4 py-3 text-[15px] bg-[#fafaf9] text-[#0f172a] resize-none leading-relaxed"
             />
           )}
           {!voiceMode && (
@@ -755,7 +762,7 @@ export default function Interview() {
                 type="submit"
                 size="icon"
                 disabled={isTyping || !inputValue.trim()}
-                className="h-14 w-14 rounded-full bg-primary text-white shadow-[0_4px_16px_rgba(124,58,237,0.3)] flex-shrink-0"
+                className="h-14 w-14 rounded-2xl bg-primary text-white shadow-[0_4px_16px_rgba(124,58,237,0.3)] flex-shrink-0"
               >
                 <Send className="w-5 h-5" />
               </Button>
