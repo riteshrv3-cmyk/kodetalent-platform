@@ -18,3 +18,21 @@ id = "lmDbQ9O_BUkemRZsEsFYJ"
 uri = "file://public/demo/kodetalent-demo.mp4"
 type = "video"
 title = "KodeTalent — Pitch Demo (43s, 1080p)"
+
+[[outputs]]
+id = "rpWVeK7NVFhMbihgbiApB"
+uri = "file://public/demo/ad1-recruiter-pain.jpg"
+type = "image"
+title = "Ad 1 — Recruiter Pain (\"500 fake resumes thakaa diye?\")"
+
+[[outputs]]
+id = "79xowgPwhKX8xL0WwhSIJ"
+uri = "file://public/demo/ad2-recruiter-outcome.jpg"
+type = "image"
+title = "Ad 2 — Recruiter Outcome (\"Job post → first interview\")"
+
+[[outputs]]
+id = "d_EPD-poa0Wkmi_q-fP0y"
+uri = "file://public/demo/ad3-student-identity.jpg"
+type = "image"
+title = "Ad 3 — Student Identity (\"Naukri.com se aage badho\")"
