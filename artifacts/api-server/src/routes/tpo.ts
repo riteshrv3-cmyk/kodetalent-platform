@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { studentsTable, recruiterInvites, mentors } from "@workspace/db";
-import { eq, inArray, desc } from "drizzle-orm";
+import { studentsTable, recruiterInvites, mentors, driveChecksTable, recruiterJobsTable } from "@workspace/db";
+import { eq, inArray, desc, and, gte, sql } from "drizzle-orm";
 
 const router = Router();
 
@@ -110,6 +110,246 @@ router.post("/students/:id/mark-invites-seen", async (req, res) => {
     .set({ studentSeen: true })
     .where(eq(recruiterInvites.studentId, id));
   res.json({ ok: true });
+});
+
+router.get("/colleges/:college/leaderboard", async (req, res) => {
+  const { college } = req.params;
+  const all = await db
+    .select({
+      college: studentsTable.college,
+      total: sql<number>`count(*)::int`,
+      avgStrength: sql<number>`coalesce(round(avg(${studentsTable.profileStrength}))::int, 0)`,
+      avgScore: sql<number>`coalesce(round(avg(${studentsTable.overallScore}))::int, 0)`,
+      readyCount: sql<number>`coalesce(sum(case when ${studentsTable.profileStrength} >= 60 then 1 else 0 end)::int, 0)`,
+      openToWork: sql<number>`coalesce(sum(case when ${studentsTable.openToWork} = true then 1 else 0 end)::int, 0)`,
+    })
+    .from(studentsTable)
+    .groupBy(studentsTable.college);
+
+  const inviteCounts = await db
+    .select({
+      college: studentsTable.college,
+      invites: sql<number>`count(${recruiterInvites.id})::int`,
+    })
+    .from(studentsTable)
+    .leftJoin(recruiterInvites, eq(recruiterInvites.studentId, studentsTable.id))
+    .groupBy(studentsTable.college);
+  const inviteMap = Object.fromEntries(inviteCounts.map(r => [r.college, r.invites]));
+
+  const ranked = all
+    .filter(r => r.total >= 1)
+    .map(r => {
+      const readyPct = r.total > 0 ? Math.round((r.readyCount / r.total) * 100) : 0;
+      const compositeScore = r.avgStrength * 0.4 + readyPct * 0.4 + Math.min((inviteMap[r.college] ?? 0), 100) * 0.2;
+      return {
+        college: r.college,
+        total: r.total,
+        avgStrength: r.avgStrength,
+        avgScore: r.avgScore,
+        readyCount: r.readyCount,
+        readyPct,
+        openToWork: r.openToWork,
+        recruiterInterest: inviteMap[r.college] ?? 0,
+        compositeScore: Math.round(compositeScore),
+      };
+    })
+    .sort((a, b) => b.compositeScore - a.compositeScore);
+
+  const withRank = ranked.map((r, i) => ({ ...r, rank: i + 1 }));
+  const myRank = withRank.find(r => r.college === college);
+  const top10 = withRank.slice(0, 10);
+
+  res.json({
+    totalColleges: withRank.length,
+    myRank: myRank ?? null,
+    top10,
+    nationalAvgStrength: withRank.length > 0
+      ? Math.round(withRank.reduce((s, r) => s + r.avgStrength, 0) / withRank.length)
+      : 0,
+  });
+});
+
+router.get("/colleges/:college/digest", async (req, res) => {
+  const { college } = req.params;
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+  const collegeStudents = await db
+    .select({
+      id: studentsTable.id,
+      name: studentsTable.name,
+      year: studentsTable.year,
+      field: studentsTable.field,
+      profileStrength: studentsTable.profileStrength,
+      overallScore: studentsTable.overallScore,
+      createdAt: studentsTable.createdAt,
+      openToWork: studentsTable.openToWork,
+    })
+    .from(studentsTable)
+    .where(eq(studentsTable.college, college));
+
+  if (collegeStudents.length === 0) {
+    return res.json({
+      topReady: [], openToWorkList: [], newInvites: [],
+      invitesTotal7d: 0, driveChecks7d: 0, scamsBlocked: 0, ghostedDrives: 0,
+    });
+  }
+
+  const studentIds = collegeStudents.map(s => s.id);
+
+  const topReady = [...collegeStudents]
+    .filter(s => (s.profileStrength ?? 0) >= 60)
+    .sort((a, b) => (b.profileStrength ?? 0) - (a.profileStrength ?? 0))
+    .slice(0, 8);
+
+  const openToWorkList = collegeStudents
+    .filter(s => s.openToWork)
+    .sort((a, b) => (b.createdAt?.getTime() ?? 0) - (a.createdAt?.getTime() ?? 0))
+    .slice(0, 8);
+
+  const recentInvites = await db
+    .select()
+    .from(recruiterInvites)
+    .where(
+      and(
+        inArray(recruiterInvites.studentId, studentIds),
+        gte(recruiterInvites.createdAt, sevenDaysAgo),
+      ),
+    )
+    .orderBy(desc(recruiterInvites.createdAt));
+
+  const studentMap = Object.fromEntries(collegeStudents.map(s => [s.id, s]));
+  const newInvites = recentInvites.slice(0, 8).map(inv => ({
+    ...inv,
+    student: studentMap[inv.studentId],
+  }));
+
+  const recentDrives = await db
+    .select()
+    .from(driveChecksTable)
+    .where(
+      and(
+        inArray(driveChecksTable.studentId, studentIds),
+        gte(driveChecksTable.createdAt, sevenDaysAgo),
+      ),
+    );
+
+  const scamsBlocked = recentDrives.filter(d => d.scamVerdict === "scam").length;
+  const ghostedDrives = recentDrives.filter(d => d.outcome === "ghosted").length;
+
+  res.json({
+    topReady,
+    openToWorkList,
+    newInvites,
+    invitesTotal7d: recentInvites.length,
+    driveChecks7d: recentDrives.length,
+    scamsBlocked,
+    ghostedDrives,
+  });
+});
+
+router.get("/colleges/:college/skill-gap", async (req, res) => {
+  const { college } = req.params;
+  const collegeStudents = await db
+    .select({ skills: studentsTable.skills })
+    .from(studentsTable)
+    .where(eq(studentsTable.college, college));
+
+  const skillCounts: Record<string, number> = {};
+  for (const s of collegeStudents) {
+    const sk = (s.skills ?? {}) as Record<string, number>;
+    for (const k of Object.keys(sk)) {
+      const key = k.toLowerCase();
+      skillCounts[key] = (skillCounts[key] ?? 0) + 1;
+    }
+  }
+
+  const allJobs = await db.select({ parsed: recruiterJobsTable.parsedRequirements }).from(recruiterJobsTable);
+  const demandCounts: Record<string, number> = {};
+  for (const j of allJobs) {
+    if (!j.parsed) continue;
+    for (const k of [...(j.parsed.mustHaveSkills ?? []), ...(j.parsed.niceToHaveSkills ?? [])]) {
+      const key = String(k).toLowerCase();
+      demandCounts[key] = (demandCounts[key] ?? 0) + 1;
+    }
+  }
+
+  const totalStudents = collegeStudents.length;
+  const demanded = Object.entries(demandCounts)
+    .map(([skill, demand]) => {
+      const supply = skillCounts[skill] ?? 0;
+      const supplyPct = totalStudents > 0 ? Math.round((supply / totalStudents) * 100) : 0;
+      const gap = Math.max(0, demand - supply);
+      return { skill, demand, supply, supplyPct, gap };
+    })
+    .sort((a, b) => b.demand - a.demand)
+    .slice(0, 12);
+
+  const topBatchSkills = Object.entries(skillCounts)
+    .map(([skill, count]) => ({ skill, count, pct: totalStudents > 0 ? Math.round((count / totalStudents) * 100) : 0 }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 8);
+
+  res.json({
+    totalStudents,
+    totalJobsAnalyzed: allJobs.length,
+    inDemand: demanded,
+    topBatchSkills,
+  });
+});
+
+router.get("/colleges/:college/drive-feed", async (req, res) => {
+  const { college } = req.params;
+  const collegeStudents = await db
+    .select({ id: studentsTable.id, name: studentsTable.name, field: studentsTable.field, year: studentsTable.year })
+    .from(studentsTable)
+    .where(eq(studentsTable.college, college));
+
+  if (collegeStudents.length === 0) {
+    return res.json({ recentChecks: [], topGhostingCompanies: [], scamCount: 0, totalChecks: 0 });
+  }
+
+  const studentIds = collegeStudents.map(s => s.id);
+  const studentMap = Object.fromEntries(collegeStudents.map(s => [s.id, s]));
+
+  const checks = await db
+    .select()
+    .from(driveChecksTable)
+    .where(inArray(driveChecksTable.studentId, studentIds))
+    .orderBy(desc(driveChecksTable.createdAt))
+    .limit(40);
+
+  const recentChecks = checks.map(c => ({ ...c, student: studentMap[c.studentId] }));
+
+  const byCompany: Record<string, { total: number; ghosted: number; called: number; offer: number; rejected: number }> = {};
+  for (const c of checks) {
+    if (!c.company) continue;
+    const key = c.company;
+    if (!byCompany[key]) byCompany[key] = { total: 0, ghosted: 0, called: 0, offer: 0, rejected: 0 };
+    byCompany[key].total++;
+    if (c.outcome === "ghosted") byCompany[key].ghosted++;
+    else if (c.outcome === "called") byCompany[key].called++;
+    else if (c.outcome === "offer") byCompany[key].offer++;
+    else if (c.outcome === "rejected") byCompany[key].rejected++;
+  }
+
+  const topGhostingCompanies = Object.entries(byCompany)
+    .map(([company, v]) => {
+      const decided = v.ghosted + v.called + v.offer + v.rejected;
+      const ghostRate = decided > 0 ? Math.round((v.ghosted / decided) * 100) : 0;
+      return { company, ...v, decided, ghostRate };
+    })
+    .filter(c => c.decided >= 1)
+    .sort((a, b) => b.ghostRate - a.ghostRate || b.total - a.total)
+    .slice(0, 8);
+
+  const scamCount = checks.filter(c => c.scamVerdict === "scam").length;
+
+  res.json({
+    recentChecks,
+    topGhostingCompanies,
+    scamCount,
+    totalChecks: checks.length,
+  });
 });
 
 export default router;

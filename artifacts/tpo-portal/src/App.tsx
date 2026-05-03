@@ -9,6 +9,9 @@ import Students from "@/pages/Students";
 import StudentProfile from "@/pages/StudentProfile";
 import ActivityFeed from "@/pages/ActivityFeed";
 import MentorHub from "@/pages/MentorHub";
+import Leaderboard from "@/pages/Leaderboard";
+import Insights from "@/pages/Insights";
+import DriveFeed from "@/pages/DriveFeed";
 import { Layout } from "@/components/Layout";
 
 const queryClient = new QueryClient();
@@ -39,6 +42,9 @@ function Router() {
     <Switch>
       <Route path="/login" component={Login} />
       <Route path="/dashboard"><Guard><Dashboard /></Guard></Route>
+      <Route path="/leaderboard"><Guard><Leaderboard /></Guard></Route>
+      <Route path="/insights"><Guard><Insights /></Guard></Route>
+      <Route path="/drives"><Guard><DriveFeed /></Guard></Route>
       <Route path="/students"><Guard><Students /></Guard></Route>
       <Route path="/students/:id" component={StudentProfileRoute} />
       <Route path="/activity"><Guard><ActivityFeed /></Guard></Route>
