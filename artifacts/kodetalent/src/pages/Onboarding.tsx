@@ -135,6 +135,7 @@ export default function Onboarding() {
       });
 
       localStorage.setItem("studentId", student.id.toString());
+      localStorage.setItem("studentCollege", student.college || formData.college || "");
       setTimeout(() => { setLocation("/dashboard"); }, 2000);
     } catch (e) {
       console.error(e);

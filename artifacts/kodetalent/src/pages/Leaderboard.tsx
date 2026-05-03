@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Leaderboard() {
   const [, setLocation] = useLocation();
-  const [studentCollege] = useState<string>("PICT Pune");
+  const [studentCollege, setStudentCollege] = useState<string>("");
   const [studentId, setStudentId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState("college");
 
@@ -16,12 +16,17 @@ export default function Leaderboard() {
     const id = localStorage.getItem("studentId");
     if (!id) {
       setLocation("/");
-    } else {
-      setStudentId(parseInt(id, 10));
+      return;
     }
+    setStudentId(parseInt(id, 10));
+    const college = localStorage.getItem("studentCollege") || "";
+    setStudentCollege(college);
   }, [setLocation]);
 
-  const { data: collegeLeaderboard, isLoading: collegeLoading } = useGetCollegeLeaderboard({ college: studentCollege });
+  const { data: collegeLeaderboard, isLoading: collegeLoading } = useGetCollegeLeaderboard(
+    { college: studentCollege },
+    { query: { enabled: !!studentCollege } }
+  );
   const { data: indiaLeaderboard, isLoading: indiaLoading } = useGetIndiaLeaderboard();
 
   return (

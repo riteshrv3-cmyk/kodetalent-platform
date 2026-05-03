@@ -89,4 +89,27 @@ router.get("/students/:id/invites", async (req, res) => {
   res.json(invites);
 });
 
+router.patch("/recruiter-invites/:id", async (req, res) => {
+  const id = parseInt(req.params.id);
+  const { status } = req.body as { status: "accepted" | "declined" };
+  if (!["accepted", "declined"].includes(status)) {
+    return res.status(400).json({ error: "Invalid status" });
+  }
+  const [updated] = await db
+    .update(recruiterInvites)
+    .set({ status, studentSeen: true })
+    .where(eq(recruiterInvites.id, id))
+    .returning();
+  res.json(updated);
+});
+
+router.post("/students/:id/mark-invites-seen", async (req, res) => {
+  const id = parseInt(req.params.id);
+  await db
+    .update(recruiterInvites)
+    .set({ studentSeen: true })
+    .where(eq(recruiterInvites.studentId, id));
+  res.json({ ok: true });
+});
+
 export default router;
