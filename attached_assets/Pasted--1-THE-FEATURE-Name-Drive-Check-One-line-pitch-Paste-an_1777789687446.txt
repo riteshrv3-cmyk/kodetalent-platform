@@ -1,0 +1,154 @@
+## 1. THE FEATURE
+
+**Name:** Drive Check  
+
+**One-line pitch:** Paste any placement drive message, get instant scam check and eligibility verdict.  
+
+***
+
+## 2. THE 60-SECOND MAGIC MOMENT
+
+**00–10s:**  
+A 3rd-year NIT Warangal student opens KodeTalent and sees a new banner on Home: “New: Drive Check – Paste any drive from Telegram/WhatsApp.” [t](https://t.me/s/freshershunt?before=358)
+Their KodeScore and college badge sit at the top (“KodeScore 67 -  NITW ECE”), with a single big input box: “Paste drive message or link here (no parents, no TPO, just truth).” [reddit](https://www.reddit.com/r/PlacementsPrep/comments/1qawavg/placement_prep_feels_overwhelming_how_do_you_stay/)
+
+**10–25s:**  
+They long-press a sketchy “Infosys off-campus 21 LPA, registration fees ₹399” message from an off-campus Telegram channel, copy text, switch back, and paste into the box. [instagram](https://www.instagram.com/reel/DXwk_UnJSXX/)
+They tap a fat green button: “Check drive”. A tiny line below says: “We’ll tell you: 1) Scam or not, 2) Are you even eligible?” [cyber-times](https://cyber-times.in/indian-scams/fake-job-scam-telegram-whatsapp)
+
+**25–45s (SURPRISE):**  
+Claude processes for a second, then the screen flips into a bold verdict card that feels like a meme more than a job board. [mediamakersmeet](https://mediamakersmeet.com/15m-app-downloads-3b-pageviews-per-month-what-publishers-can-learn-from-the-meteoric-rise-of-indian-news-app-inshorts/)
+
+Top strip (full-width, color-coded):  
+
+- Big text: “Verdict: 🚩 Scam vibes, mat bhar.”  
+- Subtext in Hinglish: “Registration fee माँग रहा hai, Gmail ID se form, company domain match nahi karta.” [quickheal.co](https://www.quickheal.co.in/knowledge-centre/telegram-scam-in-india-and-how-to-stay-safe-online/)
+
+Middle section shows:  
+
+- “Scam score: 89% (Telegram job scam patterns match)” with 2–3 short reasons (fee demand, no company domain, unrealistic pay vs role). [cyber-times](https://cyber-times.in/indian-scams/fake-job-scam-telegram-whatsapp)
+- “Official college drive: Not found in your TPO list for this month.” (because the TPO portal doesn’t list it). [resources.instahyre](https://resources.instahyre.com/blog/why-i-agree-with-zomatos-ceo-that-campus-placements-in-india-are-broken/)
+
+Then the second panel slides up: “If it *was* real, are you eligible?”  
+
+- “Your CGPA: 7.2 | Drive cutoff: 8.0 → Gate: ❌ Closed (CGPA filter).” [reddit](https://www.reddit.com/r/developersIndia/comments/p07cd7/what_is_the_minimum_cgpa_required_so_as_to_be/)  
+- “Branches allowed: CSE/IT only | You: ECE → ❌ Branch blocked.” [linkedin](https://www.linkedin.com/pulse/something-wrong-current-placement-system-anurag-pradhan)  
+- “KodeScore fit: You’re above 55% of KodeTalent users for this role type.”[hypothesis]  
+
+The student didn’t expect both scam detection + personalised eligibility in one tap; until now they either trusted random drives or spammed seniors/TPO. [reddit](https://www.reddit.com/r/developersIndia/comments/1fpnzb0/i_am_frustrated_with_campus_placements_in_our/)
+
+**45–60s (SHARE TRIGGER):**  
+At the bottom, a chunky button says “Share verdict to your drive group.” Tapping it opens a preview image: the same verdict card, with their name, college, and KodeScore in the top-left and a tiny KodeTalent tag in the corner. [cloud.google](https://cloud.google.com/customers/inshorts)
+They screenshot instead (habit) and drop it straight into the same Telegram/WhatsApp drive group with “Bhai this is scam, dekho.” Others instantly react—laugh, panic, and ask “Ye KodeTalent kya hai? Link bhej.” [reddit](https://www.reddit.com/r/developersIndia/comments/t41fku/hello_cse_students_on_this_subreddit_do_you_have/)
+
+***
+
+## 3. THE SHAREABLE ARTIFACT
+
+The artifact is a single vertically oriented “Drive Verdict” card:  
+
+- Top: Student name, college, branch, KodeScore (“Ankit -  NITW ECE -  KodeScore 67”).[hypothesis]  
+- Center: Huge 2–3 word verdict with emoji: “🚩 Scam vibes”, “🟡 Risky but legit-looking”, or “🟢 Safe, tu eligible hai.” [quickheal.co](https://www.quickheal.co.in/knowledge-centre/telegram-scam-in-india-and-how-to-stay-safe-online/)
+- Under verdict: 3 ultra-short Hinglish reasons in bullet form (“Registration fee”, “Free Gmail form”, “No company website”, or “Official TPO mail, domain matches, no money asked”). [reddit](https://www.reddit.com/r/IndiaCareers/comments/1kvpmlx/unstop_warns_about_fake_job/)
+- Lower section: Eligibility snapshot against that exact drive: CGPA vs cutoff, branch allowed vs yours, passout year, plus a single line “You vs this drive: 0/3 gates open” or “2/3 gates open – apply aaj hi.” [reddit](https://www.reddit.com/r/developersIndia/comments/p07cd7/what_is_the_minimum_cgpa_required_so_as_to_be/)
+
+It’s impossible to scroll past because it compresses three anxieties into one image: “Is this scam?”, “Am I even allowed to sit?”, “Am I wasting time?”—things students currently dig through comments, seniors, and random blogs to answer. [reddit](https://www.reddit.com/r/PlacementsPrep/)
+
+First forward is always to the same drive’s hostel/batch/off-campus group, where everyone is already debating “legit hai kya?” and sharing Telegram links blindly. [t](https://t.me/s/freshershunt?before=372)
+Recipients feel a mix of relief (“acha hua pehle check kar liya”), embarrassment (“almost paid registration”), and FOMO (“mere liye kya verdict aayega?”), which pushes them to click through and run Drive Check on the next drive they see. [youtube](https://www.youtube.com/watch?v=hj-qn3G48Fw)
+
+***
+
+## 4. THE VIRAL LOOP (K-FACTOR MECHANISM)
+
+- **Step 1:** A student sees a drive on Telegram/WhatsApp/Instagram—either from Off Campus channels or college groups—and pastes it into Drive Check inside KodeTalent. [instagram](https://www.instagram.com/reel/DXwk_UnJSXX/)
+- **Step 2:** The app produces the Drive Verdict card (scam score + eligibility snapshot) with the student’s identity and college stamped on top. [reddit](https://www.reddit.com/r/developersIndia/comments/p07cd7/what_is_the_minimum_cgpa_required_so_as_to_be/)
+- **Step 3:** The student shares to 3–5 friends/groups because:  
+  - It lets them flex as the “research-wala” friend who saves others from scams (identity flex). [reddit](https://www.reddit.com/r/JEENEETards/comments/x9txer/to_all_the_22_tards_a_discord_server_for_indian/)
+  - They feel moral duty after hearing about Telegram job scams draining thousands from students. [youtube](https://www.youtube.com/watch?v=20W86LbyYIY)
+  - They know others are equally stressed about CGPA/branch cutoffs and eligibility and will want their own verdicts. [linkedin](https://www.linkedin.com/posts/mayurikri_cgpa-placementtips-activity-7370481571088297984-oxZB)
+- **Step 4:** Friends see the card with the KodeTalent tag, tap the short link, and land directly on the Drive Check screen with the same drive text already loaded and a prompt to “See your own verdict.”[hypothesis]  
+- **Step 5:** To not feel like the clueless one who almost fell for a scam—or to check if *they* are eligible when the original sharer wasn’t—friends are pushed to sign in, add CGPA/branch once, and hit “Check drive.”[hypothesis] [linkedin](https://www.linkedin.com/pulse/something-wrong-current-placement-system-anurag-pradhan)
+- **Step 6:** They now have their own verdict card to share back (“mere liye gate open hai, tera band hai”), restarting the loop.[hypothesis]  
+
+For a typical 60-person CS/ECE batch where ~30–40 actively follow off-campus channels, it’s realistic that one heavy user sharing 3–4 verdicts in a week pulls in 1–2 new users who each then share at least one card.[hypothesis] [t](https://t.me/s/freshershunt?before=358)
+That implies a k-factor in the 1.3–1.8 range at the batch level if the artifact is visually tight and share defaults are smooth.[hypothesis]  
+
+***
+
+## 5. THE INSIGHT IT EMBODIES
+
+“Most people think Indian career-tech is about giving students more opportunities—more job listings, more hackathons, more ‘placement guarantee’ programs. [linkedin](https://www.linkedin.com/posts/thecreatorsir_if-anyone-has-got-a-job-through-cuvette-activity-7182005921961713664-rkoD)
+The truth is that for a 3rd-year engineering student in 2026, the daily grind is *filtering* a flood of noisy, often scammy drives on Telegram/WhatsApp and figuring out ‘Is this real, and am I even allowed to sit?’ before wasting hours and money. [reddit](https://www.reddit.com/r/Btechtards/comments/1oqmbff/81_cgpa_in_college_but_12th_marks_below_80/)
+Therefore Drive Check is the inevitable wedge: instead of being yet another place that *pushes* drives, KodeTalent sits on top of the chaos as the trust layer that says ‘this one is fake, this one bans you on CGPA, this one you can actually win—here’s why.’” [reddit](https://www.reddit.com/r/developersIndia/comments/13cd9s9/how_much_does_college_cgpa_matters_in_getting/)
+
+(For example, Indian students explicitly complain about registration-fee job scams on Telegram/WhatsApp, and about being silently filtered out of campus drives by CGPA/branch criteria even when they have strong skills and projects.) [linkedin](https://www.linkedin.com/pulse/something-wrong-current-placement-system-anurag-pradhan)
+
+***
+
+## 6. WHY YC PARTNERS WILL CARE
+
+1. Drive Check delivers a **magic moment in <60 seconds** when a pasted Telegram drive is instantly unpacked into scam likelihood + personalised eligibility, something no existing job board or prep tool shows in one shot (YC trigger 1). [reddit](https://www.reddit.com/r/developersIndia/comments/13cd9s9/how_much_does_college_cgpa_matters_in_getting/)
+2. It is an **insight made tangible**: instead of “more jobs for students,” the product directly encodes the contrarian thesis that *filtering and trust* are the real bottlenecks in Indian placements, especially with 80–85% of engineering students not getting placed and job scams rising (YC trigger 2). [linkedin](https://www.linkedin.com/pulse/campus-placement-crisis-india-70-decline-phenomenon-tamojit-das-4n3gc)
+3. It is a **sharp wedge into a huge market**: starting from “check any drive link” in college groups naturally extends into being the default trust and eligibility layer for every early-career opportunity in India (YC trigger 6). [play.google](https://play.google.com/store/apps/details?id=com.dare2compete.app&hl=en_IN)
+
+***
+
+## 7. WHY STUDENTS WILL FORWARD IT
+
+1. The verdict card is a pure **identity flex**: “I’m the person who can tell scam vs legit and who actually knows which drives I qualify for,” stamped with their name, college, and KodeScore (Forward trigger 1). [born2flirt](https://born2flirt.in/blog/best-discord-servers-for-students-india)
+2. It creates **FOMO**: when one student shares “Scam vibes, I saved you ₹399” or “I’m above cutoff for this 21 LPA role,” others feel they’re at an information disadvantage until they run Drive Check for the same and future drives (Forward trigger 2). [x](https://x.com/learning_pt/status/2049725847221965046)
+3. It bakes in **inside jokes and social comparison**: Hinglish copy, references to CGPA cutoffs and branch bias, and “gates open/closed” language tap straight into JEE/placement meme culture and the constant IIT/NIT vs tier-3 comparison (Forward triggers 3 and 6). [reddit](https://www.reddit.com/r/JEENEETards/comments/16mp6bn/resharing_this_meme_i_created_on_jee_2023/)
+
+***
+
+## 8. WHY NO COMPETITOR HAS BUILT IT
+
+Option **(b)** is the truest.  
+
+Large Indian job platforms like Internshala, Apna, and Unstop are structurally optimised to maximise volume of postings and on-platform engagement, not to tell users “this drive you got elsewhere is probably fake; don’t apply.” [mouthshut](https://www.mouthshut.com/product-reviews/internshala-reviews-925769318)
+Their 1–2 star reviews and external writeups complain about irrelevant profiles, low-quality candidates, overhyped “placement guarantee” programs, and occasionally scammy-feeling experiences, but not about giving students a tool to *actively scan* third-party drives. [resumejudge](https://resumejudge.com/blog/apna-review/)
+Security companies and scam-awareness content (Quick Heal, cybercrime lawyers, YouTube explainers) warn about Telegram/WhatsApp job scams in bulk, yet they live outside campus workflows and never tie back to a student’s CGPA/branch/skills in a single flow. [youtube](https://www.youtube.com/watch?v=20W86LbyYIY)
+KodeTalent can build Drive Check precisely because it already sits in the “placement brain” of a student (AI chat + practice), knows their KodeScore/branch, and has a path to TPO/recruiter data—so it’s aligned with *reducing* noisy drives, not pushing more.[hypothesis] [reddit](https://www.reddit.com/r/PlacementsPrep/comments/1qawavg/placement_prep_feels_overwhelming_how_do_you_stay/)
+
+***
+
+## 9. WHY IT FITS KODETALENT SPECIFICALLY
+
+Drive Check becomes far more powerful *because* KodeTalent already has AI chat, KodeScore, TPO, recruiter, and gamification foundations: the same Claude-powered chat that updates profiles can also parse messy drive messages and explain verdicts in campus Hinglish without extra UX.[hypothesis] [reddit](https://www.reddit.com/r/PlacementsPrep/comments/1qawavg/placement_prep_feels_overwhelming_how_do_you_stay/)
+KodeScore + recruiter portal make the “you vs this drive” slice real (fit band for this role), while the TPO portal lets you mark official drives vs random Telegram spam, and gamification rewards the first student in a batch to run and share a verdict for each new drive.[hypothesis] [linkedin](https://www.linkedin.com/pulse/campus-placement-crisis-india-70-decline-phenomenon-tamojit-das-4n3gc)
+
+***
+
+## 10. BUILD FEASIBILITY (24-HOUR DETAIL)
+
+| Component | Detail |
+|---|---|
+| **DB schema changes** | New table `drive_checks` (id, user_id, raw_text, structured_json, scam_score, eligibility_summary, created_at); optional `shared_count` column for viral metric.[hypothesis] |
+| **API endpoints (REST)** | `POST /api/drive-checks` (body: `{ rawText }`, returns verdict JSON + ID); `GET /api/drive-checks/:id` (fetch saved verdict); `GET /api/drive-checks/recent` (list last N for user); `POST /api/drive-checks/:id/share` (increment `shared_count`, return sharable image URL or data).[hypothesis] |
+| **Frontend components** | `DriveCheckPage` (route under student app), `DriveCheckForm` (paste box + CTA), `DriveVerdictCard` (scam + eligibility panels), `SharePreviewModal` (shows image + share options), small `DriveCheckEntryPoint` banner on Home, `DriveCheckHistoryList` (last few checks).[hypothesis] |
+| **Claude API usage** | `claude-haiku-4-5` with a prompt that: (1) classifies scam vs safe (with reasons), (2) extracts fields (company name, cutoff, branches, location, fee, deadline, link), (3) outputs a compact JSON for backend to compare with user info; low temperature (~0.2) for deterministic outputs. [cyber-times](https://cyber-times.in/indian-scams/fake-job-scam-telegram-whatsapp)[hypothesis] |
+| **External APIs** | None required for v1; rely on text pasted by user and existing KodeTalent user/TPO data.[hypothesis] |
+| **Third-party libs** | Lightweight HTML-to-image library on frontend or backend (e.g., `html-to-image` or `puppeteer` in Node) to generate the sharable verdict card PNG; optional emoji/icon set.[hypothesis] |
+| **Build hours estimate** | 14–16 / 24 (backend endpoints + Claude integration 6–7h, frontend UI/flows 7–8h, basic testing + polish 2h).[hypothesis] |
+| **What I deliberately SKIP** | OCR from screenshots (require text paste only in v1); deep TPO integration beyond simple “official drive list” lookups; advanced model fine-tuning; multi-college stats; recruiter-facing analytics for now; non-English languages beyond Hinglish copy templates.[hypothesis] |
+| **Killer risk** | Misclassifying legit drives as scams or vice versa—if early verdicts are obviously wrong for students, trust is hard to rebuild.[hypothesis] |
+
+Everything above is feasible with your current React/TS/Tailwind + Express/Drizzle/Postgres stack and Claude Haiku, without scraping new sites or training custom models.[hypothesis]  
+
+***
+
+## 11. THE METRIC THAT PROVES IT WORKS
+
+“**At least 35% of students who run one Drive Check return within 7 days to run 3 or more additional Drive Checks, vs an estimated sub-10% week-one return rate for typical job-search or assessment tools.**”[hypothesis]  
+
+The exact industry benchmark W% (for comparable job/assessment apps) will need to be validated, but if over a third of first-time users are voluntarily coming back multiple times in week one *purely to check more drives they discovered elsewhere*, that is a strong behavioural proof of a must-have trust layer, not just another resume tool.[hypothesis] [apna](https://apna.co)
+
+***
+
+## 12. YOUR CONFIDENCE & WHAT WOULD CHANGE IT
+
+- **Confidence (1–10):** 8[hypothesis]  
+- **Why this number:** The feature cleanly plugs into existing campus behaviour (Telegram/WhatsApp drives + CGPA anxiety + scam fear) with a magic moment that no mainstream Indian job/edtech app currently offers, and is technically straightforward with your stack. [x](https://x.com/learning_pt/status/2049725847221965046)
+- **What would push it to 10:** 10–15 real student user interviews across 2–3 campuses validating that (a) they *do* regularly see scammy/uncertain drives, and (b) they would trust and act on an AI verdict card enough to share it in their main drive groups.[hypothesis] [reddit](https://www.reddit.com/r/PlacementsPrep/)
+- **What would drop it below 5:** If early usage shows students treat it as a one-time novelty (run 1–2 checks and stop), or if they consistently disagree with the scam/eligibility verdicts and go back to relying on seniors and TPO emails instead.[hypothesis] [reddit](https://www.reddit.com/r/developersIndia/comments/1fpnzb0/i_am_frustrated_with_campus_placements_in_our/)

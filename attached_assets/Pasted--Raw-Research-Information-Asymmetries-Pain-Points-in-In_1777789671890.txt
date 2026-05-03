@@ -1,0 +1,227 @@
+# Raw Research: Information Asymmetries & Pain Points in Indian Campus Placements
+
+*Compiled for KodeTalent YC W26 feature ideation. All [hypothesis] tags mark inferences not directly evidenced. Searches were limited; some Reddit and Twitter sources could not be fetched directly (robots.txt / fetch permission errors), so triangulated from cached snippets, Quora, Trustpilot, Glassdoor, Play Store, and industry analyses.*
+
+---
+
+## TL;DR (3 bullets)
+
+- **The biggest invisible asymmetry is recruiter-side filtering logic that students never see**: Indian campus ATSes filter on college-tier and CGPA cutoffs (often 7.0/8.0), 10th/12th percentage cutoffs (75–80%), backlog flags, and "Tier-1/Tier-2 only" tags applied *before* a human reads the resume — yet students apply blindly, with no ability to know whether they were auto-rejected by a regex, a CGPA cutoff, a tier filter, or actually evaluated. Recruiters know "Tier filtering is a 1990s heuristic running against a 2026 talent distribution" (IntervueBox, 2026) and that 60% of TCS fresher hires are now AI-specialist roles — but the eligibility/fit logic stays opaque to students.
+- **The most shareable artifact in Indian engineering circles is structured drive intel**: Telegram channels with 18k–280k+ subscribers (Jobdrives, FresherOffCampus, OffCampusJobs4u, Freshershunt) spread a near-identical templated card every day — Company • Role • Batch eligibility • CTC • Location • Apply Link • "Tier-1/Tier-2 only" note • emoji bullets — designed to be re-forwarded 1-tap into hostel WhatsApp groups. The format is *the* product; nothing else gets shared at this velocity.
+- **The dark period (apply → silence) is where the anxiety loop lives, and no Indian app surfaces "what actually happened to my application."** Students complain on Trustpilot/Play Store/Glassdoor that 95/100 Internshala applications get no response, that Apna sends "0/10 companies" callbacks, that Unstop "after attending the exam, you are sure not to receive any updates." The unmet need is *closure-state visibility*, not more job listings.
+
+---
+
+## Key Findings
+
+### 1. Recruiter-side signals students are blind to (the core asymmetry)
+
+From recruitment-tooling vendor blogs (intervuebox.ai, thehirehub.ai, eklavvya.com, iamneo.ai — 2025/2026), corroborated across multiple independent sources:
+
+- **Volumes**: A single mid-size IT company hiring ~100 freshers receives 5,000–10,000 applications. TCS-class drives see 5,000+ applications cut to 5 shortlists in 7–15 days via AI. (intervuebox.ai, 2026; thehirehub.ai, 2026.)
+- **Hidden first-pass filters routinely used**:
+  - College tier list (Tier-1 / Tier-2 only flag) — explicitly seen in Telegram drive posts, e.g., "Note: This job is for candidates from Tier 1 and Tier 2 colleges only" (Sprinklr drive, Jobdrives Telegram channel).
+  - 10th and 12th board percentages (often 75–80% minimum), no current backlog, sometimes "no education gap" — see Scribd "Company CGPA Criteria" doc listing 39 companies' filters (Hevo: 8 CGPA + no BL + 80% in 10th/12th, etc.).
+  - CGPA cutoffs (commonly 6.5/7.0/8.0 — varies by company).
+  - Resume regex/keyword parsing — "Resume scanners that filter on college name and CGPA throw away the exact candidates the business wants" (intervuebox.ai).
+  - Recency bias: "the recruiter reading resume #4,200 at 9pm on day three of a drive is not the same recruiter who read resume #5" (intervuebox.ai). Application *timing* is a hidden signal.
+  - Internship signal: "65% of companies now favor candidates with internship experience" (intervuebox.ai citing market data).
+  - Skill-tier banding: Infosys explicitly bands fresher pay — Specialist Programmer L3 ₹21 LPA, L2 ₹16 LPA, L1 ₹11 LPA, Digital ₹7 LPA (Times of India, Dec 2025) — but the criteria mapping a candidate to a band is recruiter-internal.
+- **What this means students don't know about themselves**: their auto-eligibility status for any given drive (which is deterministic from CGPA + 10/12th + backlogs + branch + tier), their *predicted* band placement, and which specific filter caused a silent rejection.
+
+### 2. Pain points from app reviews (1- and 2-star)
+
+**Internshala** (Trustpilot multi-page, Glassdoor reviews):
+- "If you will apply for 100 job posting on internshalla only 5 will be genuine all rest will be fake companies demanding you money" (Glassdoor reviewer, 2y ago).
+- "Internshala is a total fraud when it comes to their so-called 'placement guarantee' programs… Once you pay and finish the course, they vanish, leaving you with useless certificates" (Trustpilot).
+- "It has now been 8 months, and I have received zero placement assistance" (Trustpilot).
+- URL: https://www.trustpilot.com/review/www.internshala.com (multiple pages)
+
+**Unstop** (G2, Play Store, Grapevine):
+- "Everything is attractive to the user's eye. But I feel like fake. Landing a job after attending the Exam and getting qualified is hard." (G2)
+- "After encountering many scams, I am writing this review. It even redirects you to another platform… even after attending the exam, you are sure not to receive any updates about the test" (G2)
+- Play Store: "very bad experience with this platform the hiring process is not at all smooth and there is no communication regarding which thing will take place and when and the support team is basically useless"
+- "Unstop spam" thread on Grapevine: https://www.grapevine.in/post/unstop-spam-067855cc-c40d-4d68-b9c2-4dfa0f76a281
+- URL: https://www.g2.com/products/unstop/reviews
+
+**Apna** (Apple App Store, India):
+- "I nearly applied 10/10 companies but no one company also not messageing me i have required skills nd experience in the field sales but no one is there to kind of help… this is fake app… all apps are fake go and get from out side its waste of time in apna naukri linkdin etc"
+- URL: https://apps.apple.com/in/app/apna-job-search-app-india/id6751943956
+
+**Cuvette** (Quora, multiple Q&A):
+- "Yes, Cuvette is a scam. I have experienced the same thing. They will give you three chances. (Project + Viva). If you clear project then you have clear viva where questions are from every 5 subjects" — referring to their "placement guarantee" pivot.
+- URL: https://www.quora.com/What-is-the-review-of-Cuvette-placement-guarantee-program
+
+**Common thread**: Three distinct complaint clusters: (a) fake/low-quality listings; (b) no callbacks / no closure on applications; (c) "placement guarantee" courses that students perceive as money-extraction.
+
+### 3. The shareable artifact — Telegram off-campus drive cards
+
+Across the largest Telegram off-campus channels (Jobdrives ~18k+, OffCampusDrivesForFreshers, Freshershunt, OffCampusJobs4u, FresherOffCampus, "CAMPUS DRIVE" ~280k subscribers per innovativetricks.com), a near-identical message template is used. Example from Freshershunt (https://telegram.me/s/freshershunt):
+
+```
+🔹 L&T Technology Services (LTTS)
+💼 GET | 📍 Multiple Locations | 💰 ₹4 LPA | 🎓 2025
+🔗 https://freshershunt.in/ltts-off-campus-drive-2026/
+```
+And from Jobdrives:
+```
+Sprinklr off campus drive
+Batch: 2023*, 22, 21, 20, 19, 18
+Salary: INR 8 to 11 LPA
+Note: This job is for candidates from Tier 1 and Tier 2 colleges only
+```
+
+**Why it spreads** (extracted from format analysis):
+- Forwarding takes one tap; the card is self-contained, no app needed.
+- Single visual hierarchy: company > role > eligibility > CTC > apply link.
+- The "Batch" + "Tier" filter lines do recruiter-side filtering work *for the student* — they answer "is this for me?" in 2 seconds.
+- Hashtag tail (#freshers2022 #batch2021 #offcampus) makes the same card searchable across channels.
+- Identity signal: forwarding it = "I'm placement-grinding / I look out for my batchmates."
+
+URLs of the recurring pattern:
+- https://telegram.me/s/freshershunt
+- https://telegram.me/s/fresheroffcampus
+- https://t.me/s/offcampusjobs4u
+- https://t.me/OffCampusDrivesForFreshers
+- https://telegram-store.com/catalog/channels/jobdrives
+
+[hypothesis] No existing Indian app has replicated this card exactly as the *primary unit of content* with one-tap WhatsApp forward and an embedded "Am I eligible?" auto-check.
+
+### 4. Handshake's actual viral mechanic in the US
+
+From Wikipedia, Inside Higher Ed, Quartz, joinhandshake.com:
+- Founders' insight: "the opportunity gap they faced coming from a small engineering school, versus students from Ivy League or other schools that had more resources" (Wikipedia). The pitch was *democratising employer access* for non-elite campuses.
+- Distribution wedge: signed colleges' career services as the *paying* customer (universities paid annual subscription; students free). 800+ partner schools by 2019. (Inside Higher Ed, 2019.)
+- Critical retention feature added later: "peer-learning features will make it easier for students and recent grads to share advice and learn from one another" — i.e., student reviews of employers, peer-to-peer career advice. (Inside Higher Ed.)
+- Employer-reach-out: recruiters could DM students based on filters (skills, projects, demographic). Employers like PayPal "connected with 9× more women, 9× more Black applicants, 14× more Latinx candidates" via Handshake. (Quartz, 2019.)
+- **Why no Indian replica has stuck**: Indian colleges' TPO offices are not paying customers in the same way — TPOs *are* the employer-relationship layer and have no incentive to surrender it to a third-party platform. Cuvette/Superset/Naukri Campus all approached the TPO; none made the *student* the primary protagonist with employer-reach-out + verified peer review at scale. [hypothesis]
+
+### 5. Apna / Cuvette / Inshorts viral mechanics (campus-specific)
+
+**Apna** (Bloomberg, ThePrint, The Ken, Business Standard, insidestartups.substack.com):
+- Hit unicorn in 21 months, 22M users by late 2021. Core mechanic: vertical community groups (electricians, beauticians, telecallers) where users posted their work — *job-finding became identity-signalling* inside narrow occupational groups.
+- 16M of 22M users active in groups, not just job-hunting (The Ken). Networking/identity, not search, drove retention.
+- Key insight relevant for KodeTalent: Apna won by giving low-skill workers a *peer identity* layer, not a better job board.
+
+**Cuvette** (Medium IIT-KGP E-Cell, YourStory, Tracxn):
+- Founded 2020 by IIT-KGP grads; raised $180k seed 2021; "engaged 600+ companies, students from 150+ engineering colleges" within 10 months.
+- Original wedge: "skill-based matchmaking" — verified intern pool for startups, *bypassing CGPA and tier filters*. This is the explicit pitch ("save 80% of recruiter time").
+- Pivot to "placement guarantee" courses produced strong scam complaints on Quora (above).
+- [hypothesis] Cuvette spread among Bangalore engineering circles in 2022 because it gave non-Tier-1 students a credible-feeling alternative to TPO drives — a *bypass identity*, not just a job board.
+
+**Inshorts** (general knowledge): Spread by structured 60-word news cards designed for screenshot/share — same DNA as the Telegram drive card. Format = product.
+
+### 6. Information that travels in placement circles but apps haven't captured
+
+- **Live drive-status intel**: which company has finished its OA, who got shortlist mails, "drive postponed," what cutoff was applied this round. This passes through hostel WhatsApp + Telegram in real-time and decays in 24h. Apps surface listings, not *drive status*.
+- **Interview experiences (company × college × year)**: Geeksforgeeks-style "interview experience" posts get screenshotted and pasted into Telegram. Recurring format: "TCS Digital | NIT-X | 2024 | Round 1 OA: 3 coding qs (medium DP, easy graph) … Tip: brush DP."
+- **Eligibility hacks**: "Company X says 7.0 CGPA but they relax to 6.5 if you have 2 internships" — folk-knowledge that lives in seniors' DMs.
+- **Tier-2/Tier-3 'who-actually-came'**: students at non-marquee colleges desperately want to know which companies *actually* hired from their campus last year vs. nominally listed. TPOs inflate; reality differs.
+- **Backdoor / referral availability**: who in the senior batch has a referral pipe at Goldman/Microsoft/etc. Currently lives in alumni WhatsApp groups.
+- **Compensation ground-truth**: "they advertised ₹12 LPA but the in-hand is ₹6.8 LPA after components." Surfaces only post-offer in WhatsApp.
+
+### 7. The dark period / anxiety loop
+
+Direct evidence from reviews:
+- Internshala: "after applying to several internships" with no callbacks; 8-month silence post-paid-program.
+- Apna: "10/10 companies, no one company also not messageing me."
+- Unstop: "even after attending the exam, you are sure not to receive any updates."
+- Handshake (US, for contrast): app reviewers complain about *spam from far-away jobs* — a *different* failure mode (too much signal vs. India's no-signal). Source: https://apps.apple.com/us/app/handshake-jobs-new-careers/id1220620171
+
+**[hypothesis] The dark period in India is roughly 2–8 weeks per application, during which the student has zero state visibility and no probability estimate. No app surfaces:**
+- "Your application is one of N — typical shortlist rate at this company × CGPA × college tier is X%."
+- "You were auto-rejected by [CGPA filter / tier filter / regex]."
+- "Median time-to-respond from this company is Y days; you should move on after Z."
+
+### 8. Placement readiness gap (student belief vs. reality)
+
+Evidence (industry, not Reddit-direct):
+- Only 7% of Indian colleges achieve 100% placement (eklavvya.com industry summary).
+- 66% of recruiters report skill gaps as the primary challenge; 42% of university partners cite lack of preparation (eklavvya.com).
+- IIT Bombay 2024: 712 of ~2,000 registered students placed at the time of the Hindustan Times report — IIT-B publicly clarified only 6.1% were "still looking" in the exit survey, but the *registered-vs-placed* gap fueled viral discussion (india.com coverage).
+- TCS shifted to AI-specialist hiring (60% of fresher hires); Infosys created 4-tier fresher pay (₹7L–₹21L). Most students have no map of which tier they qualify for. (Rediff Mar 2026; ToI Dec 2025, via intervuebox.ai.)
+- iamneo.ai (campus-hiring vendor): "skills-based hiring frameworks, where a candidate's demonstrable ability in specific competencies matters more than their CGPA or college tier" — recruiter side has moved; student-side mental model hasn't.
+
+[hypothesis] The "placement readiness gap" is real and quantifiable: students estimate their probability of placement based on (a) CGPA, (b) college brand, (c) batchmate stories — none of which match the recruiter-side 2026 model (skill projects, internships, AI-tool fluency, GitHub, Kaggle).
+
+### 9. What students vent about (qualitative themes synthesised)
+
+From r/developersIndia wiki "Advice for Freshers" (https://wiki.developersindia.in/faqs/advice-for-freshers) and adjacent fragments captured in search:
+- Web dev saturation, niche confusion, "where do I even start" loops.
+- u/morning-coder advice template: "Take. Your. Time. Start at one place don't just jump into the niche."
+- Recurring vent (across snippets): "I have a 8.5 CGPA and 0 callbacks" — the disconnect between academic signal and recruiter signal.
+
+**Sources we could *not* directly fetch** (search results returned no usable snippets for some Reddit threads; google.com fetch blocked; reddit.com fetches blocked by permissions tool): r/PlacementPreparation top posts, r/IITBombay/r/BITSPilani placement threads, Striver/Apna College YouTube comment sections, Twitter rants. **These should be hand-collected before final synthesis.**
+
+### 10. What YC has likely *not* seen in Indian edtech / careertech apps (inference)
+
+[hypothesis] Based on the Indian app landscape (Internshala = listings + paid courses; Unstop = competitions + listings; Naukri Campus = job board; Apna = blue-collar identity; Cuvette = vetted intern matching; Hirect = chat-based; Cutshort = mid-career) and on YC's recent India edtech batch composition:
+
+- **Not seen**: "Why was I rejected?" feature — auto-decoding the deterministic part of recruiter filters from a student's profile and showing them the exact reason (CGPA cutoff missed by 0.2 / 12th-percentage cutoff / tier filter / branch ineligibility / backlog flag) per-drive, with a probability estimate.
+- **Not seen**: A student-facing "ATS preview" — show a student literally what the recruiter's parser sees from their resume, including which keywords matched/missed for a specific live drive.
+- **Not seen**: "Drive-state tracker" — for any company × college × batch, real-time crowd-sourced state (OA done, results out, shortlist sent, drive postponed) — replicating the Telegram chatter inside an app with verified peer-state.
+- **Not seen, but Telegram has organically**: The auto-generated structured drive card with one-tap "Am I eligible?" check based on the user's CGPA/10th/12th/branch. KodeTalent could *manufacture the artifact* that already wants to spread.
+- **Not seen**: A reverse-recruiter view ("here's how recruiters at [Company] tier-rank candidates from [your college]") backed by historical placement data scraped from public TPO reports + user-submitted offer letters.
+
+---
+
+## Details — Highest-leverage raw material
+
+**The one-line insight**: In Indian campus placements, the *deterministic* part of recruiter selection (eligibility filters) is private; the *stochastic* part (interview performance) gets all the prep attention. Students prep for the random thing and have zero visibility into the 60–80% of the funnel that's deterministic and would have told them upfront whether to even apply.
+
+**The shareable-artifact insight**: The unit that travels at velocity is ~7 lines, ~120 chars, structured Telegram card with eligibility on it. Whoever owns *generation* of this card per-student per-drive (i.e., personalised "Am I eligible? + Apply link" cards auto-fanned out to a student's batch WhatsApp) owns the flow.
+
+**The identity-signal insight**: Apna's lesson is that job apps in India retain on *identity inside a narrow community*, not on listings. For B.Tech students, the identity is "I'm placement-prepping seriously / I'm in the know / I look out for batchmates."
+
+**The closure-state insight**: Every existing app drops the student into a black box post-application. The "holy shit" demo is showing a student exactly which filter killed their last 47 applications, what their actual conversion is by company tier, and what the median dark-period length is so they stop refreshing email.
+
+---
+
+## Caveats
+
+- **Research budget was constrained**: Reddit, Twitter/X, Telegram channel-internal content, and YouTube comments could not be fetched directly via the available tools (robots.txt, permissions, and zero search results for several queries). This report leans heavily on Trustpilot, Glassdoor, Play/App Store reviews, Quora, industry vendor blogs (intervuebox.ai, thehirehub.ai, iamneo.ai, eklavvya.com), Telegram channel public web mirrors, Wikipedia, Inside Higher Ed, Quartz, and ThePrint. Hand-collection on Reddit and Twitter is required to verify the "voice."
+- **Vendor blogs are biased**: intervuebox.ai, thehirehub.ai, iamneo.ai, eklavvya.com sell the recruiter-side AI tools — they have an incentive to dramatise the volume/filter problem. Cross-checked against ToI/Rediff/Bloomberg quotes which they cite.
+- **Cuvette "scam" allegations** are user opinions on Quora, not adjudicated. They reflect perception, which is what matters for a YC story, but should not be repeated as fact.
+- **"Tier filtering is a 1990s heuristic"** quote is from a vendor's marketing post; treat as directional not authoritative.
+- **All [hypothesis] tags** mark inferences — particularly: (a) why Cuvette spread in Bangalore 2022 specifically, (b) the exact 2–8 week dark-period range, (c) the absence of a "Why was I rejected?" feature in YC India edtech batches, and (d) the framing of "deterministic vs. stochastic" funnel split. These are strong working theses but need primary-source validation (founder interviews, recruiter ATS audit, student survey n>50) before being put in the YC application.
+- **IIT Bombay 2024 placement numbers**: Hindustan Times reported 712/2,000 placed; IIT-B disputed with 6.1% "still looking" figure. The discrepancy itself is the placement-readiness-gap story — both numbers are usable but should be cited together to avoid cherry-picking.
+- **No direct screenshots / actual Reddit URLs**: the only working Reddit URL captured is the wiki (https://wiki.developersindia.in/faqs/advice-for-freshers). Manual scraping of r/developersIndia, r/PlacementPreparation, r/BITSPilani, r/NITRourkela top posts is a required next step.
+
+---
+
+## Verified URLs cited
+
+- https://www.trustpilot.com/review/www.internshala.com
+- https://www.trustpilot.com/review/www.internshala.com?page=4
+- https://www.glassdoor.com/Reviews/Employee-Review-Internshala-E901048-RVW82109822.htm
+- https://www.glassdoor.co.in/Reviews/Employee-Review-Internshala-E901048-RVW85608244.htm
+- https://www.g2.com/products/unstop/reviews
+- https://play.google.com/store/apps/details?id=com.dare2compete.app&hl=en_IN
+- https://www.grapevine.in/post/unstop-spam-067855cc-c40d-4d68-b9c2-4dfa0f76a281
+- https://apps.apple.com/in/app/apna-job-search-app-india/id6751943956
+- https://apps.apple.com/us/app/handshake-jobs-new-careers/id1220620171
+- https://www.quora.com/What-is-the-review-of-Cuvette-placement-guarantee-program
+- https://wiki.developersindia.in/faqs/advice-for-freshers
+- https://telegram.me/s/freshershunt
+- https://telegram.me/s/fresheroffcampus
+- https://t.me/s/offcampusjobs4u
+- https://t.me/OffCampusDrivesForFreshers
+- https://telegram-store.com/catalog/channels/jobdrives
+- https://en.wikipedia.org/wiki/Handshake_(company)
+- https://www.insidehighered.com/news/2019/08/21/handshake-popular-career-services-platform-now-open-all-students
+- https://www.insidehighered.com/news/2017/03/30/career-services-platform-handshake-sees-quick-growth-also-questions-about-data
+- https://qz.com/work/1690572/handshake-opens-to-all-students-attending-four-year-colleges-in-the-us
+- https://the-ken.com/story/apna-blue-collar-jobs-learning-india/
+- https://insidestartups.substack.com/p/apna-jobs-how-does-a-blue-collar
+- https://www.business-standard.com/article/companies/blue-collar-jobs-app-apna-becomes-unicorn-in-15-months-raises-100-mn-121091600129_1.html
+- https://theprint.in/economy/blue-collar-workers-app-apna-becomes-a-unicorn-in-21-months-valued-at-1-1-billion/734273/
+- https://yourstory.com/2021/05/funding-alert-intern-hiring-platform-cuvette-tech-titan-capital
+- https://ecell-iitkgp.medium.com/kgp-startup-stories-cuvette-tech-a2b47b545660
+- https://www.intervuebox.ai/ai-campus-hiring-fresher-recruitment/
+- https://www.thehirehub.ai/blog/it-fresher-hiring-india-2026
+- https://iamneo.ai/campus-hiring-in-india/
+- https://www.eklavvya.com/blog/improve-campus-placements/
+- https://www.scribd.com/document/718701549/Company-Criteria-3-Years-1-13
+- https://www.india.com/education/iit-bombay-placement-report-2024-institute-responds-to-reports-of-36-graduates-without-placement-provides-clarification-with-data-6836680/
+
+*End of raw research material. No feature recommendation included per scope.*
