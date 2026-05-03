@@ -135,7 +135,7 @@ function VerdictCard({ row, studentName, college, kodeScore }: {
             <div className="flex items-center justify-between mb-2.5">
               <p className="text-[10px] font-black uppercase tracking-wider text-[#64748b]">Tu eligible hai?</p>
               <span className="text-[11px] font-black text-[#0f172a]">
-                {row.gatesOpen}/{row.gatesTotal} gates open
+                {row.gatesOpen}/{row.gatesTotal} gates open · KodeScore fit {row.kodeScoreFit}
               </span>
             </div>
             <div className="space-y-2">
