@@ -2,7 +2,8 @@ import { useEffect } from "react";
 import { ALL_SUBDOMAINS } from "@/data/domains";
 
 const CACHE_VERSION = "v2";
-const BATCH_SIZE = 4;
+const BATCH_SIZE = 3;
+const MAX_PER_SESSION = 30;
 const STATUS_KEY = "course_preload_status";
 
 // Module-level singleton — only one preloader runs across the app lifetime
@@ -51,9 +52,11 @@ async function runPreloader() {
   const statusMap = getStatusMap();
 
   // Only process subdomains not yet successfully generated
-  const pending = ALL_SUBDOMAINS.filter(
+  // Cap per session so we don't hammer the AI endpoint when 100 courses are pending.
+  const allPending = ALL_SUBDOMAINS.filter(
     sd => !localStorage.getItem(getCacheKey(sd.id)) && statusMap[sd.id] !== "done"
   );
+  const pending = allPending.slice(0, MAX_PER_SESSION);
 
   if (pending.length === 0) return;
 

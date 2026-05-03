@@ -255,7 +255,7 @@ export default function Opportunities() {
               {selectedSubDomain && selectedSubDomain.name}
             </h1>
             <p className="text-xs font-bold text-[#64748b]">
-              {!selectedDomain && "Explore 12 tech domains · Jobs · Internships · Freelancing"}
+              {!selectedDomain && `Explore ${DOMAINS.length} tech domains · 100+ AI courses · Jobs · Internships`}
               {selectedDomain && !selectedSubDomain && "Select a specialisation to explore roles"}
               {selectedSubDomain && "Browse opportunities and get prepared"}
             </p>
