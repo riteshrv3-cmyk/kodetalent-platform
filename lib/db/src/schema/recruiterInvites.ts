@@ -1,4 +1,4 @@
-import { pgTable, serial, text, integer, boolean, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, integer, boolean, timestamp, index } from "drizzle-orm/pg-core";
 import { studentsTable } from "./students";
 
 export const recruiterInvites = pgTable("recruiter_invites", {
@@ -14,6 +14,12 @@ export const recruiterInvites = pgTable("recruiter_invites", {
   recruiterId: integer("recruiter_id"),
   jobId: integer("job_id"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
-});
+}, t => ({
+  studentIdx: index("ri_student_idx").on(t.studentId),
+  recruiterIdx: index("ri_recruiter_idx").on(t.recruiterId),
+  jobIdx: index("ri_job_idx").on(t.jobId),
+  statusIdx: index("ri_status_idx").on(t.status),
+  createdIdx: index("ri_created_idx").on(t.createdAt),
+}));
 
 export type RecruiterInvite = typeof recruiterInvites.$inferSelect;

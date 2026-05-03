@@ -3,6 +3,7 @@ import cors from "cors";
 import pinoHttp from "pino-http";
 import router from "./routes";
 import { logger } from "./lib/logger";
+import { errorHandler, notFoundHandler } from "./middlewares/errorHandler";
 
 const app: Express = express();
 
@@ -30,5 +31,11 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/api", router);
+
+// 404 for any /api/* route that didn't match
+app.use("/api", notFoundHandler);
+
+// Global error handler — must be last
+app.use(errorHandler);
 
 export default app;

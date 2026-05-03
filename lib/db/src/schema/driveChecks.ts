@@ -1,4 +1,4 @@
-import { pgTable, serial, integer, text, jsonb, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, serial, integer, text, jsonb, timestamp, index } from "drizzle-orm/pg-core";
 
 export const driveChecksTable = pgTable("drive_checks", {
   id: serial("id").primaryKey(),
@@ -26,6 +26,11 @@ export const driveChecksTable = pgTable("drive_checks", {
   outcomeAt: timestamp("outcome_at"),
   nextPingAt: timestamp("next_ping_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
-});
+}, t => ({
+  studentIdx: index("dc_student_idx").on(t.studentId),
+  outcomeIdx: index("dc_outcome_idx").on(t.outcome),
+  companyIdx: index("dc_company_idx").on(t.company),
+  createdIdx: index("dc_created_idx").on(t.createdAt),
+}));
 
 export type DriveCheck = typeof driveChecksTable.$inferSelect;

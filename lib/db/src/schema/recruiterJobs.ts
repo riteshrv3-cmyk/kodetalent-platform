@@ -1,4 +1,4 @@
-import { pgTable, serial, text, integer, jsonb, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, integer, jsonb, timestamp, index } from "drizzle-orm/pg-core";
 import { recruitersTable } from "./recruiters";
 
 export const recruiterJobsTable = pgTable("recruiter_jobs", {
@@ -20,6 +20,10 @@ export const recruiterJobsTable = pgTable("recruiter_jobs", {
   status: text("status").notNull().default("active"),
   invitesSent: integer("invites_sent").notNull().default(0),
   createdAt: timestamp("created_at").notNull().defaultNow(),
-});
+}, t => ({
+  recruiterIdx: index("rj_recruiter_idx").on(t.recruiterId),
+  statusIdx: index("rj_status_idx").on(t.status),
+  createdIdx: index("rj_created_idx").on(t.createdAt),
+}));
 
 export type RecruiterJob = typeof recruiterJobsTable.$inferSelect;
