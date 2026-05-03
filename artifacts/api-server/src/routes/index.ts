@@ -12,6 +12,7 @@ import courseRouter from "./course";
 import profileRouter from "./profile";
 import tpoRouter from "./tpo";
 import driveCheckRouter from "./driveCheck";
+import recruiterRouter from "./recruiter";
 
 const router: IRouter = Router();
 
@@ -28,5 +29,6 @@ router.use(anthropicRouter);
 router.use(courseRouter);
 router.use(tpoRouter);
 router.use(driveCheckRouter);
+router.use(recruiterRouter);
 
 export default router;

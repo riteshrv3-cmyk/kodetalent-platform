@@ -7,11 +7,20 @@ import Login from "@/pages/Login";
 import TalentPool from "@/pages/TalentPool";
 import StudentDetail from "@/pages/StudentDetail";
 import Shortlist from "@/pages/Shortlist";
+import Showcase from "@/pages/Showcase";
+import Dashboard from "@/pages/Dashboard";
+import PostJob from "@/pages/PostJob";
+import JobMatches from "@/pages/JobMatches";
 
 const queryClient = new QueryClient();
 
 function isLoggedIn() {
-  return !!localStorage.getItem("recruiter");
+  try {
+    const raw = localStorage.getItem("recruiter");
+    if (!raw) return false;
+    const r = JSON.parse(raw);
+    return !!r?.id;
+  } catch { return false; }
 }
 
 function Guard({ children }: { children: React.ReactNode }) {
@@ -23,18 +32,11 @@ function Guard({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-function StudentDetailRoute({ id }: { id: string }) {
-  return (
-    <Guard>
-      <StudentDetail id={Number(id)} />
-    </Guard>
-  );
-}
 
 function CatchAll() {
   const [, nav] = useLocation();
   useEffect(() => {
-    nav(isLoggedIn() ? "/talent" : "/login");
+    nav(isLoggedIn() ? "/dashboard" : "/welcome");
   }, [nav]);
   return null;
 }
@@ -42,14 +44,14 @@ function CatchAll() {
 function Router() {
   return (
     <Switch>
+      <Route path="/welcome" component={Showcase} />
       <Route path="/login" component={Login} />
-      <Route path="/talent">
-        <Guard><TalentPool /></Guard>
-      </Route>
-      <Route path="/student/:id" component={StudentDetailRoute} />
-      <Route path="/shortlist">
-        <Guard><Shortlist /></Guard>
-      </Route>
+      <Route path="/dashboard"><Guard><Dashboard /></Guard></Route>
+      <Route path="/post-job"><Guard><PostJob /></Guard></Route>
+      <Route path="/job/:id">{(params) => <Guard><JobMatches id={params.id} /></Guard>}</Route>
+      <Route path="/talent"><Guard><TalentPool /></Guard></Route>
+      <Route path="/student/:id">{(params) => <Guard><StudentDetail id={Number(params.id)} /></Guard>}</Route>
+      <Route path="/shortlist"><Guard><Shortlist /></Guard></Route>
       <Route component={CatchAll} />
     </Switch>
   );

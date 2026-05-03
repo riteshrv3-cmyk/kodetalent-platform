@@ -11,6 +11,8 @@ export const recruiterInvites = pgTable("recruiter_invites", {
   message: text("message"),
   status: text("status").notNull().default("pending"),
   studentSeen: boolean("student_seen").notNull().default(false),
+  recruiterId: integer("recruiter_id"),
+  jobId: integer("job_id"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
