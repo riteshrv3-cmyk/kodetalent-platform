@@ -82,13 +82,13 @@ export default function Roadmap() {
         particleCount: 100,
         spread: 70,
         origin: { y: 0.6 },
-        colors: ['#7c3aed', '#06b6d4', '#10b981', '#ec4899']
+        colors: ['#4f46e5', '#0ea5e9', '#10b981', '#ec4899']
       });
 
       // Create floating +XP element
       const el = document.createElement("div");
       el.innerText = `+${selectedQuest.quest.xpReward} XP`;
-      el.className = "fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-4xl font-black text-[#7c3aed] z-50 pointer-events-none drop-shadow-lg";
+      el.className = "fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-4xl font-black text-[#4f46e5] z-50 pointer-events-none drop-shadow-lg";
       document.body.appendChild(el);
       
       const animation = el.animate([
@@ -107,12 +107,12 @@ export default function Roadmap() {
   };
 
   return (
-    <div className="p-4 pb-28 max-w-md mx-auto min-h-screen bg-[#f5f3ff]">
+    <div className="p-4 pb-28 max-w-md mx-auto min-h-screen bg-[#f8fafc]">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold flex items-center text-[#1e1b4b]">
+        <h1 className="text-2xl font-bold flex items-center text-[#0f172a]">
           <BookOpen className="mr-2" /> Career Roadmap
         </h1>
-        <p className="text-[#6b7280] font-medium text-sm mt-1">
+        <p className="text-[#64748b] font-medium text-sm mt-1">
           Complete quests to level up and get placement ready.
         </p>
       </div>
@@ -129,15 +129,15 @@ export default function Roadmap() {
               <AccordionTrigger className="px-5 py-4 hover:no-underline [&[data-state=open]>div>svg]:rotate-180">
                 <div className="flex flex-col items-start w-full relative">
                   <div className="flex justify-between w-full mb-3 items-center pr-2">
-                    <span className="font-bold text-lg text-[#1e1b4b]">Year {year}</span>
+                    <span className="font-bold text-lg text-[#0f172a]">Year {year}</span>
                     <div className="flex items-center gap-3">
                       <span className="text-sm font-bold bg-primary/10 text-primary px-3 py-1 rounded-full">
                         {progress}%
                       </span>
-                      <ChevronDown className="h-5 w-5 shrink-0 text-[#6b7280] transition-transform duration-200" />
+                      <ChevronDown className="h-5 w-5 shrink-0 text-[#64748b] transition-transform duration-200" />
                     </div>
                   </div>
-                  <div className="w-full bg-[#ede9fe] rounded-full h-2 overflow-hidden">
+                  <div className="w-full bg-[#e0e7ff] rounded-full h-2 overflow-hidden">
                     <motion.div 
                       className="bg-primary h-full transition-all duration-500" 
                       initial={{ width: 0 }}
@@ -147,7 +147,7 @@ export default function Roadmap() {
                 </div>
               </AccordionTrigger>
               <AccordionContent className="pt-0 pb-5 px-5">
-                <div className="space-y-1 mt-2 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px before:h-full before:w-[2px] before:bg-[#ede9fe]">
+                <div className="space-y-1 mt-2 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px before:h-full before:w-[2px] before:bg-[#e0e7ff]">
                   {yearQuests.map((qs, index) => {
                     const isCompleted = qs.status === "completed";
                     const isInProgress = qs.status === "in_progress";
@@ -166,16 +166,16 @@ export default function Roadmap() {
                           <div className={`shrink-0 z-10 flex items-center justify-center w-10 h-10 rounded-full bg-white border-[3px] ${
                             isCompleted ? "border-[#10b981]" : 
                             isInProgress ? "border-primary" : 
-                            "border-[#ede9fe]"
+                            "border-[#e0e7ff]"
                           }`}>
                             {isCompleted ? <CheckCircle2 className="w-6 h-6 text-[#10b981]" /> :
-                             isLocked ? <Lock className="w-4 h-4 text-[#6b7280]" /> :
+                             isLocked ? <Lock className="w-4 h-4 text-[#64748b]" /> :
                              <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 8, ease: "linear" }}>
                                <Circle className="w-5 h-5 text-primary border-t-2 border-primary rounded-full border-r-transparent" />
                              </motion.div>}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h4 className={`text-[15px] truncate ${isCompleted ? "text-[#6b7280] line-through font-medium" : isLocked ? "text-[#6b7280] font-medium" : "text-[#1e1b4b] font-bold"}`}>
+                            <h4 className={`text-[15px] truncate ${isCompleted ? "text-[#64748b] line-through font-medium" : isLocked ? "text-[#64748b] font-medium" : "text-[#0f172a] font-bold"}`}>
                               {qs.quest.title}
                             </h4>
                           </div>
@@ -202,7 +202,7 @@ export default function Roadmap() {
               initial={{ opacity: 0 }} 
               animate={{ opacity: 1 }} 
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-[#1e1b4b]/40 backdrop-blur-sm z-50"
+              className="fixed inset-0 bg-[#0f172a]/40 backdrop-blur-sm z-50"
               onClick={() => setSelectedQuest(null)}
             />
             <motion.div
@@ -212,7 +212,7 @@ export default function Roadmap() {
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
               className="fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl z-50 p-6 shadow-[0_-10px_40px_rgba(124,58,237,0.15)] max-w-md mx-auto"
             >
-              <div className="w-12 h-1.5 bg-[#ede9fe] rounded-full mx-auto mb-6" />
+              <div className="w-12 h-1.5 bg-[#e0e7ff] rounded-full mx-auto mb-6" />
               
               <div className="flex justify-between items-start mb-4">
                 <div className="flex gap-2">
@@ -220,33 +220,33 @@ export default function Roadmap() {
                     <Zap className="w-3 h-3 mr-1" />
                     +{selectedQuest.quest.xpReward} XP
                   </div>
-                  <div className="bg-[#ede9fe] text-[#6b7280] px-3 py-1 rounded-full text-xs font-bold flex items-center">
+                  <div className="bg-[#e0e7ff] text-[#64748b] px-3 py-1 rounded-full text-xs font-bold flex items-center">
                     <Clock className="w-3 h-3 mr-1" />
                     ~{selectedQuest.quest.minutes}m
                   </div>
                 </div>
               </div>
               
-              <h2 className="text-2xl font-bold text-[#1e1b4b] leading-tight mb-2">{selectedQuest.quest.title}</h2>
-              <p className="text-[#6b7280] font-medium text-[15px] mb-6 leading-relaxed">
+              <h2 className="text-2xl font-bold text-[#0f172a] leading-tight mb-2">{selectedQuest.quest.title}</h2>
+              <p className="text-[#64748b] font-medium text-[15px] mb-6 leading-relaxed">
                 {selectedQuest.quest.description}
               </p>
               
               <div className="space-y-4 mb-8">
                 {selectedQuest.quest.whyItMatters && (
-                  <div className="bg-[#f5f3ff] rounded-2xl p-4 border border-[#ede9fe]">
+                  <div className="bg-[#f8fafc] rounded-2xl p-4 border border-[#e0e7ff]">
                     <h4 className="text-sm font-bold mb-1 text-primary flex items-center">
                       <span className="w-1.5 h-1.5 rounded-full bg-primary mr-2" /> Why it matters
                     </h4>
-                    <p className="text-[14px] font-medium text-[#6b7280] leading-relaxed">{selectedQuest.quest.whyItMatters}</p>
+                    <p className="text-[14px] font-medium text-[#64748b] leading-relaxed">{selectedQuest.quest.whyItMatters}</p>
                   </div>
                 )}
                 {selectedQuest.quest.howToDoIt && (
-                  <div className="bg-[#f5f3ff] rounded-2xl p-4 border border-[#ede9fe]">
-                    <h4 className="text-sm font-bold mb-1 text-[#06b6d4] flex items-center">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#06b6d4] mr-2" /> How to do it
+                  <div className="bg-[#f8fafc] rounded-2xl p-4 border border-[#e0e7ff]">
+                    <h4 className="text-sm font-bold mb-1 text-[#0ea5e9] flex items-center">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#0ea5e9] mr-2" /> How to do it
                     </h4>
-                    <p className="text-[14px] font-medium text-[#6b7280] leading-relaxed">{selectedQuest.quest.howToDoIt}</p>
+                    <p className="text-[14px] font-medium text-[#64748b] leading-relaxed">{selectedQuest.quest.howToDoIt}</p>
                   </div>
                 )}
               </div>
@@ -254,7 +254,7 @@ export default function Roadmap() {
               <div className="pb-safe">
                 {selectedQuest.status !== "completed" ? (
                   <motion.div whileTap={{ scale: 0.97 }}>
-                    <Button onClick={handleStartQuest} className="w-full bg-primary hover:bg-[#6d28d9] text-white font-bold h-14 rounded-full text-lg shadow-[0_8px_16px_rgba(124,58,237,0.2)]">
+                    <Button onClick={handleStartQuest} className="w-full bg-primary hover:bg-[#3730a3] text-white font-bold h-14 rounded-full text-lg shadow-[0_8px_16px_rgba(124,58,237,0.2)]">
                       Start Quest
                     </Button>
                   </motion.div>

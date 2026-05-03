@@ -12,8 +12,8 @@ type InterviewType = "Technical" | "Behavioral" | "Mixed";
 type Difficulty = "Standard" | "Challenging";
 
 const INTERVIEW_TYPES: { type: InterviewType; icon: React.ElementType; label: string; desc: string; color: string }[] = [
-  { type: "Technical", icon: Cpu, label: "Technical", desc: "DSA, system design, CS fundamentals", color: "#7c3aed" },
-  { type: "Behavioral", icon: Users, label: "Behavioral", desc: "STAR-method, leadership, teamwork", color: "#06b6d4" },
+  { type: "Technical", icon: Cpu, label: "Technical", desc: "DSA, system design, CS fundamentals", color: "#4f46e5" },
+  { type: "Behavioral", icon: Users, label: "Behavioral", desc: "STAR-method, leadership, teamwork", color: "#0ea5e9" },
   { type: "Mixed", icon: Shuffle, label: "Mixed", desc: "Both technical + HR questions", color: "#10b981" },
 ];
 
@@ -74,12 +74,12 @@ export default function Prep() {
   };
 
   return (
-    <div className="p-4 pb-28 max-w-md mx-auto space-y-4 min-h-screen bg-[#f5f3ff]">
+    <div className="p-4 pb-28 max-w-md mx-auto space-y-4 min-h-screen bg-[#f8fafc]">
       <div className="pt-2 mb-2">
-        <h1 className="text-2xl font-bold flex items-center text-[#1e1b4b]">
+        <h1 className="text-2xl font-bold flex items-center text-[#0f172a]">
           <Target className="mr-2 text-primary" /> Practice
         </h1>
-        <p className="text-sm font-medium text-[#6b7280] mt-1">
+        <p className="text-sm font-medium text-[#64748b] mt-1">
           Get ready for your real placement interviews.
         </p>
       </div>
@@ -91,41 +91,41 @@ export default function Prep() {
         >
           <CardContent className="p-5">
             <div className="flex justify-between items-center mb-3">
-              <div className="bg-[#ede9fe] text-primary text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">
+              <div className="bg-[#e0e7ff] text-primary text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">
                 AI · Personalised
               </div>
-              <div className="w-8 h-8 rounded-full bg-[#f5f3ff] text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors">
+              <div className="w-8 h-8 rounded-full bg-[#f8fafc] text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors">
                 <ChevronRight className="w-5 h-5" />
               </div>
             </div>
-            <h3 className="text-xl font-bold text-[#1e1b4b] flex items-center mb-1">
+            <h3 className="text-xl font-bold text-[#0f172a] flex items-center mb-1">
               <MessageSquare className="w-5 h-5 mr-2 text-primary" />
               Mock Interview
             </h3>
-            <p className="text-sm font-medium text-[#6b7280]">AI interviewer · Live feedback · Score report</p>
+            <p className="text-sm font-medium text-[#64748b]">AI interviewer · Live feedback · Score report</p>
           </CardContent>
         </Card>
       </motion.div>
 
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} whileHover={{ y: -2 }}>
         <Card
-          className="border-0 border-t-4 border-t-[#06b6d4] shadow-[0_4px_24px_rgba(124,58,237,0.10)] rounded-2xl bg-white cursor-pointer group"
+          className="border-0 border-t-4 border-t-[#0ea5e9] shadow-[0_4px_24px_rgba(124,58,237,0.10)] rounded-2xl bg-white cursor-pointer group"
           onClick={() => setTestDrawerOpen(true)}
         >
           <CardContent className="p-5">
             <div className="flex justify-between items-center mb-3">
-              <div className="bg-[#06b6d4]/10 text-[#06b6d4] text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">
+              <div className="bg-[#0ea5e9]/10 text-[#0ea5e9] text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">
                 20-min timed MCQ
               </div>
-              <div className="w-8 h-8 rounded-full bg-[#f5f3ff] text-[#06b6d4] flex items-center justify-center group-hover:bg-[#06b6d4] group-hover:text-white transition-colors">
+              <div className="w-8 h-8 rounded-full bg-[#f8fafc] text-[#0ea5e9] flex items-center justify-center group-hover:bg-[#0ea5e9] group-hover:text-white transition-colors">
                 <ChevronRight className="w-5 h-5" />
               </div>
             </div>
-            <h3 className="text-xl font-bold text-[#1e1b4b] flex items-center mb-1">
-              <Briefcase className="w-5 h-5 mr-2 text-[#06b6d4]" />
+            <h3 className="text-xl font-bold text-[#0f172a] flex items-center mb-1">
+              <Briefcase className="w-5 h-5 mr-2 text-[#0ea5e9]" />
               Mock Test
             </h3>
-            <p className="text-sm font-medium text-[#6b7280]">Aptitude and reasoning — just like campus drives.</p>
+            <p className="text-sm font-medium text-[#64748b]">Aptitude and reasoning — just like campus drives.</p>
           </CardContent>
         </Card>
       </motion.div>
@@ -137,7 +137,7 @@ export default function Prep() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-[#1e1b4b]/40 backdrop-blur-sm z-50"
+              className="fixed inset-0 bg-[#0f172a]/40 backdrop-blur-sm z-50"
               onClick={closeDrawers}
             />
             <motion.div
@@ -148,33 +148,33 @@ export default function Prep() {
               className="fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl z-50 shadow-[0_-10px_40px_rgba(124,58,237,0.15)] max-w-md mx-auto overflow-y-auto max-h-[90vh]"
             >
               <div className="p-6 pb-8">
-                <div className="w-12 h-1.5 bg-[#ede9fe] rounded-full mx-auto mb-5" />
-                <button className="absolute top-6 right-6 text-[#6b7280] bg-[#f5f3ff] rounded-full p-1" onClick={closeDrawers}>
+                <div className="w-12 h-1.5 bg-[#e0e7ff] rounded-full mx-auto mb-5" />
+                <button className="absolute top-6 right-6 text-[#64748b] bg-[#f8fafc] rounded-full p-1" onClick={closeDrawers}>
                   <X className="w-5 h-5" />
                 </button>
 
                 {interviewDrawerOpen && (
                   <div className="space-y-5">
                     <div>
-                      <h2 className="text-2xl font-bold text-[#1e1b4b] mb-1">Set Up Interview</h2>
-                      <p className="text-[#6b7280] text-sm font-medium">Configure your practice session</p>
+                      <h2 className="text-2xl font-bold text-[#0f172a] mb-1">Set Up Interview</h2>
+                      <p className="text-[#64748b] text-sm font-medium">Configure your practice session</p>
                     </div>
 
                     <div>
-                      <label className="text-xs font-extrabold text-[#6b7280] uppercase tracking-wider mb-2 block">
+                      <label className="text-xs font-extrabold text-[#64748b] uppercase tracking-wider mb-2 block">
                         <Building2 className="w-3 h-3 inline mr-1" /> Target Company
                       </label>
                       <Input
                         value={company}
                         onChange={(e) => setCompany(e.target.value)}
                         placeholder="e.g. Google, TCS, Infosys..."
-                        className="rounded-xl border-2 border-[#ede9fe] focus-visible:ring-primary focus-visible:border-primary h-11 text-[#1e1b4b] font-medium"
+                        className="rounded-xl border-2 border-[#e0e7ff] focus-visible:ring-primary focus-visible:border-primary h-11 text-[#0f172a] font-medium"
                       />
-                      <p className="text-xs text-[#6b7280] mt-1 ml-1">Leave blank for a general interview</p>
+                      <p className="text-xs text-[#64748b] mt-1 ml-1">Leave blank for a general interview</p>
                     </div>
 
                     <div>
-                      <label className="text-xs font-extrabold text-[#6b7280] uppercase tracking-wider mb-2 block">Interview Type</label>
+                      <label className="text-xs font-extrabold text-[#64748b] uppercase tracking-wider mb-2 block">Interview Type</label>
                       <div className="grid grid-cols-3 gap-2">
                         {INTERVIEW_TYPES.map(({ type, icon: Icon, label, desc, color }) => (
                           <button
@@ -183,30 +183,30 @@ export default function Prep() {
                             className={cn(
                               "rounded-2xl border-2 p-3 text-left transition-all",
                               interviewType === type
-                                ? "border-primary bg-[#f5f3ff] shadow-[0_0_0_3px_rgba(124,58,237,0.15)]"
-                                : "border-[#e5e7eb] bg-white hover:border-[#ede9fe]"
+                                ? "border-primary bg-[#f8fafc] shadow-[0_0_0_3px_rgba(124,58,237,0.15)]"
+                                : "border-[#e5e7eb] bg-white hover:border-[#e0e7ff]"
                             )}
                           >
-                            <Icon className="w-5 h-5 mb-1.5" style={{ color: interviewType === type ? color : "#9ca3af" }} />
-                            <div className="text-[12px] font-bold text-[#1e1b4b] leading-tight">{label}</div>
-                            <div className="text-[10px] text-[#6b7280] mt-0.5 leading-tight">{desc}</div>
+                            <Icon className="w-5 h-5 mb-1.5" style={{ color: interviewType === type ? color : "#94a3b8" }} />
+                            <div className="text-[12px] font-bold text-[#0f172a] leading-tight">{label}</div>
+                            <div className="text-[10px] text-[#64748b] mt-0.5 leading-tight">{desc}</div>
                           </button>
                         ))}
                       </div>
                     </div>
 
                     <div>
-                      <label className="text-xs font-extrabold text-[#6b7280] uppercase tracking-wider mb-2 block">
+                      <label className="text-xs font-extrabold text-[#64748b] uppercase tracking-wider mb-2 block">
                         <Flame className="w-3 h-3 inline mr-1" /> Difficulty
                       </label>
-                      <div className="flex rounded-xl border-2 border-[#ede9fe] overflow-hidden">
+                      <div className="flex rounded-xl border-2 border-[#e0e7ff] overflow-hidden">
                         {(["Standard", "Challenging"] as Difficulty[]).map((d) => (
                           <button
                             key={d}
                             onClick={() => setDifficulty(d)}
                             className={cn(
                               "flex-1 py-2.5 text-sm font-bold transition-colors",
-                              difficulty === d ? "bg-primary text-white" : "bg-white text-[#6b7280] hover:bg-[#f5f3ff]"
+                              difficulty === d ? "bg-primary text-white" : "bg-white text-[#64748b] hover:bg-[#f8fafc]"
                             )}
                           >
                             {d === "Challenging" ? "🔥 " : ""}{d}
@@ -223,17 +223,17 @@ export default function Prep() {
                       className={cn(
                         "w-full flex items-center justify-between px-4 py-3 rounded-2xl border-2 transition-all",
                         voiceMode
-                          ? "border-primary bg-[#f5f3ff] shadow-[0_0_0_3px_rgba(124,58,237,0.12)]"
-                          : "border-[#e5e7eb] bg-white hover:border-[#ede9fe]"
+                          ? "border-primary bg-[#f8fafc] shadow-[0_0_0_3px_rgba(124,58,237,0.12)]"
+                          : "border-[#e5e7eb] bg-white hover:border-[#e0e7ff]"
                       )}
                     >
                       <div className="flex items-center gap-3">
-                        <div className={cn("w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0", voiceMode ? "bg-primary text-white" : "bg-[#f3f4f6] text-[#6b7280]")}>
+                        <div className={cn("w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0", voiceMode ? "bg-primary text-white" : "bg-[#f3f4f6] text-[#64748b]")}>
                           <Mic className="w-4 h-4" />
                         </div>
                         <div className="text-left">
-                          <div className="text-sm font-bold text-[#1e1b4b]">Voice Mode</div>
-                          <div className="text-[11px] text-[#6b7280]">AI reads questions · speak your answers</div>
+                          <div className="text-sm font-bold text-[#0f172a]">Voice Mode</div>
+                          <div className="text-[11px] text-[#64748b]">AI reads questions · speak your answers</div>
                         </div>
                       </div>
                       <div className={cn("w-11 h-6 rounded-full transition-colors relative flex-shrink-0", voiceMode ? "bg-primary" : "bg-[#d1d5db]")}>
@@ -249,7 +249,7 @@ export default function Prep() {
                       <Button
                         onClick={handleStartInterview}
                         disabled={createInterview.isPending}
-                        className="w-full bg-primary hover:bg-[#6d28d9] text-white font-bold h-14 rounded-full text-lg shadow-[0_8px_16px_rgba(124,58,237,0.2)]"
+                        className="w-full bg-primary hover:bg-[#3730a3] text-white font-bold h-14 rounded-full text-lg shadow-[0_8px_16px_rgba(124,58,237,0.2)]"
                       >
                         {createInterview.isPending ? "Setting up..." : voiceMode ? "🎤 Start Voice Interview →" : "Start Interview →"}
                       </Button>
@@ -259,13 +259,13 @@ export default function Prep() {
 
                 {testDrawerOpen && (
                   <div className="space-y-4">
-                    <h2 className="text-2xl font-bold text-[#1e1b4b] mb-2">Start Mock Test</h2>
-                    <p className="text-[#6b7280] font-medium text-[15px]">A 20-minute timed aptitude test — just like your campus placement rounds. You can't pause once it starts.</p>
+                    <h2 className="text-2xl font-bold text-[#0f172a] mb-2">Start Mock Test</h2>
+                    <p className="text-[#64748b] font-medium text-[15px]">A 20-minute timed aptitude test — just like your campus placement rounds. You can't pause once it starts.</p>
                     <motion.div whileTap={{ scale: 0.97 }}>
                       <Button
                         onClick={handleStartTest}
                         disabled={createTest.isPending}
-                        className="w-full bg-[#06b6d4] hover:bg-[#0891b2] text-white font-bold h-14 rounded-full text-lg shadow-[0_8px_16px_rgba(6,182,212,0.2)]"
+                        className="w-full bg-[#0ea5e9] hover:bg-[#0891b2] text-white font-bold h-14 rounded-full text-lg shadow-[0_8px_16px_rgba(6,182,212,0.2)]"
                       >
                         {createTest.isPending ? "Generating questions..." : "Start Test →"}
                       </Button>

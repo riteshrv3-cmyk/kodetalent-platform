@@ -94,15 +94,15 @@ export default function Opportunities() {
                 <div className="flex items-center gap-2">
                   <span className="text-2xl">{t.logo}</span>
                   <div>
-                    <p className="text-xs text-[#6b7280] font-bold">{t.company}</p>
-                    <p className="text-sm font-extrabold text-[#1e1b4b] leading-tight">{fillTitle(t.title, role)}</p>
+                    <p className="text-xs text-[#64748b] font-bold">{t.company}</p>
+                    <p className="text-sm font-extrabold text-[#0f172a] leading-tight">{fillTitle(t.title, role)}</p>
                   </div>
                 </div>
                 <span className="text-[11px] font-extrabold text-[#10b981] bg-[#ecfdf5] px-2.5 py-1 rounded-full whitespace-nowrap">
                   {t.pay}
                 </span>
               </div>
-              <p className="text-xs text-[#6b7280] mb-3">📍 {t.location} · Full-time</p>
+              <p className="text-xs text-[#64748b] mb-3">📍 {t.location} · Full-time</p>
               <div className="flex flex-wrap gap-1.5 mb-3">
                 {skills.map(s => (
                   <span key={s} className="text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${selectedDomain!.bg}`, color: selectedDomain!.color }}>
@@ -144,15 +144,15 @@ export default function Opportunities() {
                 <div className="flex items-center gap-2">
                   <span className="text-2xl">{t.logo}</span>
                   <div>
-                    <p className="text-xs text-[#6b7280] font-bold">{t.company}</p>
-                    <p className="text-sm font-extrabold text-[#1e1b4b] leading-tight">{fillTitle(t.title, role)}</p>
+                    <p className="text-xs text-[#64748b] font-bold">{t.company}</p>
+                    <p className="text-sm font-extrabold text-[#0f172a] leading-tight">{fillTitle(t.title, role)}</p>
                   </div>
                 </div>
-                <span className="text-[11px] font-extrabold text-[#7c3aed] bg-[#f5f3ff] px-2.5 py-1 rounded-full whitespace-nowrap">
+                <span className="text-[11px] font-extrabold text-[#4f46e5] bg-[#f8fafc] px-2.5 py-1 rounded-full whitespace-nowrap">
                   {t.pay}
                 </span>
               </div>
-              <p className="text-xs text-[#6b7280] mb-1">⏱ {t.duration} · via {t.platform}</p>
+              <p className="text-xs text-[#64748b] mb-1">⏱ {t.duration} · via {t.platform}</p>
               <div className="flex flex-wrap gap-1.5 mb-3">
                 {skills.map(s => (
                   <span key={s} className="text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ background: selectedDomain!.bg, color: selectedDomain!.color }}>
@@ -194,15 +194,15 @@ export default function Opportunities() {
               <div className="flex items-center gap-2">
                 <span className="text-2xl">{t.logo}</span>
                 <div>
-                  <p className="text-xs text-[#6b7280] font-bold">{t.client} · {t.platform}</p>
-                  <p className="text-sm font-extrabold text-[#1e1b4b] leading-tight">{fillTitle(t.title, role)}</p>
+                  <p className="text-xs text-[#64748b] font-bold">{t.client} · {t.platform}</p>
+                  <p className="text-sm font-extrabold text-[#0f172a] leading-tight">{fillTitle(t.title, role)}</p>
                 </div>
               </div>
               <span className="text-[11px] font-extrabold text-[#f97316] bg-[#fff7ed] px-2.5 py-1 rounded-full whitespace-nowrap">
                 {t.pay}
               </span>
             </div>
-            <p className="text-xs text-[#6b7280] mb-3">📅 {t.duration}</p>
+            <p className="text-xs text-[#64748b] mb-3">📅 {t.duration}</p>
             <div className="flex flex-wrap gap-1.5 mb-3">
               {skills.map(s => (
                 <span key={s} className="text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ background: selectedDomain!.bg, color: selectedDomain!.color }}>
@@ -236,25 +236,25 @@ export default function Opportunities() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f5f3ff] pb-28">
+    <div className="min-h-screen bg-[#f8fafc] pb-28">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-[#f5f3ff] px-4 pt-4 pb-2">
+      <div className="sticky top-0 z-10 bg-[#f8fafc] px-4 pt-4 pb-2">
         <div className="flex items-center gap-2 mb-1">
           {(selectedDomain || selectedSubDomain) && (
             <button
               onClick={goBack}
-              className="w-9 h-9 rounded-full bg-white shadow-sm flex items-center justify-center text-[#1e1b4b] flex-shrink-0"
+              className="w-9 h-9 rounded-full bg-white shadow-sm flex items-center justify-center text-[#0f172a] flex-shrink-0"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
           )}
           <div>
-            <h1 className="text-2xl font-extrabold text-[#1e1b4b]">
+            <h1 className="text-2xl font-extrabold text-[#0f172a]">
               {!selectedDomain && "Opportunities"}
               {selectedDomain && !selectedSubDomain && selectedDomain.name}
               {selectedSubDomain && selectedSubDomain.name}
             </h1>
-            <p className="text-xs font-bold text-[#6b7280]">
+            <p className="text-xs font-bold text-[#64748b]">
               {!selectedDomain && "Explore 12 tech domains · Jobs · Internships · Freelancing"}
               {selectedDomain && !selectedSubDomain && "Select a specialisation to explore roles"}
               {selectedSubDomain && "Browse opportunities and get prepared"}
@@ -273,7 +273,7 @@ export default function Opportunities() {
                   "flex-1 py-2 rounded-xl text-[13px] font-extrabold transition-all",
                   activeTab === tab.id
                     ? "text-white shadow-sm"
-                    : "bg-white text-[#6b7280]"
+                    : "bg-white text-[#64748b]"
                 )}
                 style={activeTab === tab.id ? { background: selectedDomain!.color } : {}}
               >
@@ -331,9 +331,9 @@ export default function Opportunities() {
               >
                 <span className="text-4xl">{selectedDomain.emoji}</span>
                 <div>
-                  <p className="text-xs font-extrabold text-[#6b7280] uppercase tracking-wider">Domain</p>
+                  <p className="text-xs font-extrabold text-[#64748b] uppercase tracking-wider">Domain</p>
                   <p className="text-lg font-extrabold" style={{ color: selectedDomain.color }}>{selectedDomain.name}</p>
-                  <p className="text-xs text-[#6b7280]">{selectedDomain.subDomains.length} specialisations</p>
+                  <p className="text-xs text-[#64748b]">{selectedDomain.subDomains.length} specialisations</p>
                 </div>
               </div>
 
@@ -348,7 +348,7 @@ export default function Opportunities() {
                   className="w-full bg-white rounded-2xl p-4 flex items-center justify-between shadow-[0_2px_12px_rgba(0,0,0,0.05)] text-left"
                 >
                   <div>
-                    <p className="font-extrabold text-[#1e1b4b] text-[15px]">{sd.name}</p>
+                    <p className="font-extrabold text-[#0f172a] text-[15px]">{sd.name}</p>
                     <div className="flex gap-1.5 mt-1.5 flex-wrap">
                       {sd.skills.slice(0, 3).map(s => (
                         <span key={s} className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: selectedDomain.bg, color: selectedDomain.color }}>
@@ -384,7 +384,7 @@ export default function Opportunities() {
                   <p className="text-xs font-extrabold" style={{ color: selectedDomain!.color }}>
                     {selectedDomain!.name} › {selectedSubDomain.name}
                   </p>
-                  <p className="text-[11px] text-[#6b7280] font-bold">
+                  <p className="text-[11px] text-[#64748b] font-bold">
                     {activeTab === "jobs" ? "Full-time roles" : activeTab === "internship" ? "Internship openings" : "Freelance gigs"}
                   </p>
                 </div>
@@ -403,7 +403,7 @@ export default function Opportunities() {
                 <p className="text-sm font-extrabold mb-1" style={{ color: selectedDomain!.color }}>
                   🎯 Not ready to apply yet?
                 </p>
-                <p className="text-xs text-[#6b7280] mb-3">
+                <p className="text-xs text-[#64748b] mb-3">
                   Practice mock interviews tailored to {selectedSubDomain.name} roles and build your confidence first.
                 </p>
                 <Button

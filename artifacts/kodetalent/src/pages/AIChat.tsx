@@ -35,12 +35,12 @@ function AIBubble({ msg }: { msg: Message }) {
       animate={{ opacity: 1, y: 0 }}
       className="flex items-end gap-2 max-w-[88%]"
     >
-      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#7c3aed] to-[#4f46e5] flex items-center justify-center shrink-0 mb-1 shadow-sm">
+      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#4f46e5] to-[#6366f1] flex items-center justify-center shrink-0 mb-1 shadow-sm">
         <Sparkles className="w-3.5 h-3.5 text-white" />
       </div>
       <div className="flex flex-col gap-1">
-        <div className="bg-white rounded-2xl rounded-bl-md px-4 py-3 shadow-sm border border-[#ede9fe]/50">
-          <p className="text-[13px] text-[#1e1b4b] leading-relaxed whitespace-pre-wrap">
+        <div className="bg-white rounded-2xl rounded-bl-md px-4 py-3 shadow-sm border border-[#e0e7ff]/50">
+          <p className="text-[13px] text-[#0f172a] leading-relaxed whitespace-pre-wrap">
             {displayText || (msg.streaming ? "" : "...")}
           </p>
           {msg.streaming && (
@@ -50,7 +50,7 @@ function AIBubble({ msg }: { msg: Message }) {
                   key={i}
                   animate={{ opacity: [0.3, 1, 0.3] }}
                   transition={{ duration: 1, delay: i * 0.2, repeat: Infinity }}
-                  className="w-1.5 h-1.5 rounded-full bg-[#7c3aed]"
+                  className="w-1.5 h-1.5 rounded-full bg-[#4f46e5]"
                 />
               ))}
             </div>
@@ -78,10 +78,10 @@ function UserBubble({ msg }: { msg: Message }) {
       animate={{ opacity: 1, y: 0 }}
       className="flex items-end gap-2 max-w-[88%] ml-auto flex-row-reverse"
     >
-      <div className="w-7 h-7 rounded-full bg-[#ede9fe] flex items-center justify-center shrink-0 mb-1">
-        <User className="w-3.5 h-3.5 text-[#7c3aed]" />
+      <div className="w-7 h-7 rounded-full bg-[#e0e7ff] flex items-center justify-center shrink-0 mb-1">
+        <User className="w-3.5 h-3.5 text-[#4f46e5]" />
       </div>
-      <div className="bg-gradient-to-br from-[#7c3aed] to-[#4f46e5] rounded-2xl rounded-br-md px-4 py-3 shadow-sm shadow-[#7c3aed]/20">
+      <div className="bg-gradient-to-br from-[#4f46e5] to-[#6366f1] rounded-2xl rounded-br-md px-4 py-3 shadow-sm shadow-[#4f46e5]/20">
         <p className="text-[13px] text-white leading-relaxed">{msg.text}</p>
       </div>
     </motion.div>
@@ -213,15 +213,15 @@ export default function AIChat() {
   const showQuickActions = messages.length <= 1;
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-7rem)] bg-[#f5f3ff]">
+    <div className="flex flex-col h-[calc(100dvh-7rem)] bg-[#f8fafc]">
 
       {/* Chat header */}
-      <div className="bg-white border-b border-[#ede9fe] px-4 py-3 flex items-center gap-3 shadow-sm">
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#7c3aed] to-[#4f46e5] flex items-center justify-center shadow-sm shadow-[#7c3aed]/25">
+      <div className="bg-white border-b border-[#e0e7ff] px-4 py-3 flex items-center gap-3 shadow-sm">
+        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#4f46e5] to-[#6366f1] flex items-center justify-center shadow-sm shadow-[#4f46e5]/25">
           <Sparkles className="w-4 h-4 text-white" />
         </div>
         <div className="flex-1">
-          <p className="font-black text-[#1e1b4b] text-sm">KT AI</p>
+          <p className="font-black text-[#0f172a] text-sm">KT AI</p>
           <p className="text-[10px] text-[#10b981] font-bold flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-[#10b981] inline-block animate-pulse" />
             Always on for you
@@ -236,9 +236,9 @@ export default function AIChat() {
               text: `Hi ${name.split(" ")[0]}! 👋 I'm ready to help. What would you like to do?`,
             }]);
           }}
-          className="w-8 h-8 rounded-xl bg-[#f5f3ff] flex items-center justify-center"
+          className="w-8 h-8 rounded-xl bg-[#f8fafc] flex items-center justify-center"
         >
-          <RefreshCw className="w-3.5 h-3.5 text-[#6b7280]" />
+          <RefreshCw className="w-3.5 h-3.5 text-[#64748b]" />
         </button>
       </div>
 
@@ -265,7 +265,7 @@ export default function AIChat() {
                 key={action}
                 onClick={() => sendMessage(action)}
                 disabled={streaming}
-                className="text-[11px] font-bold bg-white text-[#7c3aed] border border-[#ede9fe] px-3 py-1.5 rounded-full shadow-sm active:scale-95 transition-transform disabled:opacity-50"
+                className="text-[11px] font-bold bg-white text-[#4f46e5] border border-[#e0e7ff] px-3 py-1.5 rounded-full shadow-sm active:scale-95 transition-transform disabled:opacity-50"
               >
                 {action}
               </button>
@@ -277,7 +277,7 @@ export default function AIChat() {
       </div>
 
       {/* Input bar */}
-      <div className="bg-white border-t border-[#ede9fe] px-4 py-3">
+      <div className="bg-white border-t border-[#e0e7ff] px-4 py-3">
         <div className="flex items-end gap-2">
           <textarea
             ref={inputRef}
@@ -291,13 +291,13 @@ export default function AIChat() {
             placeholder="Ask me anything about your career..."
             rows={1}
             disabled={streaming}
-            className="flex-1 resize-none bg-[#f5f3ff] text-[13px] text-[#1e1b4b] placeholder:text-[#9ca3af] rounded-2xl px-4 py-2.5 outline-none border border-[#ede9fe] focus:border-[#7c3aed] transition-colors max-h-[100px] disabled:opacity-60"
+            className="flex-1 resize-none bg-[#f8fafc] text-[13px] text-[#0f172a] placeholder:text-[#94a3b8] rounded-2xl px-4 py-2.5 outline-none border border-[#e0e7ff] focus:border-[#4f46e5] transition-colors max-h-[100px] disabled:opacity-60"
           />
           <motion.button
             whileTap={{ scale: 0.88 }}
             onClick={() => sendMessage(input)}
             disabled={!input.trim() || streaming}
-            className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#7c3aed] to-[#4f46e5] flex items-center justify-center shadow-md shadow-[#7c3aed]/25 disabled:opacity-40 shrink-0"
+            className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#4f46e5] to-[#6366f1] flex items-center justify-center shadow-md shadow-[#4f46e5]/25 disabled:opacity-40 shrink-0"
           >
             {streaming ? (
               <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -306,7 +306,7 @@ export default function AIChat() {
             )}
           </motion.button>
         </div>
-        <p className="text-[10px] text-[#9ca3af] text-center mt-2">
+        <p className="text-[10px] text-[#94a3b8] text-center mt-2">
           I can update your profile, add projects, set preferences and more
         </p>
       </div>

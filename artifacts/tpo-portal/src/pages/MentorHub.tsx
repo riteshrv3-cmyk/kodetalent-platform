@@ -25,7 +25,7 @@ function MentorCard({ mentor, onDelete }: { mentor: Mentor; onDelete: (id: numbe
     <div className="bg-white rounded-2xl border border-[#e2e8f0] shadow-sm p-5 hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-3">
-          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#7c3aed] to-[#4f46e5] flex items-center justify-center text-white font-bold text-base shrink-0">
+          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#4f46e5] to-[#6366f1] flex items-center justify-center text-white font-bold text-base shrink-0">
             {mentor.name.charAt(0)}
           </div>
           <div>
@@ -33,7 +33,7 @@ function MentorCard({ mentor, onDelete }: { mentor: Mentor; onDelete: (id: numbe
             {mentor.designation && <p className="text-xs text-[#64748b] mt-0.5">{mentor.designation}</p>}
             <div className="flex flex-wrap gap-1.5 mt-2">
               {mentor.field && (
-                <span className="text-xs bg-[#f5f3ff] text-[#7c3aed] border border-[#ede9fe] rounded-full px-2.5 py-0.5 font-medium">
+                <span className="text-xs bg-[#f8fafc] text-[#4f46e5] border border-[#e0e7ff] rounded-full px-2.5 py-0.5 font-medium">
                   {mentor.field}
                 </span>
               )}
@@ -56,7 +56,7 @@ function MentorCard({ mentor, onDelete }: { mentor: Mentor; onDelete: (id: numbe
       <div className="mt-4 pt-4 border-t border-[#f1f5f9] space-y-1.5">
         <div className="flex items-center gap-2">
           <Mail className="w-3.5 h-3.5 text-[#94a3b8]" />
-          <a href={`mailto:${mentor.email}`} className="text-xs text-[#64748b] hover:text-[#7c3aed] transition-colors">{mentor.email}</a>
+          <a href={`mailto:${mentor.email}`} className="text-xs text-[#64748b] hover:text-[#4f46e5] transition-colors">{mentor.email}</a>
         </div>
         {mentor.phone && (
           <div className="flex items-center gap-2">
@@ -114,37 +114,37 @@ function AddMentorModal({ college, onClose }: { college: string; onClose: () => 
               <label className="block text-xs font-bold text-[#475569] mb-1.5 uppercase tracking-wide">Full Name *</label>
               <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                 placeholder="Dr. Anita Sharma" required
-                className="w-full px-3.5 py-2.5 border border-[#e2e8f0] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#7c3aed]/20 focus:border-[#7c3aed] transition" />
+                className="w-full px-3.5 py-2.5 border border-[#e2e8f0] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#4f46e5]/20 focus:border-[#4f46e5] transition" />
             </div>
             <div className="col-span-2">
               <label className="block text-xs font-bold text-[#475569] mb-1.5 uppercase tracking-wide">Email *</label>
               <input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
                 placeholder="anita@example.com" required
-                className="w-full px-3.5 py-2.5 border border-[#e2e8f0] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#7c3aed]/20 focus:border-[#7c3aed] transition" />
+                className="w-full px-3.5 py-2.5 border border-[#e2e8f0] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#4f46e5]/20 focus:border-[#4f46e5] transition" />
             </div>
             <div>
               <label className="block text-xs font-bold text-[#475569] mb-1.5 uppercase tracking-wide">Designation</label>
               <input value={form.designation} onChange={e => setForm(f => ({ ...f, designation: e.target.value }))}
                 placeholder="Prof. / Industry Expert"
-                className="w-full px-3.5 py-2.5 border border-[#e2e8f0] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#7c3aed]/20 focus:border-[#7c3aed] transition" />
+                className="w-full px-3.5 py-2.5 border border-[#e2e8f0] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#4f46e5]/20 focus:border-[#4f46e5] transition" />
             </div>
             <div>
               <label className="block text-xs font-bold text-[#475569] mb-1.5 uppercase tracking-wide">Field</label>
               <input value={form.field} onChange={e => setForm(f => ({ ...f, field: e.target.value }))}
                 placeholder="CSE / Data Science"
-                className="w-full px-3.5 py-2.5 border border-[#e2e8f0] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#7c3aed]/20 focus:border-[#7c3aed] transition" />
+                className="w-full px-3.5 py-2.5 border border-[#e2e8f0] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#4f46e5]/20 focus:border-[#4f46e5] transition" />
             </div>
             <div>
               <label className="block text-xs font-bold text-[#475569] mb-1.5 uppercase tracking-wide">Batch Year</label>
               <input type="number" value={form.batchYear} onChange={e => setForm(f => ({ ...f, batchYear: e.target.value }))}
                 placeholder="2024"
-                className="w-full px-3.5 py-2.5 border border-[#e2e8f0] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#7c3aed]/20 focus:border-[#7c3aed] transition" />
+                className="w-full px-3.5 py-2.5 border border-[#e2e8f0] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#4f46e5]/20 focus:border-[#4f46e5] transition" />
             </div>
             <div>
               <label className="block text-xs font-bold text-[#475569] mb-1.5 uppercase tracking-wide">Phone</label>
               <input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
                 placeholder="+91 98765 43210"
-                className="w-full px-3.5 py-2.5 border border-[#e2e8f0] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#7c3aed]/20 focus:border-[#7c3aed] transition" />
+                className="w-full px-3.5 py-2.5 border border-[#e2e8f0] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#4f46e5]/20 focus:border-[#4f46e5] transition" />
             </div>
           </div>
 
@@ -154,7 +154,7 @@ function AddMentorModal({ college, onClose }: { college: string; onClose: () => 
               Cancel
             </button>
             <button type="submit" disabled={mutation.isPending}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-[#7c3aed] to-[#4f46e5] text-white rounded-xl text-sm font-semibold disabled:opacity-60 transition">
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-[#4f46e5] to-[#6366f1] text-white rounded-xl text-sm font-semibold disabled:opacity-60 transition">
               {mutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <><UserCheck className="w-4 h-4" /> Add Mentor</>}
             </button>
           </div>
@@ -193,7 +193,7 @@ export default function MentorHub() {
         </div>
         <button
           onClick={() => setShowAdd(true)}
-          className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-[#7c3aed] to-[#4f46e5] text-white rounded-xl text-sm font-semibold shadow-sm shadow-[#7c3aed]/25 hover:shadow-[#7c3aed]/40 transition-all"
+          className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-[#4f46e5] to-[#6366f1] text-white rounded-xl text-sm font-semibold shadow-sm shadow-[#4f46e5]/25 hover:shadow-[#4f46e5]/40 transition-all"
         >
           <Plus className="w-4 h-4" /> Add Mentor
         </button>
@@ -211,7 +211,7 @@ export default function MentorHub() {
           <p className="text-base font-semibold text-[#94a3b8]">No mentors yet</p>
           <p className="text-sm text-[#cbd5e1] mt-1 mb-5">Add faculty or industry mentors to support your batch's placement journey</p>
           <button onClick={() => setShowAdd(true)}
-            className="flex items-center gap-2 px-5 py-2.5 bg-[#7c3aed] text-white rounded-xl text-sm font-semibold">
+            className="flex items-center gap-2 px-5 py-2.5 bg-[#4f46e5] text-white rounded-xl text-sm font-semibold">
             <Plus className="w-4 h-4" /> Add your first mentor
           </button>
         </div>

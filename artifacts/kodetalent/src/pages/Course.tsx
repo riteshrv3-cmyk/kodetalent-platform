@@ -314,7 +314,7 @@ export default function Course() {
     const progressPct = Math.min(100, Math.round((msgIndex / (LOAD_MSGS.length - 1)) * 100));
 
     return (
-      <div className="min-h-screen bg-[#f5f3ff] flex flex-col px-6 pb-28 pt-16">
+      <div className="min-h-screen bg-[#f8fafc] flex flex-col px-6 pb-28 pt-16">
         {/* Domain pill */}
         <div className="flex justify-center mb-8">
           <span className="text-xs font-extrabold px-3 py-1 rounded-full" style={{ background: bg, color }}>
@@ -335,10 +335,10 @@ export default function Course() {
         </div>
 
         {/* Title */}
-        <h2 className="text-xl font-extrabold text-[#1e1b4b] text-center mb-1">
+        <h2 className="text-xl font-extrabold text-[#0f172a] text-center mb-1">
           {ctx.subDomainName} Course
         </h2>
-        <p className="text-[13px] text-[#6b7280] text-center mb-8">AI is building your personalised course</p>
+        <p className="text-[13px] text-[#64748b] text-center mb-8">AI is building your personalised course</p>
 
         {/* Progress bar */}
         <div className="w-full bg-white rounded-full h-2 mb-3 shadow-inner overflow-hidden">
@@ -361,7 +361,7 @@ export default function Course() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -6 }}
               transition={{ duration: 0.25 }}
-              className="text-sm font-extrabold text-[#1e1b4b] text-center"
+              className="text-sm font-extrabold text-[#0f172a] text-center"
             >
               ✦ {LOAD_MSGS[msgIndex]}
             </motion.p>
@@ -388,7 +388,7 @@ export default function Course() {
                   </motion.svg>
                 )}
               </div>
-              <p className={cn("text-[13px] font-bold", step.done ? "text-[#1e1b4b]" : "text-[#9ca3af]")}>
+              <p className={cn("text-[13px] font-bold", step.done ? "text-[#0f172a]" : "text-[#94a3b8]")}>
                 {step.label}
               </p>
               {!step.done && (
@@ -404,10 +404,10 @@ export default function Course() {
 
   if (error || !courseData) {
     return (
-      <div className="min-h-screen bg-[#f5f3ff] flex flex-col items-center justify-center px-6 pb-28">
+      <div className="min-h-screen bg-[#f8fafc] flex flex-col items-center justify-center px-6 pb-28">
         <div className="text-5xl mb-4">😕</div>
-        <h2 className="text-lg font-extrabold text-[#1e1b4b] mb-2">Something went wrong</h2>
-        <p className="text-sm text-[#6b7280] text-center mb-6">{error}</p>
+        <h2 className="text-lg font-extrabold text-[#0f172a] mb-2">Something went wrong</h2>
+        <p className="text-sm text-[#64748b] text-center mb-6">{error}</p>
         <Button onClick={() => { setDataReady(false); setAnimReady(false); setMsgIndex(0); hasFetched.current = false; }} style={{ background: color }} className="text-white rounded-xl px-6">
           Try again
         </Button>
@@ -431,17 +431,17 @@ export default function Course() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#f5f3ff] pb-28">
+    <div className="min-h-screen bg-[#f8fafc] pb-28">
       {/* Sticky header */}
-      <div className="sticky top-0 z-10 bg-[#f5f3ff] px-4 pt-4 pb-0">
+      <div className="sticky top-0 z-10 bg-[#f8fafc] px-4 pt-4 pb-0">
         <div className="flex items-center gap-2 mb-3">
           <button onClick={() => setLocation("/opportunities")}
             className="w-9 h-9 rounded-full bg-white shadow-sm flex items-center justify-center flex-shrink-0">
-            <ArrowLeft className="w-5 h-5 text-[#1e1b4b]" />
+            <ArrowLeft className="w-5 h-5 text-[#0f172a]" />
           </button>
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-extrabold text-[#6b7280] truncate">{ctx.domainEmoji} {ctx.domainName}</p>
-            <h1 className="text-[17px] font-extrabold text-[#1e1b4b] truncate">{ctx.subDomainName}</h1>
+            <p className="text-xs font-extrabold text-[#64748b] truncate">{ctx.domainEmoji} {ctx.domainName}</p>
+            <h1 className="text-[17px] font-extrabold text-[#0f172a] truncate">{ctx.subDomainName}</h1>
           </div>
         </div>
         <div className="flex bg-white rounded-2xl p-1 shadow-sm mb-1">
@@ -451,7 +451,7 @@ export default function Course() {
             return (
               <button key={tab.id} onClick={() => setActiveTab(tab.id)}
                 className={cn("flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-[12px] font-extrabold transition-all",
-                  active ? "text-white shadow-sm" : "text-[#6b7280]")}
+                  active ? "text-white shadow-sm" : "text-[#64748b]")}
                 style={active ? { background: color } : {}}>
                 <Icon className="w-3.5 h-3.5" />{tab.label}
               </button>
@@ -526,11 +526,11 @@ export default function Course() {
                                   <p className="text-[11px] font-extrabold uppercase tracking-wider" style={{ color }}>
                                     Module {modIdx + 1}
                                   </p>
-                                  <p className="font-extrabold text-[#1e1b4b] text-[14px] leading-tight">{mod.title}</p>
+                                  <p className="font-extrabold text-[#0f172a] text-[14px] leading-tight">{mod.title}</p>
                                 </div>
                                 <div className="flex items-center gap-1.5 flex-shrink-0">
-                                  {isLocked && <Lock className="w-3.5 h-3.5 text-[#9ca3af]" />}
-                                  <ChevronDown className={cn("w-4 h-4 text-[#6b7280] transition-transform duration-200", isExpanded && "rotate-180")} />
+                                  {isLocked && <Lock className="w-3.5 h-3.5 text-[#94a3b8]" />}
+                                  <ChevronDown className={cn("w-4 h-4 text-[#64748b] transition-transform duration-200", isExpanded && "rotate-180")} />
                                 </div>
                               </div>
                               {/* Progress bar */}
@@ -538,7 +538,7 @@ export default function Course() {
                                 <div className="flex-1 h-1.5 bg-[#f3f4f6] rounded-full overflow-hidden">
                                   <div className="h-full rounded-full transition-all duration-500" style={{ width: `${modPct}%`, background: color }} />
                                 </div>
-                                <span className="text-[10px] font-bold text-[#6b7280] whitespace-nowrap">
+                                <span className="text-[10px] font-bold text-[#64748b] whitespace-nowrap">
                                   {modCompleted}/{lessons.length} · <Clock className="w-2.5 h-2.5 inline" /> {mod.duration}
                                 </span>
                               </div>
@@ -580,7 +580,7 @@ export default function Course() {
                                         </div>
                                         <div className="flex-1 min-w-0">
                                           <p className={cn("text-[13px] font-bold leading-tight",
-                                            done ? "text-[#9ca3af] line-through" : "text-[#1e1b4b]")}>
+                                            done ? "text-[#94a3b8] line-through" : "text-[#0f172a]")}>
                                             {lessonIdx + 1}. {lesson.title}
                                           </p>
                                           <div className="flex items-center gap-2 mt-0.5">
@@ -588,12 +588,12 @@ export default function Course() {
                                               style={{ background: cfg.bg, color: cfg.color }}>
                                               {cfg.label}
                                             </span>
-                                            <span className="text-[10px] text-[#6b7280] font-bold flex items-center gap-1">
+                                            <span className="text-[10px] text-[#64748b] font-bold flex items-center gap-1">
                                               <Clock className="w-2.5 h-2.5" />{lesson.duration}
                                             </span>
                                           </div>
                                         </div>
-                                        <ChevronRight className={cn("w-4 h-4 text-[#9ca3af] transition-transform flex-shrink-0", lessonOpen && "rotate-90")} />
+                                        <ChevronRight className={cn("w-4 h-4 text-[#94a3b8] transition-transform flex-shrink-0", lessonOpen && "rotate-90")} />
                                       </button>
 
                                       {/* Lesson detail — inline expand */}
@@ -609,7 +609,7 @@ export default function Course() {
                                             <div className="ml-11 mb-3 rounded-2xl overflow-hidden" style={{ background: bg }}>
                                               {/* Description */}
                                               <div className="p-4 pb-3">
-                                                <p className="text-xs text-[#1e1b4b] font-bold leading-relaxed mb-3">
+                                                <p className="text-xs text-[#0f172a] font-bold leading-relaxed mb-3">
                                                   {lesson.description}
                                                 </p>
 
@@ -685,7 +685,7 @@ export default function Course() {
                 <p className="text-sm font-extrabold mb-1" style={{ color }}>
                   {overallPct === 100 ? "🎉 Course complete! Now test yourself." : "📚 Learning tip"}
                 </p>
-                <p className="text-xs text-[#6b7280] mb-3">
+                <p className="text-xs text-[#64748b] mb-3">
                   {overallPct === 100
                     ? "You've finished all lessons. Reinforce your knowledge with flashcards and the quiz."
                     : "After each lesson, review flashcards and take the quiz to lock in what you learned."}
@@ -710,12 +710,12 @@ export default function Course() {
               {/* Stats bar */}
               <div className="flex gap-2 mb-4">
                 {[
-                  { label: "Reviewed", value: sessionStats.reviewed, color: "#1e1b4b" },
+                  { label: "Reviewed", value: sessionStats.reviewed, color: "#0f172a" },
                   { label: "Accuracy", value: `${accuracy}%`, color: accuracy >= 70 ? "#10b981" : accuracy >= 40 ? "#f59e0b" : "#ef4444" },
                   { label: "Streak", value: `🔥 ${streak}`, color: "#f97316" },
                 ].map(s => (
                   <div key={s.label} className="flex-1 bg-white rounded-xl p-3 text-center shadow-sm">
-                    <p className="text-[11px] text-[#6b7280] font-bold">{s.label}</p>
+                    <p className="text-[11px] text-[#64748b] font-bold">{s.label}</p>
                     <p className="text-lg font-extrabold" style={{ color: s.color }}>{s.value}</p>
                   </div>
                 ))}
@@ -723,7 +723,7 @@ export default function Course() {
 
               {/* Progress */}
               <div className="flex items-center justify-between mb-2 px-1">
-                <p className="text-[11px] font-bold text-[#6b7280]">
+                <p className="text-[11px] font-bold text-[#64748b]">
                   {cardsLeft > 0 ? `${queueIndex + 1} / ${queue.length} cards` : "Session complete!"}
                 </p>
                 <div className="flex items-center gap-1">
@@ -742,10 +742,10 @@ export default function Course() {
                 <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
                   className="rounded-2xl p-8 text-center" style={{ background: bg }}>
                   <div className="text-5xl mb-3">🎉</div>
-                  <h2 className="text-xl font-extrabold text-[#1e1b4b] mb-1">
+                  <h2 className="text-xl font-extrabold text-[#0f172a] mb-1">
                     {sessionStats.reviewed > 0 ? "Session complete!" : "All caught up!"}
                   </h2>
-                  <p className="text-sm text-[#6b7280] mb-4">
+                  <p className="text-sm text-[#64748b] mb-4">
                     {sessionStats.reviewed > 0
                       ? `You reviewed ${sessionStats.reviewed} cards with ${accuracy}% accuracy.`
                       : "No cards due right now. Come back tomorrow!"}
@@ -784,14 +784,14 @@ export default function Course() {
                             <p className="text-[10px] font-extrabold uppercase tracking-widest mb-3" style={{ color }}>
                               {currentCard.topic}
                             </p>
-                            <p className="text-base font-extrabold text-[#1e1b4b] leading-snug">{currentCard.front}</p>
-                            <p className="text-[11px] text-[#6b7280] mt-4">Tap to reveal answer</p>
+                            <p className="text-base font-extrabold text-[#0f172a] leading-snug">{currentCard.front}</p>
+                            <p className="text-[11px] text-[#64748b] mt-4">Tap to reveal answer</p>
                           </div>
                           {/* Back */}
                           <div className="absolute inset-0 rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] flex flex-col items-center justify-center p-6 text-center"
                             style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)", background: bg }}>
                             <p className="text-[10px] font-extrabold uppercase tracking-widest mb-3" style={{ color }}>Answer</p>
-                            <p className="text-[14px] font-bold text-[#1e1b4b] leading-relaxed">{currentCard.back}</p>
+                            <p className="text-[14px] font-bold text-[#0f172a] leading-relaxed">{currentCard.back}</p>
                           </div>
                         </motion.div>
                       </div>
@@ -832,8 +832,8 @@ export default function Course() {
                 <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
                   <div className="rounded-2xl p-6 text-center mb-4" style={{ background: bg }}>
                     <Trophy className="w-12 h-12 mx-auto mb-3" style={{ color }} />
-                    <h2 className="text-2xl font-extrabold text-[#1e1b4b] mb-1">{quizScore} / {courseData.quizQuestions.length}</h2>
-                    <p className="text-sm text-[#6b7280] mb-4">
+                    <h2 className="text-2xl font-extrabold text-[#0f172a] mb-1">{quizScore} / {courseData.quizQuestions.length}</h2>
+                    <p className="text-sm text-[#64748b] mb-4">
                       {quizScore === courseData.quizQuestions.length ? "Perfect! You nailed it 🎉"
                         : quizScore >= Math.ceil(courseData.quizQuestions.length * 0.6) ? "Good job! Review the ones you missed."
                         : "Keep studying — try the flashcards first."}
@@ -847,11 +847,11 @@ export default function Course() {
                       </Button>
                     </div>
                   </div>
-                  <p className="text-xs font-extrabold text-[#6b7280] uppercase tracking-wider mb-2 px-1">Breakdown</p>
+                  <p className="text-xs font-extrabold text-[#64748b] uppercase tracking-wider mb-2 px-1">Breakdown</p>
                   {courseData.quizQuestions.map(q => (
                     <div key={q.id} className="bg-white rounded-xl p-3 flex items-center gap-3 mb-2 shadow-sm">
                       {quizAnswers[q.id] ? <CheckCircle2 className="w-5 h-5 text-[#10b981] flex-shrink-0" /> : <XCircle className="w-5 h-5 text-[#ef4444] flex-shrink-0" />}
-                      <p className="text-sm text-[#1e1b4b] font-bold flex-1 leading-snug">{q.question}</p>
+                      <p className="text-sm text-[#0f172a] font-bold flex-1 leading-snug">{q.question}</p>
                       <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full"
                         style={{ background: q.difficulty === "easy" ? "#ecfdf5" : q.difficulty === "medium" ? "#fff7ed" : "#fef2f2", color: q.difficulty === "easy" ? "#10b981" : q.difficulty === "medium" ? "#f97316" : "#ef4444" }}>
                         {q.difficulty}
@@ -863,7 +863,7 @@ export default function Course() {
                 <AnimatePresence mode="wait">
                   <motion.div key={quizIndex} initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.2 }}>
                     <div className="flex items-center justify-between mb-2 px-1">
-                      <p className="text-[11px] font-bold text-[#6b7280]">Question {quizIndex + 1} of {courseData.quizQuestions.length}</p>
+                      <p className="text-[11px] font-bold text-[#64748b]">Question {quizIndex + 1} of {courseData.quizQuestions.length}</p>
                       <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full"
                         style={{ background: currentQ.difficulty === "easy" ? "#ecfdf5" : currentQ.difficulty === "medium" ? "#fff7ed" : "#fef2f2", color: currentQ.difficulty === "easy" ? "#10b981" : currentQ.difficulty === "medium" ? "#f97316" : "#ef4444" }}>
                         {currentQ.difficulty}
@@ -874,7 +874,7 @@ export default function Course() {
                     </div>
                     <Card className="border-0 shadow-[0_4px_16px_rgba(0,0,0,0.07)] rounded-2xl mb-4">
                       <CardContent className="p-5">
-                        <p className="text-base font-extrabold text-[#1e1b4b] leading-snug">{currentQ.question}</p>
+                        <p className="text-base font-extrabold text-[#0f172a] leading-snug">{currentQ.question}</p>
                       </CardContent>
                     </Card>
                     <div className="space-y-2 mb-4">
@@ -882,7 +882,7 @@ export default function Course() {
                         const letter = opt.charAt(0);
                         const chosen = selectedAnswer === letter;
                         const isCorrect = letter === currentQ.answer;
-                        let optBg = "bg-white", optColor = "text-[#1e1b4b]", optBorder = "border-transparent";
+                        let optBg = "bg-white", optColor = "text-[#0f172a]", optBorder = "border-transparent";
                         if (showExplanation) {
                           if (isCorrect) { optBg = "bg-[#ecfdf5]"; optColor = "text-[#10b981]"; optBorder = "border-[#10b981]"; }
                           else if (chosen) { optBg = "bg-[#fef2f2]"; optColor = "text-[#ef4444]"; optBorder = "border-[#ef4444]"; }
@@ -904,7 +904,7 @@ export default function Course() {
                               {selectedAnswer === currentQ.answer ? "Correct!" : `Correct answer: ${currentQ.answer}`}
                             </p>
                           </div>
-                          <p className="text-xs text-[#6b7280] leading-relaxed">{currentQ.explanation}</p>
+                          <p className="text-xs text-[#64748b] leading-relaxed">{currentQ.explanation}</p>
                         </motion.div>
                       )}
                     </AnimatePresence>

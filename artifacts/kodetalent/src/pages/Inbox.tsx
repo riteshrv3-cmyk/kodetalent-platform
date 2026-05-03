@@ -63,22 +63,22 @@ function InviteCard({ invite, onUpdate }: { invite: Invite; onUpdate: (id: numbe
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       className={`bg-white rounded-2xl p-4 shadow-[0_4px_20px_rgba(124,58,237,0.07)] border-2 transition-colors ${
-        isPending ? "border-[#7c3aed]/20" : isAccepted ? "border-[#10b981]/20" : "border-transparent"
+        isPending ? "border-[#4f46e5]/20" : isAccepted ? "border-[#10b981]/20" : "border-transparent"
       }`}
     >
       {/* Header row */}
       <div className="flex items-start gap-3">
-        <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#7c3aed] to-[#4f46e5] flex items-center justify-center text-white font-black text-base shrink-0">
+        <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#4f46e5] to-[#6366f1] flex items-center justify-center text-white font-black text-base shrink-0">
           {invite.recruiterCompany.charAt(0)}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
             <div>
-              <p className="font-extrabold text-[#1e1b4b] text-[15px] leading-tight">{invite.recruiterCompany}</p>
+              <p className="font-extrabold text-[#0f172a] text-[15px] leading-tight">{invite.recruiterCompany}</p>
               {invite.role && (
                 <div className="flex items-center gap-1 mt-0.5">
-                  <Briefcase className="w-3 h-3 text-[#7c3aed]" />
-                  <p className="text-xs font-bold text-[#7c3aed]">{invite.role}</p>
+                  <Briefcase className="w-3 h-3 text-[#4f46e5]" />
+                  <p className="text-xs font-bold text-[#4f46e5]">{invite.role}</p>
                 </div>
               )}
             </div>
@@ -95,12 +95,12 @@ function InviteCard({ invite, onUpdate }: { invite: Invite; onUpdate: (id: numbe
                   New
                 </span>
               )}
-              <span className="text-[10px] text-[#9ca3af] font-bold">{timeAgo(invite.createdAt)}</span>
+              <span className="text-[10px] text-[#94a3b8] font-bold">{timeAgo(invite.createdAt)}</span>
             </div>
           </div>
           <div className="flex items-center gap-1.5 mt-1">
-            <Building2 className="w-3 h-3 text-[#9ca3af]" />
-            <p className="text-xs text-[#9ca3af] font-medium">{invite.recruiterName}</p>
+            <Building2 className="w-3 h-3 text-[#94a3b8]" />
+            <p className="text-xs text-[#94a3b8] font-medium">{invite.recruiterName}</p>
           </div>
         </div>
       </div>
@@ -108,7 +108,7 @@ function InviteCard({ invite, onUpdate }: { invite: Invite; onUpdate: (id: numbe
       {/* Message */}
       {invite.message && (
         <div className="mt-3 bg-[#f8f7ff] rounded-xl px-3.5 py-2.5">
-          <p className="text-xs text-[#6b7280] leading-relaxed italic">"{invite.message}"</p>
+          <p className="text-xs text-[#64748b] leading-relaxed italic">"{invite.message}"</p>
         </div>
       )}
 
@@ -203,26 +203,26 @@ export default function Inbox() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#f5f3ff] pb-28">
+    <div className="min-h-screen bg-[#f8fafc] pb-28">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-[#f5f3ff] px-4 pt-5 pb-3">
+      <div className="sticky top-0 z-10 bg-[#f8fafc] px-4 pt-5 pb-3">
         <div className="flex items-center justify-between mb-4">
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-extrabold text-[#1e1b4b]">Recruiter Inbox</h1>
+              <h1 className="text-2xl font-extrabold text-[#0f172a]">Recruiter Inbox</h1>
               {pendingCount > 0 && !loading && (
                 <motion.span
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
-                  className="bg-[#7c3aed] text-white text-xs font-black px-2 py-0.5 rounded-full min-w-[22px] text-center"
+                  className="bg-[#4f46e5] text-white text-xs font-black px-2 py-0.5 rounded-full min-w-[22px] text-center"
                 >
                   {pendingCount}
                 </motion.span>
               )}
             </div>
-            <p className="text-xs font-bold text-[#9ca3af] mt-0.5">Companies interested in hiring you</p>
+            <p className="text-xs font-bold text-[#94a3b8] mt-0.5">Companies interested in hiring you</p>
           </div>
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#7c3aed] to-[#4f46e5] flex items-center justify-center">
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#4f46e5] to-[#6366f1] flex items-center justify-center">
             <Mail className="w-5 h-5 text-white" />
           </div>
         </div>
@@ -235,14 +235,14 @@ export default function Inbox() {
               onClick={() => setActiveFilter(f.key)}
               className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-extrabold whitespace-nowrap transition-all ${
                 activeFilter === f.key
-                  ? "bg-[#7c3aed] text-white shadow-sm shadow-[#7c3aed]/30"
-                  : "bg-white text-[#6b7280] border border-[#ede9fe]"
+                  ? "bg-[#4f46e5] text-white shadow-sm shadow-[#4f46e5]/30"
+                  : "bg-white text-[#64748b] border border-[#e0e7ff]"
               }`}
             >
               {f.label}
               {f.count > 0 && (
                 <span className={`text-[10px] font-black px-1 rounded-full ${
-                  activeFilter === f.key ? "bg-white/20 text-white" : "bg-[#f3f0ff] text-[#7c3aed]"
+                  activeFilter === f.key ? "bg-white/20 text-white" : "bg-[#f3f0ff] text-[#4f46e5]"
                 }`}>
                   {f.count}
                 </span>
@@ -263,13 +263,13 @@ export default function Inbox() {
             animate={{ opacity: 1, y: 0 }}
             className="flex flex-col items-center text-center py-16 px-6"
           >
-            <div className="w-20 h-20 rounded-3xl bg-[#ede9fe] flex items-center justify-center mb-4">
-              <InboxIcon className="w-9 h-9 text-[#7c3aed]" />
+            <div className="w-20 h-20 rounded-3xl bg-[#e0e7ff] flex items-center justify-center mb-4">
+              <InboxIcon className="w-9 h-9 text-[#4f46e5]" />
             </div>
-            <h3 className="text-lg font-extrabold text-[#1e1b4b] mb-2">
+            <h3 className="text-lg font-extrabold text-[#0f172a] mb-2">
               {activeFilter === "all" ? "No invites yet" : `No ${activeFilter} invites`}
             </h3>
-            <p className="text-sm text-[#9ca3af] font-medium leading-relaxed">
+            <p className="text-sm text-[#94a3b8] font-medium leading-relaxed">
               {activeFilter === "all"
                 ? "Keep building your profile — recruiters are searching for talent like you every day."
                 : `You don't have any ${activeFilter} invites right now.`}
@@ -278,7 +278,7 @@ export default function Inbox() {
               <motion.button
                 whileTap={{ scale: 0.97 }}
                 onClick={() => setLocation("/profile")}
-                className="mt-5 flex items-center gap-2 bg-gradient-to-r from-[#7c3aed] to-[#4f46e5] text-white font-bold text-sm px-5 py-2.5 rounded-full"
+                className="mt-5 flex items-center gap-2 bg-gradient-to-r from-[#4f46e5] to-[#6366f1] text-white font-bold text-sm px-5 py-2.5 rounded-full"
               >
                 Boost your profile <ChevronRight className="w-4 h-4" />
               </motion.button>

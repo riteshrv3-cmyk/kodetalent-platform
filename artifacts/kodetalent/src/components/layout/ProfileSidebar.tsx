@@ -34,14 +34,14 @@ function StrengthArc({ value }: { value: number }) {
   const circ = 2 * Math.PI * r;
   const dash = (value / 100) * circ * 0.75;
   const gap = circ - dash;
-  const color = value >= 80 ? "#10b981" : value >= 50 ? "#7c3aed" : "#f97316";
+  const color = value >= 80 ? "#10b981" : value >= 50 ? "#4f46e5" : "#f97316";
 
   return (
     <svg width="100" height="100" viewBox="0 0 100 100">
-      <circle cx="50" cy="50" r={r} fill="none" stroke="#ede9fe" strokeWidth="8" strokeDasharray={`${circ * 0.75} ${circ}`} strokeDashoffset={circ * 0.125} strokeLinecap="round" transform="rotate(-135 50 50)" />
+      <circle cx="50" cy="50" r={r} fill="none" stroke="#e0e7ff" strokeWidth="8" strokeDasharray={`${circ * 0.75} ${circ}`} strokeDashoffset={circ * 0.125} strokeLinecap="round" transform="rotate(-135 50 50)" />
       <circle cx="50" cy="50" r={r} fill="none" stroke={color} strokeWidth="8" strokeDasharray={`${dash} ${gap + circ * 0.25}`} strokeDashoffset={circ * 0.125} strokeLinecap="round" transform="rotate(-135 50 50)" />
-      <text x="50" y="47" textAnchor="middle" className="fill-[#1e1b4b]" fontSize="16" fontWeight="900">{value}</text>
-      <text x="50" y="62" textAnchor="middle" className="fill-[#6b7280]" fontSize="8">/ 100</text>
+      <text x="50" y="47" textAnchor="middle" className="fill-[#0f172a]" fontSize="16" fontWeight="900">{value}</text>
+      <text x="50" y="62" textAnchor="middle" className="fill-[#64748b]" fontSize="8">/ 100</text>
     </svg>
   );
 }
@@ -90,7 +90,7 @@ export function ProfileSidebar({ onClose }: { onClose: () => void }) {
         className="fixed right-0 top-0 bottom-0 z-[51] w-[92%] max-w-sm bg-white shadow-2xl flex flex-col overflow-hidden"
       >
         {/* Header */}
-        <div className="bg-gradient-to-br from-[#7c3aed] to-[#4f46e5] px-5 pt-12 pb-6 text-white relative">
+        <div className="bg-gradient-to-br from-[#312e81] via-[#3730a3] to-[#4f46e5] px-5 pt-12 pb-6 text-white relative">
           <button
             onClick={onClose}
             className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/20 flex items-center justify-center"
@@ -123,22 +123,22 @@ export function ProfileSidebar({ onClose }: { onClose: () => void }) {
         </div>
 
         {/* Scrollable content */}
-        <div className="flex-1 overflow-y-auto bg-[#f5f3ff]">
+        <div className="flex-1 overflow-y-auto bg-[#f8fafc]">
 
           {/* Score + Strength */}
           <div className="px-4 pt-4">
             <div className="bg-white rounded-2xl p-4 shadow-sm">
               <div className="flex items-center justify-between">
                 <div className="flex-1">
-                  <h3 className="font-black text-[#1e1b4b] text-sm mb-3">Profile Strength</h3>
+                  <h3 className="font-black text-[#0f172a] text-sm mb-3">Profile Strength</h3>
                   <div className="grid grid-cols-2 gap-2">
-                    <div className="bg-[#f5f3ff] rounded-xl p-2.5 text-center">
-                      <p className="text-lg font-black text-[#7c3aed]">{profile ? Math.round(profile.overallScore) : "—"}</p>
-                      <p className="text-[10px] text-[#6b7280] font-bold uppercase">AI Score</p>
+                    <div className="bg-[#f8fafc] rounded-xl p-2.5 text-center">
+                      <p className="text-lg font-black text-[#4f46e5]">{profile ? Math.round(profile.overallScore) : "—"}</p>
+                      <p className="text-[10px] text-[#64748b] font-bold uppercase">AI Score</p>
                     </div>
-                    <div className="bg-[#f5f3ff] rounded-xl p-2.5 text-center">
-                      <p className="text-lg font-black text-[#06b6d4]">{profile?.commitmentScore ?? "—"}</p>
-                      <p className="text-[10px] text-[#6b7280] font-bold uppercase">Commitment</p>
+                    <div className="bg-[#f8fafc] rounded-xl p-2.5 text-center">
+                      <p className="text-lg font-black text-[#0ea5e9]">{profile?.commitmentScore ?? "—"}</p>
+                      <p className="text-[10px] text-[#64748b] font-bold uppercase">Commitment</p>
                     </div>
                   </div>
                 </div>
@@ -154,25 +154,25 @@ export function ProfileSidebar({ onClose }: { onClose: () => void }) {
                 <div className="text-center">
                   <div className="flex items-center justify-center gap-1 mb-1">
                     <Flame className="w-4 h-4 text-[#f97316]" />
-                    <span className="font-black text-[#1e1b4b] text-base">{profile?.streakCount ?? 0}</span>
+                    <span className="font-black text-[#0f172a] text-base">{profile?.streakCount ?? 0}</span>
                   </div>
-                  <p className="text-[10px] text-[#6b7280] font-bold uppercase">Day Streak</p>
+                  <p className="text-[10px] text-[#64748b] font-bold uppercase">Day Streak</p>
                 </div>
-                <div className="w-px bg-[#f5f3ff]" />
+                <div className="w-px bg-[#f8fafc]" />
                 <div className="text-center">
                   <div className="flex items-center justify-center gap-1 mb-1">
                     <Star className="w-4 h-4 text-[#f59e0b]" />
-                    <span className="font-black text-[#1e1b4b] text-base">{profile ? (profile.xp / 1000).toFixed(1) + "k" : "—"}</span>
+                    <span className="font-black text-[#0f172a] text-base">{profile ? (profile.xp / 1000).toFixed(1) + "k" : "—"}</span>
                   </div>
-                  <p className="text-[10px] text-[#6b7280] font-bold uppercase">XP Earned</p>
+                  <p className="text-[10px] text-[#64748b] font-bold uppercase">XP Earned</p>
                 </div>
-                <div className="w-px bg-[#f5f3ff]" />
+                <div className="w-px bg-[#f8fafc]" />
                 <div className="text-center">
                   <div className="flex items-center justify-center gap-1 mb-1">
                     <TrendingUp className="w-4 h-4 text-[#10b981]" />
-                    <span className="font-black text-[#1e1b4b] text-base">Lv {profile?.level ?? 1}</span>
+                    <span className="font-black text-[#0f172a] text-base">Lv {profile?.level ?? 1}</span>
                   </div>
-                  <p className="text-[10px] text-[#6b7280] font-bold uppercase">Level</p>
+                  <p className="text-[10px] text-[#64748b] font-bold uppercase">Level</p>
                 </div>
               </div>
             </div>
@@ -183,9 +183,9 @@ export function ProfileSidebar({ onClose }: { onClose: () => void }) {
             <div className="px-4 pt-3">
               <div className="bg-white rounded-2xl p-4 shadow-sm space-y-2.5">
                 {[
-                  { icon: Github, value: profile.githubUrl, color: "#1e1b4b" },
+                  { icon: Github, value: profile.githubUrl, color: "#0f172a" },
                   { icon: Linkedin, value: profile.linkedinUrl, color: "#0077b5" },
-                  { icon: Globe, value: profile.portfolioUrl, color: "#7c3aed" },
+                  { icon: Globe, value: profile.portfolioUrl, color: "#4f46e5" },
                   { icon: Phone, value: profile.phone, color: "#10b981" },
                 ].filter(l => l.value).map(({ icon: Icon, value, color }, i) => (
                   <div key={i} className="flex items-center gap-2">
@@ -205,8 +205,8 @@ export function ProfileSidebar({ onClose }: { onClose: () => void }) {
           {profile?.bio && (
             <div className="px-4 pt-3">
               <div className="bg-white rounded-2xl p-4 shadow-sm">
-                <h3 className="font-black text-[#1e1b4b] text-sm mb-2">About</h3>
-                <p className="text-xs text-[#6b7280] leading-relaxed">{profile.bio}</p>
+                <h3 className="font-black text-[#0f172a] text-sm mb-2">About</h3>
+                <p className="text-xs text-[#64748b] leading-relaxed">{profile.bio}</p>
               </div>
             </div>
           )}
@@ -216,22 +216,22 @@ export function ProfileSidebar({ onClose }: { onClose: () => void }) {
             <div className="px-4 pt-3">
               <div className="bg-white rounded-2xl p-4 shadow-sm">
                 <div className="flex items-center gap-2 mb-3">
-                  <BarChart2 className="w-4 h-4 text-[#7c3aed]" />
-                  <h3 className="font-black text-[#1e1b4b] text-sm">Top Skills</h3>
+                  <BarChart2 className="w-4 h-4 text-[#4f46e5]" />
+                  <h3 className="font-black text-[#0f172a] text-sm">Top Skills</h3>
                 </div>
                 <div className="space-y-2">
                   {topSkills.map(([skill, val]) => (
                     <div key={skill} className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-[#1e1b4b] w-20 shrink-0 truncate">{skill}</span>
-                      <div className="flex-1 h-1.5 bg-[#f5f3ff] rounded-full overflow-hidden">
+                      <span className="text-xs font-bold text-[#0f172a] w-20 shrink-0 truncate">{skill}</span>
+                      <div className="flex-1 h-1.5 bg-[#f8fafc] rounded-full overflow-hidden">
                         <motion.div
                           initial={{ width: 0 }}
                           animate={{ width: `${val}%` }}
                           transition={{ duration: 0.6, ease: "easeOut" }}
-                          className="h-full rounded-full bg-gradient-to-r from-[#7c3aed] to-[#06b6d4]"
+                          className="h-full rounded-full bg-gradient-to-r from-[#4f46e5] to-[#0ea5e9]"
                         />
                       </div>
-                      <span className="text-[10px] font-black text-[#7c3aed] w-6 text-right">{val}</span>
+                      <span className="text-[10px] font-black text-[#4f46e5] w-6 text-right">{val}</span>
                     </div>
                   ))}
                 </div>
@@ -245,13 +245,13 @@ export function ProfileSidebar({ onClose }: { onClose: () => void }) {
               <div className="bg-white rounded-2xl p-4 shadow-sm">
                 <div className="flex justify-around">
                   <div className="text-center">
-                    <p className="text-2xl font-black text-[#7c3aed]">{profile.projects?.length ?? 0}</p>
-                    <p className="text-[10px] text-[#6b7280] font-bold uppercase">Projects</p>
+                    <p className="text-2xl font-black text-[#4f46e5]">{profile.projects?.length ?? 0}</p>
+                    <p className="text-[10px] text-[#64748b] font-bold uppercase">Projects</p>
                   </div>
-                  <div className="w-px bg-[#f5f3ff]" />
+                  <div className="w-px bg-[#f8fafc]" />
                   <div className="text-center">
                     <p className="text-2xl font-black text-[#10b981]">{profile.certifications?.length ?? 0}</p>
-                    <p className="text-[10px] text-[#6b7280] font-bold uppercase">Certifications</p>
+                    <p className="text-[10px] text-[#64748b] font-bold uppercase">Certifications</p>
                   </div>
                 </div>
               </div>
@@ -261,7 +261,7 @@ export function ProfileSidebar({ onClose }: { onClose: () => void }) {
           <div className="px-4 pt-4 pb-6">
             <button
               onClick={goToProfile}
-              className="w-full bg-gradient-to-r from-[#7c3aed] to-[#4f46e5] text-white font-black py-3.5 rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-[#7c3aed]/25 active:scale-95 transition-transform"
+              className="w-full bg-gradient-to-r from-[#4f46e5] to-[#6366f1] text-white font-black py-3.5 rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-[#4f46e5]/25 active:scale-95 transition-transform"
             >
               <Edit2 className="w-4 h-4" />
               Edit Full Profile

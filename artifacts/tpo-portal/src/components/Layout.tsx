@@ -28,11 +28,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
         {/* Logo */}
         <div className="px-6 py-5 border-b border-[#e2e8f0]">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 bg-gradient-to-br from-[#7c3aed] to-[#4f46e5] rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-gradient-to-br from-[#4f46e5] to-[#6366f1] rounded-lg flex items-center justify-center">
               <BookOpen className="w-4 h-4 text-white" />
             </div>
             <div>
-              <p className="text-xs font-bold text-[#7c3aed] tracking-wide uppercase">KodeTalent</p>
+              <p className="text-xs font-bold text-[#4f46e5] tracking-wide uppercase">KodeTalent</p>
               <p className="text-[10px] text-[#94a3b8] font-medium">TPO Portal</p>
             </div>
           </div>
@@ -55,11 +55,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 onClick={() => nav(path)}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
                   active
-                    ? "bg-[#f5f3ff] text-[#7c3aed] font-semibold"
+                    ? "bg-[#f8fafc] text-[#4f46e5] font-semibold"
                     : "text-[#64748b] hover:bg-[#f8fafc] hover:text-[#1e293b]"
                 }`}
               >
-                <Icon className={`w-4.5 h-4.5 ${active ? "text-[#7c3aed]" : "text-[#94a3b8]"}`} />
+                <Icon className={`w-4.5 h-4.5 ${active ? "text-[#4f46e5]" : "text-[#94a3b8]"}`} />
                 {label}
               </button>
             );

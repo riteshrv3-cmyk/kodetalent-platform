@@ -90,7 +90,7 @@ export default function Students() {
 
   function SortIcon({ col }: { col: typeof sortBy }) {
     if (sortBy !== col) return <span className="text-[#cbd5e1] ml-0.5">↕</span>;
-    return <span className="text-[#7c3aed] ml-0.5">{sortDir === "desc" ? "↓" : "↑"}</span>;
+    return <span className="text-[#4f46e5] ml-0.5">{sortDir === "desc" ? "↓" : "↑"}</span>;
   }
 
   return (
@@ -108,18 +108,18 @@ export default function Students() {
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Search by name, email, field…"
-            className="w-full pl-9 pr-4 py-2.5 border border-[#e2e8f0] rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#7c3aed]/20 focus:border-[#7c3aed] transition"
+            className="w-full pl-9 pr-4 py-2.5 border border-[#e2e8f0] rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#4f46e5]/20 focus:border-[#4f46e5] transition"
           />
         </div>
-        <select value={filterYear} onChange={e => setFilterYear(e.target.value)} className="px-3 py-2.5 border border-[#e2e8f0] rounded-xl text-sm bg-white text-[#475569] focus:outline-none focus:ring-2 focus:ring-[#7c3aed]/20">
+        <select value={filterYear} onChange={e => setFilterYear(e.target.value)} className="px-3 py-2.5 border border-[#e2e8f0] rounded-xl text-sm bg-white text-[#475569] focus:outline-none focus:ring-2 focus:ring-[#4f46e5]/20">
           <option value="all">All Years</option>
           {years.map(y => <option key={y} value={y}>Year {y}</option>)}
         </select>
-        <select value={filterField} onChange={e => setFilterField(e.target.value)} className="px-3 py-2.5 border border-[#e2e8f0] rounded-xl text-sm bg-white text-[#475569] focus:outline-none focus:ring-2 focus:ring-[#7c3aed]/20">
+        <select value={filterField} onChange={e => setFilterField(e.target.value)} className="px-3 py-2.5 border border-[#e2e8f0] rounded-xl text-sm bg-white text-[#475569] focus:outline-none focus:ring-2 focus:ring-[#4f46e5]/20">
           <option value="all">All Fields</option>
           {fields.map(f => <option key={f} value={f}>{f}</option>)}
         </select>
-        <select value={filterReadiness} onChange={e => setFilterReadiness(e.target.value)} className="px-3 py-2.5 border border-[#e2e8f0] rounded-xl text-sm bg-white text-[#475569] focus:outline-none focus:ring-2 focus:ring-[#7c3aed]/20">
+        <select value={filterReadiness} onChange={e => setFilterReadiness(e.target.value)} className="px-3 py-2.5 border border-[#e2e8f0] rounded-xl text-sm bg-white text-[#475569] focus:outline-none focus:ring-2 focus:ring-[#4f46e5]/20">
           <option value="all">All Readiness</option>
           <option value="ready">Ready (≥60%)</option>
           <option value="progress">In Progress</option>
@@ -132,17 +132,17 @@ export default function Students() {
         <table className="w-full">
           <thead>
             <tr className="border-b border-[#e2e8f0] bg-[#f8fafc]">
-              <th className="text-left px-5 py-3.5 text-xs font-bold text-[#475569] uppercase tracking-wide cursor-pointer hover:text-[#7c3aed]" onClick={() => toggleSort("name")}>
+              <th className="text-left px-5 py-3.5 text-xs font-bold text-[#475569] uppercase tracking-wide cursor-pointer hover:text-[#4f46e5]" onClick={() => toggleSort("name")}>
                 Student <SortIcon col="name" />
               </th>
-              <th className="text-left px-4 py-3.5 text-xs font-bold text-[#475569] uppercase tracking-wide cursor-pointer hover:text-[#7c3aed]" onClick={() => toggleSort("year")}>
+              <th className="text-left px-4 py-3.5 text-xs font-bold text-[#475569] uppercase tracking-wide cursor-pointer hover:text-[#4f46e5]" onClick={() => toggleSort("year")}>
                 Year <SortIcon col="year" />
               </th>
               <th className="text-left px-4 py-3.5 text-xs font-bold text-[#475569] uppercase tracking-wide">Field</th>
-              <th className="text-left px-4 py-3.5 text-xs font-bold text-[#475569] uppercase tracking-wide cursor-pointer hover:text-[#7c3aed]" onClick={() => toggleSort("strength")}>
+              <th className="text-left px-4 py-3.5 text-xs font-bold text-[#475569] uppercase tracking-wide cursor-pointer hover:text-[#4f46e5]" onClick={() => toggleSort("strength")}>
                 Profile Strength <SortIcon col="strength" />
               </th>
-              <th className="text-left px-4 py-3.5 text-xs font-bold text-[#475569] uppercase tracking-wide cursor-pointer hover:text-[#7c3aed]" onClick={() => toggleSort("score")}>
+              <th className="text-left px-4 py-3.5 text-xs font-bold text-[#475569] uppercase tracking-wide cursor-pointer hover:text-[#4f46e5]" onClick={() => toggleSort("score")}>
                 Score <SortIcon col="score" />
               </th>
               <th className="text-left px-4 py-3.5 text-xs font-bold text-[#475569] uppercase tracking-wide">Status</th>
@@ -171,7 +171,7 @@ export default function Students() {
                 >
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#7c3aed] to-[#4f46e5] flex items-center justify-center text-white text-xs font-bold shrink-0">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#4f46e5] to-[#6366f1] flex items-center justify-center text-white text-xs font-bold shrink-0">
                         {s.name.charAt(0)}
                       </div>
                       <div>

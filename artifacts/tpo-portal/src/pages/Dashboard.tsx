@@ -102,17 +102,17 @@ export default function Dashboard() {
 
       {/* Stat cards */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
-        <StatCard icon={Users} label="Total Students" value={stats?.total ?? "—"} sub="Across all years" color="bg-[#7c3aed]" />
+        <StatCard icon={Users} label="Total Students" value={stats?.total ?? "—"} sub="Across all years" color="bg-[#4f46e5]" />
         <StatCard icon={TrendingUp} label="Placement Ready" value={`${readyPct}%`} sub={`${stats?.ready ?? 0} students ≥60% profile`} color="bg-[#10b981]" />
         <StatCard icon={AlertTriangle} label="At Risk" value={stats?.atRisk ?? "—"} sub="Year 3+ below 30% strength" color="bg-[#f97316]" />
-        <StatCard icon={Star} label="Avg Score" value={stats?.avgScore ?? "—"} sub={`Avg profile strength ${stats?.avgStrength ?? 0}%`} color="bg-[#06b6d4]" />
+        <StatCard icon={Star} label="Avg Score" value={stats?.avgScore ?? "—"} sub={`Avg profile strength ${stats?.avgStrength ?? 0}%`} color="bg-[#0ea5e9]" />
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {/* Batch health by year */}
         <div className="bg-white rounded-2xl border border-[#e2e8f0] shadow-sm p-6">
           <div className="flex items-center gap-2 mb-6">
-            <BarChart3 className="w-4.5 h-4.5 text-[#7c3aed]" />
+            <BarChart3 className="w-4.5 h-4.5 text-[#4f46e5]" />
             <h2 className="text-base font-bold text-[#1e293b]">Batch Health by Year</h2>
           </div>
           {stats?.byYear && stats.byYear.length > 0 ? (
@@ -128,10 +128,10 @@ export default function Dashboard() {
         <div className="bg-white rounded-2xl border border-[#e2e8f0] shadow-sm p-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-2">
-              <Activity className="w-4.5 h-4.5 text-[#7c3aed]" />
+              <Activity className="w-4.5 h-4.5 text-[#4f46e5]" />
               <h2 className="text-base font-bold text-[#1e293b]">Recent Recruiter Activity</h2>
             </div>
-            <button onClick={() => nav("/activity")} className="text-xs text-[#7c3aed] font-semibold hover:underline flex items-center gap-1">
+            <button onClick={() => nav("/activity")} className="text-xs text-[#4f46e5] font-semibold hover:underline flex items-center gap-1">
               View all <ChevronRight className="w-3 h-3" />
             </button>
           </div>
@@ -139,7 +139,7 @@ export default function Dashboard() {
             <div className="space-y-3">
               {activity.slice(0, 5).map(item => (
                 <div key={item.id} className="flex items-start gap-3 p-3 rounded-xl bg-[#f8fafc] hover:bg-[#f1f5f9] transition">
-                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#7c3aed] to-[#4f46e5] flex items-center justify-center shrink-0">
+                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#4f46e5] to-[#6366f1] flex items-center justify-center shrink-0">
                     <Mail className="w-4 h-4 text-white" />
                   </div>
                   <div className="flex-1 min-w-0">

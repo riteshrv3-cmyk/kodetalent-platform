@@ -35,7 +35,7 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#1e1b4b] via-[#312e81] to-[#4c1d95] flex items-center justify-center px-4">
+    <div className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#312e81] to-[#4c1d95] flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="flex items-center gap-3 mb-10 justify-center">
@@ -50,7 +50,7 @@ export default function Login() {
 
         {/* Card */}
         <div className="bg-white rounded-2xl shadow-2xl shadow-black/30 p-8">
-          <h2 className="text-xl font-bold text-[#1e1b4b] mb-1">Welcome, TPO</h2>
+          <h2 className="text-xl font-bold text-[#0f172a] mb-1">Welcome, TPO</h2>
           <p className="text-sm text-[#64748b] mb-7">Sign in to manage your batch's placement journey</p>
 
           <form onSubmit={handleSubmit} className="space-y-5">
@@ -63,7 +63,7 @@ export default function Login() {
                   onChange={e => setCollege(e.target.value)}
                   list="colleges"
                   placeholder="e.g. IIT Bombay"
-                  className="w-full pl-10 pr-4 py-3 border border-[#e2e8f0] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#7c3aed]/30 focus:border-[#7c3aed] transition"
+                  className="w-full pl-10 pr-4 py-3 border border-[#e2e8f0] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#4f46e5]/30 focus:border-[#4f46e5] transition"
                 />
                 <datalist id="colleges">
                   {DEMO_COLLEGES.map(c => <option key={c} value={c} />)}
@@ -79,7 +79,7 @@ export default function Login() {
                   value={name}
                   onChange={e => setName(e.target.value)}
                   placeholder="Prof. Ramesh Kumar"
-                  className="w-full pl-10 pr-4 py-3 border border-[#e2e8f0] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#7c3aed]/30 focus:border-[#7c3aed] transition"
+                  className="w-full pl-10 pr-4 py-3 border border-[#e2e8f0] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#4f46e5]/30 focus:border-[#4f46e5] transition"
                 />
               </div>
             </div>
@@ -90,7 +90,7 @@ export default function Login() {
                 value={dept}
                 onChange={e => setDept(e.target.value)}
                 placeholder="CSE, ECE, IT…"
-                className="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#7c3aed]/30 focus:border-[#7c3aed] transition"
+                className="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#4f46e5]/30 focus:border-[#4f46e5] transition"
               />
             </div>
 
@@ -103,7 +103,7 @@ export default function Login() {
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   placeholder="••••••"
-                  className="w-full pl-10 pr-4 py-3 border border-[#e2e8f0] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#7c3aed]/30 focus:border-[#7c3aed] transition"
+                  className="w-full pl-10 pr-4 py-3 border border-[#e2e8f0] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#4f46e5]/30 focus:border-[#4f46e5] transition"
                 />
               </div>
               <p className="text-xs text-[#94a3b8] mt-1">Demo password: tpo123</p>
@@ -118,7 +118,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-[#7c3aed] to-[#4f46e5] text-white py-3 rounded-xl font-semibold text-sm shadow-lg shadow-[#7c3aed]/25 hover:shadow-[#7c3aed]/40 transition-all disabled:opacity-60"
+              className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-[#4f46e5] to-[#6366f1] text-white py-3 rounded-xl font-semibold text-sm shadow-lg shadow-[#4f46e5]/25 hover:shadow-[#4f46e5]/40 transition-all disabled:opacity-60"
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Sign In <ChevronRight className="w-4 h-4" /></>}
             </button>

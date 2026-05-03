@@ -47,76 +47,76 @@
 }
 
 :root {
-  /* Page background: #f5f3ff */
-  --background: 250 100% 98%;
-  /* Text primary: #1e1b4b */
-  --foreground: 244 47% 20%;
-  
+  /* Page background: #f8fafc (slate-50) */
+  --background: 210 40% 98%;
+  /* Text primary: #0f172a (slate-900) */
+  --foreground: 222 47% 11%;
+
   /* Card background: #ffffff */
   --card: 0 0% 100%;
-  /* Text primary inside card */
-  --card-foreground: 244 47% 20%;
-  /* Card border: #ede9fe */
-  --card-border: 250 83% 95%;
+  --card-foreground: 222 47% 11%;
+  /* Card border: #e0e7ff (indigo-100) */
+  --card-border: 228 100% 93%;
 
   --popover: 0 0% 100%;
-  --popover-foreground: 244 47% 20%;
-  --popover-border: 250 83% 95%;
+  --popover-foreground: 222 47% 11%;
+  --popover-border: 228 100% 93%;
 
-  /* Primary: #7c3aed */
-  --primary: 262 83% 58%;
+  /* Primary: #4f46e5 (indigo-600) */
+  --primary: 239 76% 59%;
   --primary-foreground: 0 0% 100%;
 
-  /* Secondary (cyan): #06b6d4 */
-  --secondary: 189 94% 43%;
+  /* Secondary (sky): #0ea5e9 (sky-500) */
+  --secondary: 199 89% 48%;
   --secondary-foreground: 0 0% 100%;
 
-  /* Text secondary: #6b7280 */
-  --muted: 220 9% 96%;
-  --muted-foreground: 220 9% 46%;
+  /* Muted backgrounds */
+  --muted: 210 40% 96%;
+  /* Muted text: #64748b (slate-500) */
+  --muted-foreground: 215 16% 47%;
 
-  /* Warning/Streak: #f97316 */
-  --accent: 25 95% 53%;
+  /* Accent: #f59e0b (amber-400) — XP, achievements */
+  --accent: 38 92% 50%;
   --accent-foreground: 0 0% 100%;
 
-  /* Achievement: #ec4899 */
-  --destructive: 330 81% 60%;
+  /* Destructive: #ef4444 */
+  --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
 
   --success: 160 84% 39%;
   --streak: 25 95% 53%;
-  --achievement: 330 81% 60%;
+  --achievement: 38 92% 50%;
 
-  --border: 250 83% 95%;
-  --input: 250 83% 95%;
-  --ring: 262 83% 58%;
+  --border: 228 100% 93%;
+  --input: 228 100% 93%;
+  --ring: 239 76% 59%;
 
   --radius: 0.75rem;
 }
 
-/* Ensure no dark mode */
+/* Ensure no dark mode override */
 .dark {
-  --background: 250 100% 98%;
-  --foreground: 244 47% 20%;
+  --background: 210 40% 98%;
+  --foreground: 222 47% 11%;
   --card: 0 0% 100%;
-  --card-foreground: 244 47% 20%;
-  --card-border: 250 83% 95%;
+  --card-foreground: 222 47% 11%;
+  --card-border: 228 100% 93%;
   --popover: 0 0% 100%;
-  --popover-foreground: 244 47% 20%;
-  --popover-border: 250 83% 95%;
-  --primary: 262 83% 58%;
+  --popover-foreground: 222 47% 11%;
+  --popover-border: 228 100% 93%;
+  --primary: 239 76% 59%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 189 94% 43%;
+  --secondary: 199 89% 48%;
   --secondary-foreground: 0 0% 100%;
-  --muted: 220 9% 96%;
-  --muted-foreground: 220 9% 46%;
-  --accent: 25 95% 53%;
+  --muted: 210 40% 96%;
+  --muted-foreground: 215 16% 47%;
+  --accent: 38 92% 50%;
   --accent-foreground: 0 0% 100%;
-  --destructive: 330 81% 60%;
+  --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
-  --border: 250 83% 95%;
-  --input: 250 83% 95%;
-  --ring: 262 83% 58%;
+  --border: 228 100% 93%;
+  --input: 228 100% 93%;
+  --ring: 239 76% 59%;
 }
 
 @layer base {
@@ -127,9 +127,9 @@
     @apply font-sans antialiased bg-background text-foreground;
   }
   h1, h2, h3, h4, h5, h6 {
-    @apply font-bold text-[#1e1b4b];
+    @apply font-bold text-[#0f172a];
   }
   p {
-    @apply font-medium text-[#6b7280];
+    @apply font-medium text-[#64748b];
   }
 }

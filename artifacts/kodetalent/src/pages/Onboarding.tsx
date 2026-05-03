@@ -146,12 +146,12 @@ export default function Onboarding() {
 
   if (loadingProfile) {
     return (
-      <div className="min-h-screen bg-[#f5f3ff] flex flex-col items-center justify-center p-6 text-center space-y-6">
+      <div className="min-h-screen bg-[#f8fafc] flex flex-col items-center justify-center p-6 text-center space-y-6">
         <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center animate-pulse">
           <span className="text-5xl">⭐</span>
         </div>
-        <h2 className="text-2xl font-bold text-[#1e1b4b]">Building your career profile...</h2>
-        <div className="w-full max-w-xs h-3 bg-[#ede9fe] rounded-full overflow-hidden">
+        <h2 className="text-2xl font-bold text-[#0f172a]">Building your career profile...</h2>
+        <div className="w-full max-w-xs h-3 bg-[#e0e7ff] rounded-full overflow-hidden">
           <motion.div
             className="h-full bg-primary"
             initial={{ width: "0%" }}
@@ -166,13 +166,13 @@ export default function Onboarding() {
   const currentBotMessage = messages[messages.length - 1]?.sender === "bot" ? messages[messages.length - 1] : null;
 
   return (
-    <div className="min-h-[100dvh] flex flex-col bg-[#f5f3ff] max-w-md mx-auto relative overflow-hidden">
-      <div className="bg-white border-b border-[#ede9fe] p-4 shadow-sm flex items-center space-x-3 sticky top-0 z-10">
+    <div className="min-h-[100dvh] flex flex-col bg-[#f8fafc] max-w-md mx-auto relative overflow-hidden">
+      <div className="bg-white border-b border-[#e0e7ff] p-4 shadow-sm flex items-center space-x-3 sticky top-0 z-10">
         <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-white font-extrabold text-lg">
           KT
         </div>
         <div>
-          <h1 className="font-bold text-xl text-[#1e1b4b]">KodeTalent AI</h1>
+          <h1 className="font-bold text-xl text-[#0f172a]">KodeTalent AI</h1>
           <p className="text-sm font-semibold text-[#10b981]">Online</p>
         </div>
       </div>
@@ -190,7 +190,7 @@ export default function Onboarding() {
                 className={`max-w-[85%] px-5 py-3 text-[15px] font-medium shadow-[0_4px_24px_rgba(124,58,237,0.10)] ${
                   msg.sender === "user"
                     ? "bg-primary text-white rounded-2xl rounded-tr-none"
-                    : "bg-white text-[#1e1b4b] rounded-2xl rounded-tl-none border border-[#ede9fe]"
+                    : "bg-white text-[#0f172a] rounded-2xl rounded-tl-none border border-[#e0e7ff]"
                 }`}
               >
                 {msg.text}
@@ -199,7 +199,7 @@ export default function Onboarding() {
           ))}
           {isTyping && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start">
-              <div className="bg-white border border-[#ede9fe] rounded-2xl rounded-tl-none px-5 py-4 flex space-x-1 shadow-[0_4px_24px_rgba(124,58,237,0.10)]">
+              <div className="bg-white border border-[#e0e7ff] rounded-2xl rounded-tl-none px-5 py-4 flex space-x-1 shadow-[0_4px_24px_rgba(124,58,237,0.10)]">
                 <motion.div className="w-2 h-2 bg-primary/60 rounded-full" animate={{ y: [0, -5, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0 }} />
                 <motion.div className="w-2 h-2 bg-primary/60 rounded-full" animate={{ y: [0, -5, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }} />
                 <motion.div className="w-2 h-2 bg-primary/60 rounded-full" animate={{ y: [0, -5, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }} />
@@ -211,7 +211,7 @@ export default function Onboarding() {
       </div>
 
       {!isTyping && currentBotMessage && (
-        <div className="fixed bottom-0 left-0 right-0 p-4 pb-safe bg-gradient-to-t from-[#f5f3ff] to-transparent z-20 pointer-events-none">
+        <div className="fixed bottom-0 left-0 right-0 p-4 pb-safe bg-gradient-to-t from-[#f8fafc] to-transparent z-20 pointer-events-none">
           <div className="max-w-md mx-auto pointer-events-auto">
             {currentBotMessage.options?.length ? (
               <div className="flex flex-wrap gap-2 justify-end">
@@ -235,7 +235,7 @@ export default function Onboarding() {
                   placeholder="Type your answer..."
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
-                  className="flex-1 rounded-full bg-white border-[#ede9fe] focus-visible:ring-primary h-14 px-6 text-[15px] shadow-[0_4px_24px_rgba(124,58,237,0.10)] text-[#1e1b4b]"
+                  className="flex-1 rounded-full bg-white border-[#e0e7ff] focus-visible:ring-primary h-14 px-6 text-[15px] shadow-[0_4px_24px_rgba(124,58,237,0.10)] text-[#0f172a]"
                 />
                 <motion.div whileTap={{ scale: 0.97 }}>
                   <Button type="submit" size="icon" className="rounded-full shrink-0 h-14 w-14 bg-primary text-white shadow-[0_4px_24px_rgba(124,58,237,0.20)]">

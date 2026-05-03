@@ -29,7 +29,7 @@ export default function Jobs() {
 
   if (isLoading || !jobMatches) {
     return (
-      <div className="p-4 space-y-4 bg-[#f5f3ff] min-h-screen">
+      <div className="p-4 space-y-4 bg-[#f8fafc] min-h-screen">
         <Skeleton className="h-8 w-40 mb-6" />
         <Skeleton className="h-32 w-full rounded-2xl mb-6" />
         {[1,2,3].map(i => <Skeleton key={i} className="h-48 w-full rounded-2xl" />)}
@@ -43,18 +43,18 @@ export default function Jobs() {
     : 0;
 
   return (
-    <div className="p-4 pb-28 max-w-md mx-auto space-y-6 min-h-screen bg-[#f5f3ff]">
+    <div className="p-4 pb-28 max-w-md mx-auto space-y-6 min-h-screen bg-[#f8fafc]">
       <div className="mb-2">
-        <h1 className="text-2xl font-bold flex items-center text-[#1e1b4b]">
+        <h1 className="text-2xl font-bold flex items-center text-[#0f172a]">
           <Briefcase className="mr-2 text-primary" /> Job Matches
         </h1>
-        <p className="text-[#6b7280] font-medium text-sm mt-1">
+        <p className="text-[#64748b] font-medium text-sm mt-1">
           Opportunities tailored to your verified skills.
         </p>
       </div>
 
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} whileHover={{ y: -2 }}>
-        <Card className="border-0 shadow-[0_4px_24px_rgba(124,58,237,0.10)] rounded-2xl overflow-hidden" style={{ background: 'linear-gradient(135deg, #7c3aed, #06b6d4)' }}>
+        <Card className="border-0 shadow-[0_4px_24px_rgba(124,58,237,0.10)] rounded-2xl overflow-hidden" style={{ background: 'linear-gradient(135deg, #4f46e5, #0ea5e9)' }}>
           <CardContent className="p-5 text-white">
             <div className="flex justify-between items-center mb-4">
               <span className="font-bold text-sm">Job Readiness Score</span>
@@ -87,8 +87,8 @@ export default function Jobs() {
                 <CardContent className="p-5">
                   <div className="flex justify-between items-start mb-3">
                     <div>
-                      <h3 className="font-extrabold text-[18px] text-[#1e1b4b] leading-tight mb-1">{job.companyName}</h3>
-                      <p className="text-[#6b7280] font-bold text-sm">{job.role}</p>
+                      <h3 className="font-extrabold text-[18px] text-[#0f172a] leading-tight mb-1">{job.companyName}</h3>
+                      <p className="text-[#64748b] font-bold text-sm">{job.role}</p>
                     </div>
                     {!match.isLocked && (
                       <div className="bg-[#10b981]/10 text-[#10b981] px-3 py-1 rounded-full text-xs font-extrabold whitespace-nowrap">
@@ -101,14 +101,14 @@ export default function Jobs() {
                     <div className="flex items-center text-xs font-bold text-primary bg-primary/5 px-2 py-1.5 rounded-md">
                       <DollarSign className="w-3.5 h-3.5 mr-1" /> {job.ctcMin}-{job.ctcMax} LPA
                     </div>
-                    <div className="flex items-center text-xs font-bold text-[#6b7280] bg-[#f5f3ff] px-2 py-1.5 rounded-md">
+                    <div className="flex items-center text-xs font-bold text-[#64748b] bg-[#f8fafc] px-2 py-1.5 rounded-md">
                       <MapPin className="w-3.5 h-3.5 mr-1" /> {job.remote ? "Remote" : job.location}
                     </div>
                   </div>
 
                   <div className="flex gap-1.5 flex-wrap mb-5">
                     {job.requiredSkills.map(skill => (
-                      <span key={skill} className="text-[10px] bg-[#06b6d4]/10 text-[#06b6d4] font-extrabold px-2 py-1 rounded-full">
+                      <span key={skill} className="text-[10px] bg-[#0ea5e9]/10 text-[#0ea5e9] font-extrabold px-2 py-1 rounded-full">
                         {skill}
                       </span>
                     ))}
@@ -116,7 +116,7 @@ export default function Jobs() {
 
                   <motion.div whileTap={{ scale: match.isLocked ? 1 : 0.97 }}>
                     <Button 
-                      className={`w-full font-bold h-12 rounded-full text-[15px] ${!match.isLocked ? 'bg-white text-primary border-2 border-primary hover:bg-primary hover:text-white' : 'bg-[#ede9fe] text-[#6b7280] border-0'}`}
+                      className={`w-full font-bold h-12 rounded-full text-[15px] ${!match.isLocked ? 'bg-white text-primary border-2 border-primary hover:bg-primary hover:text-white' : 'bg-[#e0e7ff] text-[#64748b] border-0'}`}
                       variant="outline"
                       disabled={match.isLocked}
                     >
@@ -130,9 +130,9 @@ export default function Jobs() {
         })}
 
         {jobMatches.some(m => m.isLocked) && (
-          <div className="absolute bottom-0 left-0 w-full h-64 bg-gradient-to-t from-[#f5f3ff] via-[#f5f3ff]/90 to-transparent flex items-end justify-center pb-6 z-10">
+          <div className="absolute bottom-0 left-0 w-full h-64 bg-gradient-to-t from-[#f8fafc] via-[#f8fafc]/90 to-transparent flex items-end justify-center pb-6 z-10">
             <motion.div whileTap={{ scale: 0.97 }} className="w-full px-4">
-              <Button className="w-full text-white font-bold h-14 rounded-full text-[16px] shadow-[0_8px_16px_rgba(124,58,237,0.25)] border-0" style={{ background: 'linear-gradient(135deg, #7c3aed, #ec4899)' }}>
+              <Button className="w-full text-white font-bold h-14 rounded-full text-[16px] shadow-[0_8px_16px_rgba(124,58,237,0.25)] border-0" style={{ background: 'linear-gradient(135deg, #4f46e5, #ec4899)' }}>
                 <Lock className="w-5 h-5 mr-2" />
                 Go Pro to Unlock All
               </Button>

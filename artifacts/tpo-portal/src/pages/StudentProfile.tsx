@@ -59,7 +59,7 @@ function SkillBar({ name, value }: { name: string; value: number }) {
     <div className="flex items-center gap-3">
       <span className="text-xs text-[#475569] w-28 truncate font-medium">{name}</span>
       <div className="flex-1 bg-[#f1f5f9] rounded-full h-2">
-        <div className="h-full rounded-full bg-[#7c3aed]" style={{ width: `${Math.min(value, 100)}%` }} />
+        <div className="h-full rounded-full bg-[#4f46e5]" style={{ width: `${Math.min(value, 100)}%` }} />
       </div>
       <span className="text-xs font-bold text-[#475569] w-6 text-right">{value}</span>
     </div>
@@ -103,7 +103,7 @@ export default function StudentProfile({ id }: { id: number }) {
       <div className="bg-white rounded-2xl border border-[#e2e8f0] shadow-sm p-6 mb-5">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="flex items-start gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#7c3aed] to-[#4f46e5] flex items-center justify-center text-white text-xl font-bold">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#4f46e5] to-[#6366f1] flex items-center justify-center text-white text-xl font-bold">
               {profile.name.charAt(0)}
             </div>
             <div>
@@ -122,7 +122,7 @@ export default function StudentProfile({ id }: { id: number }) {
               <div className="flex items-center gap-3 mt-2 flex-wrap">
                 <span className="flex items-center gap-1 text-xs text-[#94a3b8]"><Mail className="w-3.5 h-3.5" />{profile.email}</span>
                 {profile.phone && <span className="flex items-center gap-1 text-xs text-[#94a3b8]"><Phone className="w-3.5 h-3.5" />{profile.phone}</span>}
-                {profile.githubUrl && <a href={profile.githubUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-xs text-[#7c3aed] hover:underline"><Github className="w-3.5 h-3.5" />GitHub</a>}
+                {profile.githubUrl && <a href={profile.githubUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-xs text-[#4f46e5] hover:underline"><Github className="w-3.5 h-3.5" />GitHub</a>}
                 {profile.linkedinUrl && <a href={profile.linkedinUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-xs text-[#0077b5] hover:underline"><Linkedin className="w-3.5 h-3.5" />LinkedIn</a>}
                 {profile.portfolioUrl && <a href={profile.portfolioUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-xs text-[#64748b] hover:underline"><Globe className="w-3.5 h-3.5" />Portfolio</a>}
               </div>
@@ -131,9 +131,9 @@ export default function StudentProfile({ id }: { id: number }) {
 
           {/* Score rings */}
           <div className="flex items-center gap-4">
-            <ScoreRing value={profile.overallScore} label="Overall Score" color="#7c3aed" />
+            <ScoreRing value={profile.overallScore} label="Overall Score" color="#4f46e5" />
             <ScoreRing value={profile.profileStrength ?? 0} label="Profile %" color={strengthColor} />
-            <ScoreRing value={profile.commitmentScore ?? 0} label="Commitment" color="#06b6d4" />
+            <ScoreRing value={profile.commitmentScore ?? 0} label="Commitment" color="#0ea5e9" />
           </div>
         </div>
 
@@ -150,7 +150,7 @@ export default function StudentProfile({ id }: { id: number }) {
             <span className="text-sm font-bold text-[#1e293b]">{profile.xp.toLocaleString()} XP</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <Star className="w-4 h-4 text-[#7c3aed]" />
+            <Star className="w-4 h-4 text-[#4f46e5]" />
             <span className="text-sm font-bold text-[#1e293b]">Level {profile.level}</span>
           </div>
           <div className="flex items-center gap-1.5">
@@ -159,7 +159,7 @@ export default function StudentProfile({ id }: { id: number }) {
           </div>
           {profile.workMode && (
             <div className="flex items-center gap-1.5">
-              <Briefcase className="w-4 h-4 text-[#06b6d4]" />
+              <Briefcase className="w-4 h-4 text-[#0ea5e9]" />
               <span className="text-sm text-[#64748b]">{profile.workMode}</span>
             </div>
           )}
@@ -176,7 +176,7 @@ export default function StudentProfile({ id }: { id: number }) {
         {topSkills.length > 0 && (
           <div className="bg-white rounded-2xl border border-[#e2e8f0] shadow-sm p-5">
             <div className="flex items-center gap-2 mb-4">
-              <Code2 className="w-4 h-4 text-[#7c3aed]" />
+              <Code2 className="w-4 h-4 text-[#4f46e5]" />
               <h2 className="text-sm font-bold text-[#1e293b]">Top Skills</h2>
             </div>
             <div className="space-y-3">
@@ -204,7 +204,7 @@ export default function StudentProfile({ id }: { id: number }) {
             </div>
             <div className="flex flex-wrap gap-1.5 mb-4">
               {profile.githubStats.topLanguages.map(l => (
-                <span key={l} className="text-xs bg-[#f5f3ff] text-[#7c3aed] border border-[#ede9fe] rounded-full px-2.5 py-0.5 font-medium">{l}</span>
+                <span key={l} className="text-xs bg-[#f8fafc] text-[#4f46e5] border border-[#e0e7ff] rounded-full px-2.5 py-0.5 font-medium">{l}</span>
               ))}
             </div>
             {profile.githubStats.topRepos.slice(0, 3).map(repo => (
@@ -229,7 +229,7 @@ export default function StudentProfile({ id }: { id: number }) {
       {profile.projects?.length > 0 && (
         <div className="bg-white rounded-2xl border border-[#e2e8f0] shadow-sm p-5 mb-5">
           <div className="flex items-center gap-2 mb-4">
-            <Code2 className="w-4 h-4 text-[#06b6d4]" />
+            <Code2 className="w-4 h-4 text-[#0ea5e9]" />
             <h2 className="text-sm font-bold text-[#1e293b]">Projects ({profile.projects.length})</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -239,7 +239,7 @@ export default function StudentProfile({ id }: { id: number }) {
                   <p className="text-sm font-bold text-[#1e293b]">{p.title}</p>
                   <div className="flex gap-1.5">
                     {p.githubUrl && <a href={p.githubUrl} target="_blank" rel="noreferrer"><Github className="w-3.5 h-3.5 text-[#94a3b8] hover:text-[#1e293b]" /></a>}
-                    {p.liveUrl && <a href={p.liveUrl} target="_blank" rel="noreferrer"><ExternalLink className="w-3.5 h-3.5 text-[#94a3b8] hover:text-[#7c3aed]" /></a>}
+                    {p.liveUrl && <a href={p.liveUrl} target="_blank" rel="noreferrer"><ExternalLink className="w-3.5 h-3.5 text-[#94a3b8] hover:text-[#4f46e5]" /></a>}
                   </div>
                 </div>
                 <p className="text-xs text-[#64748b] mt-1 line-clamp-2">{p.description}</p>
@@ -268,7 +268,7 @@ export default function StudentProfile({ id }: { id: number }) {
                 </div>
                 {cert.credentialUrl && (
                   <a href={cert.credentialUrl} target="_blank" rel="noreferrer">
-                    <ExternalLink className="w-3.5 h-3.5 text-[#7c3aed]" />
+                    <ExternalLink className="w-3.5 h-3.5 text-[#4f46e5]" />
                   </a>
                 )}
               </div>

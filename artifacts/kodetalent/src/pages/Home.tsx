@@ -40,8 +40,8 @@ const categories = [
     label: "Opportunities",
     icon: Briefcase,
     href: "/opportunities",
-    gradient: "from-[#7c3aed] to-[#6d28d9]",
-    bg: "#ede9fe",
+    gradient: "from-[#4f46e5] to-[#3730a3]",
+    bg: "#e0e7ff",
     count: "200+ Jobs",
   },
   {
@@ -67,7 +67,7 @@ const categories = [
     label: "Practice",
     icon: Zap,
     href: "/practice",
-    gradient: "from-[#06b6d4] to-[#0891b2]",
+    gradient: "from-[#0ea5e9] to-[#0891b2]",
     bg: "#cffafe",
     count: "Mock Tests",
   },
@@ -106,7 +106,7 @@ export default function Home() {
 
     Promise.all([
       fetch(`${BASE}/api/students/${id}/full-profile`).then((r) => r.json()),
-      fetch(`${BASE}/api/recruiter-invites?studentId=${id}`).then((r) => r.json()).catch(() => []),
+      fetch(`${BASE}/api/students/${id}/invites`).then((r) => r.json()).catch(() => []),
     ]).then(([prof, inv]) => {
       setProfile(prof);
       setInvites(Array.isArray(inv) ? inv : []);
@@ -126,16 +126,16 @@ export default function Home() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-[#7c3aed] border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-[#4f46e5] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="pb-6 space-y-4 min-h-screen bg-[#f5f3ff]">
+    <div className="pb-6 space-y-4 min-h-screen bg-[#f8fafc]">
 
       {/* Score Banner */}
-      <div className="bg-gradient-to-br from-[#7c3aed] via-[#6d28d9] to-[#4f46e5] px-5 pt-5 pb-6 text-white">
+      <div className="bg-gradient-to-br from-[#1e1b4b] via-[#3730a3] to-[#4f46e5] px-5 pt-5 pb-6 text-white">
         <p className="text-white/70 text-sm font-medium">{greeting},</p>
         <h1 className="text-2xl font-black mt-0.5">{firstName} 👋</h1>
         <p className="text-white/60 text-xs mt-0.5">{profile?.college}</p>
@@ -184,20 +184,20 @@ export default function Home() {
             initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
             onClick={() => setLocation("/inbox")}
-            className="w-full bg-gradient-to-r from-[#7c3aed]/10 to-[#06b6d4]/10 border border-[#7c3aed]/20 rounded-2xl p-4 flex items-center gap-3 active:scale-[0.98] transition-transform"
+            className="w-full bg-gradient-to-r from-[#4f46e5]/10 to-[#0ea5e9]/10 border border-[#4f46e5]/20 rounded-2xl p-4 flex items-center gap-3 active:scale-[0.98] transition-transform"
           >
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#7c3aed] to-[#4f46e5] flex items-center justify-center shrink-0 shadow-md shadow-[#7c3aed]/25">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#4f46e5] to-[#6366f1] flex items-center justify-center shrink-0 shadow-md shadow-[#4f46e5]/25">
               <Users className="w-5 h-5 text-white" />
             </div>
             <div className="flex-1 text-left">
-              <p className="font-black text-[#1e1b4b] text-sm">
+              <p className="font-black text-[#0f172a] text-sm">
                 {pendingInvites.length} recruiter{pendingInvites.length > 1 ? "s are" : " is"} interested!
               </p>
-              <p className="text-xs text-[#6b7280] mt-0.5">Tap to view and respond</p>
+              <p className="text-xs text-[#64748b] mt-0.5">Tap to view and respond</p>
             </div>
             <div className="flex items-center gap-1">
-              <div className="w-2 h-2 rounded-full bg-[#7c3aed] animate-pulse" />
-              <ChevronRight className="w-4 h-4 text-[#7c3aed]" />
+              <div className="w-2 h-2 rounded-full bg-[#4f46e5] animate-pulse" />
+              <ChevronRight className="w-4 h-4 text-[#4f46e5]" />
             </div>
           </motion.button>
         </div>
@@ -205,8 +205,8 @@ export default function Home() {
 
       {/* Categories Grid */}
       <div className="px-4">
-        <h2 className="font-black text-[#1e1b4b] text-sm mb-3 flex items-center gap-2">
-          <Target className="w-4 h-4 text-[#7c3aed]" />
+        <h2 className="font-black text-[#0f172a] text-sm mb-3 flex items-center gap-2">
+          <Target className="w-4 h-4 text-[#4f46e5]" />
           Quick Access
         </h2>
         <div className="grid grid-cols-3 gap-3">
@@ -227,8 +227,8 @@ export default function Home() {
                 >
                   <Icon className="w-5 h-5 text-white" />
                 </div>
-                <span className="font-black text-[#1e1b4b] text-[11px] text-center leading-tight">{cat.label}</span>
-                <span className="text-[9px] font-bold text-[#9ca3af] text-center">{cat.count}</span>
+                <span className="font-black text-[#0f172a] text-[11px] text-center leading-tight">{cat.label}</span>
+                <span className="text-[9px] font-bold text-[#94a3b8] text-center">{cat.count}</span>
               </motion.button>
             );
           })}
@@ -242,32 +242,32 @@ export default function Home() {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             onClick={() => setLocation("/chat")}
-            className="w-full bg-white rounded-2xl p-4 shadow-sm flex items-center gap-4 border border-[#ede9fe] active:scale-[0.98] transition-transform"
+            className="w-full bg-white rounded-2xl p-4 shadow-sm flex items-center gap-4 border border-[#e0e7ff] active:scale-[0.98] transition-transform"
           >
             <div className="relative w-12 h-12 shrink-0">
               <svg width="48" height="48" viewBox="0 0 48 48">
-                <circle cx="24" cy="24" r="18" fill="none" stroke="#ede9fe" strokeWidth="4" />
+                <circle cx="24" cy="24" r="18" fill="none" stroke="#e0e7ff" strokeWidth="4" />
                 <circle
                   cx="24" cy="24" r="18"
                   fill="none"
-                  stroke="#7c3aed"
+                  stroke="#4f46e5"
                   strokeWidth="4"
                   strokeDasharray={`${(profile.profileStrength / 100) * 113} 113`}
                   strokeLinecap="round"
                   transform="rotate(-90 24 24)"
                 />
-                <text x="24" y="28" textAnchor="middle" fontSize="10" fontWeight="900" fill="#7c3aed">{profile.profileStrength}%</text>
+                <text x="24" y="28" textAnchor="middle" fontSize="10" fontWeight="900" fill="#4f46e5">{profile.profileStrength}%</text>
               </svg>
             </div>
             <div className="flex-1 text-left">
-              <p className="font-black text-[#1e1b4b] text-sm">Boost Your Profile</p>
-              <p className="text-xs text-[#6b7280] mt-0.5">
+              <p className="font-black text-[#0f172a] text-sm">Boost Your Profile</p>
+              <p className="text-xs text-[#64748b] mt-0.5">
                 {100 - profile.profileStrength}% left to stand out to recruiters
               </p>
             </div>
             <div className="flex items-center gap-1">
-              <span className="text-[10px] font-black text-[#7c3aed]">AI Help</span>
-              <ChevronRight className="w-4 h-4 text-[#7c3aed]" />
+              <span className="text-[10px] font-black text-[#4f46e5]">AI Help</span>
+              <ChevronRight className="w-4 h-4 text-[#4f46e5]" />
             </div>
           </motion.button>
         </div>
@@ -277,11 +277,11 @@ export default function Home() {
       {invites.length > 0 && (
         <div className="px-4">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="font-black text-[#1e1b4b] text-sm flex items-center gap-2">
-              <Mail className="w-4 h-4 text-[#7c3aed]" />
+            <h2 className="font-black text-[#0f172a] text-sm flex items-center gap-2">
+              <Mail className="w-4 h-4 text-[#4f46e5]" />
               Recruiter Activity
             </h2>
-            <button onClick={() => setLocation("/inbox")} className="text-[11px] font-bold text-[#7c3aed]">
+            <button onClick={() => setLocation("/inbox")} className="text-[11px] font-bold text-[#4f46e5]">
               View all
             </button>
           </div>
@@ -292,19 +292,19 @@ export default function Home() {
                 onClick={() => setLocation("/inbox")}
                 className="w-full bg-white rounded-2xl px-4 py-3 flex items-center gap-3 shadow-sm text-left active:scale-[0.98] transition-transform"
               >
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#7c3aed]/10 to-[#4f46e5]/10 flex items-center justify-center shrink-0">
-                  <span className="text-sm font-black text-[#7c3aed]">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#4f46e5]/10 to-[#6366f1]/10 flex items-center justify-center shrink-0">
+                  <span className="text-sm font-black text-[#4f46e5]">
                     {inv.companyName?.[0] ?? "?"}
                   </span>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-black text-[#1e1b4b] text-xs truncate">{inv.companyName}</p>
-                  <p className="text-[11px] text-[#6b7280] truncate">{inv.recruiterName}</p>
+                  <p className="font-black text-[#0f172a] text-xs truncate">{inv.companyName}</p>
+                  <p className="text-[11px] text-[#64748b] truncate">{inv.recruiterName}</p>
                 </div>
                 <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${
                   inv.status === "accepted" ? "bg-[#d1fae5] text-[#10b981]"
                   : inv.status === "declined" ? "bg-[#fee2e2] text-[#ef4444]"
-                  : "bg-[#ede9fe] text-[#7c3aed]"
+                  : "bg-[#e0e7ff] text-[#4f46e5]"
                 }`}>
                   {inv.status.toUpperCase()}
                 </span>
@@ -318,14 +318,14 @@ export default function Home() {
       {invites.length === 0 && !loading && (
         <div className="px-4">
           <div className="bg-white rounded-2xl p-5 text-center shadow-sm">
-            <div className="w-12 h-12 rounded-2xl bg-[#ede9fe] flex items-center justify-center mx-auto mb-3">
-              <Briefcase className="w-6 h-6 text-[#7c3aed]" />
+            <div className="w-12 h-12 rounded-2xl bg-[#e0e7ff] flex items-center justify-center mx-auto mb-3">
+              <Briefcase className="w-6 h-6 text-[#4f46e5]" />
             </div>
-            <p className="font-black text-[#1e1b4b] text-sm">No recruiter activity yet</p>
-            <p className="text-xs text-[#6b7280] mt-1 mb-3">Complete your profile to start getting noticed</p>
+            <p className="font-black text-[#0f172a] text-sm">No recruiter activity yet</p>
+            <p className="text-xs text-[#64748b] mt-1 mb-3">Complete your profile to start getting noticed</p>
             <button
               onClick={() => setLocation("/chat")}
-              className="bg-[#7c3aed] text-white font-bold text-xs px-4 py-2 rounded-xl"
+              className="bg-[#4f46e5] text-white font-bold text-xs px-4 py-2 rounded-xl"
             >
               Build Profile with AI
             </button>

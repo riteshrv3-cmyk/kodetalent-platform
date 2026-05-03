@@ -44,7 +44,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <div className="min-h-[100dvh] bg-[#f5f3ff]">
+    <div className="min-h-[100dvh] bg-[#f8fafc]">
       <TopBar
         pendingCount={pendingCount}
         initials={initials}

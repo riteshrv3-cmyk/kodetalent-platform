@@ -234,7 +234,7 @@ export default function Resume() {
 
   if (isLoading || !student) {
     return (
-      <div className="p-4 pb-28 max-w-md mx-auto space-y-4 min-h-screen bg-[#f5f3ff]">
+      <div className="p-4 pb-28 max-w-md mx-auto space-y-4 min-h-screen bg-[#f8fafc]">
         <Skeleton className="h-8 w-32 rounded-xl" />
         <Skeleton className="h-48 w-full rounded-2xl" />
         <Skeleton className="h-32 w-full rounded-2xl" />
@@ -244,17 +244,17 @@ export default function Resume() {
   }
 
   return (
-    <div className="p-4 pb-28 max-w-md mx-auto space-y-5 min-h-screen bg-[#f5f3ff]">
-      <Button variant="ghost" onClick={() => setLocation("/profile")} className="-ml-2 text-[#6b7280] font-bold">
+    <div className="p-4 pb-28 max-w-md mx-auto space-y-5 min-h-screen bg-[#f8fafc]">
+      <Button variant="ghost" onClick={() => setLocation("/profile")} className="-ml-2 text-[#64748b] font-bold">
         <ArrowLeft className="w-5 h-5 mr-2" /> Back
       </Button>
 
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold text-[#1e1b4b] flex items-center gap-2">
+          <h1 className="text-2xl font-extrabold text-[#0f172a] flex items-center gap-2">
             <FileText className="w-6 h-6 text-primary" /> My Resume
           </h1>
-          <p className="text-[#6b7280] text-sm font-medium mt-0.5">Auto-generated from your KodeTalent profile</p>
+          <p className="text-[#64748b] text-sm font-medium mt-0.5">Auto-generated from your KodeTalent profile</p>
         </div>
         <motion.div whileTap={{ scale: 0.95 }}>
           <Button
@@ -269,12 +269,12 @@ export default function Resume() {
       </div>
 
       <Card className="border-0 shadow-[0_4px_24px_rgba(124,58,237,0.10)] rounded-3xl bg-white overflow-hidden">
-        <div className="h-1.5 w-full" style={{ background: 'linear-gradient(90deg, #7c3aed, #06b6d4)' }} />
+        <div className="h-1.5 w-full" style={{ background: 'linear-gradient(90deg, #4f46e5, #0ea5e9)' }} />
         <CardContent className="p-6 space-y-5">
           <div className="text-center border-b border-[#f3f4f6] pb-5">
-            <h2 className="text-2xl font-black text-[#1e1b4b] uppercase tracking-wide">{student.name}</h2>
+            <h2 className="text-2xl font-black text-[#0f172a] uppercase tracking-wide">{student.name}</h2>
             <p className="text-primary font-semibold text-sm mt-1">{degree}</p>
-            <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 mt-3 text-xs text-[#6b7280]">
+            <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 mt-3 text-xs text-[#64748b]">
               <span className="flex items-center gap-1"><Mail className="w-3 h-3" />{student.email}</span>
               <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{student.city}</span>
               {student.githubUrl && (
@@ -287,13 +287,13 @@ export default function Resume() {
             <p className="text-[10px] font-extrabold text-primary uppercase tracking-widest mb-2">Education</p>
             <div className="flex justify-between items-start">
               <div>
-                <p className="text-sm font-bold text-[#1e1b4b]">{degree}</p>
-                <p className="text-xs text-[#6b7280] mt-0.5">{student.college}, {student.city}</p>
+                <p className="text-sm font-bold text-[#0f172a]">{degree}</p>
+                <p className="text-xs text-[#64748b] mt-0.5">{student.college}, {student.city}</p>
                 {questProgress && (
-                  <p className="text-xs text-[#6b7280]">{questProgress.completed} learning quests completed</p>
+                  <p className="text-xs text-[#64748b]">{questProgress.completed} learning quests completed</p>
                 )}
               </div>
-              <p className="text-xs font-bold text-[#6b7280] flex-shrink-0 ml-2">{startYear}–{gradYear}</p>
+              <p className="text-xs font-bold text-[#64748b] flex-shrink-0 ml-2">{startYear}–{gradYear}</p>
             </div>
           </div>
 
@@ -302,8 +302,8 @@ export default function Resume() {
             <div className="space-y-1.5">
               {skills.map(([cat, items]) => (
                 <div key={cat} className="flex gap-1 text-xs">
-                  <span className="font-bold text-[#1e1b4b] flex-shrink-0">{cat}:</span>
-                  <span className="text-[#6b7280]">{items}</span>
+                  <span className="font-bold text-[#0f172a] flex-shrink-0">{cat}:</span>
+                  <span className="text-[#64748b]">{items}</span>
                 </div>
               ))}
             </div>
@@ -315,10 +315,10 @@ export default function Resume() {
               {projects.map((proj, i) => (
                 <div key={i}>
                   <div className="flex justify-between items-center">
-                    <p className="text-sm font-bold text-[#1e1b4b]">{proj.title}</p>
+                    <p className="text-sm font-bold text-[#0f172a]">{proj.title}</p>
                     <p className="text-[10px] text-primary font-semibold ml-2 flex-shrink-0">{proj.tech}</p>
                   </div>
-                  <p className="text-xs text-[#6b7280] mt-0.5 leading-relaxed">• {proj.desc}</p>
+                  <p className="text-xs text-[#64748b] mt-0.5 leading-relaxed">• {proj.desc}</p>
                 </div>
               ))}
             </div>
@@ -327,23 +327,23 @@ export default function Resume() {
           <div>
             <p className="text-[10px] font-extrabold text-primary uppercase tracking-widest mb-2">Achievements</p>
             <div className="space-y-1.5">
-              <div className="flex items-center gap-2 text-xs text-[#1e1b4b]">
+              <div className="flex items-center gap-2 text-xs text-[#0f172a]">
                 <Award className="w-3.5 h-3.5 text-[#ec4899] flex-shrink-0" />
                 KodeTalent Score: {student.overallScore}/100 · Level {student.level} · {student.xp} XP
               </div>
               {collegeRank && (
-                <div className="flex items-center gap-2 text-xs text-[#1e1b4b]">
+                <div className="flex items-center gap-2 text-xs text-[#0f172a]">
                   <Award className="w-3.5 h-3.5 text-[#f97316] flex-shrink-0" />
                   Top {100 - collegeRank.percentile + 1}th percentile at {student.college} (#{collegeRank.rank}/{collegeRank.total})
                 </div>
               )}
               {topSkills.length > 0 && (
-                <div className="flex items-center gap-2 text-xs text-[#1e1b4b]">
+                <div className="flex items-center gap-2 text-xs text-[#0f172a]">
                   <Zap className="w-3.5 h-3.5 text-primary flex-shrink-0" />
                   Verified skills: {topSkills.map(s => s.name).join(", ")}
                 </div>
               )}
-              <div className="flex items-center gap-2 text-xs text-[#1e1b4b]">
+              <div className="flex items-center gap-2 text-xs text-[#0f172a]">
                 <Zap className="w-3.5 h-3.5 text-[#10b981] flex-shrink-0" />
                 {student.streakCount}-day learning streak on KodeTalent
               </div>
@@ -352,10 +352,10 @@ export default function Resume() {
         </CardContent>
       </Card>
 
-      <Card className="border-0 shadow-sm rounded-2xl bg-[#ede9fe]">
+      <Card className="border-0 shadow-sm rounded-2xl bg-[#e0e7ff]">
         <CardContent className="p-4">
           <p className="text-sm font-bold text-primary mb-1">⚠️ Note</p>
-          <p className="text-xs text-[#6b7280] leading-relaxed">
+          <p className="text-xs text-[#64748b] leading-relaxed">
             Projects and some skills are shown as representative examples for your field. Update them with your real project work before sending to recruiters.
           </p>
         </CardContent>

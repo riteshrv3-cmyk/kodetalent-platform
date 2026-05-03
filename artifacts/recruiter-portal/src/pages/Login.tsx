@@ -21,7 +21,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#1e1b4b] via-[#312e81] to-[#4338ca] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#312e81] to-[#4338ca] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Brand */}
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8">
@@ -53,49 +53,49 @@ export default function Login() {
           onSubmit={handleSubmit}
           className="bg-white rounded-3xl p-6 shadow-[0_32px_64px_rgba(0,0,0,0.3)]"
         >
-          <h2 className="text-xl font-black text-[#1e1b4b] mb-5">Access Talent Pool</h2>
+          <h2 className="text-xl font-black text-[#0f172a] mb-5">Access Talent Pool</h2>
 
           <div className="space-y-4">
             <div>
-              <label className="text-xs font-bold text-[#6b7280] uppercase tracking-wider mb-1.5 block">Company Name *</label>
+              <label className="text-xs font-bold text-[#64748b] uppercase tracking-wider mb-1.5 block">Company Name *</label>
               <div className="relative">
-                <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9ca3af]" />
+                <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#94a3b8]" />
                 <input
                   type="text" required placeholder="e.g. Razorpay, Zerodha, Infosys"
                   value={form.company} onChange={e => setForm(f => ({ ...f, company: e.target.value }))}
-                  className="w-full pl-10 pr-4 py-3 border border-[#e5e7eb] rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#7c3aed]/30 focus:border-[#7c3aed] transition-colors"
+                  className="w-full pl-10 pr-4 py-3 border border-[#e5e7eb] rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#4f46e5]/30 focus:border-[#4f46e5] transition-colors"
                 />
               </div>
             </div>
 
             <div>
-              <label className="text-xs font-bold text-[#6b7280] uppercase tracking-wider mb-1.5 block">Your Name *</label>
+              <label className="text-xs font-bold text-[#64748b] uppercase tracking-wider mb-1.5 block">Your Name *</label>
               <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9ca3af]" />
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#94a3b8]" />
                 <input
                   type="text" required placeholder="Full name"
                   value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                  className="w-full pl-10 pr-4 py-3 border border-[#e5e7eb] rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#7c3aed]/30 focus:border-[#7c3aed] transition-colors"
+                  className="w-full pl-10 pr-4 py-3 border border-[#e5e7eb] rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#4f46e5]/30 focus:border-[#4f46e5] transition-colors"
                 />
               </div>
             </div>
 
             <div>
-              <label className="text-xs font-bold text-[#6b7280] uppercase tracking-wider mb-1.5 block">Work Email *</label>
+              <label className="text-xs font-bold text-[#64748b] uppercase tracking-wider mb-1.5 block">Work Email *</label>
               <input
                 type="email" required placeholder="you@company.com"
                 value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-                className="w-full px-4 py-3 border border-[#e5e7eb] rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#7c3aed]/30 focus:border-[#7c3aed] transition-colors"
+                className="w-full px-4 py-3 border border-[#e5e7eb] rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#4f46e5]/30 focus:border-[#4f46e5] transition-colors"
               />
             </div>
 
             <div>
-              <label className="text-xs font-bold text-[#6b7280] uppercase tracking-wider mb-1.5 block">Your Role</label>
+              <label className="text-xs font-bold text-[#64748b] uppercase tracking-wider mb-1.5 block">Your Role</label>
               <div className="relative">
-                <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9ca3af]" />
+                <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#94a3b8]" />
                 <select
                   value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value }))}
-                  className="w-full pl-10 pr-4 py-3 border border-[#e5e7eb] rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#7c3aed]/30 focus:border-[#7c3aed] transition-colors bg-white appearance-none"
+                  className="w-full pl-10 pr-4 py-3 border border-[#e5e7eb] rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#4f46e5]/30 focus:border-[#4f46e5] transition-colors bg-white appearance-none"
                 >
                   <option value="">Select role</option>
                   {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
@@ -108,12 +108,12 @@ export default function Login() {
 
           <button
             type="submit"
-            className="w-full mt-5 bg-gradient-to-r from-[#7c3aed] to-[#4f46e5] text-white font-black py-4 rounded-2xl flex items-center justify-center gap-2 shadow-[0_8px_24px_rgba(124,58,237,0.35)] hover:shadow-[0_12px_32px_rgba(124,58,237,0.45)] transition-all active:scale-[0.98]"
+            className="w-full mt-5 bg-gradient-to-r from-[#4f46e5] to-[#6366f1] text-white font-black py-4 rounded-2xl flex items-center justify-center gap-2 shadow-[0_8px_24px_rgba(124,58,237,0.35)] hover:shadow-[0_12px_32px_rgba(124,58,237,0.45)] transition-all active:scale-[0.98]"
           >
             Browse Talent Pool <ArrowRight className="w-5 h-5" />
           </button>
 
-          <p className="text-center text-xs text-[#9ca3af] mt-4">
+          <p className="text-center text-xs text-[#94a3b8] mt-4">
             Free access during beta · No credit card needed
           </p>
         </motion.form>

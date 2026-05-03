@@ -13,7 +13,7 @@ export function BottomNav() {
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-[#ede9fe] pb-safe shadow-[0_-4px_24px_rgba(124,58,237,0.07)]">
+    <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-[#e0e7ff] pb-safe shadow-[0_-4px_24px_rgba(124,58,237,0.07)]">
       <div className="flex justify-around items-center h-16 max-w-md mx-auto px-4">
         {navItems.map((item) => {
           const isActive =
@@ -30,20 +30,20 @@ export function BottomNav() {
                 className={cn(
                   "flex flex-col items-center gap-1 px-5 py-2 rounded-2xl transition-all",
                   isActive
-                    ? "bg-[#ede9fe]"
-                    : "hover:bg-[#f5f3ff]"
+                    ? "bg-[#e0e7ff]"
+                    : "hover:bg-[#f8fafc]"
                 )}
               >
                 <Icon
                   className={cn(
                     "h-[22px] w-[22px] transition-colors",
-                    isActive ? "text-[#7c3aed]" : "text-[#9ca3af]"
+                    isActive ? "text-[#4f46e5]" : "text-[#94a3b8]"
                   )}
                 />
                 <span
                   className={cn(
                     "text-[10px] font-bold transition-colors",
-                    isActive ? "text-[#7c3aed]" : "text-[#9ca3af]"
+                    isActive ? "text-[#4f46e5]" : "text-[#94a3b8]"
                   )}
                 >
                   {item.label}
@@ -52,7 +52,7 @@ export function BottomNav() {
               {isActive && (
                 <motion.div
                   layoutId="tab-indicator"
-                  className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-[#7c3aed]"
+                  className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-[#4f46e5]"
                   transition={{ type: "spring", stiffness: 400, damping: 30 }}
                 />
               )}

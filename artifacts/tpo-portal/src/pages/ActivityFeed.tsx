@@ -82,8 +82,8 @@ export default function ActivityFeed() {
             onClick={() => setFilterStatus(s)}
             className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all capitalize ${
               filterStatus === s
-                ? "bg-[#7c3aed] text-white shadow-sm shadow-[#7c3aed]/30"
-                : "bg-white text-[#64748b] border border-[#e2e8f0] hover:border-[#7c3aed] hover:text-[#7c3aed]"
+                ? "bg-[#4f46e5] text-white shadow-sm shadow-[#4f46e5]/30"
+                : "bg-white text-[#64748b] border border-[#e2e8f0] hover:border-[#4f46e5] hover:text-[#4f46e5]"
             }`}
           >
             {s === "all" ? "All" : s.charAt(0).toUpperCase() + s.slice(1)} ({counts[s]})
@@ -96,7 +96,7 @@ export default function ActivityFeed() {
             <select
               value={filterCompany}
               onChange={e => setFilterCompany(e.target.value)}
-              className="px-3 py-2 border border-[#e2e8f0] rounded-xl text-sm bg-white text-[#475569] focus:outline-none focus:ring-2 focus:ring-[#7c3aed]/20"
+              className="px-3 py-2 border border-[#e2e8f0] rounded-xl text-sm bg-white text-[#475569] focus:outline-none focus:ring-2 focus:ring-[#4f46e5]/20"
             >
               <option value="">All Companies</option>
               {companies.map(c => <option key={c} value={c}>{c}</option>)}
@@ -124,7 +124,7 @@ export default function ActivityFeed() {
             <div key={item.id} className="bg-white rounded-2xl border border-[#e2e8f0] shadow-sm p-5 hover:shadow-md transition-shadow">
               <div className="flex items-start gap-4">
                 {/* Company icon */}
-                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#7c3aed] to-[#4f46e5] flex items-center justify-center shrink-0 text-white font-bold text-sm">
+                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#4f46e5] to-[#6366f1] flex items-center justify-center shrink-0 text-white font-bold text-sm">
                   {item.recruiterCompany.charAt(0)}
                 </div>
 
@@ -157,7 +157,7 @@ export default function ActivityFeed() {
                       onClick={() => nav(`/students/${item.studentId}`)}
                       className="flex items-center gap-2 bg-[#f8fafc] hover:bg-[#f1f5f9] rounded-lg px-3 py-1.5 transition"
                     >
-                      <div className="w-5 h-5 rounded-full bg-[#7c3aed] flex items-center justify-center text-white text-[10px] font-bold">
+                      <div className="w-5 h-5 rounded-full bg-[#4f46e5] flex items-center justify-center text-white text-[10px] font-bold">
                         {item.student?.name?.charAt(0) ?? "?"}
                       </div>
                       <span className="text-xs font-semibold text-[#475569]">
