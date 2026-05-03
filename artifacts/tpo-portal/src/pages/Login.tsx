@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { BookOpen, Building2, User, Lock, Mail, ChevronRight, Loader2 } from "lucide-react";
+import { Zap, Building2, User, Lock, Mail, ChevronRight, Loader2 } from "lucide-react";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "").replace("/tpo-portal", "");
 
@@ -62,7 +62,7 @@ export default function Login() {
       <div className="w-full max-w-md">
         <div className="flex items-center gap-3 mb-10 justify-center">
           <div className="w-11 h-11 bg-white/10 backdrop-blur rounded-2xl flex items-center justify-center">
-            <BookOpen className="w-6 h-6 text-white" />
+            <Zap className="w-6 h-6 text-white fill-white" />
           </div>
           <div>
             <p className="text-xl font-bold text-white">KodeTalent</p>

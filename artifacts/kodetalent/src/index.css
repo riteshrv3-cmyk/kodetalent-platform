@@ -30,6 +30,9 @@
   --color-accent: hsl(var(--accent));
   --color-accent-foreground: hsl(var(--accent-foreground));
 
+  --color-brand: hsl(var(--brand));
+  --color-brand-foreground: hsl(var(--brand-foreground));
+
   --color-destructive: hsl(var(--destructive));
   --color-destructive-foreground: hsl(var(--destructive-foreground));
 
@@ -78,6 +81,10 @@
   /* Accent: #f59e0b (amber-400) — XP, achievements */
   --accent: 38 92% 50%;
   --accent-foreground: 0 0% 100%;
+
+  /* Brand: #f97316 (orange-500) — logo, CTA accents */
+  --brand: 21 90% 53%;
+  --brand-foreground: 0 0% 100%;
 
   /* Destructive: #ef4444 */
   --destructive: 0 84% 60%;

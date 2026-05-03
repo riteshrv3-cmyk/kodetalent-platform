@@ -1,5 +1,5 @@
 import { useLocation } from "wouter";
-import { LayoutDashboard, Users, Bell, GraduationCap, LogOut, BookOpen, Trophy, Target, ShieldAlert, Megaphone, Share2 } from "lucide-react";
+import { LayoutDashboard, Users, Bell, GraduationCap, LogOut, Zap, Trophy, Target, ShieldAlert, Megaphone, Share2 } from "lucide-react";
 
 const navItems = [
   { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -33,8 +33,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
         {/* Logo */}
         <div className="px-6 py-5 border-b border-[#e2e8f0]">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 bg-gradient-to-br from-[#4f46e5] to-[#6366f1] rounded-lg flex items-center justify-center">
-              <BookOpen className="w-4 h-4 text-white" />
+            <div className="w-8 h-8 bg-[#f97316] rounded-lg flex items-center justify-center shadow-sm shadow-orange-200">
+              <Zap className="w-4 h-4 text-white fill-white" />
             </div>
             <div>
               <p className="text-xs font-bold text-[#4f46e5] tracking-wide uppercase">KodeTalent</p>

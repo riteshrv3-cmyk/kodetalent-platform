@@ -48,16 +48,27 @@ scripts/               # Shared utility scripts
 
 ---
 
-## Design Tokens
+## Brand & Design Tokens (unified across all 4 portals)
 
-| Token | Value |
-|---|---|
-| Background | `#f5f3ff` |
-| Primary | `#7c3aed` |
-| Secondary | `#06b6d4` |
-| Success | `#10b981` |
-| Text dark | `#1e1b4b` |
-| Text muted | `#6b7280` |
+**Logo**: ⚡ lightning bolt (Lucide `Zap`) on rounded square — `bg-[#f97316]` (orange-500), white fill icon. Identical favicon.svg in all 4 `public/` folders.
+
+**Typography**: `Plus Jakarta Sans` (weights 400/500/600/700/800) — loaded in both `index.html` `<link>` AND `index.css` `@import` for redundancy. NO Inter (removed across all portals).
+
+**Tokens** (identical in `kodetalent`, `recruiter-portal`, `tpo-portal` — light theme; `admin-panel` uses dark variant of same hues):
+
+| Token | Light value | Hex | Use |
+|---|---|---|---|
+| `--background` | `210 40% 98%` | `#f8fafc` | Page bg |
+| `--foreground` | `222 47% 11%` | `#0f172a` | Text primary |
+| `--primary` | `239 76% 59%` | `#4f46e5` | UI primary, buttons, links |
+| `--secondary` | `199 89% 48%` | `#0ea5e9` | Sky highlights |
+| `--accent` | `38 92% 50%` | `#f59e0b` | Amber — XP, achievements |
+| **`--brand`** | `21 90% 53%` | `#f97316` | **Orange — logo + brand CTAs** |
+| `--success` | `160 84% 39%` | `#10b981` | Green |
+| `--destructive` | `0 84% 60%` | `#ef4444` | Red |
+| `--radius` | `0.75rem` | — | All portals (was 0.5/0.625/0.75 mixed) |
+
+**HTML metadata**: All 4 `index.html` include `<meta name="theme-color">` (`#F97316` for light portals, `#0F172A` for admin) and SEO `<meta name="description">`.
 
 ---
 
