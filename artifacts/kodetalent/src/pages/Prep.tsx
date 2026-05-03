@@ -75,13 +75,22 @@ export default function Prep() {
 
   return (
     <div className="p-4 pb-28 max-w-md mx-auto space-y-4 min-h-screen bg-[#f8fafc]">
-      <div className="pt-2 mb-2">
-        <h1 className="text-2xl font-bold flex items-center text-[#0f172a]">
-          <Target className="mr-2 text-primary" /> Practice
-        </h1>
-        <p className="text-sm font-medium text-[#64748b] mt-1">
-          Get ready for your real placement interviews.
-        </p>
+      <div className="pt-2 mb-2 flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold flex items-center text-[#0f172a]">
+            <Target className="mr-2 text-primary" /> Practice
+          </h1>
+          <p className="text-sm font-medium text-[#64748b] mt-1">
+            Get ready for your real placement interviews.
+          </p>
+        </div>
+        <button
+          onClick={() => setLocation("/practice/history")}
+          className="mt-1 px-3 py-1.5 rounded-full bg-white border border-[#e2e8f0] text-[11px] font-extrabold text-[#0f172a] uppercase tracking-wider shadow-sm whitespace-nowrap"
+          data-testid="link-interview-history"
+        >
+          History
+        </button>
       </div>
 
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} whileHover={{ y: -2 }}>

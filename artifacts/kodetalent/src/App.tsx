@@ -11,6 +11,7 @@ import Home from "@/pages/Home";
 import AIChat from "@/pages/AIChat";
 import Prep from "@/pages/Prep";
 import Interview from "@/pages/Interview";
+import InterviewHistory from "@/pages/InterviewHistory";
 import Test from "@/pages/Test";
 import Opportunities from "@/pages/Opportunities";
 import Course from "@/pages/Course";
@@ -42,6 +43,7 @@ function Router() {
             <Route path="/dashboard">{() => { const [,go] = useLocation(); go("/home"); return null; }}</Route>
             <Route path="/chat" component={AIChat} />
             <Route path="/practice" component={Prep} />
+            <Route path="/practice/history" component={InterviewHistory} />
             <Route path="/practice/interview/:id" component={Interview} />
             <Route path="/practice/test/:id" component={Test} />
             <Route path="/opportunities" component={Opportunities} />

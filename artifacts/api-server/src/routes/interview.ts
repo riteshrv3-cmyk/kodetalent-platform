@@ -106,6 +106,56 @@ router.post("/interview/sessions/:id/question", async (req, res) => {
   }
 });
 
+// GET /interview/students/:studentId/sessions — history for a student
+router.get("/interview/students/:studentId/sessions", async (req, res) => {
+  const studentId = Number(req.params.studentId);
+  if (isNaN(studentId)) return res.status(400).json({ error: "Invalid studentId" });
+  try {
+    const rows = await db
+      .select({
+        id: interviewSessionsTable.id,
+        company: interviewSessionsTable.company,
+        round: interviewSessionsTable.round,
+        overallScore: interviewSessionsTable.overallScore,
+        evaluation: interviewSessionsTable.evaluation,
+        completed: interviewSessionsTable.completed,
+        createdAt: interviewSessionsTable.createdAt,
+      })
+      .from(interviewSessionsTable)
+      .where(eq(interviewSessionsTable.studentId, studentId));
+
+    const items = rows
+      .filter(r => r.completed && typeof r.overallScore === "number")
+      .map(r => {
+        const ev = (r.evaluation ?? null) as null | {
+          communicationScore?: number;
+          technicalScore?: number;
+          confidenceScore?: number;
+          overallRating?: string;
+        };
+        const [interviewType] = r.round.includes("|") ? r.round.split("|") : [r.round];
+        return {
+          id: r.id,
+          company: r.company,
+          interviewType,
+          round: r.round,
+          overallScore: r.overallScore,
+          communicationScore: ev?.communicationScore ?? null,
+          technicalScore: ev?.technicalScore ?? null,
+          confidenceScore: ev?.confidenceScore ?? null,
+          overallRating: ev?.overallRating ?? null,
+          createdAt: r.createdAt.toISOString(),
+        };
+      })
+      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+
+    return res.json({ items });
+  } catch (err) {
+    req.log.error({ err }, "Failed to load interview history");
+    return res.status(500).json({ error: "Failed to load history" });
+  }
+});
+
 // POST /interview/sessions/:id/evaluate
 router.post("/interview/sessions/:id/evaluate", async (req, res) => {
   const id = Number(req.params.id);
