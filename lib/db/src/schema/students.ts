@@ -53,6 +53,9 @@ export const studentsTable = pgTable("students", {
   openToWorkIdx: index("students_open_to_work_idx").on(t.openToWork),
   yearIdx: index("students_year_idx").on(t.year),
   fieldIdx: index("students_field_idx").on(t.field),
+  overallScoreIdx: index("students_overall_score_idx").on(t.overallScore),
+  collegeScoreIdx: index("students_college_score_idx").on(t.college, t.overallScore),
+  recruiterSearchIdx: index("students_recruiter_search_idx").on(t.openToWork, t.year, t.college),
 }));
 
 export const insertStudentSchema = createInsertSchema(studentsTable).omit({ id: true, createdAt: true });
