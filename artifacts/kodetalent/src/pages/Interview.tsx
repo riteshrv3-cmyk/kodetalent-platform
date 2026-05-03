@@ -331,7 +331,7 @@ export default function Interview() {
 
     return (
       <div className="p-4 pb-24 max-w-md mx-auto space-y-4 min-h-screen bg-[#f5f3ff]">
-        <Button variant="ghost" onClick={() => setLocation("/prep")} className="mb-2 -ml-2 text-[#6b7280] font-bold">
+        <Button variant="ghost" onClick={() => setLocation("/practice")} className="mb-2 -ml-2 text-[#6b7280] font-bold">
           <ArrowLeft className="w-5 h-5 mr-2" /> Back
         </Button>
         <div className="text-center space-y-1">
@@ -503,7 +503,7 @@ export default function Interview() {
         )}
 
         <div className="flex gap-3 pt-2">
-          <Button variant="outline" className="flex-1 rounded-full h-12 font-bold border-primary text-primary" onClick={() => setLocation("/prep")}>
+          <Button variant="outline" className="flex-1 rounded-full h-12 font-bold border-primary text-primary" onClick={() => setLocation("/practice")}>
             <RefreshCw className="w-4 h-4 mr-2" /> Try Again
           </Button>
           <Button className="flex-1 rounded-full h-12 font-bold bg-primary text-white shadow-[0_4px_16px_rgba(124,58,237,0.3)]">
@@ -525,7 +525,7 @@ export default function Interview() {
       {/* Header */}
       <div className="bg-white p-4 sticky top-0 z-10 shadow-[0_4px_24px_rgba(124,58,237,0.05)]">
         <div className="flex items-center justify-between mb-2">
-          <Button variant="ghost" size="icon" className="-ml-2 text-[#1e1b4b]" onClick={() => setLocation("/prep")}>
+          <Button variant="ghost" size="icon" className="-ml-2 text-[#1e1b4b]" onClick={() => setLocation("/practice")}>
             <ArrowLeft className="w-6 h-6" />
           </Button>
           <div className="text-center">

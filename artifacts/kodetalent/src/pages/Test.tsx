@@ -27,7 +27,7 @@ export default function Test() {
 
   useEffect(() => {
     if (session?.completed && session.score !== null && !testResult) {
-      setLocation("/prep");
+      setLocation("/practice");
     }
   }, [session, setLocation, testResult]);
 
@@ -122,7 +122,7 @@ export default function Test() {
 
         <div className="flex gap-4 pt-4">
           <motion.div whileTap={{ scale: 0.97 }} className="flex-1">
-            <Button className="w-full h-14 rounded-full font-bold bg-primary text-white text-lg shadow-[0_8px_16px_rgba(124,58,237,0.2)]" onClick={() => setLocation("/dashboard")}>
+            <Button className="w-full h-14 rounded-full font-bold bg-primary text-white text-lg shadow-[0_8px_16px_rgba(124,58,237,0.2)]" onClick={() => setLocation("/home")}>
               Done
             </Button>
           </motion.div>

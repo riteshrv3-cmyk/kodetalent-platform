@@ -65,21 +65,33 @@ scripts/               # Shared utility scripts
 
 | Route | Page | Description |
 |---|---|---|
-| `/` | Onboarding | 10-step WhatsApp-style chatbot collecting student profile (name, college, branch, CGPA, dream company, target package, skills, interests) |
-| `/dashboard` | Home | Gamified dashboard — Points ⭐, streak 🔥, level badge, today's goal, skill progress bars |
-| `/roadmap` | Roadmap | Year-by-year accordion learning timeline with quest cards |
+| `/` | Onboarding | WhatsApp-style chatbot collecting student profile; redirects to `/home` if already signed in |
+| `/dashboard` | — | Redirects to `/home` (backward compat) |
+| `/home` | Home Hub | Score banner (AI score, streak, XP), category cards grid, recruiter activity feed, profile strength CTA |
+| `/chat` | AI Chat | Full-screen conversational AI that reads and updates the student profile via chat (streaming SSE); supports bio, projects, certs, preferences, GitHub/LinkedIn |
 | `/practice` | Practice | Mock interview + timed MCQ test launcher |
 | `/practice/interview/:id` | Mock Interview | AI 5-question interview with per-question feedback and overall score |
 | `/practice/test/:id` | Mock Test | Timed 10-question MCQ test with results |
 | `/opportunities` | Opportunities | 12-domain career explorer (domain grid → sub-domain list → Jobs/Internship/Freelancing cards + Prepare button) |
 | `/opportunities/course` | Course | Full Coursera-style AI course for the selected sub-domain |
-| `/profile` | Profile | Rich profile: strength ring, open-to-work toggle, GitHub/LinkedIn AI analyzer, bio, projects, certifications, work preferences, commitment score |
+| `/profile` | Profile | Rich profile editor — strength ring, open-to-work, GitHub/LinkedIn AI analyzer, bio, projects, certifications, work preferences |
+| `/leaderboard` | Leaderboard | College + India tab ranking by overall score |
+| `/resume` | Resume | AI-generated resume PDF builder |
+| `/inbox` | Inbox | Recruiter invite inbox — Accept/Decline with recruiter email reveal |
 
 ---
 
-## Navigation
+## Navigation Architecture (3-tab)
 
-5-item bottom nav: **Home · Roadmap · Practice · Opportunities · Profile**
+**Bottom nav (3 items only):** Home · AI Chat · Practice
+
+**Top bar (fixed):** KodeTalent logo · Inbox icon (with unread badge) · Profile avatar (opens sidebar)
+
+**Profile Sidebar:** Slides in from the right. Shows profile strength, scores, stats, links, skills, project/cert counts. "Edit Full Profile" button navigates to `/profile`.
+
+**Inbox:** Linked from top bar message icon, not in bottom nav.
+
+**Removed from nav:** Roadmap (feature removed), Opportunities/Leaderboard/Resume (accessible via Home category cards)
 
 ---
 

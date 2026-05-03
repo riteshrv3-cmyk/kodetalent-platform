@@ -50,7 +50,7 @@ export default function Prep() {
       const session = await createInterview.mutateAsync({
         data: { studentId, company: targetCompany, round }
       });
-      setLocation(`/prep/interview/${session.id}`);
+      setLocation(`/practice/interview/${session.id}`);
     } catch (e) {
       console.error(e);
     }
@@ -62,7 +62,7 @@ export default function Prep() {
       const session = await createTest.mutateAsync({
         data: { studentId, testType: "Aptitude", difficulty: "Medium" }
       });
-      setLocation(`/prep/test/${session.id}`);
+      setLocation(`/practice/test/${session.id}`);
     } catch (e) {
       console.error(e);
     }

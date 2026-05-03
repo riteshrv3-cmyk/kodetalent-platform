@@ -227,6 +227,116 @@ Return ONLY valid JSON with this structure:
   }
 });
 
+// ─── POST /students/:id/chat ─────────────────────────────────────────────────
+
+router.post("/students/:id/chat", async (req, res) => {
+  const id = Number(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
+  const { message } = req.body as { message: string };
+  if (!message?.trim()) return res.status(400).json({ error: "message required" });
+
+  try {
+    const [student] = await db.select().from(studentsTable).where(eq(studentsTable.id, id)).limit(1);
+    if (!student) return res.status(404).json({ error: "Student not found" });
+
+    const profileCtx = `
+Name: ${student.name}
+College: ${student.college} (${student.city})
+Field: ${student.field} | Year: ${student.year}
+CGPA: ${student.cgpa || "not set"}
+Bio: ${student.bio || "not set"}
+GitHub: ${student.githubUrl || "not set"}
+LinkedIn: ${student.linkedinUrl || "not set"}
+Portfolio: ${student.portfolioUrl || "not set"}
+Phone: ${student.phone || "not set"}
+Projects (${(student.projects as unknown[])?.length ?? 0}): ${JSON.stringify(student.projects ?? [])}
+Certifications (${(student.certifications as unknown[])?.length ?? 0}): ${JSON.stringify(student.certifications ?? [])}
+Skills: ${JSON.stringify(student.skills ?? {})}
+Work Mode: ${student.workMode || "not set"}
+Preferred Locations: ${JSON.stringify(student.preferredLocations ?? [])}
+Expected Salary: ${student.expectedSalary ? student.expectedSalary + " LPA" : "not set"}
+Dream Company: ${student.dreamCompany || "not set"}
+Profile Strength: ${student.profileStrength}/100
+Overall Score: ${Math.round(student.overallScore)}/100
+XP: ${student.xp} | Streak: ${student.streakCount} days
+Open to Work: ${student.openToWork ? "Yes" : "No"}`.trim();
+
+    const systemPrompt = `You are KodeTalent AI — a career companion for Indian engineering students navigating placement season.
+
+CURRENT STUDENT PROFILE:
+${profileCtx}
+
+YOU CAN UPDATE THEIR PROFILE: When the student asks you to add/change profile info, include this block EXACTLY at the very end of your response (after your conversational reply):
+___PROFILE_UPDATE___
+{"bio":"...","workMode":"remote","preferredLocations":["Bangalore","Mumbai"],"expectedSalary":12}
+
+VALID UPDATE FIELDS: bio, githubUrl, linkedinUrl, portfolioUrl, phone, cgpa, dreamCompany, workMode (remote/hybrid/in-office), preferredLocations (string array), expectedSalary (number in LPA), projects (array of {title,description,techStack:[],url}), certifications (array of {name,issuer,date,url})
+
+RULES:
+- Only include ___PROFILE_UPDATE___ when actually making a profile change — never for informational replies
+- For projects/certs, include the COMPLETE new array (existing + new entries)
+- Keep replies conversational and concise (2–4 sentences)
+- Use Indian placement context: LPA not USD, mention FAANG/unicorns, campus/off-campus placements
+- Be encouraging and specific to their background`;
+
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+
+    let fullResponse = "";
+
+    const stream = anthropic.messages.stream({
+      model: "claude-haiku-4-5",
+      max_tokens: 1024,
+      system: systemPrompt,
+      messages: [{ role: "user", content: message }],
+    });
+
+    for await (const event of stream) {
+      if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
+        fullResponse += event.delta.text;
+        res.write(`data: ${JSON.stringify({ content: event.delta.text })}\n\n`);
+      }
+    }
+
+    // Parse and apply profile update if present
+    let profileUpdated = false;
+    const marker = "___PROFILE_UPDATE___";
+    const markerIdx = fullResponse.indexOf(marker);
+    if (markerIdx !== -1) {
+      const jsonStr = fullResponse.slice(markerIdx + marker.length).trim();
+      const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        try {
+          const updates = JSON.parse(jsonMatch[0]) as Record<string, unknown>;
+          const filtered: Record<string, unknown> = {};
+          for (const key of ALLOWED_FIELDS) {
+            if (updates[key] !== undefined) filtered[key] = updates[key];
+          }
+          if (Object.keys(filtered).length > 0) {
+            await db.update(studentsTable).set(filtered).where(eq(studentsTable.id, id));
+            const [updated] = await db.select().from(studentsTable).where(eq(studentsTable.id, id)).limit(1);
+            const profileStrength = computeProfileStrength(updated);
+            const commitmentScore = computeCommitmentScore(updated);
+            await db.update(studentsTable).set({ profileStrength, commitmentScore }).where(eq(studentsTable.id, id));
+            profileUpdated = true;
+          }
+        } catch { /* invalid JSON, skip */ }
+      }
+    }
+
+    res.write(`data: ${JSON.stringify({ done: true, profileUpdated })}\n\n`);
+    res.end();
+  } catch (err) {
+    req.log.error({ err }, "AI chat failed");
+    if (!res.headersSent) {
+      return res.status(500).json({ error: "Server error" });
+    }
+    res.write(`data: ${JSON.stringify({ done: true, error: true })}\n\n`);
+    res.end();
+  }
+});
+
 // ─── GET /students (recruiter talent pool) ───────────────────────────────────
 
 router.get("/talent-pool", async (req, res) => {

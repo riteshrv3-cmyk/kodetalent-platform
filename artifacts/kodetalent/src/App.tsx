@@ -1,12 +1,13 @@
-import { Switch, Route, Router as WouterRouter } from "wouter";
+import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { useEffect } from "react";
 import NotFound from "@/pages/not-found";
 
 import Onboarding from "@/pages/Onboarding";
-import Dashboard from "@/pages/Dashboard";
-import Roadmap from "@/pages/Roadmap";
+import Home from "@/pages/Home";
+import AIChat from "@/pages/AIChat";
 import Prep from "@/pages/Prep";
 import Interview from "@/pages/Interview";
 import Test from "@/pages/Test";
@@ -20,18 +21,28 @@ import { AppLayout } from "@/components/layout/AppLayout";
 
 const queryClient = new QueryClient();
 
+function RootRedirect() {
+  const [, setLocation] = useLocation();
+  useEffect(() => {
+    const id = localStorage.getItem("studentId");
+    if (id) setLocation("/home");
+  }, [setLocation]);
+  return <Onboarding />;
+}
+
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Onboarding} />
+      <Route path="/" component={RootRedirect} />
       <Route>
         <AppLayout>
           <Switch>
-            <Route path="/dashboard" component={Dashboard} />
-            <Route path="/roadmap" component={Roadmap} />
-            <Route path="/prep" component={Prep} />
-            <Route path="/prep/interview/:id" component={Interview} />
-            <Route path="/prep/test/:id" component={Test} />
+            <Route path="/home" component={Home} />
+            <Route path="/dashboard">{() => { const [,go] = useLocation(); go("/home"); return null; }}</Route>
+            <Route path="/chat" component={AIChat} />
+            <Route path="/practice" component={Prep} />
+            <Route path="/practice/interview/:id" component={Interview} />
+            <Route path="/practice/test/:id" component={Test} />
             <Route path="/opportunities" component={Opportunities} />
             <Route path="/opportunities/course" component={Course} />
             <Route path="/profile" component={Profile} />
