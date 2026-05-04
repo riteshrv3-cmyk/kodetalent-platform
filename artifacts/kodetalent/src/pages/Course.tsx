@@ -5,7 +5,7 @@ import {
   ArrowLeft, BookOpen, CreditCard, HelpCircle, CheckCircle2,
   XCircle, RotateCcw, Star, AlertTriangle, Trophy, ChevronRight,
   ChevronDown, PlayCircle, FileText, PenLine, Hammer, ExternalLink,
-  Clock, Lock,
+  Clock, Lock, X, Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -109,6 +109,27 @@ function todayKey() {
   return new Date().toISOString().slice(0, 10);
 }
 
+// ─── YouTube helpers ──────────────────────────────────────────────────────────
+
+function extractYouTubeId(url: string): string | null {
+  try {
+    const u = new URL(url);
+    // youtu.be/<id>
+    if (u.hostname === "youtu.be") return u.pathname.slice(1) || null;
+    // youtube.com/watch?v=<id>  or  youtube.com/embed/<id>
+    if (u.hostname.includes("youtube.com")) {
+      const v = u.searchParams.get("v");
+      if (v) return v;
+      const parts = u.pathname.split("/");
+      const embedIdx = parts.indexOf("embed");
+      if (embedIdx !== -1 && parts[embedIdx + 1]) return parts[embedIdx + 1];
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 // ─── Lesson type config ───────────────────────────────────────────────────────
 
 const LESSON_TYPE = {
@@ -135,6 +156,10 @@ export default function Course() {
   const [expandedModule, setExpandedModule] = useState<string | null>(null);
   const [expandedLesson, setExpandedLesson] = useState<string | null>(null);
   const [completedLessons, setCompletedLessons] = useState<Set<string>>(new Set());
+
+  // ── In-app YouTube player ──────────────────────────────────────────────────
+  const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);   // lessonId → ytVideoId
+  const [videoLoading, setVideoLoading] = useState<string | null>(null);       // lessonId being fetched
 
   // ── Flashcard state ────────────────────────────────────────────────────────
   const [queue, setQueue] = useState<Flashcard[]>([]);
@@ -663,40 +688,83 @@ export default function Course() {
 
                                                 {/* Actions */}
                                                 <div className="flex gap-2">
-                                                  {/* Type-aware resource link — routes to the right platform per lesson type */}
-                                                  {(() => {
-                                                    const q = lesson.searchQuery || lesson.title;
-                                                    const ACTION = {
-                                                      video:    { label: "Watch on YouTube", bg: "#ef4444", endpoint: `/api/course/best-video?q=${encodeURIComponent(q)}`,                       fallback: `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`,                                                                     pickUrl: (d: { watchUrl?: string | null }) => d?.watchUrl ?? null },
-                                                      reading:  { label: "Read tutorial",    bg: "#3b82f6", endpoint: `/api/course/best-link?kind=reading&q=${encodeURIComponent(q)}`,            fallback: `https://www.google.com/search?q=${encodeURIComponent(`${q} tutorial site:w3schools.com OR site:developer.mozilla.org OR site:geeksforgeeks.org`)}`, pickUrl: (d: { url?: string | null }) => d?.url ?? null },
-                                                      exercise: { label: "Try exercises",    bg: "#10b981", endpoint: `/api/course/best-link?kind=exercise&q=${encodeURIComponent(q)}`,           fallback: `https://www.google.com/search?q=${encodeURIComponent(`${q} practice site:leetcode.com OR site:hackerrank.com OR site:geeksforgeeks.org`)}`,         pickUrl: (d: { url?: string | null }) => d?.url ?? null },
-                                                      project:  { label: "Find project",     bg: "#f97316", endpoint: `/api/course/best-link?kind=project&q=${encodeURIComponent(q)}`,            fallback: `https://www.google.com/search?q=${encodeURIComponent(`${q} project ideas site:github.com OR site:freecodecamp.org`)}`,                              pickUrl: (d: { url?: string | null }) => d?.url ?? null },
-                                                    } as const;
-                                                    const a = ACTION[lesson.type] ?? ACTION.video;
-                                                    return (
+                                                  {lesson.type === "video" ? (
+                                                    /* ── In-app YouTube embed for video lessons ── */
+                                                    playingVideoId === lesson.id ? (
+                                                      /* Playing — show close button */
+                                                      <button
+                                                        onClick={() => setPlayingVideoId(null)}
+                                                        className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl font-bold text-[12px] bg-[#fef2f2] text-[#ef4444]"
+                                                      >
+                                                        <X className="w-4 h-4" /> Close video
+                                                      </button>
+                                                    ) : (
                                                       <button
                                                         onClick={async () => {
-                                                          const win = window.open("about:blank", "_blank");
+                                                          const q = lesson.searchQuery || lesson.title;
+                                                          setVideoLoading(lesson.id);
                                                           try {
-                                                            const r = await fetch(a.endpoint);
-                                                            const data = r.ok ? await r.json() : null;
-                                                            const target = (data && a.pickUrl(data)) || a.fallback;
-                                                            if (win) win.location.href = target;
-                                                            else window.location.href = target;
+                                                            const r = await fetch(`/api/course/best-video?q=${encodeURIComponent(q)}`);
+                                                            const data = r.ok ? await r.json() as { watchUrl?: string | null } : null;
+                                                            const watchUrl = data?.watchUrl ?? null;
+                                                            const ytId = watchUrl ? extractYouTubeId(watchUrl) : null;
+                                                            if (ytId) {
+                                                              setPlayingVideoId(lesson.id + "|" + ytId);
+                                                            } else {
+                                                              /* fallback — open YouTube search in new tab */
+                                                              window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`, "_blank");
+                                                            }
                                                           } catch {
-                                                            if (win) win.location.href = a.fallback;
-                                                            else window.location.href = a.fallback;
+                                                            const q2 = lesson.searchQuery || lesson.title;
+                                                            window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(q2)}`, "_blank");
+                                                          } finally {
+                                                            setVideoLoading(null);
                                                           }
                                                         }}
-                                                        className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl font-bold text-[12px] text-white"
-                                                        style={{ background: a.bg }}
+                                                        disabled={videoLoading === lesson.id}
+                                                        className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl font-bold text-[12px] text-white disabled:opacity-70"
+                                                        style={{ background: "#ef4444" }}
                                                       >
-                                                        <PlayCircle className="w-4 h-4" />
-                                                        {a.label}
-                                                        <ExternalLink className="w-3 h-3 opacity-70" />
+                                                        {videoLoading === lesson.id
+                                                          ? <><Loader2 className="w-4 h-4 animate-spin" /> Loading…</>
+                                                          : <><PlayCircle className="w-4 h-4" /> Watch video</>}
                                                       </button>
-                                                    );
-                                                  })()}
+                                                    )
+                                                  ) : (
+                                                    /* ── External link for reading / exercise / project ── */
+                                                    (() => {
+                                                      const q = lesson.searchQuery || lesson.title;
+                                                      const ACTION = {
+                                                        reading:  { label: "Read tutorial",  bg: "#3b82f6", endpoint: `/api/course/best-link?kind=reading&q=${encodeURIComponent(q)}`,  fallback: `https://www.google.com/search?q=${encodeURIComponent(`${q} tutorial site:w3schools.com OR site:developer.mozilla.org OR site:geeksforgeeks.org`)}`, pickUrl: (d: { url?: string | null }) => d?.url ?? null },
+                                                        exercise: { label: "Try exercises",  bg: "#10b981", endpoint: `/api/course/best-link?kind=exercise&q=${encodeURIComponent(q)}`, fallback: `https://www.google.com/search?q=${encodeURIComponent(`${q} practice site:leetcode.com OR site:hackerrank.com OR site:geeksforgeeks.org`)}`,         pickUrl: (d: { url?: string | null }) => d?.url ?? null },
+                                                        project:  { label: "Find project",   bg: "#f97316", endpoint: `/api/course/best-link?kind=project&q=${encodeURIComponent(q)}`,  fallback: `https://www.google.com/search?q=${encodeURIComponent(`${q} project ideas site:github.com OR site:freecodecamp.org`)}`,                              pickUrl: (d: { url?: string | null }) => d?.url ?? null },
+                                                      } as const;
+                                                      const a = ACTION[lesson.type as keyof typeof ACTION];
+                                                      if (!a) return null;
+                                                      return (
+                                                        <button
+                                                          onClick={async () => {
+                                                            const win = window.open("about:blank", "_blank");
+                                                            try {
+                                                              const r = await fetch(a.endpoint);
+                                                              const data = r.ok ? await r.json() : null;
+                                                              const target = (data && a.pickUrl(data)) || a.fallback;
+                                                              if (win) win.location.href = target;
+                                                              else window.location.href = target;
+                                                            } catch {
+                                                              if (win) win.location.href = a.fallback;
+                                                              else window.location.href = a.fallback;
+                                                            }
+                                                          }}
+                                                          className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl font-bold text-[12px] text-white"
+                                                          style={{ background: a.bg }}
+                                                        >
+                                                          <ExternalLink className="w-4 h-4" />
+                                                          {a.label}
+                                                        </button>
+                                                      );
+                                                    })()
+                                                  )}
                                                   {/* Mark complete */}
                                                   <button
                                                     onClick={() => toggleLesson(lesson.id)}
@@ -712,6 +780,22 @@ export default function Course() {
                                                     {done ? "Done!" : "Mark Done"}
                                                   </button>
                                                 </div>
+
+                                                {/* ── Inline YouTube player ── */}
+                                                {lesson.type === "video" && playingVideoId?.startsWith(lesson.id + "|") && (() => {
+                                                  const ytId = playingVideoId.split("|")[1];
+                                                  return (
+                                                    <div className="mt-3 rounded-xl overflow-hidden bg-black" style={{ aspectRatio: "16/9" }}>
+                                                      <iframe
+                                                        src={`https://www.youtube.com/embed/${ytId}?autoplay=1&rel=0`}
+                                                        title={lesson.title}
+                                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                        allowFullScreen
+                                                        className="w-full h-full border-0"
+                                                      />
+                                                    </div>
+                                                  );
+                                                })()}
                                               </div>
                                             </div>
                                           </motion.div>
