@@ -50,12 +50,24 @@ router.post("/students/:id/resumes", rlAiHeavy, async (req, res) => {
   const id = Number(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
 
-  const { templateId = "classic", jdText = "", companyName = "", resumeName } = req.body as {
-    templateId?: string;
-    jdText?: string;
-    companyName?: string;
-    resumeName?: string;
+  const VALID_TEMPLATES = ["classic", "tech", "minimal"] as const;
+  type TemplateId = typeof VALID_TEMPLATES[number];
+
+  const rawBody = req.body as {
+    templateId?: unknown;
+    jdText?: unknown;
+    companyName?: unknown;
+    resumeName?: unknown;
   };
+
+  const rawTemplate = typeof rawBody.templateId === "string" ? rawBody.templateId : "classic";
+  if (!VALID_TEMPLATES.includes(rawTemplate as TemplateId)) {
+    return res.status(400).json({ error: `Invalid templateId. Must be one of: ${VALID_TEMPLATES.join(", ")}` });
+  }
+  const templateId = rawTemplate as TemplateId;
+  const jdText = typeof rawBody.jdText === "string" ? rawBody.jdText.slice(0, 5000) : "";
+  const companyName = typeof rawBody.companyName === "string" ? rawBody.companyName.slice(0, 200) : "";
+  const resumeName = typeof rawBody.resumeName === "string" ? rawBody.resumeName.slice(0, 200) : undefined;
 
   try {
     const [student] = await db

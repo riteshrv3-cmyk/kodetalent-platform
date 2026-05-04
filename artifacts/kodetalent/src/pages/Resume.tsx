@@ -82,10 +82,15 @@ function templateBadge(templateId: string) {
 
 function downloadClassicPDF(r: ResumeContent, filename: string) {
   const doc = new jsPDF({ unit: "pt", format: "letter" });
-  const PW = 612, M = 45, CW = PW - 2 * M;
+  const PW = 612, PH = 792, M = 45, CW = PW - 2 * M;
   let y = M;
 
+  const checkPage = (needed = 20) => {
+    if (y + needed > PH - M) { doc.addPage(); y = M; }
+  };
+
   const line = (col = "#c7d2fe") => {
+    checkPage(12);
     doc.setDrawColor(col);
     doc.setLineWidth(0.5);
     doc.line(M, y, PW - M, y);
@@ -93,6 +98,7 @@ function downloadClassicPDF(r: ResumeContent, filename: string) {
   };
 
   const section = (title: string) => {
+    checkPage(30);
     y += 8;
     doc.setFont("helvetica", "bold");
     doc.setFontSize(9.5);
@@ -126,7 +132,7 @@ function downloadClassicPDF(r: ResumeContent, filename: string) {
     doc.setFontSize(9);
     doc.setTextColor(55, 65, 81);
     const lines = doc.splitTextToSize(r.summary, CW) as string[];
-    for (const l of lines) { doc.text(l, M, y); y += 11; }
+    for (const l of lines) { checkPage(14); doc.text(l, M, y); y += 11; }
   }
 
   section("Education");
@@ -146,6 +152,7 @@ function downloadClassicPDF(r: ResumeContent, filename: string) {
   if (r.skillSections.length > 0) {
     section("Technical Skills");
     for (const s of r.skillSections) {
+      checkPage(14);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(9.5);
       doc.setTextColor(15, 23, 42);
@@ -163,6 +170,7 @@ function downloadClassicPDF(r: ResumeContent, filename: string) {
   if (r.projects.length > 0) {
     section("Projects");
     for (const p of r.projects) {
+      checkPage(40);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(10);
       doc.setTextColor(15, 23, 42);
@@ -177,7 +185,7 @@ function downloadClassicPDF(r: ResumeContent, filename: string) {
       doc.setTextColor(55, 65, 81);
       for (const b of p.bullets) {
         const ls = doc.splitTextToSize(`• ${b}`, CW) as string[];
-        for (const l of ls) { doc.text(l, M, y); y += 10; }
+        for (const l of ls) { checkPage(12); doc.text(l, M, y); y += 10; }
       }
       y += 4;
     }
@@ -189,12 +197,11 @@ function downloadClassicPDF(r: ResumeContent, filename: string) {
     doc.setFontSize(9.5);
     doc.setTextColor(55, 65, 81);
     for (const c of r.certifications) {
-      doc.text(`• ${c.name} — ${c.issuer}${c.date ? ` (${c.date})` : ""}`, M, y);
-      y += 11;
+      checkPage(14); doc.text(`• ${c.name} — ${c.issuer}${c.date ? ` (${c.date})` : ""}`, M, y); y += 11;
     }
     for (const a of r.achievements) {
       const ls = doc.splitTextToSize(`• ${a}`, CW) as string[];
-      for (const l of ls) { doc.text(l, M, y); y += 11; }
+      for (const l of ls) { checkPage(14); doc.text(l, M, y); y += 11; }
     }
   }
 
@@ -203,10 +210,15 @@ function downloadClassicPDF(r: ResumeContent, filename: string) {
 
 function downloadTechPDF(r: ResumeContent, filename: string) {
   const doc = new jsPDF({ unit: "pt", format: "letter" });
-  const PW = 612, M = 45, CW = PW - 2 * M;
+  const PW = 612, PH = 792, M = 45, CW = PW - 2 * M;
   let y = M;
 
+  const checkPage = (needed = 20) => {
+    if (y + needed > PH - M) { doc.addPage(); y = M; }
+  };
+
   const section = (title: string) => {
+    checkPage(30);
     y += 10;
     doc.setFillColor(15, 23, 42);
     doc.rect(M, y - 11, CW, 16, "F");
@@ -237,7 +249,7 @@ function downloadTechPDF(r: ResumeContent, filename: string) {
     doc.setFontSize(9);
     doc.setTextColor(55, 65, 81);
     const ls = doc.splitTextToSize(r.summary, CW) as string[];
-    for (const l of ls) { doc.text(l, M, y); y += 11; }
+    for (const l of ls) { checkPage(14); doc.text(l, M, y); y += 11; }
   }
 
   section("Education");
@@ -256,6 +268,7 @@ function downloadTechPDF(r: ResumeContent, filename: string) {
   if (r.skillSections.length > 0) {
     section("Technical Skills");
     for (const s of r.skillSections) {
+      checkPage(14);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(9.5);
       doc.setTextColor(15, 23, 42);
@@ -273,6 +286,7 @@ function downloadTechPDF(r: ResumeContent, filename: string) {
   if (r.projects.length > 0) {
     section("Projects");
     for (const p of r.projects) {
+      checkPage(40);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(10);
       doc.setTextColor(15, 23, 42);
@@ -287,7 +301,7 @@ function downloadTechPDF(r: ResumeContent, filename: string) {
       doc.setTextColor(55, 65, 81);
       for (const b of p.bullets) {
         const ls = doc.splitTextToSize(`▸ ${b}`, CW) as string[];
-        for (const l of ls) { doc.text(l, M, y); y += 10; }
+        for (const l of ls) { checkPage(12); doc.text(l, M, y); y += 10; }
       }
       y += 4;
     }
@@ -299,12 +313,11 @@ function downloadTechPDF(r: ResumeContent, filename: string) {
     doc.setFontSize(9.5);
     doc.setTextColor(55, 65, 81);
     for (const c of r.certifications) {
-      doc.text(`▸ ${c.name} — ${c.issuer}${c.date ? ` (${c.date})` : ""}`, M, y);
-      y += 11;
+      checkPage(14); doc.text(`▸ ${c.name} — ${c.issuer}${c.date ? ` (${c.date})` : ""}`, M, y); y += 11;
     }
     for (const a of r.achievements) {
       const ls = doc.splitTextToSize(`▸ ${a}`, CW) as string[];
-      for (const l of ls) { doc.text(l, M, y); y += 11; }
+      for (const l of ls) { checkPage(14); doc.text(l, M, y); y += 11; }
     }
   }
 
@@ -313,10 +326,15 @@ function downloadTechPDF(r: ResumeContent, filename: string) {
 
 function downloadMinimalPDF(r: ResumeContent, filename: string) {
   const doc = new jsPDF({ unit: "pt", format: "letter" });
-  const PW = 612, M = 55, CW = PW - 2 * M;
+  const PW = 612, PH = 792, M = 55, CW = PW - 2 * M;
   let y = M;
 
+  const checkPage = (needed = 20) => {
+    if (y + needed > PH - M) { doc.addPage(); y = M; }
+  };
+
   const section = (title: string) => {
+    checkPage(30);
     y += 12;
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
@@ -351,7 +369,7 @@ function downloadMinimalPDF(r: ResumeContent, filename: string) {
     doc.setFontSize(9.5);
     doc.setTextColor(71, 85, 105);
     const ls = doc.splitTextToSize(r.summary, CW) as string[];
-    for (const l of ls) { doc.text(l, M, y); y += 12; }
+    for (const l of ls) { checkPage(14); doc.text(l, M, y); y += 12; }
   }
 
   section("Education");
@@ -369,6 +387,7 @@ function downloadMinimalPDF(r: ResumeContent, filename: string) {
   if (r.skillSections.length > 0) {
     section("Skills");
     for (const s of r.skillSections) {
+      checkPage(14);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(9.5);
       doc.setTextColor(15, 23, 42);
@@ -386,6 +405,7 @@ function downloadMinimalPDF(r: ResumeContent, filename: string) {
   if (r.projects.length > 0) {
     section("Projects");
     for (const p of r.projects) {
+      checkPage(40);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(10);
       doc.setTextColor(15, 23, 42);
@@ -400,7 +420,7 @@ function downloadMinimalPDF(r: ResumeContent, filename: string) {
       doc.setTextColor(71, 85, 105);
       for (const b of p.bullets) {
         const ls = doc.splitTextToSize(`– ${b}`, CW) as string[];
-        for (const l of ls) { doc.text(l, M, y); y += 10; }
+        for (const l of ls) { checkPage(12); doc.text(l, M, y); y += 10; }
       }
       y += 4;
     }
@@ -412,12 +432,11 @@ function downloadMinimalPDF(r: ResumeContent, filename: string) {
     doc.setFontSize(9.5);
     doc.setTextColor(71, 85, 105);
     for (const c of r.certifications) {
-      doc.text(`– ${c.name} — ${c.issuer}${c.date ? ` (${c.date})` : ""}`, M, y);
-      y += 11;
+      checkPage(14); doc.text(`– ${c.name} — ${c.issuer}${c.date ? ` (${c.date})` : ""}`, M, y); y += 11;
     }
     for (const a of r.achievements) {
       const ls = doc.splitTextToSize(`– ${a}`, CW) as string[];
-      for (const l of ls) { doc.text(l, M, y); y += 11; }
+      for (const l of ls) { checkPage(14); doc.text(l, M, y); y += 11; }
     }
   }
 
