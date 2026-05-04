@@ -64,6 +64,13 @@ export function ProfileSidebar({ onClose }: { onClose: () => void }) {
     setLocation("/profile");
   };
 
+  const logout = () => {
+    localStorage.removeItem("studentId");
+    localStorage.removeItem("studentName");
+    onClose();
+    setLocation("/");
+  };
+
   const initials = profile
     ? profile.name.split(/\s+/).map((p) => p[0]).join("").substring(0, 2).toUpperCase()
     : "?";
@@ -265,6 +272,13 @@ export function ProfileSidebar({ onClose }: { onClose: () => void }) {
             >
               <Edit2 className="w-4 h-4" />
               Edit Full Profile
+            </button>
+            <button
+              onClick={logout}
+              className="w-full mt-3 bg-white border-2 border-[#e2e8f0] text-[#ef4444] font-black py-3.5 rounded-2xl flex items-center justify-center gap-2 active:scale-95 transition-transform"
+            >
+              <X className="w-4 h-4" />
+              Log out
             </button>
           </div>
         </div>
