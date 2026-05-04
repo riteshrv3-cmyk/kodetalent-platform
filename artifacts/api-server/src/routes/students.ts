@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { studentsTable, questsTable, studentQuestsTable } from "@workspace/db";
+import { studentsTable, questsTable, studentQuestsTable, studentActivityLogTable } from "@workspace/db";
 import { eq, desc, sql } from "drizzle-orm";
 import {
   CreateStudentBody,
@@ -87,6 +87,42 @@ router.patch("/students/:id", async (req, res) => {
   } catch (err) {
     req.log.error({ err }, "Failed to update student");
     return res.status(500).json({ error: "Failed to update student" });
+  }
+});
+
+// POST /students/:id/checkin — daily check-in (+50 XP, +1 streak)
+router.post("/students/:id/checkin", async (req, res) => {
+  const id = Number(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
+  try {
+    const [student] = await db.select().from(studentsTable).where(eq(studentsTable.id, id)).limit(1);
+    if (!student) return res.status(404).json({ error: "Student not found" });
+
+    const today = new Date().toISOString().split("T")[0];
+    if (student.lastActiveDate === today) {
+      return res.json({ alreadyCheckedIn: true, student: formatStudent(student) });
+    }
+
+    const [updated] = await db.update(studentsTable)
+      .set({
+        xp: sql`${studentsTable.xp} + 50`,
+        streakCount: sql`${studentsTable.streakCount} + 1`,
+        lastActiveDate: today,
+      })
+      .where(eq(studentsTable.id, id))
+      .returning();
+
+    await db.insert(studentActivityLogTable).values({
+      studentId: id,
+      action: "daily_checkin",
+      description: "Daily check-in",
+      xpAmount: 50,
+    });
+
+    return res.json({ alreadyCheckedIn: false, student: formatStudent(updated) });
+  } catch (err) {
+    req.log.error({ err }, "Failed to check in");
+    return res.status(500).json({ error: "Failed to check in" });
   }
 });
 

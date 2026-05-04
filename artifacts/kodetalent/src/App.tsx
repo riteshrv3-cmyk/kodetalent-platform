@@ -54,7 +54,7 @@ function Router() {
           <Suspense fallback={<PageSkeleton />}>
             <Switch>
               <Route path="/home" component={Home} />
-              <Route path="/dashboard">{() => { const [,go] = useLocation(); go("/home"); return null; }}</Route>
+              <Route path="/dashboard" component={Home} />
               <Route path="/chat" component={AIChat} />
               <Route path="/practice" component={Prep} />
               <Route path="/practice/history" component={InterviewHistory} />

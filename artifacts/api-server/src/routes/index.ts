@@ -20,6 +20,7 @@ import resumeRouter from "./resume";
 import recruiterRouter from "./recruiter";
 import adminRouter from "./admin";
 import collegesRouter from "./colleges";
+import activityLogRouter from "./activityLog";
 
 const router: IRouter = Router();
 
@@ -44,5 +45,6 @@ router.use(resumeRouter);
 router.use(recruiterRouter);
 router.use(adminRouter);
 router.use(collegesRouter);
+router.use(activityLogRouter);
 
 export default router;

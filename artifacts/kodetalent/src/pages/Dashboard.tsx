@@ -78,15 +78,7 @@ export default function Dashboard() {
     const today = new Date().toDateString();
     localStorage.setItem("checkin_" + studentId, today);
     setCheckedIn(true);
-    // award XP via patch
-    const s = data?.student;
-    if (s) {
-      await fetch(`${BASE}/api/students/${studentId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ streakCount: (s.streakCount || 0) + 1, xp: (s.xp || 0) + 50 }),
-      });
-    }
+    await fetch(`${BASE}/api/students/${studentId}/checkin`, { method: "POST" });
   }
 
   if (isLoading || !data) {
@@ -111,13 +103,11 @@ export default function Dashboard() {
 
   return (
     <div className="p-4 space-y-4 pb-28 min-h-screen bg-[#f8fafc]">
-      {/* Header */}
       <header className="pt-2 flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-bold text-[#0f172a]">Hey {student.name.split(" ")[0]} 👋</h1>
           <p className="text-sm font-medium text-[#64748b] mt-0.5">{student.college}</p>
         </div>
-        {/* Check-in button */}
         <motion.button
           whileTap={{ scale: 0.95 }}
           onClick={handleCheckIn}
@@ -131,13 +121,8 @@ export default function Dashboard() {
         </motion.button>
       </header>
 
-      {/* ── Recruiter Interest ── */}
       {pendingInvites.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: -8 }}
-          animate={{ opacity: 1, y: 0 }}
-          whileHover={{ y: -2 }}
-        >
+        <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} whileHover={{ y: -2 }}>
           <Link href="/inbox">
             <Card className="border-0 rounded-2xl overflow-hidden cursor-pointer" style={{ background: "linear-gradient(135deg, #4f46e5, #6366f1)" }}>
               <CardContent className="p-4">
@@ -168,7 +153,6 @@ export default function Dashboard() {
         </motion.div>
       )}
 
-      {/* ── Streak + XP ── */}
       <div className="grid grid-cols-2 gap-3">
         <motion.div whileHover={{ y: -2 }}>
           <Card className="border-0 shadow-[0_4px_24px_rgba(124,58,237,0.10)] rounded-2xl text-white" style={{ background: "linear-gradient(135deg, #f97316, #ec4899)" }}>
@@ -190,7 +174,6 @@ export default function Dashboard() {
         </motion.div>
       </div>
 
-      {/* ── Today's Goal ── */}
       {todayQuest && (
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} whileHover={{ y: -2 }}>
           <Card className="border-0 border-l-4 border-l-primary shadow-[0_4px_24px_rgba(124,58,237,0.10)] rounded-2xl bg-white">
@@ -215,7 +198,6 @@ export default function Dashboard() {
         </motion.div>
       )}
 
-      {/* ── Score + Rank ── */}
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} whileHover={{ y: -2 }}>
         <Card className="border-0 shadow-[0_4px_24px_rgba(124,58,237,0.15)] rounded-2xl text-white" style={{ background: "linear-gradient(135deg, #10b981, #0ea5e9)" }}>
           <CardContent className="p-5">
@@ -235,7 +217,6 @@ export default function Dashboard() {
         </Card>
       </motion.div>
 
-      {/* ── Top Skills ── */}
       {topSkills.length > 0 && (
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
           <Card className="border-0 shadow-[0_4px_20px_rgba(124,58,237,0.07)] rounded-2xl bg-white">
@@ -270,7 +251,6 @@ export default function Dashboard() {
         </motion.div>
       )}
 
-      {/* ── Profile Power-Ups ── */}
       {powerUps.length > 0 && (
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
           <Card className="border-0 shadow-[0_4px_20px_rgba(124,58,237,0.07)] rounded-2xl bg-white">

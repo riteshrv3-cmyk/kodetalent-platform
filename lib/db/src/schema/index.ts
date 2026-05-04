@@ -17,3 +17,4 @@ export * from "./tpoAccounts";
 export * from "./aiCache";
 export * from "./colleges";
 export * from "./studentResumes";
+export * from "./studentActivityLog";

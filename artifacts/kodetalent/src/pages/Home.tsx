@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import {
   Briefcase, Trophy, FileText, Flame, Star,
   ChevronRight, Zap, BookOpen, TrendingUp, Mail,
-  Target, Users, ShieldCheck, PlayCircle, Code2, Plus, Sparkles
+  Target, Users, ShieldCheck, PlayCircle, Code2, Plus, Sparkles, Clock
 } from "lucide-react";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -91,6 +91,35 @@ const categories = [
   },
 ];
 
+interface ActivityEntry {
+  id: number;
+  action: string;
+  description: string;
+  xpAmount: number;
+  createdAt: string;
+}
+
+const ACTION_META: Record<string, { emoji: string; color: string }> = {
+  daily_checkin: { emoji: "🔥", color: "#f97316" },
+  quest_completed: { emoji: "⚡", color: "#4f46e5" },
+};
+
+function getActionMeta(action: string) {
+  return ACTION_META[action] ?? { emoji: "⭐", color: "#10b981" };
+}
+
+function formatRelativeTime(isoString: string): string {
+  const diff = Date.now() - new Date(isoString).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d ago`;
+  return new Date(isoString).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+}
+
 interface ResumeCourse {
   subDomainId: string;
   subDomainName: string;
@@ -155,6 +184,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [resume, setResume] = useState<ResumeCourse | null>(null);
   const [isMobile, setIsMobile] = useState(false);
+  const [activityLog, setActivityLog] = useState<ActivityEntry[]>([]);
 
   useEffect(() => {
     setResume(loadResumeCourse());
@@ -185,9 +215,11 @@ export default function Home() {
     Promise.all([
       fetch(`${BASE}/api/students/${id}/full-profile`).then((r) => r.json()),
       fetch(`${BASE}/api/students/${id}/invites`).then((r) => r.json()).catch(() => []),
-    ]).then(([prof, inv]) => {
+      fetch(`${BASE}/api/students/${id}/activity-log?limit=10`).then((r) => r.json()).catch(() => []),
+    ]).then(([prof, inv, log]) => {
       setProfile(prof);
       setInvites(Array.isArray(inv) ? inv : []);
+      setActivityLog(Array.isArray(log) ? log : []);
     }).finally(() => setLoading(false));
   }, [setLocation]);
 
@@ -584,6 +616,65 @@ export default function Home() {
           </div>
         </div>
       )}
+
+      {/* XP Activity Log */}
+      <div className="px-4">
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white rounded-2xl p-4 shadow-sm border border-[#f1f5f9]"
+        >
+          <h2 className="font-black text-[#0f172a] text-sm mb-3 flex items-center gap-2">
+            <Clock className="w-4 h-4 text-[#4f46e5]" />
+            XP Activity
+          </h2>
+          {activityLog.length === 0 ? (
+            <div className="text-center py-3">
+              <p className="text-[#94a3b8] text-xs font-bold">No activity yet</p>
+              <p className="text-[#cbd5e1] text-[11px] mt-1 leading-snug">
+                Check in daily or complete a roadmap quest to earn XP
+              </p>
+            </div>
+          ) : (
+            <div className="relative">
+              <div className="absolute left-[15px] top-2 bottom-2 w-px bg-[#f1f5f9]" />
+              <div className="space-y-3">
+                {activityLog.map((entry, i) => {
+                  const meta = getActionMeta(entry.action);
+                  return (
+                    <motion.div
+                      key={entry.id}
+                      initial={{ opacity: 0, x: -8 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.04 }}
+                      className="flex items-start gap-2.5 relative"
+                    >
+                      <div
+                        className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-sm z-10"
+                        style={{ background: meta.color + "15", border: `1.5px solid ${meta.color}30` }}
+                      >
+                        {meta.emoji}
+                      </div>
+                      <div className="flex-1 min-w-0 pt-0.5">
+                        <p className="text-[12px] font-bold text-[#0f172a] leading-tight truncate">{entry.description}</p>
+                        <p className="text-[10px] text-[#94a3b8] font-medium mt-0.5">{formatRelativeTime(entry.createdAt)}</p>
+                      </div>
+                      {entry.xpAmount > 0 && (
+                        <span
+                          className="text-[11px] font-extrabold px-2 py-0.5 rounded-full shrink-0 mt-0.5"
+                          style={{ color: meta.color, background: meta.color + "15" }}
+                        >
+                          +{entry.xpAmount} XP
+                        </span>
+                      )}
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </motion.div>
+      </div>
     </div>
   );
 }

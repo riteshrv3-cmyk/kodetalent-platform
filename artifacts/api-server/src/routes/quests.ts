@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { questsTable, studentQuestsTable, studentsTable } from "@workspace/db";
+import { questsTable, studentQuestsTable, studentsTable, studentActivityLogTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 
 const router = Router();
@@ -101,6 +101,14 @@ router.post("/students/:id/quests/:questId/complete", async (req, res) => {
       })
       .where(eq(studentsTable.id, studentId))
       .returning();
+
+    // Log the activity
+    await db.insert(studentActivityLogTable).values({
+      studentId,
+      action: "quest_completed",
+      description: `Completed quest: ${quest.title}`,
+      xpAmount: quest.xpReward,
+    });
 
     return res.json(formatStudent(updatedStudent));
   } catch (err) {
