@@ -515,7 +515,7 @@ export default function DriveCheck() {
     const shareUrl =
       platform === "whatsapp"
         ? `https://wa.me/?text=${encoded}`
-        : `https://t.me/share/url?url=${encodeURIComponent("https://kodetalent.app")}&text=${encoded}`;
+        : `https://t.me/share/url?url=${encodeURIComponent(window.location.origin)}&text=${encoded}`;
     window.open(shareUrl, "_blank", "noopener,noreferrer");
 
     toast({

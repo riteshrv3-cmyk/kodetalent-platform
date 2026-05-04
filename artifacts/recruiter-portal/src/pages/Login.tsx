@@ -1,15 +1,25 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { Building2, User, Briefcase, ArrowRight, Zap, Mail } from "lucide-react";
 
 const ROLES = ["HR Manager", "Technical Recruiter", "Campus Recruiter", "Talent Acquisition Lead", "Founder / CEO"];
 
+interface PlatformStats { totalStudents: number; totalColleges: number; avgScore: number; openToWork: number; }
+
 export default function Login() {
   const [, setLocation] = useLocation();
   const [form, setForm] = useState({ company: "", name: "", email: "", role: "" });
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [platformStats, setPlatformStats] = useState<PlatformStats | null>(null);
+
+  useEffect(() => {
+    fetch("/api/platform/stats")
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d) setPlatformStats(d); })
+      .catch(() => null);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,9 +63,9 @@ export default function Login() {
 
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="grid grid-cols-3 gap-3 mb-8">
           {[
-            { label: "Students", value: "10K+" },
-            { label: "Colleges", value: "200+" },
-            { label: "Avg. Score", value: "72/100" },
+            { label: "Students", value: platformStats ? `${platformStats.totalStudents.toLocaleString("en-IN")}` : "…" },
+            { label: "Colleges", value: platformStats ? `${platformStats.totalColleges}` : "…" },
+            { label: "Avg. Score", value: platformStats ? `${platformStats.avgScore}/100` : "…" },
           ].map(stat => (
             <div key={stat.label} className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-3 text-center">
               <p className="text-white font-black text-xl">{stat.value}</p>

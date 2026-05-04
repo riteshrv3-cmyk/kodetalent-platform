@@ -185,6 +185,7 @@ export default function Home() {
   const [resume, setResume] = useState<ResumeCourse | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [activityLog, setActivityLog] = useState<ActivityEntry[]>([]);
+  const [myRank, setMyRank] = useState<number | null>(null);
 
   useEffect(() => {
     setResume(loadResumeCourse());
@@ -217,7 +218,17 @@ export default function Home() {
     fetch(`${BASE}/api/students/${id}/full-profile`)
       .then((r) => r.json())
       .then((prof) => {
-        if (alive) setProfile(prof);
+        if (!alive) return;
+        setProfile(prof);
+        if (prof?.college) {
+          fetch(`${BASE}/api/leaderboard/college?college=${encodeURIComponent(prof.college)}`)
+            .then(r => r.ok ? r.json() : [])
+            .then((board: { studentId: number; rank: number }[]) => {
+              const entry = board.find(e => e.studentId === Number(id));
+              if (alive && entry) setMyRank(entry.rank);
+            })
+            .catch(() => null);
+        }
       })
       .catch(() => null);
 
@@ -465,6 +476,9 @@ export default function Home() {
         <div className="grid grid-cols-2 gap-3">
           {categories.map((cat, i) => {
             const Icon = cat.icon;
+            const count = cat.id === "leaderboard"
+              ? (myRank ? `#${myRank} in college` : "Leaderboard")
+              : cat.count;
             return (
               <motion.button
                 key={cat.id}
@@ -483,7 +497,7 @@ export default function Home() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="font-black text-[#0f172a] text-[13px] leading-tight truncate">{cat.label}</p>
-                  <p className="text-[10px] font-bold text-[#64748b] mt-0.5 truncate">{cat.count}</p>
+                  <p className="text-[10px] font-bold text-[#64748b] mt-0.5 truncate">{count}</p>
                 </div>
               </motion.button>
             );

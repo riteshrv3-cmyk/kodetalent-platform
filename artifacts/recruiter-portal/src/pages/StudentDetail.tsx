@@ -12,7 +12,14 @@ const BASE_API = "";
 
 interface InviteModalProps { studentId: number; studentName: string; onClose: () => void; }
 function InviteModal({ studentId, studentName, onClose }: InviteModalProps) {
-  const [form, setForm] = useState({ recruiterName: "", recruiterCompany: "", recruiterEmail: "", role: "", message: "" });
+  const recruiterStored = (() => { try { return JSON.parse(localStorage.getItem("recruiter") || "{}"); } catch { return {}; } })();
+  const [form, setForm] = useState({
+    recruiterName: recruiterStored.name || "",
+    recruiterCompany: recruiterStored.company || "",
+    recruiterEmail: recruiterStored.email || "",
+    role: "",
+    message: "",
+  });
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
 

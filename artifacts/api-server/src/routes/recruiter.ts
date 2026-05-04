@@ -121,6 +121,16 @@ router.get("/recruiters/:id/dashboard", async (req, res) => {
     };
   });
 
+  const recentRaw = invites.slice(0, 8);
+  const recentStudentIds = [...new Set(recentRaw.map(i => i.studentId))];
+  const recentStudents = recentStudentIds.length > 0
+    ? await db.select({ id: studentsTable.id, name: studentsTable.name })
+        .from(studentsTable)
+        .where(inArray(studentsTable.id, recentStudentIds))
+    : [];
+  const studentNameMap: Record<number, string> = {};
+  for (const s of recentStudents) studentNameMap[s.id] = s.name;
+
   res.json({
     recruiter,
     stats: {
@@ -138,7 +148,7 @@ router.get("/recruiters/:id/dashboard", async (req, res) => {
     },
     funnel,
     jobFunnels,
-    recentInvites: invites.slice(0, 8),
+    recentInvites: recentRaw.map(i => ({ ...i, studentName: studentNameMap[i.studentId] ?? null })),
     jobs: jobs.slice(0, 10),
   });
 });
@@ -464,6 +474,21 @@ router.post("/recruiter-jobs/:id/bulk-invite", async (req, res) => {
     .where(eq(recruitersTable.id, recruiter.id));
 
   res.json({ sent: rows.length });
+});
+
+router.get("/platform/stats", async (req, res) => {
+  try {
+    const [row] = await db.select({
+      totalStudents: sql<number>`count(*)::int`,
+      totalColleges: sql<number>`count(distinct ${studentsTable.college})::int`,
+      avgScore: sql<number>`coalesce(round(avg(${studentsTable.overallScore}))::int, 0)`,
+      openToWork: sql<number>`sum(case when ${studentsTable.openToWork} then 1 else 0 end)::int`,
+    }).from(studentsTable);
+    return res.json(row ?? { totalStudents: 0, totalColleges: 0, avgScore: 0, openToWork: 0 });
+  } catch (err) {
+    req.log.error({ err }, "platform stats failed");
+    return res.status(500).json({ error: "Server error" });
+  }
 });
 
 router.get("/talent-pool/showcase", async (_req, res) => {

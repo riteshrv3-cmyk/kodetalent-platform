@@ -238,7 +238,7 @@ router.get("/students/:id/wrapped", async (req, res) => {
       college: student.college,
       streakDays: student.streakCount,
       xpGained: student.xp,
-      scoreStart: Math.max(0, student.overallScore - Math.floor(Math.random() * 15)),
+      scoreStart: Math.max(0, student.overallScore - Math.min(student.overallScore, 8)),
       scoreEnd: student.overallScore,
       indiaPercentile,
       month,

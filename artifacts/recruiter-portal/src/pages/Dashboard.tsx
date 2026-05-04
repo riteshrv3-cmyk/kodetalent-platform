@@ -24,7 +24,7 @@ interface DashboardData {
   funnel: Array<{ stage: string; count: number; conversionPct: number }>;
   jobFunnels: Array<{ id: number; title: string; invited: number; accepted: number; hired: number; acceptRate: number }>;
   recentInvites: Array<{
-    id: number; studentId: number; role: string | null;
+    id: number; studentId: number; studentName: string | null; role: string | null;
     status: string; studentSeen: boolean; createdAt: string;
   }>;
   jobs: Array<{
@@ -247,8 +247,8 @@ export default function Dashboard() {
                             <Users className="w-4 h-4 text-[#4f46e5]" />
                           </div>
                           <div className="min-w-0">
-                            <p className="text-sm font-bold text-[#0f172a] truncate">{inv.role || "Candidate"}</p>
-                            <p className="text-xs text-[#94a3b8]">{new Date(inv.createdAt).toLocaleDateString()}{inv.studentSeen ? " · seen" : ""}</p>
+                            <p className="text-sm font-bold text-[#0f172a] truncate">{inv.studentName || inv.role || "Candidate"}</p>
+                            <p className="text-xs text-[#94a3b8]">{inv.role ? `${inv.role} · ` : ""}{new Date(inv.createdAt).toLocaleDateString()}{inv.studentSeen ? " · seen" : ""}</p>
                           </div>
                         </div>
                         <span className="text-[10px] font-black uppercase px-2 py-1 rounded-full ml-2 flex-shrink-0" style={{ background: `${STATUS_COLORS[inv.status] || "#94a3b8"}15`, color: STATUS_COLORS[inv.status] || "#94a3b8" }}>
