@@ -154,9 +154,17 @@ export default function Home() {
   const [invites, setInvites] = useState<Invite[]>([]);
   const [loading, setLoading] = useState(true);
   const [resume, setResume] = useState<ResumeCourse | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     setResume(loadResumeCourse());
+  }, []);
+
+  useEffect(() => {
+    const update = () => setIsMobile(window.innerWidth < 640);
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
   }, []);
 
   const resumeCourse = () => {
@@ -212,8 +220,12 @@ export default function Home() {
       {/* Score Banner — premium hero */}
       <div className="relative bg-gradient-to-br from-[#1e1b4b] via-[#3730a3] to-[#4f46e5] px-5 pt-6 pb-7 text-white overflow-hidden rounded-b-[32px] shadow-[0_8px_32px_rgba(79,70,229,0.25)]">
         {/* Decorative orbs */}
-        <div className="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-[#f97316]/15 blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-20 -left-20 w-64 h-64 rounded-full bg-[#0ea5e9]/15 blur-3xl pointer-events-none" />
+        {!isMobile && (
+          <>
+            <div className="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-[#f97316]/15 blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-20 -left-20 w-64 h-64 rounded-full bg-[#0ea5e9]/15 blur-3xl pointer-events-none" />
+          </>
+        )}
 
         <div className="relative z-10">
           <div className="flex items-start justify-between mb-1">
@@ -222,7 +234,7 @@ export default function Home() {
               <h1 className="text-2xl font-black mt-0.5">{firstName} 👋</h1>
               <p className="text-white/60 text-xs mt-0.5 truncate max-w-[220px]">{profile?.college}</p>
             </div>
-            <div className="flex flex-col items-center bg-white/15 backdrop-blur-sm rounded-2xl px-3 py-2 border border-white/10">
+            <div className="flex flex-col items-center bg-white/15 rounded-2xl px-3 py-2 border border-white/10">
               <span className="text-[9px] font-black text-white/70 uppercase tracking-wider">Level</span>
               <span className="text-2xl font-black leading-none mt-0.5 bg-gradient-to-br from-white to-[#fbbf24] bg-clip-text text-transparent">
                 {currentLevel}
@@ -248,21 +260,21 @@ export default function Home() {
 
           {/* Stats row */}
           <div className="grid grid-cols-3 gap-2.5 mt-4">
-            <div className="bg-white/12 backdrop-blur-sm rounded-2xl px-2 py-3 text-center border border-white/10">
+            <div className="bg-white/12 rounded-2xl px-2 py-3 text-center border border-white/10">
               <div className="flex items-center justify-center gap-1 mb-1">
                 <TrendingUp className="w-3.5 h-3.5 text-[#86efac]" />
                 <p className="text-[9px] text-white/70 font-black uppercase tracking-wider">AI Score</p>
               </div>
               <p className="text-xl font-black">{Math.round(profile?.overallScore ?? 0)}</p>
             </div>
-            <div className="bg-white/12 backdrop-blur-sm rounded-2xl px-2 py-3 text-center border border-white/10">
+            <div className="bg-white/12 rounded-2xl px-2 py-3 text-center border border-white/10">
               <div className="flex items-center justify-center gap-1 mb-1">
                 <Flame className="w-3.5 h-3.5 text-[#fb923c]" />
                 <p className="text-[9px] text-white/70 font-black uppercase tracking-wider">Streak</p>
               </div>
               <p className="text-xl font-black">{profile?.streakCount ?? 0}<span className="text-[10px] text-white/60 font-bold ml-0.5">d</span></p>
             </div>
-            <div className="bg-white/12 backdrop-blur-sm rounded-2xl px-2 py-3 text-center border border-white/10">
+            <div className="bg-white/12 rounded-2xl px-2 py-3 text-center border border-white/10">
               <div className="flex items-center justify-center gap-1 mb-1">
                 <Star className="w-3.5 h-3.5 text-[#fbbf24]" />
                 <p className="text-[9px] text-white/70 font-black uppercase tracking-wider">XP</p>
@@ -276,7 +288,7 @@ export default function Home() {
           {topSkills.length > 0 && (
             <div className="flex gap-1.5 mt-3.5 flex-wrap">
               {topSkills.map(([skill]) => (
-                <span key={skill} className="text-[10px] font-bold bg-white/15 backdrop-blur-sm text-white px-2.5 py-1 rounded-full border border-white/10">
+                <span key={skill} className="text-[10px] font-bold bg-white/15 text-white px-2.5 py-1 rounded-full border border-white/10">
                   {skill}
                 </span>
               ))}
@@ -293,7 +305,7 @@ export default function Home() {
           onClick={() => setLocation("/drive-check")}
           className="w-full bg-gradient-to-br from-[#0f172a] via-[#3730a3] to-[#4f46e5] rounded-2xl p-4 flex items-center gap-3 shadow-lg shadow-[#4f46e5]/20 active:scale-[0.98] transition-transform text-left relative overflow-hidden"
         >
-          <div className="absolute -top-4 -right-4 w-24 h-24 bg-white/5 rounded-full blur-xl" />
+          {!isMobile && <div className="absolute -top-4 -right-4 w-24 h-24 bg-white/5 rounded-full blur-xl" />}
           <div className="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur flex items-center justify-center shrink-0 relative z-10">
             <ShieldCheck className="w-6 h-6 text-white" />
           </div>
@@ -410,7 +422,7 @@ export default function Home() {
                 whileTap={{ scale: 0.96 }}
                 onClick={() => setLocation(cat.href)}
                 style={{ background: cat.bg }}
-                className="rounded-2xl p-4 flex items-center gap-3 shadow-sm border border-white/60 hover:shadow-md transition-all text-left"
+                className="rounded-2xl p-4 flex items-center gap-3 shadow-sm border border-white/60 hover:shadow-md transition-all text-left motion-reduce:transition-none"
               >
                 <div
                   className={`w-11 h-11 rounded-xl bg-gradient-to-br ${cat.gradient} flex items-center justify-center shadow-md shrink-0`}
