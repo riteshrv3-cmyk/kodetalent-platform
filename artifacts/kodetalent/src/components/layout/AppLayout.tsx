@@ -46,7 +46,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   }, []);
 
   if (isFullscreenRoute) {
-    return <div className="min-h-[100dvh] bg-[#f8fafc]">{children}</div>;
+    return <div className="min-h-[100dvh] bg-[#f8fafc]" style={{ overflowX: "clip" }}>{children}</div>;
   }
 
   return (
