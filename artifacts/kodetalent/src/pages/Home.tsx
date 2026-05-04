@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import {
   Briefcase, Trophy, FileText, Flame, Star,
   ChevronRight, Zap, BookOpen, TrendingUp, Mail,
-  Target, Users, ShieldCheck, PlayCircle, Code2, Plus
+  Target, Users, ShieldCheck, PlayCircle, Code2, Plus, Sparkles
 } from "lucide-react";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -517,6 +517,7 @@ export default function Home() {
               </p>
             </div>
             <div className="flex items-center gap-1">
+              <Sparkles className="w-4 h-4 text-[#4f46e5]" />
               <span className="text-[10px] font-black text-[#4f46e5]">AI Help</span>
               <ChevronRight className="w-4 h-4 text-[#4f46e5]" />
             </div>
