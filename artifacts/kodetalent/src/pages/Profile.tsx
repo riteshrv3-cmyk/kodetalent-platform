@@ -5,7 +5,7 @@ import {
   Github, Linkedin, Globe, Phone, Edit2, Check, X, Plus, Trash2,
   Briefcase, Award, MapPin, DollarSign, Share2, FileText,
   ChevronDown, ChevronUp, Loader2, ExternalLink, Star, GitFork,
-  Code2, Building2, GraduationCap, TrendingUp, Zap
+  Code2, Building2, GraduationCap, TrendingUp, Zap, ChevronRight, Sparkles
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -124,6 +124,87 @@ function StrengthRing({ value }: { value: number }) {
         <span className="text-[9px] font-bold text-[#64748b] uppercase">Profile</span>
       </div>
     </div>
+  );
+}
+
+// ─── My Resumes Card ──────────────────────────────────────────────────────────
+
+const TEMPLATE_BADGES: Record<string, { label: string; badge: string }> = {
+  classic: { label: "Classic", badge: "bg-[#e0e7ff] text-[#4f46e5]" },
+  tech: { label: "Tech", badge: "bg-[#d1fae5] text-[#059669]" },
+  minimal: { label: "Minimal", badge: "bg-[#f1f5f9] text-[#475569]" },
+};
+
+function MyResumesCard({ studentId, onNavigate }: { studentId: number; onNavigate: () => void }) {
+  const [resumes, setResumes] = useState<{ id: number; name: string; templateId: string; createdAt: string }[]>([]);
+  const [loading, setLoading] = useState(true);
+  const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+  useEffect(() => {
+    fetch(`${base}/api/students/${studentId}/resumes`)
+      .then(r => r.ok ? r.json() : [])
+      .then(data => setResumes(Array.isArray(data) ? data.slice(0, 3) : []))
+      .catch(() => setResumes([]))
+      .finally(() => setLoading(false));
+  }, [studentId, base]);
+
+  return (
+    <Card className="border-0 shadow-[0_4px_24px_rgba(79,70,229,0.06)] rounded-2xl bg-white">
+      <CardContent className="p-5">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-black text-[#0f172a] flex items-center gap-2">
+            <FileText className="w-4 h-4 text-[#4f46e5]" /> My Resumes
+          </h3>
+          <button onClick={onNavigate} className="text-[11px] font-black text-[#4f46e5] flex items-center gap-0.5">
+            Open <ChevronRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        {loading ? (
+          <div className="space-y-2">
+            <Skeleton className="h-9 w-full rounded-xl" />
+            <Skeleton className="h-9 w-3/4 rounded-xl" />
+          </div>
+        ) : resumes.length === 0 ? (
+          <button
+            onClick={onNavigate}
+            className="w-full py-5 rounded-xl border-2 border-dashed border-[#e0e7ff] flex flex-col items-center gap-2 active:bg-[#f8faff] transition-colors"
+          >
+            <Sparkles className="w-6 h-6 text-[#4f46e5]" />
+            <div className="text-center">
+              <p className="text-sm font-black text-[#0f172a]">Generate your first resume</p>
+              <p className="text-xs text-[#64748b] mt-0.5">AI-tailored to any JD · 3 templates</p>
+            </div>
+          </button>
+        ) : (
+          <div className="space-y-2">
+            {resumes.map(r => {
+              const tmpl = TEMPLATE_BADGES[r.templateId] ?? TEMPLATE_BADGES["classic"];
+              const date = new Date(r.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+              return (
+                <div key={r.id} className="flex items-center justify-between bg-[#f8fafc] rounded-xl px-3 py-2.5">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-bold text-[#0f172a] truncate">{r.name}</p>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${tmpl.badge}`}>{tmpl.label}</span>
+                      <span className="text-[10px] text-[#94a3b8]">{date}</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+            {resumes.length > 0 && (
+              <button
+                onClick={onNavigate}
+                className="w-full mt-1 text-xs font-black text-[#4f46e5] py-2 rounded-xl bg-[#e0e7ff] active:bg-[#c7d2fe] transition-colors"
+              >
+                View all & download →
+              </button>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -808,6 +889,9 @@ export default function Profile() {
             </CardContent>
           </Card>
         )}
+
+        {/* ── My Resumes ── */}
+        <MyResumesCard studentId={studentId!} onNavigate={() => setLocation("/resume")} />
 
         {/* ── Career Wrapped + Resume ── */}
         <div className="grid grid-cols-2 gap-3 pb-4">
