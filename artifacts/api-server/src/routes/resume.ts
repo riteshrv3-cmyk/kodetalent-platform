@@ -224,6 +224,118 @@ Rules:
   }
 });
 
+// ─── PATCH /students/:id/resumes/:resumeId ────────────────────────────────────
+
+router.patch("/students/:id/resumes/:resumeId", async (req, res) => {
+  const id = Number(req.params.id);
+  const resumeId = Number(req.params.resumeId);
+  if (isNaN(id) || isNaN(resumeId)) return res.status(400).json({ error: "Invalid id" });
+
+  const rawBody = req.body as { content?: unknown };
+
+  if (!rawBody.content || typeof rawBody.content !== "object" || Array.isArray(rawBody.content)) {
+    return res.status(400).json({ error: "content must be an object" });
+  }
+
+  const incoming = rawBody.content as Record<string, unknown>;
+
+  if ("summary" in incoming && typeof incoming.summary !== "string") {
+    return res.status(400).json({ error: "content.summary must be a string" });
+  }
+
+  if ("skillSections" in incoming) {
+    if (!Array.isArray(incoming.skillSections)) {
+      return res.status(400).json({ error: "content.skillSections must be an array" });
+    }
+    for (const s of incoming.skillSections as unknown[]) {
+      if (typeof s !== "object" || s === null || Array.isArray(s)) {
+        return res.status(400).json({ error: "Each skillSection must be an object" });
+      }
+      const section = s as Record<string, unknown>;
+      if (typeof section.category !== "string" || typeof section.items !== "string") {
+        return res.status(400).json({ error: "Each skillSection must have string category and items" });
+      }
+    }
+  }
+
+  if ("projects" in incoming) {
+    if (!Array.isArray(incoming.projects)) {
+      return res.status(400).json({ error: "content.projects must be an array" });
+    }
+    for (const p of incoming.projects as unknown[]) {
+      if (typeof p !== "object" || p === null || Array.isArray(p)) {
+        return res.status(400).json({ error: "Each project must be an object" });
+      }
+      const proj = p as Record<string, unknown>;
+      if (typeof proj.title !== "string" || typeof proj.tech !== "string") {
+        return res.status(400).json({ error: "Each project must have string title and tech" });
+      }
+      if (!Array.isArray(proj.bullets) || (proj.bullets as unknown[]).some(b => typeof b !== "string")) {
+        return res.status(400).json({ error: "Each project.bullets must be an array of strings" });
+      }
+    }
+  }
+
+  if ("certifications" in incoming) {
+    if (!Array.isArray(incoming.certifications)) {
+      return res.status(400).json({ error: "content.certifications must be an array" });
+    }
+    for (const c of incoming.certifications as unknown[]) {
+      if (typeof c !== "object" || c === null || Array.isArray(c)) {
+        return res.status(400).json({ error: "Each certification must be an object" });
+      }
+      const cert = c as Record<string, unknown>;
+      if (typeof cert.name !== "string" || typeof cert.issuer !== "string") {
+        return res.status(400).json({ error: "Each certification must have string name and issuer" });
+      }
+      if ("date" in cert && cert.date !== undefined && typeof cert.date !== "string") {
+        return res.status(400).json({ error: "certification.date must be a string if provided" });
+      }
+    }
+  }
+
+  if ("achievements" in incoming) {
+    if (!Array.isArray(incoming.achievements) || (incoming.achievements as unknown[]).some(a => typeof a !== "string")) {
+      return res.status(400).json({ error: "content.achievements must be an array of strings" });
+    }
+  }
+
+  try {
+    const [resume] = await db
+      .select()
+      .from(studentResumesTable)
+      .where(eq(studentResumesTable.id, resumeId))
+      .limit(1);
+
+    if (!resume || resume.studentId !== id) {
+      return res.status(404).json({ error: "Resume not found" });
+    }
+
+    const existingContent = (resume.content ?? {}) as Record<string, unknown>;
+
+    const allowedKeys = ["summary", "skillSections", "projects", "certifications", "achievements"] as const;
+    const patchedFields: Record<string, unknown> = {};
+    for (const key of allowedKeys) {
+      if (key in incoming) {
+        patchedFields[key] = incoming[key];
+      }
+    }
+
+    const updatedContent = { ...existingContent, ...patchedFields };
+
+    const [updated] = await db
+      .update(studentResumesTable)
+      .set({ content: updatedContent })
+      .where(eq(studentResumesTable.id, resumeId))
+      .returning();
+
+    return res.json(updated);
+  } catch (err) {
+    req.log.error({ err }, "Failed to update resume");
+    return res.status(500).json({ error: "Server error" });
+  }
+});
+
 // ─── DELETE /students/:id/resumes/:resumeId ───────────────────────────────────
 
 router.delete("/students/:id/resumes/:resumeId", async (req, res) => {

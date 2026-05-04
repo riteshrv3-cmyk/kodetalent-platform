@@ -3,7 +3,8 @@ import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Download, FileText, Plus, Trash2, Sparkles,
-  Loader2, Building2, AlignLeft, ChevronRight, X
+  Loader2, Building2, AlignLeft, ChevronRight, X, Pencil,
+  Check, PlusCircle, MinusCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -454,16 +455,282 @@ function downloadResumePDF(resume: SavedResume) {
   }
 }
 
+// ─── Edit Resume Sheet ────────────────────────────────────────────────────────
+
+function EditResumeSheet({
+  resume,
+  studentId,
+  onClose,
+  onSaved,
+}: {
+  resume: SavedResume;
+  studentId: number;
+  onClose: () => void;
+  onSaved: (updated: SavedResume) => void;
+}) {
+  const { toast } = useToast();
+  const [saving, setSaving] = useState(false);
+
+  const [summary, setSummary] = useState(resume.content.summary ?? "");
+  const [skillSections, setSkillSections] = useState(
+    (resume.content.skillSections ?? []).map(s => ({ ...s }))
+  );
+  const [projects, setProjects] = useState(
+    (resume.content.projects ?? []).map(p => ({ ...p, bullets: [...(p.bullets ?? [])] }))
+  );
+  const [achievements, setAchievements] = useState([...(resume.content.achievements ?? [])]);
+
+  const updateSkillCategory = (i: number, val: string) => {
+    setSkillSections(prev => prev.map((s, idx) => idx === i ? { ...s, category: val } : s));
+  };
+  const updateSkillItems = (i: number, val: string) => {
+    setSkillSections(prev => prev.map((s, idx) => idx === i ? { ...s, items: val } : s));
+  };
+  const addSkillSection = () => setSkillSections(prev => [...prev, { category: "", items: "" }]);
+  const removeSkillSection = (i: number) => setSkillSections(prev => prev.filter((_, idx) => idx !== i));
+
+  const updateProjectTitle = (i: number, val: string) => {
+    setProjects(prev => prev.map((p, idx) => idx === i ? { ...p, title: val } : p));
+  };
+  const updateProjectTech = (i: number, val: string) => {
+    setProjects(prev => prev.map((p, idx) => idx === i ? { ...p, tech: val } : p));
+  };
+  const updateProjectBullet = (pi: number, bi: number, val: string) => {
+    setProjects(prev => prev.map((p, idx) => idx === pi
+      ? { ...p, bullets: p.bullets.map((b, bidx) => bidx === bi ? val : b) }
+      : p
+    ));
+  };
+  const addProjectBullet = (pi: number) => {
+    setProjects(prev => prev.map((p, idx) => idx === pi
+      ? { ...p, bullets: [...p.bullets, ""] }
+      : p
+    ));
+  };
+  const removeProjectBullet = (pi: number, bi: number) => {
+    setProjects(prev => prev.map((p, idx) => idx === pi
+      ? { ...p, bullets: p.bullets.filter((_, bidx) => bidx !== bi) }
+      : p
+    ));
+  };
+
+  const updateAchievement = (i: number, val: string) => {
+    setAchievements(prev => prev.map((a, idx) => idx === i ? val : a));
+  };
+  const addAchievement = () => setAchievements(prev => [...prev, ""]);
+  const removeAchievement = (i: number) => setAchievements(prev => prev.filter((_, idx) => idx !== i));
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const r = await fetch(`${BASE}/api/students/${studentId}/resumes/${resume.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          content: { summary, skillSections, projects, achievements },
+        }),
+      });
+      if (!r.ok) {
+        const err = await r.json().catch(() => ({})) as { error?: string };
+        throw new Error(err.error ?? "Failed to save");
+      }
+      const updated = await r.json() as SavedResume;
+      toast({ title: "Changes saved!" });
+      onSaved(updated);
+      onClose();
+    } catch (e) {
+      toast({ title: "Save failed", description: (e as Error).message, variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-end"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ y: "100%" }}
+        animate={{ y: 0 }}
+        exit={{ y: "100%" }}
+        transition={{ type: "spring", damping: 28, stiffness: 300 }}
+        className="w-full max-w-lg mx-auto bg-white rounded-t-3xl flex flex-col"
+        style={{ maxHeight: "92vh" }}
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-[#f1f5f9] shrink-0">
+          <h2 className="font-black text-[#0f172a] text-lg flex items-center gap-2">
+            <Pencil className="w-5 h-5 text-[#4f46e5]" />
+            Edit Resume
+          </h2>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-[#f1f5f9] flex items-center justify-center">
+            <X className="w-4 h-4 text-[#64748b]" />
+          </button>
+        </div>
+
+        <div className="overflow-y-auto flex-1 px-5 py-4 space-y-6">
+
+          {/* Summary */}
+          <div className="space-y-2">
+            <label className="text-xs font-extrabold text-[#64748b] uppercase tracking-wider">Professional Summary</label>
+            <Textarea
+              value={summary}
+              onChange={e => setSummary(e.target.value)}
+              rows={4}
+              className="rounded-xl border-[#e2e8f0] font-medium text-sm resize-none"
+            />
+          </div>
+
+          {/* Skills */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-extrabold text-[#64748b] uppercase tracking-wider">Skill Sections</label>
+              <button
+                onClick={addSkillSection}
+                className="flex items-center gap-1 text-[10px] font-bold text-[#4f46e5]"
+              >
+                <PlusCircle className="w-3.5 h-3.5" /> Add
+              </button>
+            </div>
+            {skillSections.map((s, i) => (
+              <div key={i} className="flex gap-2 items-start">
+                <div className="flex-1 space-y-1.5">
+                  <Input
+                    value={s.category}
+                    onChange={e => updateSkillCategory(i, e.target.value)}
+                    placeholder="Category (e.g. Languages)"
+                    className="rounded-lg border-[#e2e8f0] text-sm h-8"
+                  />
+                  <Input
+                    value={s.items}
+                    onChange={e => updateSkillItems(i, e.target.value)}
+                    placeholder="Items (comma-separated)"
+                    className="rounded-lg border-[#e2e8f0] text-sm h-8"
+                  />
+                </div>
+                <button
+                  onClick={() => removeSkillSection(i)}
+                  className="mt-1 text-[#ef4444] shrink-0"
+                >
+                  <MinusCircle className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+
+          {/* Projects */}
+          <div className="space-y-4">
+            <label className="text-xs font-extrabold text-[#64748b] uppercase tracking-wider">Projects</label>
+            {projects.map((p, pi) => (
+              <div key={pi} className="bg-[#f8fafc] rounded-xl p-3 space-y-2 border border-[#e2e8f0]">
+                <div className="flex gap-2">
+                  <Input
+                    value={p.title}
+                    onChange={e => updateProjectTitle(pi, e.target.value)}
+                    placeholder="Project title"
+                    className="rounded-lg border-[#e2e8f0] text-sm h-8 flex-1"
+                  />
+                  <Input
+                    value={p.tech}
+                    onChange={e => updateProjectTech(pi, e.target.value)}
+                    placeholder="Tech stack"
+                    className="rounded-lg border-[#e2e8f0] text-sm h-8 flex-1"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <p className="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wider">Bullets</p>
+                  {p.bullets.map((b, bi) => (
+                    <div key={bi} className="flex gap-1.5 items-center">
+                      <Textarea
+                        value={b}
+                        onChange={e => updateProjectBullet(pi, bi, e.target.value)}
+                        rows={2}
+                        className="flex-1 rounded-lg border-[#e2e8f0] text-xs resize-none"
+                      />
+                      <button onClick={() => removeProjectBullet(pi, bi)} className="text-[#ef4444] shrink-0">
+                        <MinusCircle className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    onClick={() => addProjectBullet(pi)}
+                    className="flex items-center gap-1 text-[10px] font-bold text-[#4f46e5] mt-1"
+                  >
+                    <PlusCircle className="w-3 h-3" /> Add bullet
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Achievements */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-extrabold text-[#64748b] uppercase tracking-wider">Achievements</label>
+              <button
+                onClick={addAchievement}
+                className="flex items-center gap-1 text-[10px] font-bold text-[#4f46e5]"
+              >
+                <PlusCircle className="w-3.5 h-3.5" /> Add
+              </button>
+            </div>
+            {achievements.map((a, i) => (
+              <div key={i} className="flex gap-1.5 items-center">
+                <Input
+                  value={a}
+                  onChange={e => updateAchievement(i, e.target.value)}
+                  placeholder="Achievement"
+                  className="flex-1 rounded-lg border-[#e2e8f0] text-sm h-8"
+                />
+                <button onClick={() => removeAchievement(i)} className="text-[#ef4444] shrink-0">
+                  <MinusCircle className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="px-5 pb-8 pt-3 border-t border-[#f1f5f9] shrink-0">
+          <Button
+            onClick={handleSave}
+            disabled={saving}
+            className="w-full h-12 rounded-2xl text-white font-black text-base shadow-[0_4px_16px_rgba(79,70,229,0.3)]"
+            style={{ background: "linear-gradient(135deg, #4f46e5, #7c3aed)" }}
+          >
+            {saving ? (
+              <>
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                Saving…
+              </>
+            ) : (
+              <>
+                <Check className="w-5 h-5 mr-2" />
+                Save Changes
+              </>
+            )}
+          </Button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
 // ─── Resume Card ──────────────────────────────────────────────────────────────
 
 function ResumeCard({
   resume,
   onDelete,
   onDownload,
+  onEdit,
 }: {
   resume: SavedResume;
   onDelete: () => void;
   onDownload: () => void;
+  onEdit: () => void;
 }) {
   const tmpl = templateBadge(resume.templateId);
   const date = new Date(resume.createdAt).toLocaleDateString("en-IN", {
@@ -507,14 +774,24 @@ function ResumeCard({
         </p>
       )}
 
-      <Button
-        onClick={onDownload}
-        className="w-full h-9 rounded-xl text-white font-bold text-xs"
-        style={{ background: `linear-gradient(135deg, ${tmpl.color}, ${tmpl.color}cc)` }}
-      >
-        <Download className="w-3.5 h-3.5 mr-1.5" />
-        Download PDF
-      </Button>
+      <div className="flex gap-2">
+        <Button
+          onClick={onEdit}
+          variant="outline"
+          className="flex-1 h-9 rounded-xl font-bold text-xs border-[#e2e8f0] text-[#4f46e5]"
+        >
+          <Pencil className="w-3.5 h-3.5 mr-1.5" />
+          Edit
+        </Button>
+        <Button
+          onClick={onDownload}
+          className="flex-1 h-9 rounded-xl text-white font-bold text-xs"
+          style={{ background: `linear-gradient(135deg, ${tmpl.color}, ${tmpl.color}cc)` }}
+        >
+          <Download className="w-3.5 h-3.5 mr-1.5" />
+          Download PDF
+        </Button>
+      </div>
     </motion.div>
   );
 }
@@ -684,6 +961,7 @@ export default function Resume() {
   const [loading, setLoading] = useState(true);
   const [showGenerate, setShowGenerate] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [editingResume, setEditingResume] = useState<SavedResume | null>(null);
 
   useEffect(() => {
     const id = localStorage.getItem("studentId");
@@ -709,6 +987,10 @@ export default function Resume() {
 
   const handleGenerated = (saved: SavedResume) => {
     setResumes(prev => [saved, ...prev]);
+  };
+
+  const handleResumeUpdated = (updated: SavedResume) => {
+    setResumes(prev => prev.map(r => r.id === updated.id ? updated : r));
   };
 
   const handleDelete = async (resumeId: number) => {
@@ -805,6 +1087,7 @@ export default function Resume() {
                     if (deletingId !== resume.id) handleDelete(resume.id);
                   }}
                   onDownload={() => downloadResumePDF(resume)}
+                  onEdit={() => setEditingResume(resume)}
                 />
               ))}
             </AnimatePresence>
@@ -833,6 +1116,17 @@ export default function Resume() {
             studentId={studentId}
             onClose={() => setShowGenerate(false)}
             onGenerated={handleGenerated}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {editingResume && studentId && (
+          <EditResumeSheet
+            resume={editingResume}
+            studentId={studentId}
+            onClose={() => setEditingResume(null)}
+            onSaved={handleResumeUpdated}
           />
         )}
       </AnimatePresence>
