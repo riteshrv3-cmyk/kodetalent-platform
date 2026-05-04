@@ -6,6 +6,7 @@
   "scripts": {
     "hello": "tsx ./src/hello.ts",
     "seed:talent": "tsx ./src/seedTalentPool.ts",
+    "reset:fake-data": "tsx ./src/reset-fake-student-data.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {
