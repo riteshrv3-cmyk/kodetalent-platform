@@ -5,7 +5,7 @@ import {
   ArrowLeft, BookOpen, CreditCard, HelpCircle, CheckCircle2,
   XCircle, RotateCcw, Star, AlertTriangle, Trophy, ChevronRight,
   ChevronDown, PlayCircle, FileText, PenLine, Hammer, ExternalLink,
-  Clock, Lock, X, Loader2,
+  Clock, Lock, X, Loader2, Eye,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -161,6 +161,7 @@ export default function Course() {
   const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);   // "lessonId|ytId" when playing
   const [videoLoading, setVideoLoading] = useState<string | null>(null);       // lessonId being fetched
   const [videoFallbackId, setVideoFallbackId] = useState<string | null>(null); // lessonId with no video result
+  const [watchedVideos, setWatchedVideos] = useState<Set<string>>(new Set());  // lesson IDs of watched videos
 
   // ── Flashcard state ────────────────────────────────────────────────────────
   const [queue, setQueue] = useState<Flashcard[]>([]);
@@ -215,6 +216,10 @@ export default function Course() {
     const lp = localStorage.getItem(`lesson_progress_${c.subDomainId}`);
     if (lp) setCompletedLessons(new Set(JSON.parse(lp)));
 
+    // Load watched video history
+    const wv = localStorage.getItem(`watched_videos_${c.subDomainId}`);
+    if (wv) setWatchedVideos(new Set(JSON.parse(wv)));
+
     // v2 cache key — includes lesson data
     const cacheKey = `course_content_v2_${c.subDomainId}`;
     const cached = localStorage.getItem(cacheKey);
@@ -267,6 +272,18 @@ export default function Course() {
     const s = parseInt(localStorage.getItem("flashcard_streak") || "0", 10);
     setStreak(last === today || last === yestStr ? s : 0);
   }, [courseData, ctx]);
+
+  // ── Mark video as watched ──────────────────────────────────────────────────
+  const markVideoWatched = useCallback((lessonId: string) => {
+    if (!ctx) return;
+    setWatchedVideos(prev => {
+      if (prev.has(lessonId)) return prev;
+      const next = new Set(prev);
+      next.add(lessonId);
+      localStorage.setItem(`watched_videos_${ctx.subDomainId}`, JSON.stringify([...next]));
+      return next;
+    });
+  }, [ctx]);
 
   // ── Toggle lesson complete ─────────────────────────────────────────────────
   const toggleLesson = useCallback((lessonId: string) => {
@@ -642,7 +659,7 @@ export default function Course() {
                                             done ? "text-[#94a3b8] line-through" : "text-[#0f172a]")}>
                                             {lessonIdx + 1}. {lesson.title}
                                           </p>
-                                          <div className="flex items-center gap-2 mt-0.5">
+                                          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                                             <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
                                               style={{ background: cfg.bg, color: cfg.color }}>
                                               {cfg.label}
@@ -650,6 +667,11 @@ export default function Course() {
                                             <span className="text-[10px] text-[#64748b] font-bold flex items-center gap-1">
                                               <Clock className="w-2.5 h-2.5" />{lesson.duration}
                                             </span>
+                                            {lesson.type === "video" && watchedVideos.has(lesson.id) && (
+                                              <span className="flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[#eff6ff] text-[#3b82f6]">
+                                                <Eye className="w-2.5 h-2.5" /> Watched
+                                              </span>
+                                            )}
                                           </div>
                                         </div>
                                         <ChevronRight className={cn("w-4 h-4 text-[#94a3b8] transition-transform flex-shrink-0", lessonOpen && "rotate-90")} />
@@ -712,6 +734,7 @@ export default function Course() {
                                                               const ytId = data?.watchUrl ? extractYouTubeId(data.watchUrl) : null;
                                                               if (ytId) {
                                                                 setPlayingVideoId(lesson.id + "|" + ytId);
+                                                                markVideoWatched(lesson.id);
                                                               } else {
                                                                 /* no embeddable video — show in-card search link */
                                                                 setVideoFallbackId(lesson.id);
@@ -797,15 +820,37 @@ export default function Course() {
                                                 {lesson.type === "video" && playingVideoId?.startsWith(lesson.id + "|") && (() => {
                                                   const ytId = playingVideoId.split("|")[1];
                                                   return (
-                                                    <div className="mt-3 rounded-xl overflow-hidden bg-black" style={{ aspectRatio: "16/9" }}>
-                                                      <iframe
-                                                        src={`https://www.youtube.com/embed/${ytId}?autoplay=1&rel=0`}
-                                                        title={lesson.title}
-                                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                                        allowFullScreen
-                                                        className="w-full h-full border-0"
-                                                      />
-                                                    </div>
+                                                    <>
+                                                      <div className="mt-3 rounded-xl overflow-hidden bg-black" style={{ aspectRatio: "16/9" }}>
+                                                        <iframe
+                                                          src={`https://www.youtube.com/embed/${ytId}?autoplay=1&rel=0`}
+                                                          title={lesson.title}
+                                                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                          allowFullScreen
+                                                          className="w-full h-full border-0"
+                                                        />
+                                                      </div>
+                                                      {/* Mark done prompt */}
+                                                      {!done && (
+                                                        <motion.div
+                                                          initial={{ opacity: 0, y: 6 }}
+                                                          animate={{ opacity: 1, y: 0 }}
+                                                          transition={{ delay: 0.4 }}
+                                                          className="mt-2 flex items-center justify-between gap-2 bg-white rounded-xl px-3 py-2.5 border border-[#e2e8f0]"
+                                                        >
+                                                          <p className="text-[12px] font-bold text-[#0f172a] leading-tight">
+                                                            Mark this lesson done?
+                                                          </p>
+                                                          <button
+                                                            onClick={() => toggleLesson(lesson.id)}
+                                                            className="flex items-center gap-1 text-[11px] font-extrabold px-3 py-1.5 rounded-lg text-white flex-shrink-0"
+                                                            style={{ background: color }}
+                                                          >
+                                                            <CheckCircle2 className="w-3.5 h-3.5" /> Done
+                                                          </button>
+                                                        </motion.div>
+                                                      )}
+                                                    </>
                                                   );
                                                 })()}
                                               </div>
