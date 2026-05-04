@@ -59,6 +59,7 @@ router.get("/students/:id/full-profile", async (req, res) => {
 // ─── PATCH /students/:id/profile ─────────────────────────────────────────────
 
 const ALLOWED_FIELDS = [
+  "name", "college", "city", "year", "field", "photoUrl",
   "githubUrl", "linkedinUrl", "portfolioUrl", "phone", "bio",
   "cgpa", "targetPackage", "dreamCompany",
   "projects", "certifications",

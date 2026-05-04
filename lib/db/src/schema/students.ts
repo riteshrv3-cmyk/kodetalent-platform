@@ -10,6 +10,7 @@ export const studentsTable = pgTable("students", {
   city: text("city").notNull(),
   year: integer("year").notNull(),
   field: text("field").notNull(),
+  photoUrl: text("photo_url"),
 
   // ─── Career links ─────────────────────────────────────────────────────────
   githubUrl: text("github_url"),

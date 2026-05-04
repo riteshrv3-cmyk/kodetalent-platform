@@ -4,8 +4,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Github, Linkedin, Globe, Phone, Edit2, Check, X, Plus, Trash2,
   Briefcase, Award, MapPin, DollarSign, Share2, FileText,
-  ChevronDown, ChevronUp, Loader2, ExternalLink, Star, GitFork,
-  Code2, Building2, GraduationCap, TrendingUp, Zap, ChevronRight, Sparkles
+  Loader2, ExternalLink, Star,
+  Code2, Building2, TrendingUp, Zap, ChevronRight, Sparkles,
+  Camera, User, BookOpen, Save,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -57,6 +58,7 @@ interface FullProfile {
   city: string;
   year: number;
   field: string;
+  photoUrl?: string;
   githubUrl?: string;
   linkedinUrl?: string;
   portfolioUrl?: string;
@@ -213,6 +215,14 @@ function MyResumesCard({ studentId, onNavigate }: { studentId: number; onNavigat
 const WORK_MODES = ["remote", "hybrid", "onsite"];
 const WORK_ICONS: Record<string, string> = { remote: "🏠", hybrid: "⚡", onsite: "🏢" };
 
+const YEAR_OPTIONS = [1, 2, 3, 4, 5];
+const FIELD_OPTIONS = [
+  "Computer Science", "Information Technology", "Electronics & Communication",
+  "Electrical Engineering", "Mechanical Engineering", "Civil Engineering",
+  "Chemical Engineering", "Biotechnology", "Data Science", "Artificial Intelligence",
+  "Cybersecurity", "Other",
+];
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function Profile() {
@@ -226,7 +236,10 @@ export default function Profile() {
   const [analyzing, setAnalyzing] = useState<"github" | "linkedin" | null>(null);
   const [showWrappedPrompt, setShowWrappedPrompt] = useState(false);
 
-  // edit buffers
+  // ── Edit buffers ──────────────────────────────────────────────────────────
+  const [basicForm, setBasicForm] = useState({
+    name: "", college: "", city: "", year: 1, field: "", cgpa: "", photoUrl: "",
+  });
   const [linksForm, setLinksForm] = useState({ githubUrl: "", linkedinUrl: "", portfolioUrl: "", phone: "" });
   const [bioForm, setBioForm] = useState("");
   const [prefsForm, setPrefsForm] = useState({ workMode: "hybrid", preferredLocations: "", expectedSalary: "" });
@@ -238,13 +251,15 @@ export default function Profile() {
   const [linkedinForm, setLinkedinForm] = useState({ headline: "", summary: "", skills: "", experience: "" });
   const [showLinkedinForm, setShowLinkedinForm] = useState(false);
 
+  const [photoPreview, setPhotoPreview] = useState<string>("");
+
   useEffect(() => {
     const id = localStorage.getItem("studentId");
     if (!id) { setLocation("/"); return; }
     setStudentId(parseInt(id, 10));
   }, [setLocation]);
 
-  // Course → Project bridge: open Add Project modal with course context pre-filled
+  // Course → Project bridge
   useEffect(() => {
     if (!profile) return;
     const params = new URLSearchParams(window.location.search);
@@ -254,15 +269,12 @@ export default function Profile() {
     setNewProject({
       title: from ? `${from} project` : "",
       description: from ? `A project I built while learning ${from}.` : "",
-      techStack: tech,
-      githubUrl: "",
-      liveUrl: "",
+      techStack: tech, githubUrl: "", liveUrl: "",
     });
     setShowAddProject(true);
     setTimeout(() => {
       document.getElementById("projects-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 200);
-    // strip the query so refreshes don't re-trigger
     const cleanUrl = window.location.pathname + window.location.hash;
     window.history.replaceState({}, "", cleanUrl);
   }, [profile]);
@@ -272,6 +284,11 @@ export default function Profile() {
     try {
       const p = await fetchProfile(id);
       setProfile(p);
+      setBasicForm({
+        name: p.name, college: p.college, city: p.city,
+        year: p.year, field: p.field, cgpa: p.cgpa || "", photoUrl: p.photoUrl || "",
+      });
+      setPhotoPreview(p.photoUrl || "");
       setLinksForm({ githubUrl: p.githubUrl || "", linkedinUrl: p.linkedinUrl || "", portfolioUrl: p.portfolioUrl || "", phone: p.phone || "" });
       setBioForm(p.bio || "");
       setPrefsForm({ workMode: p.workMode || "hybrid", preferredLocations: (p.preferredLocations || []).join(", "), expectedSalary: p.expectedSalary || "" });
@@ -303,6 +320,16 @@ export default function Profile() {
       setSaving(false);
     }
   };
+
+  const saveBasic = () => save({
+    name: basicForm.name.trim(),
+    college: basicForm.college.trim(),
+    city: basicForm.city.trim(),
+    year: Number(basicForm.year),
+    field: basicForm.field.trim(),
+    cgpa: basicForm.cgpa.trim(),
+    photoUrl: basicForm.photoUrl.trim(),
+  }, "Profile");
 
   const toggleOpenToWork = async () => {
     if (!profile || !studentId) return;
@@ -360,10 +387,7 @@ export default function Profile() {
 
   const addProject = async () => {
     if (!profile || !studentId || !newProject.title) return;
-    const updated: Project[] = [
-      ...profile.projects,
-      { ...newProject, id: `p_${Date.now()}`, techStack: newProject.techStack },
-    ];
+    const updated: Project[] = [...profile.projects, { ...newProject, id: `p_${Date.now()}` }];
     await save({ projects: updated }, "Project added");
     setNewProject({ title: "", description: "", techStack: [], githubUrl: "", liveUrl: "" });
     setTechInput("");
@@ -372,8 +396,7 @@ export default function Profile() {
 
   const removeProject = async (id: string) => {
     if (!profile || !studentId) return;
-    const updated = profile.projects.filter(p => p.id !== id);
-    await save({ projects: updated }, "Project removed");
+    await save({ projects: profile.projects.filter(p => p.id !== id) }, "Project removed");
   };
 
   const addCert = async () => {
@@ -386,8 +409,7 @@ export default function Profile() {
 
   const removeCert = async (id: string) => {
     if (!profile || !studentId) return;
-    const updated = profile.certifications.filter(c => c.id !== id);
-    await save({ certifications: updated }, "Certification removed");
+    await save({ certifications: profile.certifications.filter(c => c.id !== id) }, "Certification removed");
   };
 
   if (loading || !profile) {
@@ -403,6 +425,7 @@ export default function Profile() {
   }
 
   const initials = profile.name.split(" ").map((n: string) => n[0]).join("").substring(0, 2).toUpperCase();
+
   const strengthTips = [
     !profile.githubUrl && "Add GitHub URL",
     !profile.linkedinUrl && "Add LinkedIn URL",
@@ -418,25 +441,60 @@ export default function Profile() {
     .sort(([, a], [, b]) => (b as number) - (a as number))
     .slice(0, 5);
 
+  const isEditingBasic = editSection === "basic";
+
   return (
     <div className="pb-28 max-w-md mx-auto min-h-screen bg-[#f8fafc]">
 
       {/* ── Header ── */}
       <div className="relative bg-gradient-to-br from-[#312e81] via-[#3730a3] to-[#4f46e5] pt-12 pb-20 px-6 text-center text-white">
+
+        {/* Edit profile button top-right */}
+        <button
+          onClick={() => setEditSection(isEditingBasic ? null : "basic")}
+          className="absolute top-4 right-4 flex items-center gap-1.5 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full px-3 py-1.5 text-[11px] font-black text-white transition-colors"
+        >
+          {isEditingBasic ? <X className="w-3.5 h-3.5" /> : <Edit2 className="w-3.5 h-3.5" />}
+          {isEditingBasic ? "Cancel" : "Edit Profile"}
+        </button>
+
+        {/* Avatar */}
         <div className="relative inline-block">
-          <div className="w-24 h-24 rounded-full bg-white/20 backdrop-blur-sm border-4 border-white/40 flex items-center justify-center text-3xl font-black text-white shadow-xl">
-            {initials}
-          </div>
+          {profile.photoUrl ? (
+            <img
+              src={profile.photoUrl}
+              alt={profile.name}
+              className="w-24 h-24 rounded-full border-4 border-white/40 object-cover shadow-xl"
+              onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
+            />
+          ) : (
+            <div className="w-24 h-24 rounded-full bg-white/20 backdrop-blur-sm border-4 border-white/40 flex items-center justify-center text-3xl font-black text-white shadow-xl">
+              {initials}
+            </div>
+          )}
+
+          {/* Camera overlay */}
+          <button
+            onClick={() => setEditSection("basic")}
+            className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-[#f97316] border-2 border-white flex items-center justify-center shadow-lg"
+          >
+            <Camera className="w-3.5 h-3.5 text-white" />
+          </button>
+
+          {/* Open to work badge */}
           <button
             onClick={toggleOpenToWork}
-            className={`absolute -bottom-2 -right-2 flex items-center gap-1 text-[10px] font-black px-2 py-1 rounded-full shadow-lg border-2 border-white transition-colors ${profile.openToWork ? "bg-[#10b981] text-white" : "bg-gray-400 text-white"}`}
+            className={`absolute -top-1 -left-2 flex items-center gap-1 text-[9px] font-black px-2 py-1 rounded-full shadow-lg border-2 border-white transition-colors ${profile.openToWork ? "bg-[#10b981] text-white" : "bg-gray-400 text-white"}`}
           >
             {profile.openToWork ? "OPEN" : "CLOSED"}
           </button>
         </div>
+
         <h1 className="text-2xl font-black mt-4 drop-shadow">{profile.name}</h1>
         <p className="text-white/80 font-bold text-sm mt-1">{profile.college}</p>
-        <p className="text-white/60 text-xs mt-0.5">{profile.field} · Year {profile.year}</p>
+        <p className="text-white/60 text-xs mt-0.5">{profile.field} · Year {profile.year}{profile.city ? ` · ${profile.city}` : ""}</p>
+        {profile.cgpa && <p className="text-white/60 text-xs mt-0.5">CGPA {profile.cgpa}</p>}
+
         {profile.openToWork && (
           <div className="mt-3 inline-flex items-center gap-1.5 bg-[#10b981]/20 border border-[#10b981]/40 rounded-full px-3 py-1">
             <span className="w-2 h-2 rounded-full bg-[#10b981] animate-pulse" />
@@ -447,7 +505,153 @@ export default function Profile() {
 
       <div className="px-4 -mt-12 space-y-4">
 
-        {/* ── Profile Strength + Recruiter Snapshot ── */}
+        {/* ── Edit Basic Info ── */}
+        <AnimatePresence>
+          {isEditingBasic && (
+            <motion.div
+              initial={{ opacity: 0, y: -12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+            >
+              <Card className="border-0 shadow-[0_8px_32px_rgba(79,70,229,0.18)] rounded-2xl overflow-hidden">
+                <div className="bg-gradient-to-r from-[#4f46e5] to-[#7c3aed] px-5 py-3 flex items-center justify-between">
+                  <span className="text-white font-black text-sm flex items-center gap-2">
+                    <User className="w-4 h-4" /> Edit Profile
+                  </span>
+                  <button onClick={() => setEditSection(null)}>
+                    <X className="w-4 h-4 text-white/80" />
+                  </button>
+                </div>
+                <CardContent className="p-5 space-y-3 bg-white">
+
+                  {/* Photo URL */}
+                  <div className="space-y-1.5">
+                    <p className="text-[11px] font-black text-[#64748b] uppercase tracking-wide flex items-center gap-1">
+                      <Camera className="w-3 h-3" /> Profile Photo URL
+                    </p>
+                    <div className="flex gap-2 items-center">
+                      {photoPreview && (
+                        <img
+                          src={photoPreview}
+                          alt="preview"
+                          className="w-10 h-10 rounded-full object-cover border border-[#e2e8f0] flex-shrink-0"
+                          onError={() => setPhotoPreview("")}
+                        />
+                      )}
+                      <Input
+                        placeholder="Paste photo URL (e.g. from Google Photos, LinkedIn)"
+                        value={basicForm.photoUrl}
+                        onChange={e => {
+                          setBasicForm(f => ({ ...f, photoUrl: e.target.value }));
+                          setPhotoPreview(e.target.value);
+                        }}
+                        className="text-sm flex-1"
+                      />
+                    </div>
+                    <p className="text-[10px] text-[#94a3b8] pl-1">Upload a photo to Google Drive / Imgur and paste the direct link here</p>
+                  </div>
+
+                  {/* Name */}
+                  <div className="space-y-1.5">
+                    <p className="text-[11px] font-black text-[#64748b] uppercase tracking-wide">Full Name</p>
+                    <Input
+                      placeholder="Your full name"
+                      value={basicForm.name}
+                      onChange={e => setBasicForm(f => ({ ...f, name: e.target.value }))}
+                      className="text-sm font-bold"
+                    />
+                  </div>
+
+                  {/* College + City */}
+                  <div className="space-y-1.5">
+                    <p className="text-[11px] font-black text-[#64748b] uppercase tracking-wide flex items-center gap-1">
+                      <Building2 className="w-3 h-3" /> College
+                    </p>
+                    <Input
+                      placeholder="e.g. RVCE Bangalore, IIT Delhi"
+                      value={basicForm.college}
+                      onChange={e => setBasicForm(f => ({ ...f, college: e.target.value }))}
+                      className="text-sm"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <p className="text-[11px] font-black text-[#64748b] uppercase tracking-wide flex items-center gap-1">
+                      <MapPin className="w-3 h-3" /> City
+                    </p>
+                    <Input
+                      placeholder="e.g. Bangalore"
+                      value={basicForm.city}
+                      onChange={e => setBasicForm(f => ({ ...f, city: e.target.value }))}
+                      className="text-sm"
+                    />
+                  </div>
+
+                  {/* Year + Field */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1.5">
+                      <p className="text-[11px] font-black text-[#64748b] uppercase tracking-wide">Year</p>
+                      <div className="flex gap-1 flex-wrap">
+                        {YEAR_OPTIONS.map(y => (
+                          <button
+                            key={y}
+                            onClick={() => setBasicForm(f => ({ ...f, year: y }))}
+                            className={`w-9 h-9 rounded-xl text-sm font-black transition-colors ${basicForm.year === y ? "bg-[#4f46e5] text-white" : "bg-[#f1f5f9] text-[#64748b]"}`}
+                          >
+                            {y}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <p className="text-[11px] font-black text-[#64748b] uppercase tracking-wide">CGPA</p>
+                      <Input
+                        placeholder="e.g. 8.5"
+                        value={basicForm.cgpa}
+                        onChange={e => setBasicForm(f => ({ ...f, cgpa: e.target.value }))}
+                        className="text-sm"
+                        inputMode="decimal"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Field of study */}
+                  <div className="space-y-1.5">
+                    <p className="text-[11px] font-black text-[#64748b] uppercase tracking-wide flex items-center gap-1">
+                      <BookOpen className="w-3 h-3" /> Field of Study
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {FIELD_OPTIONS.map(f => (
+                        <button
+                          key={f}
+                          onClick={() => setBasicForm(prev => ({ ...prev, field: f }))}
+                          className={`text-[11px] font-bold px-2.5 py-1 rounded-full transition-colors ${basicForm.field === f ? "bg-[#4f46e5] text-white" : "bg-[#f1f5f9] text-[#64748b]"}`}
+                        >
+                          {f}
+                        </button>
+                      ))}
+                    </div>
+                    <Input
+                      placeholder="Or type your branch..."
+                      value={FIELD_OPTIONS.includes(basicForm.field) ? "" : basicForm.field}
+                      onChange={e => setBasicForm(prev => ({ ...prev, field: e.target.value }))}
+                      className="text-sm mt-1"
+                    />
+                  </div>
+
+                  <Button
+                    onClick={saveBasic}
+                    disabled={saving || !basicForm.name.trim() || !basicForm.college.trim()}
+                    className="w-full bg-[#4f46e5] text-white font-black rounded-xl h-11"
+                  >
+                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Save className="w-4 h-4 mr-2" /> Save Changes</>}
+                  </Button>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ── Profile Strength ── */}
         <Card className="border-0 shadow-[0_8px_32px_rgba(124,58,237,0.12)] rounded-3xl overflow-hidden bg-white">
           <CardContent className="p-5">
             <div className="flex items-center gap-4">
@@ -470,17 +674,28 @@ export default function Profile() {
                 )}
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-[#f8fafc]">
-              <div className="bg-[#f8fafc] rounded-2xl p-3 text-center">
-                <p className="text-xl font-black text-[#4f46e5]">{profile.commitmentScore}</p>
-                <p className="text-[10px] font-bold text-[#64748b] uppercase">Commitment</p>
+
+            {/* Only show scores when they have real data */}
+            {(profile.commitmentScore > 0 || profile.overallScore > 0) && (
+              <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-[#f8fafc]">
+                {profile.commitmentScore > 0 && (
+                  <div className="bg-[#f8fafc] rounded-2xl p-3 text-center">
+                    <p className="text-xl font-black text-[#4f46e5]">{profile.commitmentScore}</p>
+                    <p className="text-[10px] font-bold text-[#64748b] uppercase">Commitment</p>
+                  </div>
+                )}
+                {profile.overallScore > 0 && (
+                  <div className="bg-[#f8fafc] rounded-2xl p-3 text-center">
+                    <p className="text-xl font-black text-[#0ea5e9]">{Math.round(profile.overallScore)}</p>
+                    <p className="text-[10px] font-bold text-[#64748b] uppercase">AI Score</p>
+                  </div>
+                )}
               </div>
-              <div className="bg-[#f8fafc] rounded-2xl p-3 text-center">
-                <p className="text-xl font-black text-[#0ea5e9]">{Math.round(profile.overallScore)}</p>
-                <p className="text-[10px] font-bold text-[#64748b] uppercase">AI Score</p>
-              </div>
-            </div>
-            <p className="text-[10px] text-center text-[#94a3b8] mt-2 font-bold">Recruiters see these scores on your profile</p>
+            )}
+
+            {(profile.commitmentScore > 0 || profile.overallScore > 0) && (
+              <p className="text-[10px] text-center text-[#94a3b8] mt-2 font-bold">Recruiters see these scores on your profile</p>
+            )}
           </CardContent>
         </Card>
 
@@ -520,8 +735,13 @@ export default function Profile() {
                       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-2 pl-1">
                         <Input placeholder="LinkedIn Headline" value={linkedinForm.headline} onChange={e => setLinkedinForm(f => ({ ...f, headline: e.target.value }))} className="text-sm" />
                         <Input placeholder="Top skills (comma separated)" value={linkedinForm.skills} onChange={e => setLinkedinForm(f => ({ ...f, skills: e.target.value }))} className="text-sm" />
-                        <Textarea placeholder="Brief summary or experience..." value={linkedinForm.summary} onChange={e => setLinkedinForm(f => ({ ...f, summary: e.target.value }))} className="text-sm h-16" />
-                        <Button size="sm" onClick={analyzeLinkedIn} disabled={analyzing === "linkedin"} className="w-full bg-[#0077b5] text-white">
+                        <Textarea placeholder="Brief experience summary..." value={linkedinForm.experience} onChange={e => setLinkedinForm(f => ({ ...f, experience: e.target.value }))} className="text-sm h-16" />
+                        <Button
+                          size="sm"
+                          onClick={analyzeLinkedIn}
+                          disabled={!linksForm.linkedinUrl || analyzing === "linkedin"}
+                          className="w-full bg-[#0077b5] text-white font-bold rounded-xl"
+                        >
                           {analyzing === "linkedin" ? <><Loader2 className="w-3 h-3 mr-2 animate-spin" /> Analyzing...</> : "Get AI Feedback on LinkedIn"}
                         </Button>
                       </motion.div>
@@ -560,7 +780,7 @@ export default function Profile() {
               )}
             </AnimatePresence>
 
-            {/* GitHub Stats card */}
+            {/* GitHub Stats */}
             {profile.githubStats && editSection !== "links" && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-4 pt-4 border-t border-[#f8fafc]">
                 <div className="flex items-center gap-2 mb-3">
@@ -660,7 +880,6 @@ export default function Profile() {
               </button>
             </div>
 
-            {/* Add project form */}
             <AnimatePresence>
               {showAddProject && (
                 <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="mb-4 space-y-2 overflow-hidden">
@@ -774,7 +993,7 @@ export default function Profile() {
           </CardContent>
         </Card>
 
-        {/* ── Preferences ── */}
+        {/* ── Job Preferences ── */}
         <Card className="border-0 shadow-[0_4px_24px_rgba(124,58,237,0.06)] rounded-2xl bg-white">
           <CardContent className="p-5">
             <div className="flex items-center justify-between mb-4">
@@ -863,7 +1082,7 @@ export default function Profile() {
           </CardContent>
         </Card>
 
-        {/* ── Skills ── */}
+        {/* ── Skills (only when populated by AI/quiz) ── */}
         {topSkills.length > 0 && (
           <Card className="border-0 shadow-[0_4px_24px_rgba(124,58,237,0.06)] rounded-2xl bg-white">
             <CardContent className="p-5">
@@ -912,14 +1131,14 @@ export default function Profile() {
         </div>
       </div>
 
-      {/* ── Wrapped modal placeholder ── */}
+      {/* ── Wrapped modal ── */}
       <AnimatePresence>
         {showWrappedPrompt && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
             onClick={() => setShowWrappedPrompt(false)}>
             <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }}
-              className="w-full max-w-sm rounded-3xl overflow-hidden p-8 text-center text-white"
+              className="w-full max-w-sm rounded-3xl overflow-hidden p-8 text-center text-white relative"
               style={{ background: "linear-gradient(135deg, #4f46e5, #ec4899)" }}
               onClick={e => e.stopPropagation()}>
               <button onClick={() => setShowWrappedPrompt(false)} className="absolute top-4 right-4 bg-white/20 rounded-full p-1.5">
@@ -941,10 +1160,12 @@ export default function Profile() {
                   <p className="text-3xl font-black">{profile.profileStrength}%</p>
                   <p className="text-xs text-white/70 mt-1">Profile</p>
                 </div>
-                <div className="bg-white/15 rounded-2xl p-4">
-                  <p className="text-3xl font-black">{profile.commitmentScore}</p>
-                  <p className="text-xs text-white/70 mt-1">Commitment</p>
-                </div>
+                {profile.commitmentScore > 0 && (
+                  <div className="bg-white/15 rounded-2xl p-4">
+                    <p className="text-3xl font-black">{profile.commitmentScore}</p>
+                    <p className="text-xs text-white/70 mt-1">Commitment</p>
+                  </div>
+                )}
               </div>
               <Button className="w-full bg-[#25D366] hover:bg-[#25D366]/90 text-white font-bold h-12 rounded-full">
                 <Share2 className="w-4 h-4 mr-2" /> Share on WhatsApp
