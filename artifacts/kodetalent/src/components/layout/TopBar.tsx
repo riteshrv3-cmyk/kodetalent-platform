@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Mail } from "lucide-react";
+import { Mail, UserCircle2 } from "lucide-react";
 import { motion } from "framer-motion";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -48,9 +48,9 @@ export function TopBar({ pendingCount, initials, onProfileClick }: TopBarProps) 
           <motion.button
             whileTap={{ scale: 0.92 }}
             onClick={onProfileClick}
-            className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#4f46e5] to-[#6366f1] flex items-center justify-center text-white font-black text-xs shadow-sm shadow-[#4f46e5]/30"
+            className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#4f46e5] to-[#6366f1] flex items-center justify-center text-white shadow-sm shadow-[#4f46e5]/30"
           >
-            {initials || "?"}
+            <UserCircle2 className="w-5 h-5" />
           </motion.button>
         </div>
       </div>

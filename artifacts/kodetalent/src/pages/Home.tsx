@@ -212,15 +212,35 @@ export default function Home() {
       return;
     }
 
-    Promise.all([
-      fetch(`${BASE}/api/students/${id}/full-profile`).then((r) => r.json()),
-      fetch(`${BASE}/api/students/${id}/invites`).then((r) => r.json()).catch(() => []),
-      fetch(`${BASE}/api/students/${id}/activity-log?limit=10`).then((r) => r.json()).catch(() => []),
-    ]).then(([prof, inv, log]) => {
-      setProfile(prof);
-      setInvites(Array.isArray(inv) ? inv : []);
-      setActivityLog(Array.isArray(log) ? log : []);
-    }).finally(() => setLoading(false));
+    let alive = true;
+
+    fetch(`${BASE}/api/students/${id}/full-profile`)
+      .then((r) => r.json())
+      .then((prof) => {
+        if (alive) setProfile(prof);
+      })
+      .catch(() => null);
+
+    fetch(`${BASE}/api/students/${id}/invites`)
+      .then((r) => r.json())
+      .then((inv) => {
+        if (alive) setInvites(Array.isArray(inv) ? inv : []);
+      })
+      .catch(() => alive && setInvites([]));
+
+    fetch(`${BASE}/api/students/${id}/activity-log?limit=10`)
+      .then((r) => r.json())
+      .then((log) => {
+        if (alive) setActivityLog(Array.isArray(log) ? log : []);
+      })
+      .catch(() => alive && setActivityLog([]))
+      .finally(() => {
+        if (alive) setLoading(false);
+      });
+
+    return () => {
+      alive = false;
+    };
   }, [setLocation]);
 
   const pendingInvites = invites.filter((i) => i.status === "pending" && !i.studentSeen);
