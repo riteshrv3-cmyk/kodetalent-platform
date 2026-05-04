@@ -630,7 +630,7 @@ export default function Interview() {
             initial={{ opacity: 0, scale: 0.6, y: -10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.6 }}
-            className="fixed top-[88px] right-3 z-20 w-[110px] h-[140px] rounded-2xl overflow-hidden shadow-[0_8px_24px_rgba(0,0,0,0.25)] border-2 border-white bg-[#0f172a] max-w-[calc(50vw-1rem)]"
+            className="fixed top-[88px] right-3 z-20 w-[92px] h-[120px] rounded-2xl overflow-hidden shadow-[0_8px_24px_rgba(0,0,0,0.25)] border-2 border-white bg-[#0f172a] max-w-[calc(44vw-0.75rem)]"
           >
             <video
               ref={videoRef}

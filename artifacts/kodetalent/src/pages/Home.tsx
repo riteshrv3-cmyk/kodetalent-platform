@@ -183,19 +183,11 @@ export default function Home() {
   const [invites, setInvites] = useState<Invite[]>([]);
   const [loading, setLoading] = useState(true);
   const [resume, setResume] = useState<ResumeCourse | null>(null);
-  const [isMobile, setIsMobile] = useState(false);
   const [activityLog, setActivityLog] = useState<ActivityEntry[]>([]);
   const [myRank, setMyRank] = useState<number | null>(null);
 
   useEffect(() => {
     setResume(loadResumeCourse());
-  }, []);
-
-  useEffect(() => {
-    const update = () => setIsMobile(window.innerWidth < 640);
-    update();
-    window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
   }, []);
 
   const resumeCourse = () => {
@@ -283,12 +275,8 @@ export default function Home() {
       {/* Score Banner — premium hero */}
       <div className="relative bg-gradient-to-br from-[#1e1b4b] via-[#3730a3] to-[#4f46e5] px-5 pt-6 pb-7 text-white overflow-hidden rounded-b-[32px] shadow-[0_8px_32px_rgba(79,70,229,0.25)]">
         {/* Decorative orbs */}
-        {!isMobile && (
-          <>
-            <div className="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-[#f97316]/15 blur-3xl pointer-events-none" />
-            <div className="absolute -bottom-20 -left-20 w-64 h-64 rounded-full bg-[#0ea5e9]/15 blur-3xl pointer-events-none" />
-          </>
-        )}
+        <div className="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-[#f97316]/15 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-20 -left-20 w-64 h-64 rounded-full bg-[#0ea5e9]/15 blur-3xl pointer-events-none" />
 
         <div className="relative z-10">
           <div className="flex items-start justify-between mb-1">
@@ -368,7 +356,7 @@ export default function Home() {
           onClick={() => setLocation("/drive-check")}
           className="w-full bg-gradient-to-br from-[#0f172a] via-[#3730a3] to-[#4f46e5] rounded-2xl p-4 flex items-center gap-3 shadow-lg shadow-[#4f46e5]/20 active:scale-[0.98] transition-transform text-left relative overflow-hidden"
         >
-          {!isMobile && <div className="absolute -top-4 -right-4 w-24 h-24 bg-white/5 rounded-full blur-xl" />}
+          <div className="absolute -top-4 -right-4 w-24 h-24 bg-white/5 rounded-full blur-xl" />
           <div className="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur flex items-center justify-center shrink-0 relative z-10">
             <ShieldCheck className="w-6 h-6 text-white" />
           </div>
