@@ -60,7 +60,7 @@ function StudentCard({ student, shortlisted, onShortlist, onClick }: {
 
   return (
     <motion.div
-      whileHover={{ y: -2, shadow: "lg" }}
+      whileHover={{ y: -2 }}
       className="bg-white rounded-2xl border border-[#f1f0f9] p-5 cursor-pointer hover:border-[#4f46e5]/30 hover:shadow-[0_8px_32px_rgba(124,58,237,0.08)] transition-all group relative"
       onClick={onClick}
     >

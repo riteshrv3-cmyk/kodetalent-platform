@@ -24,7 +24,7 @@ export default function Showcase() {
 
   useEffect(() => {
     fetch(`/api/talent-pool/showcase`)
-      .then(r => r.json())
+      .then(async r => r.ok ? r.json() : { candidates: [], totalOpen: 0 })
       .then(data => {
         setCandidates(data.candidates || []);
         setTotalOpen(data.totalOpen || 0);

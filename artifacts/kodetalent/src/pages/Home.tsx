@@ -324,7 +324,7 @@ export default function Home() {
                 <Flame className="w-3.5 h-3.5 text-[#fb923c]" />
                 <p className="text-[9px] text-white/70 font-black uppercase tracking-wider">Streak</p>
               </div>
-              <p className="text-xl font-black">{profile?.streakCount ?? 0}<span className="text-[10px] text-white/60 font-bold ml-0.5">d</span></p>
+              <p className="text-xl font-black">{profile?.streakCount ? `${profile.streakCount}` : "—"}</p>
             </div>
             <div className="bg-white/12 rounded-2xl px-2 py-3 text-center border border-white/10">
               <div className="flex items-center justify-center gap-1 mb-1">

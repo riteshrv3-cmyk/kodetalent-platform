@@ -31,7 +31,7 @@ function computeProfileStrength(s: typeof studentsTable.$inferSelect): number {
 
 function computeCommitmentScore(s: typeof studentsTable.$inferSelect): number {
   const xpScore = Math.min((s.xp / 25), 40);
-  const streakScore = Math.min(s.streakCount * 3, 30);
+  const streakScore = s.lastActiveDate ? Math.min(s.streakCount * 3, 30) : 0;
   const overallScore = Math.round((s.overallScore || 0) * 0.3);
   return Math.min(Math.round(xpScore + streakScore + overallScore), 100);
 }
@@ -49,7 +49,15 @@ router.get("/students/:id/full-profile", async (req, res) => {
     await db.update(studentsTable)
       .set({ profileStrength, commitmentScore })
       .where(eq(studentsTable.id, id));
-    return res.json({ ...student, profileStrength, commitmentScore });
+    return res.json({
+      ...student,
+      skills: (student.skills as Record<string, number>) || {},
+      projects: Array.isArray(student.projects) ? student.projects : [],
+      certifications: Array.isArray(student.certifications) ? student.certifications : [],
+      preferredLocations: Array.isArray(student.preferredLocations) ? student.preferredLocations : [],
+      profileStrength,
+      commitmentScore,
+    });
   } catch (err) {
     req.log.error({ err }, "Failed to get full profile");
     return res.status(500).json({ error: "Server error" });
@@ -82,11 +90,20 @@ router.patch("/students/:id/profile", async (req, res) => {
     const profileStrength = computeProfileStrength(updated);
     const commitmentScore = computeCommitmentScore(updated);
     await db.update(studentsTable).set({ profileStrength, commitmentScore }).where(eq(studentsTable.id, id));
-    return res.json({ ok: true, profileStrength, commitmentScore });
+    return res.json({
+      ok: true,
+      profileStrength,
+      commitmentScore,
+      preferredLocations: Array.isArray(updated.preferredLocations) ? updated.preferredLocations : [],
+      projects: Array.isArray(updated.projects) ? updated.projects : [],
+      certifications: Array.isArray(updated.certifications) ? updated.certifications : [],
+      skills: (updated.skills as Record<string, number>) || {},
+    });
   } catch (err) {
     req.log.error({ err }, "Failed to update profile");
     return res.status(500).json({ error: "Server error" });
   }
+  return res.status(500).json({ error: "Server error" });
 });
 
 // ─── POST /students/:id/analyze-github ───────────────────────────────────────
