@@ -158,8 +158,9 @@ export default function Course() {
   const [completedLessons, setCompletedLessons] = useState<Set<string>>(new Set());
 
   // ── In-app YouTube player ──────────────────────────────────────────────────
-  const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);   // lessonId → ytVideoId
+  const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);   // "lessonId|ytId" when playing
   const [videoLoading, setVideoLoading] = useState<string | null>(null);       // lessonId being fetched
+  const [videoFallbackId, setVideoFallbackId] = useState<string | null>(null); // lessonId with no video result
 
   // ── Flashcard state ────────────────────────────────────────────────────────
   const [queue, setQueue] = useState<Flashcard[]>([]);
@@ -699,43 +700,47 @@ export default function Course() {
                                                         <X className="w-4 h-4" /> Close video
                                                       </button>
                                                     ) : (
-                                                      <button
-                                                        onClick={async () => {
-                                                          const q = lesson.searchQuery || lesson.title;
-                                                          /* open blank tab synchronously (inside user gesture) to avoid popup blocking */
-                                                          const fallbackWin = window.open("about:blank", "_blank");
-                                                          setVideoLoading(lesson.id);
-                                                          try {
-                                                            const r = await fetch(`/api/course/best-video?q=${encodeURIComponent(q)}`);
-                                                            const data = r.ok ? await r.json() as { watchUrl?: string | null } : null;
-                                                            const watchUrl = data?.watchUrl ?? null;
-                                                            const ytId = watchUrl ? extractYouTubeId(watchUrl) : null;
-                                                            if (ytId) {
-                                                              /* video found — embed inline, close the pre-opened tab */
-                                                              fallbackWin?.close();
-                                                              setPlayingVideoId(lesson.id + "|" + ytId);
-                                                            } else {
-                                                              /* no video — redirect pre-opened tab to YouTube search */
-                                                              const dest = `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`;
-                                                              if (fallbackWin) fallbackWin.location.href = dest;
-                                                              else window.location.href = dest;
+                                                      <>
+                                                        <button
+                                                          onClick={async () => {
+                                                            const q = lesson.searchQuery || lesson.title;
+                                                            setVideoFallbackId(null);
+                                                            setVideoLoading(lesson.id);
+                                                            try {
+                                                              const r = await fetch(`/api/course/best-video?q=${encodeURIComponent(q)}`);
+                                                              const data = r.ok ? await r.json() as { watchUrl?: string | null } : null;
+                                                              const ytId = data?.watchUrl ? extractYouTubeId(data.watchUrl) : null;
+                                                              if (ytId) {
+                                                                setPlayingVideoId(lesson.id + "|" + ytId);
+                                                              } else {
+                                                                /* no embeddable video — show in-card search link */
+                                                                setVideoFallbackId(lesson.id);
+                                                              }
+                                                            } catch {
+                                                              setVideoFallbackId(lesson.id);
+                                                            } finally {
+                                                              setVideoLoading(null);
                                                             }
-                                                          } catch {
-                                                            const dest = `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`;
-                                                            if (fallbackWin) fallbackWin.location.href = dest;
-                                                            else window.location.href = dest;
-                                                          } finally {
-                                                            setVideoLoading(null);
-                                                          }
-                                                        }}
-                                                        disabled={videoLoading === lesson.id}
-                                                        className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl font-bold text-[12px] text-white disabled:opacity-70"
-                                                        style={{ background: "#ef4444" }}
-                                                      >
-                                                        {videoLoading === lesson.id
-                                                          ? <><Loader2 className="w-4 h-4 animate-spin" /> Loading…</>
-                                                          : <><PlayCircle className="w-4 h-4" /> Watch video</>}
-                                                      </button>
+                                                          }}
+                                                          disabled={videoLoading === lesson.id}
+                                                          className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl font-bold text-[12px] text-white disabled:opacity-70"
+                                                          style={{ background: "#ef4444" }}
+                                                        >
+                                                          {videoLoading === lesson.id
+                                                            ? <><Loader2 className="w-4 h-4 animate-spin" /> Loading…</>
+                                                            : <><PlayCircle className="w-4 h-4" /> Watch video</>}
+                                                        </button>
+                                                        {videoFallbackId === lesson.id && (
+                                                          <a
+                                                            href={`https://www.youtube.com/results?search_query=${encodeURIComponent(lesson.searchQuery || lesson.title)}`}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="flex items-center gap-1 text-[11px] font-semibold text-[#ef4444] underline underline-offset-2 whitespace-nowrap self-center"
+                                                          >
+                                                            Search on YouTube <ExternalLink className="w-3 h-3" />
+                                                          </a>
+                                                        )}
+                                                      </>
                                                     )
                                                   ) : (
                                                     /* ── External link for reading / exercise / project ── */
