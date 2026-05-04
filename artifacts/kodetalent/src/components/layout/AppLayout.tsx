@@ -50,7 +50,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="min-h-[100dvh] bg-[#f8fafc]" style={{ isolation: "isolate" }}>
+    <div className="min-h-[100dvh] bg-[#f8fafc]" style={{ isolation: "isolate", overflowX: "clip" }}>
       <TopBar
         pendingCount={pendingCount}
         initials={initials}
