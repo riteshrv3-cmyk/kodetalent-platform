@@ -95,6 +95,7 @@ export function ProfileSidebar({ onClose }: { onClose: () => void }) {
         exit={{ x: "100%" }}
         transition={{ type: "spring", damping: 28, stiffness: 280 }}
         className="fixed right-0 top-0 bottom-0 z-[51] w-[92%] max-w-sm bg-white shadow-2xl flex flex-col overflow-hidden"
+        style={{ backfaceVisibility: "hidden", willChange: "transform" }}
       >
         {/* Header */}
         <div className="bg-gradient-to-br from-[#312e81] via-[#3730a3] to-[#4f46e5] px-5 pt-12 pb-6 text-white relative">

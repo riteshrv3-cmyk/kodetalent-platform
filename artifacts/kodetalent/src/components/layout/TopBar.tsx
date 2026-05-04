@@ -15,7 +15,7 @@ export function TopBar({ pendingCount, initials, onProfileClick }: TopBarProps) 
   const isInbox = location === "/inbox";
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-40 bg-white/90 backdrop-blur-md border-b border-[#e0e7ff]/60 shadow-sm">
+    <div className="fixed top-0 left-0 right-0 z-40 bg-white/90 backdrop-blur-md border-b border-[#e0e7ff]/60 shadow-sm" style={{ transform: "translateZ(0)", backfaceVisibility: "hidden", willChange: "transform" }}>
       <div className="max-w-md mx-auto px-4 h-14 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#4f46e5] to-[#6366f1] flex items-center justify-center">

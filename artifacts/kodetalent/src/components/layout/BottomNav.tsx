@@ -13,7 +13,7 @@ export function BottomNav() {
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-[#e0e7ff] pb-safe shadow-[0_-4px_24px_rgba(124,58,237,0.07)]">
+    <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-[#e0e7ff] pb-safe shadow-[0_-4px_24px_rgba(124,58,237,0.07)]" style={{ transform: "translateZ(0)", backfaceVisibility: "hidden", willChange: "transform" }}>
       <div className="flex justify-around items-center h-16 max-w-md mx-auto px-4">
         {navItems.map((item) => {
           const isActive =

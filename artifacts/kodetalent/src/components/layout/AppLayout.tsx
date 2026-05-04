@@ -50,22 +50,23 @@ export function AppLayout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="min-h-[100dvh] bg-[#f8fafc]">
+    <div className="min-h-[100dvh] bg-[#f8fafc]" style={{ isolation: "isolate" }}>
       <TopBar
         pendingCount={pendingCount}
         initials={initials}
         onProfileClick={() => setSidebarOpen(true)}
       />
 
-      <main className="max-w-md mx-auto w-full pt-14 pb-16 min-h-[100dvh] overflow-x-hidden">
-        <AnimatePresence mode="wait">
+      <main className="max-w-md mx-auto w-full pt-14 pb-16 min-h-[100dvh]">
+        <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={location}
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.18, ease: "easeOut" }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15, ease: "easeOut" }}
             className="w-full"
+            style={{ backfaceVisibility: "hidden", willChange: "opacity" }}
           >
             {children}
           </motion.div>
