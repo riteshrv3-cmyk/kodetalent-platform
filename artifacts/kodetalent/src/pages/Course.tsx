@@ -702,6 +702,8 @@ export default function Course() {
                                                       <button
                                                         onClick={async () => {
                                                           const q = lesson.searchQuery || lesson.title;
+                                                          /* open blank tab synchronously (inside user gesture) to avoid popup blocking */
+                                                          const fallbackWin = window.open("about:blank", "_blank");
                                                           setVideoLoading(lesson.id);
                                                           try {
                                                             const r = await fetch(`/api/course/best-video?q=${encodeURIComponent(q)}`);
@@ -709,14 +711,19 @@ export default function Course() {
                                                             const watchUrl = data?.watchUrl ?? null;
                                                             const ytId = watchUrl ? extractYouTubeId(watchUrl) : null;
                                                             if (ytId) {
+                                                              /* video found — embed inline, close the pre-opened tab */
+                                                              fallbackWin?.close();
                                                               setPlayingVideoId(lesson.id + "|" + ytId);
                                                             } else {
-                                                              /* fallback — open YouTube search in new tab */
-                                                              window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`, "_blank");
+                                                              /* no video — redirect pre-opened tab to YouTube search */
+                                                              const dest = `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`;
+                                                              if (fallbackWin) fallbackWin.location.href = dest;
+                                                              else window.location.href = dest;
                                                             }
                                                           } catch {
-                                                            const q2 = lesson.searchQuery || lesson.title;
-                                                            window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(q2)}`, "_blank");
+                                                            const dest = `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`;
+                                                            if (fallbackWin) fallbackWin.location.href = dest;
+                                                            else window.location.href = dest;
                                                           } finally {
                                                             setVideoLoading(null);
                                                           }
