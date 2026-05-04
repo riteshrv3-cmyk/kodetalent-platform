@@ -690,7 +690,7 @@ export default function Course() {
                                                 <div className="flex gap-2">
                                                   {lesson.type === "video" ? (
                                                     /* ── In-app YouTube embed for video lessons ── */
-                                                    playingVideoId === lesson.id ? (
+                                                    playingVideoId?.startsWith(lesson.id + "|") ? (
                                                       /* Playing — show close button */
                                                       <button
                                                         onClick={() => setPlayingVideoId(null)}
