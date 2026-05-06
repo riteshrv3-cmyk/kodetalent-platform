@@ -36,3 +36,9 @@ id = "d_EPD-poa0Wkmi_q-fP0y"
 uri = "file://public/demo/ad3-student-identity.jpg"
 type = "image"
 title = "Ad 3 — Student Identity (\"Naukri.com se aage badho\")"
+
+[[outputs]]
+id = "1L4rnuyz3P7CM0y3Sca8m"
+uri = "file://DOCUMENTATION.md"
+type = "text"
+title = "KodeTalent — Complete App Documentation"
