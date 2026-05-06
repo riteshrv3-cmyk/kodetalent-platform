@@ -1,0 +1,167 @@
+You are analyzing this Replit app for handoff to another senior AI coding assistant.
+
+Goal:
+Create a detailed, accurate, implementation-level app brief so the next assistant can understand the full product, architecture, codebase, current state, and what to modify next without re-discovering everything.
+
+Important rules:
+- Do not guess.
+- Verify every claim from actual files.
+- Mention exact file paths.
+- If something is unclear, say “unclear” and name the files that need inspection.
+- Do not expose secret values from .env or Replit secrets. Only mention variable names.
+- Prefer concrete details over generic explanation.
+- Include enough detail that another assistant can continue development immediately.
+
+Analyze and report the following:
+
+1. Product Overview
+- What this app is trying to do in simple business language
+- Who the users are
+- What problem it solves
+- What the current app appears optimized for: demo, MVP, production, landing page, dashboard, marketplace, etc.
+
+2. Tech Stack
+- Frontend framework and version
+- Backend framework and version
+- Database/storage used
+- Auth used
+- Payment/email/file upload/AI integrations, if any
+- Styling/UI libraries
+- Build tools
+- Package manager
+- Hosting/deployment assumptions
+- Cite the exact files where each was found
+
+3. Project Structure
+Give a folder tree summary.
+For each important folder/file, explain:
+- purpose
+- key exports/components/functions
+- how it connects to the rest of the app
+
+4. Routes and Pages
+List every route/page/screen.
+For each:
+- URL/path
+- file path
+- what user sees
+- key components
+- forms/buttons/actions
+- API calls made
+- current completion level
+
+5. User Flows
+Describe complete flows step by step:
+- company/recruiter flow
+- student/candidate flow
+- admin/founder flow if any
+- auth flow if any
+- submission/contact/lead capture flow
+- any onboarding flow
+
+For each flow, mention:
+- entry point
+- data collected
+- where data is stored/sent
+- success/error states
+- missing pieces
+
+6. Data Model
+If database/schema exists, document:
+- tables/models/collections
+- fields
+- relationships
+- validation rules
+- migrations/schema files
+- seed data if any
+
+If no database exists, explain how data is currently handled.
+
+7. API / Server Logic
+List every API route/server endpoint/action.
+For each:
+- method
+- path
+- file
+- request body/query params
+- response shape
+- validation
+- side effects
+- external services called
+- error handling
+
+8. State Management
+Explain:
+- global state, local state, server state
+- forms and validation
+- caching/data fetching approach
+- where important state lives
+
+9. UI / Design System
+Explain:
+- styling approach
+- theme/colors/fonts
+- reusable components
+- layout patterns
+- responsive behavior
+- any design inconsistencies or broken UI areas
+
+10. Current Features
+Separate into:
+- fully working
+- partially working
+- present in UI but not wired
+- placeholder/mock/fake/demo-only
+
+Be specific.
+
+11. Missing / Broken / Risky Areas
+Identify:
+- runtime errors
+- build errors
+- TypeScript/lint errors
+- broken links/buttons/forms
+- missing backend persistence
+- security risks
+- validation gaps
+- hardcoded data
+- fake claims or demo-only content
+- scalability risks
+
+12. Commands and Environment
+Provide:
+- install command
+- dev command
+- build command
+- test command if present
+- deployment command/config if present
+- required environment variable names
+- ports used
+
+13. Dependencies
+Mention important packages and why they are used.
+Flag unused or suspicious packages if obvious.
+
+14. Files To Read First
+Rank the top 10 files another assistant should inspect first.
+For each, explain why.
+
+15. Recommended Next Development Steps
+Give a prioritized list of what should be done next to make this app useful for validating demand:
+- must do before showing customers
+- should do after first customer interest
+- can wait
+
+Keep this section practical and specific to this app.
+
+16. Final Handoff Summary
+End with:
+- “The app currently is: …”
+- “The biggest gap is: …”
+- “The fastest useful next change is: …”
+- “The assistant should modify these files first: …”
+
+Output format:
+Use clear Markdown headings.
+Use tables where useful.
+Be detailed, but do not include huge code blocks unless necessary.
