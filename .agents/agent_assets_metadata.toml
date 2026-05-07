@@ -1,5 +1,10 @@
 uploads = []
-generated = []
+
+[[generated]]
+id = "C1hLwqARHGk10Jz5MZ3Zx"
+uri = "file://artifacts/pitch-deck/public/hero-bg.png"
+type = "image"
+title = "kodetalent hero dark abstract tech"
 
 [[outputs]]
 id = "WcWAWrbeMu5azVY-Xy9GF"

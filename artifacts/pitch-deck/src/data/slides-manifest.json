@@ -1,1 +1,82 @@
-[]
+[
+  {
+    "id": "a4f8c2d1-e3b6-4a90-8c7d-f12345670001",
+    "position": 1,
+    "filepath": "src/pages/slides/Slide01Title.tsx",
+    "title": "KodeTalent",
+    "description": "Title slide — brand, tagline, stage and year",
+    "speakerNotes": ""
+  },
+  {
+    "id": "a4f8c2d1-e3b6-4a90-8c7d-f12345670002",
+    "position": 2,
+    "filepath": "src/pages/slides/Slide02Problem.tsx",
+    "title": "A Broken Pipeline",
+    "description": "Problem — 1.5M graduates, spreadsheet TPOs, 500-resume screening",
+    "speakerNotes": ""
+  },
+  {
+    "id": "a4f8c2d1-e3b6-4a90-8c7d-f12345670003",
+    "position": 3,
+    "filepath": "src/pages/slides/Slide03Solution.tsx",
+    "title": "One Platform. Three Customers.",
+    "description": "Solution — serving students, colleges and recruiters simultaneously",
+    "speakerNotes": ""
+  },
+  {
+    "id": "a4f8c2d1-e3b6-4a90-8c7d-f12345670004",
+    "position": 4,
+    "filepath": "src/pages/slides/Slide04Product.tsx",
+    "title": "Four Portals. One Data Layer.",
+    "description": "Product overview — Student App, Recruiter Portal, TPO Portal, Admin Panel",
+    "speakerNotes": ""
+  },
+  {
+    "id": "a4f8c2d1-e3b6-4a90-8c7d-f12345670005",
+    "position": 5,
+    "filepath": "src/pages/slides/Slide05Market.tsx",
+    "title": "Market Opportunity",
+    "description": "Market — 10,000+ colleges, 1.5M graduates, SE Asia and Middle East expansion",
+    "speakerNotes": ""
+  },
+  {
+    "id": "a4f8c2d1-e3b6-4a90-8c7d-f12345670006",
+    "position": 6,
+    "filepath": "src/pages/slides/Slide06BusinessModel.tsx",
+    "title": "Business Model",
+    "description": "Revenue — Recruiter SaaS, College SaaS, Future Pro Tier and API",
+    "speakerNotes": ""
+  },
+  {
+    "id": "a4f8c2d1-e3b6-4a90-8c7d-f12345670007",
+    "position": 7,
+    "filepath": "src/pages/slides/Slide07Flywheel.tsx",
+    "title": "The College-First Flywheel",
+    "description": "GTM — 3-step flywheel: sign colleges, students build profiles, recruiters pay",
+    "speakerNotes": ""
+  },
+  {
+    "id": "a4f8c2d1-e3b6-4a90-8c7d-f12345670008",
+    "position": 8,
+    "filepath": "src/pages/slides/Slide08Traction.tsx",
+    "title": "MVP is Live",
+    "description": "Traction — full product built, all AI features working, next milestones",
+    "speakerNotes": ""
+  },
+  {
+    "id": "a4f8c2d1-e3b6-4a90-8c7d-f12345670009",
+    "position": 9,
+    "filepath": "src/pages/slides/Slide09TheAsk.tsx",
+    "title": "The Ask",
+    "description": "Pre-seed raise — amount placeholder, use of funds breakdown",
+    "speakerNotes": ""
+  },
+  {
+    "id": "a4f8c2d1-e3b6-4a90-8c7d-f12345670010",
+    "position": 10,
+    "filepath": "src/pages/slides/Slide10Closing.tsx",
+    "title": "Every Engineer Deserves a Fair Shot",
+    "description": "Closing — vision statement and contact details",
+    "speakerNotes": ""
+  }
+]
