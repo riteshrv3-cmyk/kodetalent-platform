@@ -47,3 +47,9 @@ id = "1L4rnuyz3P7CM0y3Sca8m"
 uri = "file://DOCUMENTATION.md"
 type = "text"
 title = "KodeTalent — Complete App Documentation"
+
+[[outputs]]
+id = "znbYethpPyLazI7x6sG4I"
+uri = "file://.local/outputs/Career-Companion.pptx"
+type = "slides"
+title = "Career Companion.pptx"
