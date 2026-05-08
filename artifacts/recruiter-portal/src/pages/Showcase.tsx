@@ -1,7 +1,11 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { motion } from "framer-motion";
-import { Zap, ArrowRight, Lock, Sparkles, TrendingUp, Award, Users, Github, GraduationCap, ScanSearch, ShieldCheck, BrainCircuit, Rocket, Target, BriefcaseBusiness, BadgeCheck, Flame, CheckCircle2, Star, CircleDashed, Workflow, Brain, CalendarCheck2, BadgeInfo, MousePointerClick, TimerReset, ListChecks } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Zap, ArrowRight, Lock, Github, Users, GraduationCap, TrendingUp,
+  CircleDashed, Workflow, MousePointerClick, CheckCircle, X,
+  Timer, FileStack, BarChart3, Layers, ShieldCheck, Sparkles
+} from "lucide-react";
 
 interface MaskedCandidate {
   id: number;
@@ -16,320 +20,375 @@ interface MaskedCandidate {
   hasGithub: boolean;
 }
 
+const PAIN_POINTS = [
+  { icon: FileStack, text: "100 resumes, 6 are actually good" },
+  { icon: Layers, text: "ATS + screener + sheets + Calendly = 4 tabs open always" },
+  { icon: Timer, text: "Takes 3 weeks to shortlist 10 candidates" },
+];
+
+const WITH_KODETALENT = [
+  { step: "1", title: "Open verified talent pool", desc: "Every candidate has a GitHub, project proof, and AI score — not just a PDF" },
+  { step: "2", title: "AI ranks by fit — instantly", desc: "No manual screening. System scores commitment, skills, and project quality" },
+  { step: "3", title: "Shortlist in 48 hours", desc: "One-click shortlist. Invite sent. Recruiter looks sharp, candidate gets fast response" },
+];
+
 const MARKET_STATS = [
-  { value: "1,200+", label: "verified student profiles", note: "active across campuses" },
-  { value: "15+", label: "colleges covered", note: "select campuses and partner institutes" },
-  { value: "90%+", label: "profiles with project data", note: "not resume-only entries" },
-  { value: "48 hrs", label: "median time to shortlist", note: "from post to first shortlist" },
-] as const;
+  { value: "1,200+", label: "verified student profiles", icon: Users, color: "#4f46e5" },
+  { value: "15+", label: "colleges covered", icon: GraduationCap, color: "#10b981" },
+  { value: "90%+", label: "profiles with real project data", icon: Github, color: "#0f172a" },
+  { value: "48 hrs", label: "median time to shortlist", icon: TrendingUp, color: "#f59e0b" },
+];
 
 export default function Showcase() {
   const [, setLocation] = useLocation();
   const [candidates, setCandidates] = useState<MaskedCandidate[]>([]);
-  const [totalOpen, setTotalOpen] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [activeMode, setActiveMode] = useState<"without" | "with">("with");
+  const [activePainIdx, setActivePainIdx] = useState(0);
+  const [funnelView, setFunnelView] = useState<"without" | "with">("without");
 
   useEffect(() => {
     fetch(`/api/talent-pool/showcase`)
-      .then(async r => r.ok ? r.json() : { candidates: [], totalOpen: 0 })
-      .then(data => {
-        setCandidates(data.candidates || []);
-        setTotalOpen(data.totalOpen || 0);
-      })
+      .then(async r => r.ok ? r.json() : { candidates: [] })
+      .then(data => setCandidates(data.candidates || []))
       .finally(() => setLoading(false));
+
+    const interval = setInterval(() => {
+      setActivePainIdx(i => (i + 1) % PAIN_POINTS.length);
+    }, 2200);
+    return () => clearInterval(interval);
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#f8fafc]">
-      <div className="bg-gradient-to-br from-[#0f172a] via-[#312e81] to-[#4338ca] text-white relative overflow-hidden">
-        <div className="absolute inset-0 opacity-30 pointer-events-none">
-          <div className="absolute -top-20 -right-20 w-72 h-72 rounded-full bg-[#f97316] blur-3xl" />
-          <div className="absolute top-24 left-10 w-56 h-56 rounded-full bg-[#4f46e5] blur-3xl" />
-        </div>
-        <div className="max-w-6xl mx-auto px-6 py-5 flex items-center justify-between relative z-10">
+    <div className="min-h-screen bg-[#f8fafc] font-[Plus_Jakarta_Sans,sans-serif]">
+
+      {/* ── NAV ── */}
+      <nav className="sticky top-0 z-50 bg-[#0f172a]/95 backdrop-blur border-b border-white/10">
+        <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-white/10 backdrop-blur rounded-xl flex items-center justify-center">
-              <Zap className="w-4 h-4 text-white" />
+            <div className="w-7 h-7 bg-[#f97316] rounded-lg flex items-center justify-center">
+              <Zap className="w-4 h-4 text-white fill-white" />
             </div>
-            <span className="font-black text-lg">KodeTalent</span>
-            <span className="text-white/50 text-sm hidden sm:block">· Private Hiring Network</span>
+            <span className="font-black text-white text-base">KodeTalent</span>
+            <span className="hidden sm:block text-white/30 text-sm ml-1">· Recruiter</span>
           </div>
-          <button onClick={() => setLocation("/login")} className="bg-white text-[#4f46e5] font-black px-5 py-2.5 rounded-xl text-sm flex items-center gap-2 hover:shadow-lg transition-all active:scale-95">
+          <button
+            onClick={() => setLocation("/login")}
+            className="bg-[#f97316] hover:bg-[#ea6c10] text-white font-bold px-5 py-2 rounded-xl text-sm flex items-center gap-1.5 transition-all active:scale-95"
+          >
             Request access <ArrowRight className="w-4 h-4" />
           </button>
         </div>
+      </nav>
 
-        <div className="max-w-6xl mx-auto px-6 pt-12 pb-20 text-center relative z-10">
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="inline-flex items-center gap-2 bg-white/10 backdrop-blur border border-white/20 rounded-full px-4 py-1.5 mb-6">
-            <Sparkles className="w-3.5 h-3.5 text-[#fbbf24]" />
-            <span className="text-xs font-bold">Private beta · Hiring teams only · New recruiters every week</span>
+      {/* ── HERO ── */}
+      <section className="bg-[#0f172a] text-white relative overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute top-0 right-0 w-[600px] h-[600px] rounded-full bg-[#4f46e5]/20 blur-[120px]" />
+          <div className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full bg-[#f97316]/10 blur-[100px]" />
+        </div>
+        <div className="max-w-6xl mx-auto px-6 py-20 sm:py-28 relative z-10">
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="inline-flex items-center gap-2 bg-white/10 border border-white/15 rounded-full px-4 py-1.5 mb-6"
+          >
+            <span className="w-2 h-2 rounded-full bg-[#86efac] animate-pulse" />
+            <span className="text-xs font-bold text-white/80">Private beta · Invite-only · Limited seats</span>
           </motion.div>
-          <motion.h1 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-            className="text-4xl sm:text-6xl font-black leading-tight mb-4">
-            Hire India's most committed<br />
-            <span className="bg-gradient-to-r from-[#fbbf24] to-[#f97316] bg-clip-text text-transparent">engineering students</span>
+
+          <motion.h1
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.08 }}
+            className="text-4xl sm:text-6xl font-black leading-[1.1] mb-5 max-w-3xl"
+          >
+            Stop reviewing resumes.<br />
+            <span className="bg-gradient-to-r from-[#fbbf24] via-[#f97316] to-[#fb7185] bg-clip-text text-transparent">
+              Start hiring people who build.
+            </span>
           </motion.h1>
-          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}
-            className="text-lg sm:text-xl text-white/70 max-w-2xl mx-auto mb-8">
-            A private recruiting layer for engineering talent — verified profiles, project proof, and AI-ranked match lists.
+
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.16 }}
+            className="text-lg text-white/60 max-w-xl mb-8 leading-relaxed"
+          >
+            KodeTalent is a private campus hiring layer — verified GitHub profiles, AI commitment scores, and zero resume noise.
           </motion.p>
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}
-            className="flex flex-wrap items-center justify-center gap-4 mb-2">
+
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.22 }}
+            className="flex flex-col sm:flex-row gap-3 items-start"
+          >
             <button
               onClick={() => setLocation("/login")}
-              className="bg-gradient-to-r from-[#fbbf24] to-[#f97316] text-[#0f172a] font-black px-7 py-4 rounded-2xl flex items-center gap-2 shadow-[0_8px_32px_rgba(251,191,36,0.4)] hover:shadow-[0_12px_40px_rgba(251,191,36,0.5)] transition-all active:scale-95"
+              className="bg-gradient-to-r from-[#fbbf24] to-[#f97316] text-[#0f172a] font-black px-8 py-4 rounded-2xl flex items-center gap-2 shadow-[0_8px_32px_rgba(251,191,36,0.35)] hover:shadow-[0_12px_40px_rgba(251,191,36,0.5)] transition-all active:scale-95 text-base"
             >
-              Request early access <ArrowRight className="w-5 h-5" />
+              Get early access <ArrowRight className="w-5 h-5" />
             </button>
-            <span className="text-white/60 text-sm">No credit card · 2-minute setup · Limited seats</span>
+            <button
+              onClick={() => document.getElementById("funnel")?.scrollIntoView({ behavior: "smooth" })}
+              className="border border-white/20 text-white/70 hover:text-white hover:border-white/40 font-semibold px-7 py-4 rounded-2xl transition-all text-base"
+            >
+              See how it works
+            </button>
           </motion.div>
 
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.38 }} className="mt-10 grid grid-cols-1 sm:grid-cols-3 gap-3 text-left">
-            {[
-              { icon: ScanSearch, title: "Controlled access", desc: "Private beta keeps the pool high-signal" },
-              { icon: BrainCircuit, title: "AI-ranked matches", desc: "Best-fit candidates surface first" },
-              { icon: ShieldCheck, title: "Verified profiles", desc: "GitHub, projects, and commitment signals" },
-            ].map((item) => {
-              const Icon = item.icon;
-              return (
-                <div key={item.title} className="bg-white/10 backdrop-blur border border-white/15 rounded-2xl p-4">
-                  <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center mb-3">
-                    <Icon className="w-5 h-5 text-white" />
-                  </div>
-                  <div className="font-black text-base mb-1">{item.title}</div>
-                  <div className="text-sm text-white/70">{item.desc}</div>
-                </div>
-              );
-            })}
+          {/* Rotating pain point badge */}
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="mt-10">
+            <p className="text-xs text-white/40 mb-2 font-medium uppercase tracking-wider">Recruiters tell us</p>
+            <div className="relative h-10 overflow-hidden">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activePainIdx}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -12 }}
+                  transition={{ duration: 0.3 }}
+                  className="flex items-center gap-2"
+                >
+                  {(() => { const Icon = PAIN_POINTS[activePainIdx].icon; return <Icon className="w-4 h-4 text-[#f97316]" />; })()}
+                  <span className="text-white/70 text-sm font-medium">" {PAIN_POINTS[activePainIdx].text} "</span>
+                </motion.div>
+              </AnimatePresence>
+            </div>
           </motion.div>
         </div>
-      </div>
+      </section>
 
-      <div className="max-w-6xl mx-auto px-6 -mt-12 relative z-10 mb-16">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {MARKET_STATS.map((s, idx) => {
-            const Icon = [Users, GraduationCap, Github, TrendingUp][idx]!;
-            const color = ["#4f46e5", "#10b981", "#0f172a", "#f59e0b"][idx]!;
+      {/* ── STATS BAR ── */}
+      <section className="border-b border-[#e5e7eb] bg-white">
+        <div className="max-w-6xl mx-auto px-6 py-6 grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {MARKET_STATS.map((s, i) => {
+            const Icon = s.icon;
             return (
-              <div key={s.label} className="bg-white rounded-2xl border border-[#f0f4ff] shadow-sm p-4 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${color}15` }}>
-                  <Icon className="w-5 h-5" style={{ color }} />
+              <motion.div
+                key={s.label}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.07 }}
+                className="flex items-center gap-3"
+              >
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${s.color}15` }}>
+                  <Icon className="w-4 h-4" style={{ color: s.color }} />
                 </div>
                 <div>
                   <p className="font-black text-[#0f172a] text-lg leading-none">{s.value}</p>
-                  <p className="text-[10px] text-[#94a3b8] font-bold uppercase mt-0.5">{s.label}</p>
-                  <p className="text-[9px] text-[#cbd5e1] font-medium mt-0.5">{s.note}</p>
+                  <p className="text-[10px] text-[#94a3b8] font-semibold mt-0.5 leading-tight">{s.label}</p>
                 </div>
-              </div>
+              </motion.div>
             );
           })}
         </div>
-        <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {[
-            "Private beta onboarding",
-            "No public demo site language",
-            "Enterprise-ready workflow",
-          ].map((item) => (
-            <div key={item} className="bg-[#0f172a] text-white rounded-2xl px-4 py-3 flex items-center gap-2">
-              <BadgeCheck className="w-4 h-4 text-[#86efac]" />
-              <span className="text-xs font-bold">{item}</span>
-            </div>
-          ))}
-        </div>
-      </div>
+      </section>
 
-      <div className="max-w-6xl mx-auto px-6 pb-16">
-        <div className="mb-12">
-          <div className="flex items-center justify-between gap-3 mb-4">
-            <div>
-              <h3 className="text-2xl font-black text-[#0f172a]">Hiring funnel</h3>
-              <p className="text-sm text-[#64748b]">Tap to compare the old stack with KodeTalent.</p>
-            </div>
-            <div className="bg-white rounded-full border border-[#e2e8f0] p-1 flex items-center shadow-sm">
-              <button
-                onClick={() => setActiveMode("without")}
-                className={`px-4 py-2 rounded-full text-sm font-bold transition-all ${activeMode === "without" ? "bg-[#0f172a] text-white shadow" : "text-[#64748b]"}`}
-              >
-                Without
-              </button>
-              <button
-                onClick={() => setActiveMode("with")}
-                className={`px-4 py-2 rounded-full text-sm font-bold transition-all ${activeMode === "with" ? "bg-[#4f46e5] text-white shadow" : "text-[#64748b]"}`}
-              >
-                With KodeTalent
-              </button>
-            </div>
-          </div>
-          <div className={`grid lg:grid-cols-2 gap-4 transition-all duration-300 ${activeMode === "with" ? "" : ""}`}>
-            <div className={`rounded-3xl border p-6 shadow-sm transition-all duration-300 ${activeMode === "without" ? "bg-white border-[#fecaca] ring-2 ring-[#fee2e2]" : "bg-white/60 border-[#e5e7eb] opacity-80"}`}>
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-10 h-10 rounded-2xl bg-[#fef2f2] flex items-center justify-center">
-                  <Workflow className="w-5 h-5 text-[#ef4444]" />
-                </div>
-                <div>
-                  <div className="font-black text-[#0f172a]">Without KodeTalent</div>
-                  <div className="text-xs text-[#94a3b8]">Traditional SaaS hiring stack</div>
-                </div>
-              </div>
-              <div className="space-y-3">
-                {[
-                  { title: "ATS tracker", desc: "Open applications, duplicate profiles, manual tagging" },
-                  { title: "AI screening", desc: "Separate tool, separate login, separate scoring logic" },
-                  { title: "Spreadsheet shortlist", desc: "Recruiter moves data across tabs and WhatsApp" },
-                  { title: "Interview scheduling", desc: "Another tool, another status sync" },
-                ].map((item, idx) => (
-                  <div key={item.title} className="flex items-start gap-3 rounded-2xl border border-dashed border-[#e2e8f0] p-4">
-                    <div className="w-7 h-7 rounded-full bg-[#fee2e2] text-[#ef4444] flex items-center justify-center text-xs font-black">{idx + 1}</div>
-                    <div>
-                      <div className="font-bold text-[#0f172a] text-sm">{item.title}</div>
-                      <div className="text-xs text-[#64748b] mt-1">{item.desc}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className={`rounded-3xl p-6 shadow-sm transition-all duration-300 ${activeMode === "with" ? "bg-[#0f172a] text-white ring-2 ring-[#4f46e5]/30" : "bg-white/60 text-[#0f172a] border border-[#e5e7eb] opacity-80"}`}>
-              <div className="flex items-center gap-2 mb-4">
-                <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${activeMode === "with" ? "bg-white/10" : "bg-[#eef2ff]"}`}>
-                  <CircleDashed className={`w-5 h-5 ${activeMode === "with" ? "text-[#86efac]" : "text-[#4f46e5]"}`} />
-                </div>
-                <div>
-                  <div className="font-black">With KodeTalent</div>
-                  <div className={`text-xs ${activeMode === "with" ? "text-white/55" : "text-[#94a3b8]"}`}>All-in-one recruiter workflow</div>
-                </div>
-              </div>
-              <div className="space-y-3">
-                {[
-                  { title: "Discover", desc: "Verified campus pool with projects, GitHub, and commitment score" },
-                  { title: "Screen", desc: "AI ranks candidates inside the same system — no tool switching" },
-                  { title: "Shortlist", desc: "One-click shortlist with reason, tags, and fit summary" },
-                  { title: "Move faster", desc: "Invite, schedule, and track status in one place" },
-                ].map((item, idx) => (
-                  <motion.div
-                    key={item.title}
-                    whileHover={{ scale: 1.015, x: 2 }}
-                    className={`flex items-start gap-3 rounded-2xl p-4 cursor-pointer ${activeMode === "with" ? "bg-white/5" : "bg-[#f8fafc] border border-[#e2e8f0]"}`}
-                  >
-                    <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black ${activeMode === "with" ? "bg-[#10b981]/20 text-[#86efac]" : "bg-[#dbeafe] text-[#2563eb]"}`}>
-                      {idx + 1}
-                    </div>
-                    <div>
-                      <div className="font-bold text-sm">{item.title}</div>
-                      <div className={`text-xs mt-1 ${activeMode === "with" ? "text-white/70" : "text-[#64748b]"}`}>{item.desc}</div>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-          </div>
-          <div className="mt-3 text-center text-xs text-[#64748b] flex items-center justify-center gap-2">
-            <MousePointerClick className="w-3.5 h-3.5" />
-            Click the toggle to switch the recruiter story
-          </div>
+      {/* ── FUNNEL COMPARISON ── */}
+      <section id="funnel" className="py-20 px-6 max-w-6xl mx-auto">
+        <div className="text-center mb-10">
+          <p className="text-xs font-black uppercase tracking-widest text-[#f97316] mb-2">The real problem</p>
+          <h2 className="text-3xl sm:text-4xl font-black text-[#0f172a] mb-3 leading-tight">
+            Your hiring funnel is broken.<br />
+            <span className="text-[#4f46e5]">KodeTalent fixes it at the source.</span>
+          </h2>
+          <p className="text-[#64748b] max-w-xl mx-auto">Click to compare what recruiters deal with today vs what happens when the talent is pre-verified.</p>
         </div>
 
-        <div className="text-center mb-8">
-          <h2 className="text-3xl font-black text-[#0f172a] mb-2">Preview the private talent network</h2>
-          <p className="text-[#64748b]">Anonymized cards below are a small sample of the live pool. Access remains invite-led.</p>
-        </div>
-
-        {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[1, 2, 3, 4, 5, 6].map(i => <div key={i} className="bg-white rounded-2xl h-56 animate-pulse" />)}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 relative">
-            {candidates.map((c, i) => (
-              <motion.div key={c.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
-                className="bg-white rounded-2xl border border-[#f1f0f9] p-5 relative overflow-hidden">
-                <div className="flex items-start gap-3 mb-3">
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#4f46e5] to-[#6366f1] flex items-center justify-center text-white font-black text-base flex-shrink-0">
-                    {c.initials}
-                  </div>
-                  <div className="min-w-0">
-                    <h3 className="font-black text-[#0f172a] text-base blur-sm select-none">{c.maskedName} (locked)</h3>
-                    <p className="text-xs text-[#64748b] font-medium mt-0.5 truncate">{c.college}</p>
-                    <p className="text-xs text-[#94a3b8]">{c.field} · Year {c.year}</p>
-                  </div>
-                </div>
-                <div className="flex items-center justify-around bg-[#fafafa] rounded-xl p-3 mb-3">
-                  <div className="text-center">
-                    <div className="text-sm font-black text-[#10b981]">{c.profileStrength}</div>
-                    <div className="text-[9px] text-[#94a3b8] uppercase font-bold">Profile</div>
-                  </div>
-                  <div className="w-px h-8 bg-[#f0f0f0]" />
-                  <div className="text-center">
-                    <div className="text-sm font-black text-[#0ea5e9]">{c.overallScore}</div>
-                    <div className="text-[9px] text-[#94a3b8] uppercase font-bold">AI Score</div>
-                  </div>
-                </div>
-                <div className="flex flex-wrap gap-1.5 mb-2">
-                  {c.topSkills.map(s => (
-                    <span key={s} className="text-[10px] font-bold bg-[#f8fafc] border border-[#e2e8f0] text-[#475569] px-2 py-1 rounded-lg">{s}</span>
-                  ))}
-                </div>
-                {c.hasGithub && (
-                  <div className="flex items-center gap-1 text-xs text-[#64748b]">
-                    <Github className="w-3 h-3" /> GitHub verified
-                  </div>
-                )}
-              </motion.div>
-            ))}
-          </div>
-        )}
-
-        <div className="mt-12 grid lg:grid-cols-[1.2fr_0.8fr] gap-4">
-          <div className="bg-gradient-to-br from-[#4f46e5] to-[#6366f1] text-white rounded-3xl p-8 sm:p-10">
-            <Rocket className="w-12 h-12 mb-4 text-[#fbbf24]" />
-            <h3 className="text-2xl sm:text-3xl font-black mb-3">Access the private hiring layer</h3>
-            <p className="text-white/80 mb-6 max-w-xl">Post one job. Get AI-ranked matches, shortlist faster, and keep candidate quality premium.</p>
+        {/* Toggle */}
+        <div className="flex items-center justify-center mb-8">
+          <div className="bg-white rounded-full border border-[#e2e8f0] p-1 flex shadow-sm">
             <button
-              onClick={() => setLocation("/login")}
-              className="bg-white text-[#4f46e5] font-black px-8 py-4 rounded-2xl inline-flex items-center gap-2 hover:shadow-2xl transition-all active:scale-95"
+              onClick={() => setFunnelView("without")}
+              className={`px-5 py-2.5 rounded-full text-sm font-bold transition-all duration-200 flex items-center gap-1.5 ${funnelView === "without" ? "bg-[#0f172a] text-white shadow" : "text-[#94a3b8] hover:text-[#64748b]"}`}
             >
-              <Lock className="w-4 h-4" /> Request access <ArrowRight className="w-5 h-5" />
+              <X className="w-3.5 h-3.5" /> Without
+            </button>
+            <button
+              onClick={() => setFunnelView("with")}
+              className={`px-5 py-2.5 rounded-full text-sm font-bold transition-all duration-200 flex items-center gap-1.5 ${funnelView === "with" ? "bg-[#4f46e5] text-white shadow" : "text-[#94a3b8] hover:text-[#64748b]"}`}
+            >
+              <CheckCircle className="w-3.5 h-3.5" /> With KodeTalent
             </button>
           </div>
-          <div className="bg-white rounded-3xl border border-[#e0e7ff] p-6 shadow-sm">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-11 h-11 rounded-2xl bg-[#eef2ff] flex items-center justify-center">
-                <BriefcaseBusiness className="w-5 h-5 text-[#4f46e5]" />
-              </div>
-              <div>
-                <div className="font-black text-[#0f172a]">What recruiters get</div>
-                <div className="text-xs text-[#94a3b8]">Private, structured, and premium</div>
-              </div>
-            </div>
-            <div className="space-y-3">
+        </div>
+
+        {/* Funnel Visual */}
+        <AnimatePresence mode="wait">
+          {funnelView === "without" ? (
+            <motion.div
+              key="without"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              transition={{ duration: 0.25 }}
+              className="max-w-2xl mx-auto space-y-3"
+            >
               {[
-                "Real student projects and GitHub signals",
-                "Commitment score + profile strength",
-                "AI shortlist, not just resume dump",
-              ].map((t) => (
-                <div key={t} className="flex items-start gap-2 text-sm text-[#334155]">
-                  <Target className="w-4 h-4 text-[#10b981] mt-0.5" />
-                  <span>{t}</span>
-                </div>
+                { stage: "Sourcing", old: "Post on Naukri + LinkedIn → 200 applications", pain: "80% are irrelevant or auto-applied" },
+                { stage: "Screening", old: "Manual resume review or AI screener (separate tool)", pain: "Days of effort. No GitHub. No projects." },
+                { stage: "Shortlisting", old: "Spreadsheet with name, phone, email, 'maybe'", pain: "No scoring. Biased. Easy to forget." },
+                { stage: "Interview", old: "Email → reschedule → reschedule → no-show", pain: "3 weeks wasted on a weak candidate" },
+              ].map((item, i) => (
+                <motion.div
+                  key={item.stage}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.06 }}
+                  className="bg-white rounded-2xl border border-[#fecaca] p-5 flex gap-4 shadow-sm"
+                >
+                  <div className="w-8 h-8 rounded-xl bg-[#fee2e2] text-[#ef4444] flex items-center justify-center text-xs font-black flex-shrink-0">{i + 1}</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs text-[#ef4444] font-black uppercase tracking-wider mb-0.5">{item.stage}</div>
+                    <div className="font-bold text-[#0f172a] text-sm mb-1">{item.old}</div>
+                    <div className="text-xs text-[#94a3b8] flex items-start gap-1.5">
+                      <X className="w-3 h-3 mt-0.5 flex-shrink-0 text-[#ef4444]" />
+                      {item.pain}
+                    </div>
+                  </div>
+                </motion.div>
               ))}
-            </div>
-            <div className="mt-5 rounded-2xl bg-[#f8fafc] p-4">
-              <div className="text-xs font-black uppercase text-[#94a3b8] mb-2">One-line promise</div>
-              <div className="text-sm font-semibold text-[#0f172a]">Private beta for serious hiring teams — no demo vibe, only actual workflow.</div>
-            </div>
+              <div className="rounded-2xl bg-[#fef2f2] border border-[#fecaca] p-4 text-center">
+                <p className="text-sm font-black text-[#ef4444]">Result: 3–4 weeks, low quality hires, burnt recruiter</p>
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="with"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.25 }}
+              className="max-w-2xl mx-auto space-y-3"
+            >
+              {[
+                { stage: "Discover", action: "Browse verified pool — GitHub, projects, score all visible", win: "Only committed students. Signal, not noise." },
+                { stage: "Screen", action: "AI ranks by skills, field, commitment, project quality", win: "Done automatically. No extra tool needed." },
+                { stage: "Shortlist", action: "One click. Candidate tagged, fit noted, invite queued", win: "No spreadsheet. Clean pipeline." },
+                { stage: "Close", action: "Candidate already prepared — communication tracked in-app", win: "Faster response. Better candidate experience." },
+              ].map((item, i) => (
+                <motion.div
+                  key={item.stage}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.06 }}
+                  className="bg-white rounded-2xl border border-[#bbf7d0] p-5 flex gap-4 shadow-sm"
+                >
+                  <div className="w-8 h-8 rounded-xl bg-[#dcfce7] text-[#10b981] flex items-center justify-center text-xs font-black flex-shrink-0">{i + 1}</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs text-[#10b981] font-black uppercase tracking-wider mb-0.5">{item.stage}</div>
+                    <div className="font-bold text-[#0f172a] text-sm mb-1">{item.action}</div>
+                    <div className="text-xs text-[#94a3b8] flex items-start gap-1.5">
+                      <CheckCircle className="w-3 h-3 mt-0.5 flex-shrink-0 text-[#10b981]" />
+                      {item.win}
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+              <div className="rounded-2xl bg-[#f0fdf4] border border-[#bbf7d0] p-4 text-center">
+                <p className="text-sm font-black text-[#10b981]">Result: Shortlist in 48 hrs. Quality hires. Recruiter wins.</p>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </section>
+
+      {/* ── CANDIDATE PREVIEW ── */}
+      <section className="bg-[#0f172a] py-20 px-6">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-10">
+            <p className="text-xs font-black uppercase tracking-widest text-[#f97316] mb-2">Live pool preview</p>
+            <h2 className="text-3xl font-black text-white mb-2">
+              These are your next hires — locked until you sign in.
+            </h2>
+            <p className="text-white/50 text-sm max-w-md mx-auto">Real profiles, anonymized. GitHub signals, project count, and AI scores visible to recruiters immediately.</p>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {loading ? (
+              [1,2,3,4,5,6].map(i => (
+                <div key={i} className="rounded-2xl bg-white/5 h-44 animate-pulse" />
+              ))
+            ) : (
+              candidates.slice(0, 6).map((c, i) => (
+                <motion.div
+                  key={c.id}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.05 }}
+                  className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur relative overflow-hidden group"
+                >
+                  <div className="absolute inset-0 bg-white/0 group-hover:bg-white/5 transition-all duration-200 rounded-2xl" />
+                  <div className="flex items-start gap-3 mb-4">
+                    <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#4f46e5] to-[#6366f1] flex items-center justify-center text-white font-black flex-shrink-0">
+                      {c.initials}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="font-black text-white blur-sm select-none text-sm">{c.maskedName}</div>
+                      <div className="text-xs text-white/50 mt-0.5 truncate">{c.college}</div>
+                      <div className="text-xs text-white/35">{c.field} · Year {c.year}</div>
+                    </div>
+                    <div className="ml-auto flex-shrink-0">
+                      <Lock className="w-4 h-4 text-white/20" />
+                    </div>
+                  </div>
+                  <div className="flex gap-2 mb-3">
+                    <div className="flex-1 bg-white/5 rounded-xl p-2 text-center">
+                      <div className="text-sm font-black text-[#86efac]">{c.profileStrength}</div>
+                      <div className="text-[9px] text-white/40 uppercase font-bold">Profile</div>
+                    </div>
+                    <div className="flex-1 bg-white/5 rounded-xl p-2 text-center">
+                      <div className="text-sm font-black text-[#93c5fd]">{c.overallScore}</div>
+                      <div className="text-[9px] text-white/40 uppercase font-bold">AI Score</div>
+                    </div>
+                    {c.hasGithub && (
+                      <div className="flex-1 bg-white/5 rounded-xl p-2 text-center">
+                        <Github className="w-4 h-4 text-white/60 mx-auto mb-0.5" />
+                        <div className="text-[9px] text-white/40 uppercase font-bold">GitHub</div>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {c.topSkills.slice(0, 3).map(s => (
+                      <span key={s} className="text-[10px] font-bold bg-white/8 border border-white/15 text-white/60 px-2 py-1 rounded-lg">{s}</span>
+                    ))}
+                  </div>
+                </motion.div>
+              ))
+            )}
+          </div>
+          <div className="mt-6 text-center">
             <button
               onClick={() => setLocation("/login")}
-              className="mt-4 w-full rounded-2xl border-2 border-[#4f46e5] text-[#4f46e5] font-black py-3 hover:bg-[#eef2ff] transition-colors"
+              className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/15 border border-white/20 text-white font-bold px-6 py-3 rounded-2xl transition-all text-sm"
             >
-              Join waitlist
+              <Lock className="w-4 h-4" /> Unlock full profiles
             </button>
-            <div className="mt-4 flex items-center gap-2 text-xs font-bold text-[#64748b]">
-              <Flame className="w-4 h-4 text-[#f97316]" />
-              <span>Only serious recruiters are accepted to keep the network high-signal.</span>
-            </div>
           </div>
         </div>
-      </div>
+      </section>
+
+      {/* ── FINAL CTA ── */}
+      <section className="py-20 px-6 bg-white">
+        <div className="max-w-2xl mx-auto text-center">
+          <div className="inline-flex items-center gap-2 bg-[#fff7ed] border border-[#fed7aa] rounded-full px-4 py-1.5 mb-5">
+            <Sparkles className="w-3.5 h-3.5 text-[#f97316]" />
+            <span className="text-xs font-bold text-[#ea580c]">Private beta — serious recruiters only</span>
+          </div>
+          <h2 className="text-3xl sm:text-4xl font-black text-[#0f172a] mb-4 leading-tight">
+            Your next hire is already in the pool.<br />
+            <span className="text-[#4f46e5]">Access takes 2 minutes.</span>
+          </h2>
+          <p className="text-[#64748b] mb-8 max-w-md mx-auto">No credit card. No sales call. Sign in with your work email and start browsing verified talent immediately.</p>
+          <button
+            onClick={() => setLocation("/login")}
+            className="bg-gradient-to-r from-[#4f46e5] to-[#6366f1] text-white font-black px-10 py-5 rounded-2xl inline-flex items-center gap-2 shadow-[0_8px_32px_rgba(79,70,229,0.35)] hover:shadow-[0_12px_40px_rgba(79,70,229,0.5)] transition-all active:scale-[0.98] text-base"
+          >
+            Request access now <ArrowRight className="w-5 h-5" />
+          </button>
+          <p className="mt-4 text-xs text-[#94a3b8]">Only verified hiring teams are accepted. No public sign-up.</p>
+        </div>
+      </section>
     </div>
   );
 }
