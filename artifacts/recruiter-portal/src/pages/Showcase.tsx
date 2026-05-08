@@ -60,7 +60,7 @@ const COMPARISON: {
   {
     feature: "Large professional network",
     note: "Reach across seniority levels & industries",
-    kt: false, linkedin: true, ats: false, campus: false, boards: "partial",
+    kt: "Focused", linkedin: true, ats: false, campus: false, boards: "partial",
   },
   {
     feature: "AI-ranked candidate matches",
@@ -70,7 +70,7 @@ const COMPARISON: {
   {
     feature: "HRMS / workflow integrations",
     note: "Greenhouse, Workday, Lever, JIRA HR etc.",
-    kt: false, linkedin: "partial", ats: true, campus: false, boards: "partial",
+    kt: "Planned", linkedin: "partial", ats: true, campus: false, boards: "partial",
   },
   {
     feature: "Engineering-specific talent pool",
@@ -100,7 +100,7 @@ const COMPARISON: {
   {
     feature: "Interview scheduling",
     note: "Built-in calendar coordination with candidates",
-    kt: false, linkedin: false, ats: true, campus: "partial", boards: false,
+    kt: "Planned", linkedin: false, ats: true, campus: "partial", boards: false,
   },
   {
     feature: "Free to browse talent",
@@ -468,11 +468,11 @@ export default function Showcase() {
           {/* ── Mobile: feature cards ── */}
           <div className="md:hidden space-y-3">
             {COMPARISON.map((row, i) => {
-              const icon = (val: boolean | "partial" | string) =>
+              const icon = (val: boolean | "partial" | string, isKt = false) =>
                 val === true ? <Check className="w-4 h-4 text-[#10b981]" /> :
-                val === false ? <X className="w-4 h-4 text-[#dc2626]/40" /> :
+                val === false ? (isKt ? <Minus className="w-4 h-4 text-[#f59e0b]" /> : <X className="w-4 h-4 text-[#dc2626]/40" />) :
                 val === "partial" ? <Minus className="w-4 h-4 text-[#f59e0b]" /> :
-                <span className="text-[11px] font-bold text-[#64748b]">{val}</span>;
+                <span className={`text-[11px] font-bold ${isKt ? "text-[#4f46e5]" : "text-[#64748b]"}`}>{val}</span>;
               return (
                 <motion.div key={row.feature} initial={{ opacity: 0, y: 6 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.03 }} className="bg-white border border-[#e5e7eb] rounded-2xl overflow-hidden shadow-sm">
                   <div className="px-4 pt-4 pb-3 border-b border-[#f0f4ff]">
@@ -481,12 +481,12 @@ export default function Showcase() {
                   </div>
                   <div className="grid grid-cols-3 divide-x divide-[#f0f4ff]">
                     {[
-                      { label: "KodeTalent", val: row.kt, highlight: true },
-                      { label: "LinkedIn", val: row.linkedin, highlight: false },
-                      { label: "ATS Tools", val: row.ats, highlight: false },
-                    ].map(({ label, val, highlight }) => (
+                      { label: "KodeTalent", val: row.kt, highlight: true, isKt: true },
+                      { label: "LinkedIn", val: row.linkedin, highlight: false, isKt: false },
+                      { label: "ATS Tools", val: row.ats, highlight: false, isKt: false },
+                    ].map(({ label, val, highlight, isKt }) => (
                       <div key={label} className={`flex flex-col items-center py-3 gap-1 ${highlight ? "bg-[#eef2ff]/60" : ""}`}>
-                        <div>{icon(val)}</div>
+                        <div>{icon(val, isKt)}</div>
                         <span className={`text-[9px] font-black uppercase tracking-wider ${highlight ? "text-[#4f46e5]" : "text-[#94a3b8]"}`}>{label}</span>
                       </div>
                     ))}
@@ -512,11 +512,11 @@ export default function Showcase() {
               <div className="px-3 py-3.5 text-center text-[#64748b] bg-[#f8fafc] border-b border-[#f0f4ff]">Job Boards</div>
             </div>
             {COMPARISON.map((row, i) => {
-              const renderCell = (val: boolean | "partial" | string, highlight = false) => {
+              const renderCell = (val: boolean | "partial" | string, highlight = false, isKt = false) => {
                 const base = highlight ? "bg-[#eef2ff]/60" : (i % 2 === 0 ? "" : "bg-[#fafafa]");
                 const inner =
                   val === true ? <Check className="w-4 h-4 text-[#10b981] mx-auto" /> :
-                  val === false ? <X className="w-4 h-4 text-[#dc2626]/50 mx-auto" /> :
+                  val === false ? (isKt ? <Minus className="w-4 h-4 text-[#f59e0b] mx-auto" /> : <X className="w-4 h-4 text-[#dc2626]/50 mx-auto" />) :
                   val === "partial" ? <Minus className="w-4 h-4 text-[#f59e0b] mx-auto" /> :
                   <span className={`text-[10px] font-bold ${highlight ? "text-[#4f46e5]" : "text-[#64748b]"}`}>{val}</span>;
                 return <div className={`px-3 py-3.5 text-center ${base} border-b border-[#f0f4ff]`}>{inner}</div>;
@@ -527,7 +527,7 @@ export default function Showcase() {
                     <div className="text-sm font-bold text-[#0f172a] leading-tight">{row.feature}</div>
                     {row.note && <div className="text-[10px] text-[#94a3b8] mt-0.5 leading-tight">{row.note}</div>}
                   </div>
-                  {renderCell(row.kt, true)}
+                  {renderCell(row.kt, true, true)}
                   {renderCell(row.linkedin)}
                   {renderCell(row.ats)}
                   {renderCell(row.campus)}
