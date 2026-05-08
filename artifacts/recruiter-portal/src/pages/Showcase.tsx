@@ -292,9 +292,26 @@ export default function Showcase() {
             <p className="text-[#64748b] max-w-lg mx-auto">Each one adds friction. None of them know if a candidate actually codes.</p>
           </div>
 
-          <div className="flex flex-col items-center gap-6">
-            <div className={`grid grid-cols-5 gap-3 transition-all duration-700 ${collapsed ? "opacity-0 scale-90 pointer-events-none h-0 overflow-hidden" : ""}`}>
-              {OLD_TOOLS.map((tool, i) => { const Icon = tool.icon; const isActive = activeOldTool === i; return (<motion.div key={tool.name} animate={{ scale: isActive ? 1.05 : 1, y: isActive ? -4 : 0 }} className={`bg-white rounded-2xl border-2 p-4 text-center transition-all cursor-default ${isActive ? "border-[#ef4444]/40 shadow-[0_4px_20px_rgba(239,68,68,0.12)]" : "border-[#f0f4ff]"}`}><div className="w-10 h-10 rounded-xl mx-auto mb-2 flex items-center justify-center" style={{ background: `${tool.color}18` }}><Icon className="w-5 h-5" style={{ color: tool.color }} /></div><div className="text-[10px] font-bold text-[#0f172a] leading-tight">{tool.name}</div><AnimatePresence>{isActive && (<motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="text-[9px] text-[#ef4444] font-semibold mt-1.5 leading-tight overflow-hidden">{tool.pain}</motion.div>)}</AnimatePresence></motion.div>)})}
+          <div className="flex flex-col items-center gap-6 w-full">
+            {/* Mobile: vertical stacked list; Desktop: 5-col grid */}
+            <div className={`w-full transition-all duration-700 ${collapsed ? "opacity-0 scale-90 pointer-events-none h-0 overflow-hidden" : ""}`}>
+              {/* Desktop grid */}
+              <div className="hidden sm:grid grid-cols-5 gap-3">
+                {OLD_TOOLS.map((tool, i) => { const Icon = tool.icon; const isActive = activeOldTool === i; return (<motion.div key={tool.name} animate={{ scale: isActive ? 1.05 : 1, y: isActive ? -4 : 0 }} className={`bg-white rounded-2xl border-2 p-4 text-center transition-all cursor-default ${isActive ? "border-[#ef4444]/40 shadow-[0_4px_20px_rgba(239,68,68,0.12)]" : "border-[#f0f4ff]"}`}><div className="w-10 h-10 rounded-xl mx-auto mb-2 flex items-center justify-center" style={{ background: `${tool.color}18` }}><Icon className="w-5 h-5" style={{ color: tool.color }} /></div><div className="text-[10px] font-bold text-[#0f172a] leading-tight">{tool.name}</div><AnimatePresence>{isActive && (<motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="text-[9px] text-[#ef4444] font-semibold mt-1.5 leading-tight overflow-hidden">{tool.pain}</motion.div>)}</AnimatePresence></motion.div>);})}
+              </div>
+              {/* Mobile: card list */}
+              <div className="sm:hidden space-y-2">
+                {OLD_TOOLS.map((tool, i) => { const Icon = tool.icon; const isActive = activeOldTool === i; return (
+                  <motion.div key={tool.name} animate={{ x: isActive ? 4 : 0 }} className={`bg-white rounded-2xl border-2 px-4 py-3 flex items-center gap-4 transition-all ${isActive ? "border-[#ef4444]/40 shadow-[0_4px_16px_rgba(239,68,68,0.1)]" : "border-[#f0f4ff]"}`}>
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${tool.color}18` }}><Icon className="w-5 h-5" style={{ color: tool.color }} /></div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-bold text-[#0f172a]">{tool.name}</div>
+                      <AnimatePresence>{isActive && (<motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="text-xs text-[#ef4444] font-semibold mt-0.5 overflow-hidden">{tool.pain}</motion.div>)}</AnimatePresence>
+                    </div>
+                    {isActive && <div className="w-2 h-2 rounded-full bg-[#ef4444] flex-shrink-0 animate-pulse" />}
+                  </motion.div>
+                );})}
+              </div>
             </div>
             <div className="flex flex-col items-center gap-2">
               {!collapsed ? (
@@ -448,8 +465,44 @@ export default function Showcase() {
             <p className="text-[#64748b] text-sm max-w-lg mx-auto">We're not trying to replace everything. We're great at what others can't do — and we're honest about the rest.</p>
           </div>
 
-          <div className="bg-white border border-[#e5e7eb] rounded-2xl overflow-hidden shadow-sm overflow-x-auto">
-            {/* Header */}
+          {/* ── Mobile: feature cards ── */}
+          <div className="md:hidden space-y-3">
+            {COMPARISON.map((row, i) => {
+              const icon = (val: boolean | "partial" | string) =>
+                val === true ? <Check className="w-4 h-4 text-[#10b981]" /> :
+                val === false ? <X className="w-4 h-4 text-[#dc2626]/40" /> :
+                val === "partial" ? <Minus className="w-4 h-4 text-[#f59e0b]" /> :
+                <span className="text-[11px] font-bold text-[#64748b]">{val}</span>;
+              return (
+                <motion.div key={row.feature} initial={{ opacity: 0, y: 6 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.03 }} className="bg-white border border-[#e5e7eb] rounded-2xl overflow-hidden shadow-sm">
+                  <div className="px-4 pt-4 pb-3 border-b border-[#f0f4ff]">
+                    <div className="text-sm font-black text-[#0f172a]">{row.feature}</div>
+                    {row.note && <div className="text-[11px] text-[#94a3b8] mt-0.5">{row.note}</div>}
+                  </div>
+                  <div className="grid grid-cols-3 divide-x divide-[#f0f4ff]">
+                    {[
+                      { label: "KodeTalent", val: row.kt, highlight: true },
+                      { label: "LinkedIn", val: row.linkedin, highlight: false },
+                      { label: "ATS Tools", val: row.ats, highlight: false },
+                    ].map(({ label, val, highlight }) => (
+                      <div key={label} className={`flex flex-col items-center py-3 gap-1 ${highlight ? "bg-[#eef2ff]/60" : ""}`}>
+                        <div>{icon(val)}</div>
+                        <span className={`text-[9px] font-black uppercase tracking-wider ${highlight ? "text-[#4f46e5]" : "text-[#94a3b8]"}`}>{label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              );
+            })}
+            <div className="flex items-center justify-center gap-4 pt-2 flex-wrap">
+              <div className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-[#10b981]" /><span className="text-[11px] text-[#64748b]">Full support</span></div>
+              <div className="flex items-center gap-1.5"><Minus className="w-3.5 h-3.5 text-[#f59e0b]" /><span className="text-[11px] text-[#64748b]">Partial</span></div>
+              <div className="flex items-center gap-1.5"><X className="w-3.5 h-3.5 text-[#dc2626]/40" /><span className="text-[11px] text-[#64748b]">Not available</span></div>
+            </div>
+          </div>
+
+          {/* ── Desktop: full 6-column table ── */}
+          <div className="hidden md:block bg-white border border-[#e5e7eb] rounded-2xl overflow-hidden shadow-sm">
             <div className="grid text-[10px] font-black uppercase tracking-wider" style={{ gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 1fr" }}>
               <div className="px-5 py-3.5 text-[#94a3b8] bg-[#f8fafc] border-b border-[#f0f4ff]">Feature</div>
               <div className="px-3 py-3.5 text-center text-[#4f46e5] bg-[#eef2ff] border-b border-[#c7d2fe]">KodeTalent</div>
@@ -458,15 +511,13 @@ export default function Showcase() {
               <div className="px-3 py-3.5 text-center text-[#64748b] bg-[#f8fafc] border-b border-[#f0f4ff]">Campus Drive</div>
               <div className="px-3 py-3.5 text-center text-[#64748b] bg-[#f8fafc] border-b border-[#f0f4ff]">Job Boards</div>
             </div>
-
-            {/* Rows */}
             {COMPARISON.map((row, i) => {
               const renderCell = (val: boolean | "partial" | string, highlight = false) => {
                 const base = highlight ? "bg-[#eef2ff]/60" : (i % 2 === 0 ? "" : "bg-[#fafafa]");
                 const inner =
                   val === true ? <Check className="w-4 h-4 text-[#10b981] mx-auto" /> :
                   val === false ? <X className="w-4 h-4 text-[#dc2626]/50 mx-auto" /> :
-                  val === "partial" ? <Minus className="w-4 h-4 text-[#f59e0b] mx-auto" title="Partial support" /> :
+                  val === "partial" ? <Minus className="w-4 h-4 text-[#f59e0b] mx-auto" /> :
                   <span className={`text-[10px] font-bold ${highlight ? "text-[#4f46e5]" : "text-[#64748b]"}`}>{val}</span>;
                 return <div className={`px-3 py-3.5 text-center ${base} border-b border-[#f0f4ff]`}>{inner}</div>;
               };
@@ -484,8 +535,6 @@ export default function Showcase() {
                 </motion.div>
               );
             })}
-
-            {/* Legend */}
             <div className="px-5 py-3 bg-[#f8fafc] border-t border-[#f0f4ff] flex items-center gap-5 flex-wrap">
               <span className="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wider">Legend</span>
               <div className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-[#10b981]" /><span className="text-[11px] text-[#64748b]">Full support</span></div>
