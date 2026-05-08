@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
-import { Zap, ArrowRight, Lock, Sparkles, TrendingUp, Award, Users, Github, GraduationCap } from "lucide-react";
+import { Zap, ArrowRight, Lock, Sparkles, TrendingUp, Award, Users, Github, GraduationCap, ScanSearch, ShieldCheck, Wand2, BrainCircuit, Rocket, Target, BriefcaseBusiness } from "lucide-react";
 
 interface MaskedCandidate {
   id: number;
@@ -34,8 +34,12 @@ export default function Showcase() {
 
   return (
     <div className="min-h-screen bg-[#f8fafc]">
-      <div className="bg-gradient-to-br from-[#0f172a] via-[#312e81] to-[#4338ca] text-white">
-        <div className="max-w-6xl mx-auto px-6 py-5 flex items-center justify-between">
+      <div className="bg-gradient-to-br from-[#0f172a] via-[#312e81] to-[#4338ca] text-white relative overflow-hidden">
+        <div className="absolute inset-0 opacity-30 pointer-events-none">
+          <div className="absolute -top-20 -right-20 w-72 h-72 rounded-full bg-[#f97316] blur-3xl" />
+          <div className="absolute top-24 left-10 w-56 h-56 rounded-full bg-[#4f46e5] blur-3xl" />
+        </div>
+        <div className="max-w-6xl mx-auto px-6 py-5 flex items-center justify-between relative z-10">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-white/10 backdrop-blur rounded-xl flex items-center justify-center">
               <Zap className="w-4 h-4 text-white" />
@@ -51,7 +55,7 @@ export default function Showcase() {
           </button>
         </div>
 
-        <div className="max-w-6xl mx-auto px-6 pt-12 pb-20 text-center">
+        <div className="max-w-6xl mx-auto px-6 pt-12 pb-20 text-center relative z-10">
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="inline-flex items-center gap-2 bg-white/10 backdrop-blur border border-white/20 rounded-full px-4 py-1.5 mb-6">
             <Sparkles className="w-3.5 h-3.5 text-[#fbbf24]" />
             <span className="text-xs font-bold">100% verified · No fake resumes · AI-scored</span>
@@ -74,6 +78,25 @@ export default function Showcase() {
               Start Hiring Free <ArrowRight className="w-5 h-5" />
             </button>
             <span className="text-white/60 text-sm">No credit card · Post 1 job free</span>
+          </motion.div>
+
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.38 }} className="mt-10 grid grid-cols-1 sm:grid-cols-3 gap-3 text-left">
+            {[
+              { icon: ScanSearch, title: "Instant preview", desc: "Open talent pool without signup friction" },
+              { icon: BrainCircuit, title: "AI-ranked matches", desc: "Best-fit candidates surface first" },
+              { icon: ShieldCheck, title: "Verified profiles", desc: "GitHub, projects and commitment signals" },
+            ].map((item) => {
+              const Icon = item.icon;
+              return (
+                <div key={item.title} className="bg-white/10 backdrop-blur border border-white/15 rounded-2xl p-4">
+                  <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center mb-3">
+                    <Icon className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="font-black text-base mb-1">{item.title}</div>
+                  <div className="text-sm text-white/70">{item.desc}</div>
+                </div>
+              );
+            })}
           </motion.div>
         </div>
       </div>
@@ -150,16 +173,45 @@ export default function Showcase() {
           </div>
         )}
 
-        <div className="mt-12 bg-gradient-to-br from-[#4f46e5] to-[#6366f1] text-white rounded-3xl p-8 sm:p-12 text-center">
-          <Award className="w-12 h-12 mx-auto mb-4 text-[#fbbf24]" />
-          <h3 className="text-2xl sm:text-3xl font-black mb-3">Unlock all {totalOpen}+ candidates now</h3>
-          <p className="text-white/80 mb-6 max-w-xl mx-auto">Post one job. Get instant AI-ranked matches. Bulk invite. All free during beta.</p>
-          <button
-            onClick={() => setLocation("/login")}
-            className="bg-white text-[#4f46e5] font-black px-8 py-4 rounded-2xl inline-flex items-center gap-2 hover:shadow-2xl transition-all active:scale-95"
-          >
-            <Lock className="w-4 h-4" /> Create Free Account <ArrowRight className="w-5 h-5" />
-          </button>
+        <div className="mt-12 grid lg:grid-cols-[1.2fr_0.8fr] gap-4">
+          <div className="bg-gradient-to-br from-[#4f46e5] to-[#6366f1] text-white rounded-3xl p-8 sm:p-10">
+            <Rocket className="w-12 h-12 mb-4 text-[#fbbf24]" />
+            <h3 className="text-2xl sm:text-3xl font-black mb-3">Unlock all {totalOpen}+ candidates now</h3>
+            <p className="text-white/80 mb-6 max-w-xl">Post one job. Get instant AI-ranked matches. Bulk invite. All free during beta.</p>
+            <button
+              onClick={() => setLocation("/login")}
+              className="bg-white text-[#4f46e5] font-black px-8 py-4 rounded-2xl inline-flex items-center gap-2 hover:shadow-2xl transition-all active:scale-95"
+            >
+              <Lock className="w-4 h-4" /> Create Free Account <ArrowRight className="w-5 h-5" />
+            </button>
+          </div>
+          <div className="bg-white rounded-3xl border border-[#e0e7ff] p-6 shadow-sm">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-11 h-11 rounded-2xl bg-[#eef2ff] flex items-center justify-center">
+                <BriefcaseBusiness className="w-5 h-5 text-[#4f46e5]" />
+              </div>
+              <div>
+                <div className="font-black text-[#0f172a]">What recruiters see</div>
+                <div className="text-xs text-[#94a3b8]">Clarity before signup</div>
+              </div>
+            </div>
+            <div className="space-y-3">
+              {[
+                "Real student projects and GitHub signals",
+                "Commitment score + profile strength",
+                "AI shortlist, not just resume dump",
+              ].map((t) => (
+                <div key={t} className="flex items-start gap-2 text-sm text-[#334155]">
+                  <Target className="w-4 h-4 text-[#10b981] mt-0.5" />
+                  <span>{t}</span>
+                </div>
+              ))}
+            </div>
+            <div className="mt-5 rounded-2xl bg-[#f8fafc] p-4">
+              <div className="text-xs font-black uppercase text-[#94a3b8] mb-2">One-line promise</div>
+              <div className="text-sm font-semibold text-[#0f172a]">“Acha ye bhi ho sakta hai — talent dhoondhna simple ho sakta hai.”</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
