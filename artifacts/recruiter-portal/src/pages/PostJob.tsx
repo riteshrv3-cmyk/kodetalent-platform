@@ -1,33 +1,10 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
-import { Zap, ArrowLeft, Sparkles, Send, CheckSquare, Square, Github, Loader2, ArrowRight } from "lucide-react";
-
-interface ParsedJob {
-  role: string;
-  seniority: string;
-  mustHaveSkills: string[];
-  niceToHaveSkills: string[];
-  minCgpa: number | null;
-  workMode: string | null;
-  summary: string;
-}
-
-interface Match {
-  id: number;
-  name: string;
-  college: string;
-  field: string;
-  year: number;
-  cgpa: string | null;
-  workMode: string | null;
-  profileStrength: number;
-  overallScore: number;
-  matchScore: number;
-  matchReasons: string[];
-  matchedSkills: string[];
-  githubUrl: string | null;
-}
+import {
+  Zap, ArrowLeft, Sparkles, ArrowRight, Loader2,
+  Clock, Mail, CheckCircle, ShieldCheck, Users
+} from "lucide-react";
 
 export default function PostJob() {
   const [, setLocation] = useLocation();
@@ -37,215 +14,233 @@ export default function PostJob() {
   const [rawDescription, setRawDescription] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const [result, setResult] = useState<{ jobId: number; parsed: ParsedJob; matches: Match[] } | null>(null);
-  const [selected, setSelected] = useState<Set<number>>(new Set());
-  const [message, setMessage] = useState("");
-  const [bulkSending, setBulkSending] = useState(false);
-  const [bulkSent, setBulkSent] = useState(0);
+  const [submitted, setSubmitted] = useState(false);
+  const [jobTitle, setJobTitle] = useState("");
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    if (rawDescription.trim().length < 30) { setError("Paste a real job description (at least 30 chars)"); return; }
+    if (rawDescription.trim().length < 30) {
+      setError("Please paste a real job description (at least 30 characters).");
+      return;
+    }
     setSubmitting(true);
     try {
       const res = await fetch(`/api/recruiter-jobs`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ recruiterId: recruiter.id, title: title.trim() || undefined, rawDescription }),
+        body: JSON.stringify({
+          recruiterId: recruiter.id,
+          title: title.trim() || undefined,
+          rawDescription,
+        }),
       });
-      if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
-        throw new Error(j.error || "Failed");
-      }
-      const data = await res.json();
-      setResult({ jobId: data.job.id, parsed: data.parsed, matches: data.matches });
-      setSelected(new Set(data.matches.slice(0, 10).map((m: Match) => m.id)));
-      setMessage(`Hi! We have an exciting ${data.job.title} opportunity at ${recruiter.company}. Your profile matched our search — would love to chat.`);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      const data = await res.json().catch(() => ({}));
+      const resolvedTitle = data?.job?.title || title.trim() || "your role";
+      setJobTitle(resolvedTitle);
+      setSubmitted(true);
+    } catch {
+      setError("Something went wrong. Please try again.");
     } finally {
       setSubmitting(false);
     }
   };
 
-  const toggleSelect = (id: number) => {
-    setSelected(s => {
-      const next = new Set(s);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
-    });
-  };
-
-  const bulkInvite = async () => {
-    if (!result || selected.size === 0) return;
-    setBulkSending(true);
-    try {
-      const res = await fetch(`/api/recruiter-jobs/${result.jobId}/bulk-invite`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ studentIds: Array.from(selected), message }),
-      });
-      const data = await res.json();
-      setBulkSent(data.sent || 0);
-    } catch {
-      setError("Failed to send invites");
-    } finally {
-      setBulkSending(false);
-    }
-  };
-
-  const matchColor = (score: number) => score >= 70 ? "#10b981" : score >= 40 ? "#f59e0b" : "#ef4444";
-
   return (
-    <div className="min-h-screen bg-[#f8fafc]">
+    <div className="min-h-screen bg-[#f8fafc]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+      {/* Nav */}
       <div className="bg-white border-b border-[#f0f4ff] sticky top-0 z-30">
-        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center gap-3">
-          <button onClick={() => setLocation("/dashboard")} className="text-[#64748b] hover:text-[#0f172a] p-1.5 rounded-lg hover:bg-[#f8fafc]">
+        <div className="max-w-3xl mx-auto px-5 py-4 flex items-center gap-3">
+          <button
+            onClick={() => setLocation("/dashboard")}
+            className="text-[#64748b] hover:text-[#0f172a] p-1.5 rounded-lg hover:bg-[#f8fafc] transition-colors"
+          >
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <div className="w-8 h-8 bg-gradient-to-br from-[#4f46e5] to-[#6366f1] rounded-xl flex items-center justify-center">
-            <Zap className="w-4 h-4 text-white" />
+          <div className="w-8 h-8 bg-[#f97316] rounded-xl flex items-center justify-center">
+            <Zap className="w-4 h-4 text-white fill-white" />
           </div>
-          <h1 className="font-black text-[#0f172a] text-lg">Post Job → Get Instant Matches</h1>
+          <h1 className="font-black text-[#0f172a] text-[15px]">Post a Job</h1>
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-6 py-6">
-        {!result ? (
-          <motion.form initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} onSubmit={submit} className="bg-white rounded-2xl border border-[#f0f4ff] p-6 sm:p-8">
-            <div className="flex items-center gap-2 mb-1">
-              <Sparkles className="w-5 h-5 text-[#f59e0b]" />
-              <h2 className="font-black text-xl text-[#0f172a]">Paste your JD. AI does the rest.</h2>
+      <div className="max-w-3xl mx-auto px-5 py-8">
+        {!submitted ? (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+            {/* Header */}
+            <div className="mb-7">
+              <div className="inline-flex items-center gap-2 bg-[#eef2ff] border border-[#c7d2fe] rounded-full px-3.5 py-1.5 mb-4">
+                <Sparkles className="w-3.5 h-3.5 text-[#4f46e5]" />
+                <span className="text-xs font-bold text-[#4f46e5]">Private beta · Curated matches</span>
+              </div>
+              <h2 className="text-2xl font-black text-[#0f172a] mb-1.5">Paste your JD. We'll do the rest.</h2>
+              <p className="text-[#64748b] text-sm leading-relaxed">
+                Our team will manually review and curate the best-fit candidates from our verified pool — and send them your way within 24–48 hours.
+              </p>
             </div>
-            <p className="text-sm text-[#64748b] mb-6">We'll parse requirements and rank candidates from our talent pool in ~10 seconds.</p>
 
-            <label className="text-xs font-bold text-[#64748b] uppercase tracking-wider mb-1.5 block">Job Title (optional)</label>
-            <input type="text" placeholder="e.g. Backend Engineer Intern" value={title} onChange={e => setTitle(e.target.value)}
-              className="w-full px-4 py-3 border border-[#e5e7eb] rounded-xl text-sm font-medium mb-4 focus:outline-none focus:ring-2 focus:ring-[#4f46e5]/30 focus:border-[#4f46e5]" />
-
-            <label className="text-xs font-bold text-[#64748b] uppercase tracking-wider mb-1.5 block">Job Description *</label>
-            <textarea required value={rawDescription} onChange={e => setRawDescription(e.target.value)} rows={12}
-              placeholder="Paste full JD here — role, responsibilities, required skills, CGPA cutoff, location, work mode, etc."
-              className="w-full px-4 py-3 border border-[#e5e7eb] rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#4f46e5]/30 focus:border-[#4f46e5] resize-none" />
-
-            {error && <p className="text-[#ef4444] text-sm mt-3 font-medium">{error}</p>}
-
-            <button type="submit" disabled={submitting}
-              className="mt-5 w-full sm:w-auto bg-gradient-to-r from-[#4f46e5] to-[#6366f1] text-white font-black px-7 py-4 rounded-2xl flex items-center justify-center gap-2 shadow-[0_8px_24px_rgba(124,58,237,0.35)] hover:shadow-[0_12px_32px_rgba(124,58,237,0.45)] transition-all active:scale-[0.98] disabled:opacity-60">
-              {submitting ? <><Loader2 className="w-5 h-5 animate-spin" /> Matching candidates...</> : <>Find Matches <ArrowRight className="w-5 h-5" /></>}
-            </button>
-          </motion.form>
-        ) : (
-          <div className="space-y-6">
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-gradient-to-br from-[#0f172a] to-[#312e81] text-white rounded-2xl p-6">
-              <div className="flex items-center gap-2 mb-3">
-                <Sparkles className="w-5 h-5 text-[#fbbf24]" />
-                <span className="text-xs font-black uppercase tracking-wider text-[#fbbf24]">AI parsed</span>
+            <form onSubmit={submit} className="bg-white rounded-2xl border border-[#e5e7eb] p-6 shadow-sm space-y-5">
+              {/* Job title */}
+              <div>
+                <label className="text-xs font-bold text-[#64748b] uppercase tracking-wider mb-1.5 block">
+                  Job / Internship Title
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Backend Engineer Intern, Product Intern, SDE-1"
+                  value={title}
+                  onChange={e => setTitle(e.target.value)}
+                  className="w-full px-4 py-3 border border-[#e5e7eb] rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#4f46e5]/20 focus:border-[#4f46e5] transition-colors bg-[#fafafa] focus:bg-white"
+                />
               </div>
-              <h2 className="font-black text-2xl mb-2">{result.parsed.role}</h2>
-              <p className="text-white/80 text-sm mb-4">{result.parsed.summary}</p>
-              <div className="flex flex-wrap gap-2">
-                <span className="text-xs font-bold bg-white/10 backdrop-blur px-3 py-1.5 rounded-lg">{result.parsed.seniority}</span>
-                {result.parsed.workMode && <span className="text-xs font-bold bg-white/10 backdrop-blur px-3 py-1.5 rounded-lg">{result.parsed.workMode}</span>}
-                {result.parsed.minCgpa && <span className="text-xs font-bold bg-white/10 backdrop-blur px-3 py-1.5 rounded-lg">CGPA ≥ {result.parsed.minCgpa}</span>}
+
+              {/* JD */}
+              <div>
+                <label className="text-xs font-bold text-[#64748b] uppercase tracking-wider mb-1.5 block">
+                  Job Description *
+                </label>
+                <textarea
+                  required
+                  value={rawDescription}
+                  onChange={e => setRawDescription(e.target.value)}
+                  rows={11}
+                  placeholder={`Paste your full JD here — include:\n• Role & responsibilities\n• Required skills (React, Python, etc.)\n• CGPA cutoff if any\n• Location & work mode (Remote / Hybrid / On-site)\n• Stipend or package\n• Any other requirements`}
+                  className="w-full px-4 py-3 border border-[#e5e7eb] rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#4f46e5]/20 focus:border-[#4f46e5] transition-colors bg-[#fafafa] focus:bg-white resize-none leading-relaxed"
+                />
+                <p className="text-[11px] text-[#94a3b8] mt-1.5">More detail = better candidate matches from our team.</p>
               </div>
-              {result.parsed.mustHaveSkills.length > 0 && (
-                <div className="mt-3">
-                  <p className="text-[10px] font-black uppercase text-white/50 mb-1.5">Must Have</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {result.parsed.mustHaveSkills.map(s => <span key={s} className="text-xs font-bold bg-[#fbbf24]/20 text-[#fbbf24] px-2.5 py-1 rounded-lg">{s}</span>)}
-                  </div>
+
+              {error && (
+                <div className="bg-[#fff5f5] border border-[#fecaca] rounded-xl px-4 py-2.5">
+                  <p className="text-[#ef4444] text-sm font-medium">{error}</p>
                 </div>
               )}
+
+              <button
+                type="submit"
+                disabled={submitting}
+                className="w-full bg-gradient-to-r from-[#4f46e5] to-[#6366f1] text-white font-black py-4 rounded-xl flex items-center justify-center gap-2 shadow-[0_4px_16px_rgba(79,70,229,0.25)] hover:shadow-[0_8px_24px_rgba(79,70,229,0.35)] transition-all active:scale-[0.98] disabled:opacity-60 text-[15px]"
+              >
+                {submitting
+                  ? <><Loader2 className="w-5 h-5 animate-spin" /> Submitting...</>
+                  : <>Submit Job Request <ArrowRight className="w-4 h-4" /></>
+                }
+              </button>
+            </form>
+
+            {/* Trust strip */}
+            <div className="mt-5 grid grid-cols-3 gap-3">
+              {[
+                { icon: Clock, text: "24–48 hr response" },
+                { icon: ShieldCheck, text: "Verified candidates only" },
+                { icon: Users, text: "Manually curated" },
+              ].map(({ icon: Icon, text }) => (
+                <div key={text} className="bg-white border border-[#f0f4ff] rounded-xl p-3 flex items-center gap-2">
+                  <Icon className="w-4 h-4 text-[#4f46e5] flex-shrink-0" />
+                  <span className="text-[11px] font-semibold text-[#64748b]">{text}</span>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        ) : (
+          /* ── BETA CONFIRMATION SCREEN ── */
+          <motion.div
+            initial={{ opacity: 0, scale: 0.97 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ type: "spring", stiffness: 100 }}
+            className="flex flex-col items-center text-center py-8"
+          >
+            {/* Animated tick */}
+            <motion.div
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.1, type: "spring", stiffness: 200 }}
+              className="w-20 h-20 bg-[#f0fdf4] border-2 border-[#86efac] rounded-full flex items-center justify-center mb-6"
+            >
+              <CheckCircle className="w-10 h-10 text-[#10b981]" />
             </motion.div>
 
-            {bulkSent > 0 ? (
-              <div className="bg-[#10b981]/10 border-2 border-[#10b981]/30 rounded-2xl p-6 text-center">
-                <CheckSquare className="w-12 h-12 text-[#10b981] mx-auto mb-3" />
-                <h3 className="font-black text-xl text-[#0f172a] mb-1">{bulkSent} invites sent! 🎉</h3>
-                <p className="text-sm text-[#64748b] mb-4">Students will see your invite in their inbox. Track responses on the dashboard.</p>
-                <button onClick={() => setLocation("/dashboard")} className="bg-[#10b981] text-white font-black px-5 py-2.5 rounded-xl text-sm">Back to Dashboard</button>
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+              <div className="inline-flex items-center gap-2 bg-[#fff7ed] border border-[#fed7aa] rounded-full px-4 py-1.5 mb-4">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#f97316] animate-pulse" />
+                <span className="text-xs font-bold text-[#ea580c]">Private Beta · Under Review</span>
               </div>
-            ) : (
-              <>
-                <div className="bg-white rounded-2xl border border-[#f0f4ff] p-5 sticky top-20 z-20 shadow-sm">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="font-black text-[#0f172a]">{selected.size} of {result.matches.length} selected</p>
-                      <p className="text-xs text-[#94a3b8]">Top matches ranked by AI</p>
-                    </div>
-                    <button onClick={bulkInvite} disabled={selected.size === 0 || bulkSending}
-                      className="bg-gradient-to-r from-[#4f46e5] to-[#6366f1] text-white font-black px-5 py-3 rounded-xl flex items-center gap-2 disabled:opacity-50 active:scale-95 transition-all">
-                      {bulkSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                      Bulk Invite {selected.size > 0 && `(${selected.size})`}
-                    </button>
-                  </div>
-                  <textarea value={message} onChange={e => setMessage(e.target.value)} rows={2}
-                    placeholder="Personal message to candidates..."
-                    className="w-full mt-3 px-3 py-2 border border-[#e5e7eb] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4f46e5]/30" />
-                </div>
 
-                <div className="space-y-3">
-                  {result.matches.map((m, i) => (
-                    <motion.div key={m.id} initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.02 }}
-                      className={`bg-white rounded-2xl border-2 transition-all p-4 cursor-pointer ${selected.has(m.id) ? "border-[#4f46e5] shadow-[0_4px_24px_rgba(79,70,229,0.15)]" : "border-[#f0f4ff] hover:border-[#e0e7ff]"}`}
-                      onClick={() => toggleSelect(m.id)}>
-                      <div className="flex items-start gap-4">
-                        <button className="mt-1 flex-shrink-0">
-                          {selected.has(m.id) ? <CheckSquare className="w-5 h-5 text-[#4f46e5]" /> : <Square className="w-5 h-5 text-[#cbd5e1]" />}
-                        </button>
-                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#4f46e5] to-[#6366f1] flex items-center justify-center text-white font-black flex-shrink-0">
-                          {m.name.split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase()}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-2 mb-1">
-                            <div className="min-w-0">
-                              <h3 className="font-black text-[#0f172a] truncate">{m.name}</h3>
-                              <p className="text-xs text-[#64748b] truncate">{m.college} · {m.field} · Year {m.year}</p>
-                            </div>
-                            <div className="text-right flex-shrink-0">
-                              <div className="text-2xl font-black" style={{ color: matchColor(m.matchScore) }}>{m.matchScore}</div>
-                              <div className="text-[9px] font-black uppercase text-[#94a3b8]">match</div>
-                            </div>
-                          </div>
-                          {m.matchReasons.length > 0 && (
-                            <div className="flex flex-wrap gap-1.5 mt-2">
-                              {m.matchReasons.map((r, idx) => (
-                                <span key={idx} className="text-[10px] font-bold bg-[#10b981]/10 text-[#10b981] px-2 py-0.5 rounded-md">✓ {r}</span>
-                              ))}
-                            </div>
-                          )}
-                          {m.matchedSkills.length > 0 && (
-                            <div className="flex flex-wrap gap-1.5 mt-1.5">
-                              {m.matchedSkills.map(s => (
-                                <span key={s} className="text-[10px] font-bold bg-[#eef2ff] text-[#4f46e5] px-2 py-0.5 rounded-md">{s}</span>
-                              ))}
-                            </div>
-                          )}
-                          <div className="flex items-center gap-3 mt-2 text-xs text-[#94a3b8]">
-                            <span>Profile {m.profileStrength}%</span>
-                            <span>·</span>
-                            <span>AI {m.overallScore}</span>
-                            {m.cgpa && <><span>·</span><span>CGPA {m.cgpa}</span></>}
-                            {m.githubUrl && <><span>·</span><span className="flex items-center gap-1"><Github className="w-3 h-3" /> GitHub</span></>}
-                          </div>
-                        </div>
+              <h2 className="text-2xl font-black text-[#0f172a] mb-3">
+                We've received your job request.
+              </h2>
+              <p className="text-[#64748b] text-[15px] leading-relaxed max-w-md mx-auto mb-8">
+                We're currently in <strong className="text-[#0f172a]">private beta</strong> — our team manually reviews every job posting and personally curates the best-fit candidates from our verified pool.
+                <br /><br />
+                You'll hear from us at <strong className="text-[#4f46e5]">{recruiter.email}</strong> within <strong className="text-[#0f172a]">24–48 hours</strong> with shortlisted profiles.
+              </p>
+
+              {/* What happens next */}
+              <div className="bg-white border border-[#f0f4ff] rounded-2xl p-5 mb-6 text-left max-w-md mx-auto w-full shadow-sm">
+                <p className="text-xs font-black uppercase tracking-widest text-[#94a3b8] mb-4">What happens next</p>
+                <div className="space-y-4">
+                  {[
+                    {
+                      icon: ShieldCheck,
+                      color: "#4f46e5",
+                      bg: "#eef2ff",
+                      title: "JD is reviewed",
+                      desc: "Our team reads your requirements and maps them to our talent pool.",
+                    },
+                    {
+                      icon: Users,
+                      color: "#10b981",
+                      bg: "#f0fdf4",
+                      title: "Candidates are handpicked",
+                      desc: "Only GitHub-verified, AI-scored students who actually fit your role.",
+                    },
+                    {
+                      icon: Mail,
+                      color: "#f97316",
+                      bg: "#fff7ed",
+                      title: "We email you profiles",
+                      desc: `Shortlisted profiles land in ${recruiter.email} — ready to review and reach out.`,
+                    },
+                  ].map(({ icon: Icon, color, bg, title, desc }, i) => (
+                    <motion.div
+                      key={title}
+                      initial={{ opacity: 0, x: -8 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.35 + i * 0.1 }}
+                      className="flex items-start gap-3"
+                    >
+                      <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: bg }}>
+                        <Icon className="w-4 h-4" style={{ color }} />
+                      </div>
+                      <div>
+                        <div className="font-bold text-[#0f172a] text-sm">{title}</div>
+                        <div className="text-xs text-[#64748b] mt-0.5">{desc}</div>
                       </div>
                     </motion.div>
                   ))}
                 </div>
+              </div>
 
-                {result.matches.length === 0 && (
-                  <div className="bg-white rounded-2xl border border-[#f0f4ff] p-12 text-center">
-                    <p className="text-4xl mb-3">🤔</p>
-                    <p className="font-black text-[#0f172a] mb-1">No strong matches yet</p>
-                    <p className="text-sm text-[#94a3b8]">Try widening your skill requirements or check back as more students join.</p>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <button
+                  onClick={() => setLocation("/dashboard")}
+                  className="bg-[#4f46e5] hover:bg-[#4338ca] text-white font-bold px-6 py-3 rounded-xl transition-all active:scale-[0.98] text-sm"
+                >
+                  Back to Dashboard
+                </button>
+                <button
+                  onClick={() => setLocation("/talent")}
+                  className="border border-[#e5e7eb] text-[#64748b] hover:border-[#4f46e5]/30 hover:text-[#4f46e5] font-semibold px-6 py-3 rounded-xl transition-all text-sm"
+                >
+                  Browse talent pool
+                </button>
+              </div>
+
+              <p className="mt-6 text-xs text-[#cbd5e1]">
+                Questions? Reply to any email from us or reach out at hello@kodetalent.in
+              </p>
+            </motion.div>
+          </motion.div>
         )}
       </div>
     </div>
