@@ -6,9 +6,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useEffect, lazy, Suspense } from "react";
 import NotFound from "@/pages/not-found";
-import Onboarding from "@/pages/Onboarding";
 import Join from "@/pages/Join";
 import { AppLayout } from "@/components/layout/AppLayout";
+import RoleSelect from "@/pages/RoleSelect";
 
 const Home = lazy(() => import("@/pages/Home"));
 const AIChat = lazy(() => import("@/pages/AIChat"));
@@ -37,12 +37,7 @@ function PageSkeleton() {
 }
 
 function RootRedirect() {
-  const [, setLocation] = useLocation();
-  useEffect(() => {
-    const id = localStorage.getItem("studentId");
-    if (id) setLocation("/home");
-  }, [setLocation]);
-  return <Onboarding />;
+  return <RoleSelect />;
 }
 
 function Router() {
