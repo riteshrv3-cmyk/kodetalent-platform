@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
-import { Zap, ArrowRight, Lock, Sparkles, TrendingUp, Award, Users, Github, GraduationCap, ScanSearch, ShieldCheck, BrainCircuit, Rocket, Target, BriefcaseBusiness, BadgeCheck, Flame, CheckCircle2, Star, CircleDashed, LayoutList, FileSearch, Filter, GitPullRequest, CheckCheck, Workflow, Brain, CalendarCheck2, BadgeInfo } from "lucide-react";
+import { Zap, ArrowRight, Lock, Sparkles, TrendingUp, Award, Users, Github, GraduationCap, ScanSearch, ShieldCheck, BrainCircuit, Rocket, Target, BriefcaseBusiness, BadgeCheck, Flame, CheckCircle2, Star, CircleDashed, Workflow, Brain, CalendarCheck2, BadgeInfo, MousePointerClick, TimerReset, ListChecks } from "lucide-react";
 
 interface MaskedCandidate {
   id: number;
@@ -28,6 +28,7 @@ export default function Showcase() {
   const [candidates, setCandidates] = useState<MaskedCandidate[]>([]);
   const [totalOpen, setTotalOpen] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [activeMode, setActiveMode] = useState<"without" | "with">("with");
 
   useEffect(() => {
     fetch(`/api/talent-pool/showcase`)
@@ -139,60 +140,92 @@ export default function Showcase() {
       </div>
 
       <div className="max-w-6xl mx-auto px-6 pb-16">
-        <div className="grid lg:grid-cols-2 gap-4 mb-12">
-          <div className="bg-white rounded-3xl border border-[#e5e7eb] p-6 shadow-sm">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-10 h-10 rounded-2xl bg-[#f1f5f9] flex items-center justify-center">
-                <Workflow className="w-5 h-5 text-[#4f46e5]" />
-              </div>
-              <div>
-                <div className="font-black text-[#0f172a]">Without KodeTalent</div>
-                <div className="text-xs text-[#94a3b8]">Traditional SaaS hiring stack</div>
-              </div>
+        <div className="mb-12">
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <div>
+              <h3 className="text-2xl font-black text-[#0f172a]">Hiring funnel</h3>
+              <p className="text-sm text-[#64748b]">Tap to compare the old stack with KodeTalent.</p>
             </div>
-            <div className="space-y-3">
-              {[
-                { title: "ATS tracker", desc: "Open applications, duplicate profiles, manual tagging" },
-                { title: "AI screening", desc: "Separate tool, separate login, separate scoring logic" },
-                { title: "Spreadsheet shortlist", desc: "Recruiter moves data across tabs and WhatsApp" },
-                { title: "Interview scheduling", desc: "Another tool, another status sync" },
-              ].map((item, idx) => (
-                <div key={item.title} className="flex items-start gap-3 rounded-2xl border border-dashed border-[#e2e8f0] p-4">
-                  <div className="w-7 h-7 rounded-full bg-[#fee2e2] text-[#ef4444] flex items-center justify-center text-xs font-black">{idx + 1}</div>
-                  <div>
-                    <div className="font-bold text-[#0f172a] text-sm">{item.title}</div>
-                    <div className="text-xs text-[#64748b] mt-1">{item.desc}</div>
-                  </div>
-                </div>
-              ))}
+            <div className="bg-white rounded-full border border-[#e2e8f0] p-1 flex items-center shadow-sm">
+              <button
+                onClick={() => setActiveMode("without")}
+                className={`px-4 py-2 rounded-full text-sm font-bold transition-all ${activeMode === "without" ? "bg-[#0f172a] text-white shadow" : "text-[#64748b]"}`}
+              >
+                Without
+              </button>
+              <button
+                onClick={() => setActiveMode("with")}
+                className={`px-4 py-2 rounded-full text-sm font-bold transition-all ${activeMode === "with" ? "bg-[#4f46e5] text-white shadow" : "text-[#64748b]"}`}
+              >
+                With KodeTalent
+              </button>
             </div>
           </div>
-          <div className="bg-[#0f172a] text-white rounded-3xl p-6 shadow-sm">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center">
-                <CircleDashed className="w-5 h-5 text-[#86efac]" />
-              </div>
-              <div>
-                <div className="font-black">With KodeTalent</div>
-                <div className="text-xs text-white/55">All-in-one recruiter workflow</div>
-              </div>
-            </div>
-            <div className="space-y-3">
-              {[
-                { title: "Discover", desc: "Verified campus pool with projects, GitHub, and commitment score" },
-                { title: "Screen", desc: "AI ranks candidates inside the same system — no tool switching" },
-                { title: "Shortlist", desc: "One-click shortlist with reason, tags, and fit summary" },
-                { title: "Move faster", desc: "Invite, schedule, and track status in one place" },
-              ].map((item, idx) => (
-                <div key={item.title} className="flex items-start gap-3 rounded-2xl bg-white/5 p-4">
-                  <div className="w-7 h-7 rounded-full bg-[#10b981]/20 text-[#86efac] flex items-center justify-center text-xs font-black">{idx + 1}</div>
-                  <div>
-                    <div className="font-bold text-sm">{item.title}</div>
-                    <div className="text-xs text-white/70 mt-1">{item.desc}</div>
-                  </div>
+          <div className={`grid lg:grid-cols-2 gap-4 transition-all duration-300 ${activeMode === "with" ? "" : ""}`}>
+            <div className={`rounded-3xl border p-6 shadow-sm transition-all duration-300 ${activeMode === "without" ? "bg-white border-[#fecaca] ring-2 ring-[#fee2e2]" : "bg-white/60 border-[#e5e7eb] opacity-80"}`}>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-10 h-10 rounded-2xl bg-[#fef2f2] flex items-center justify-center">
+                  <Workflow className="w-5 h-5 text-[#ef4444]" />
                 </div>
-              ))}
+                <div>
+                  <div className="font-black text-[#0f172a]">Without KodeTalent</div>
+                  <div className="text-xs text-[#94a3b8]">Traditional SaaS hiring stack</div>
+                </div>
+              </div>
+              <div className="space-y-3">
+                {[
+                  { title: "ATS tracker", desc: "Open applications, duplicate profiles, manual tagging" },
+                  { title: "AI screening", desc: "Separate tool, separate login, separate scoring logic" },
+                  { title: "Spreadsheet shortlist", desc: "Recruiter moves data across tabs and WhatsApp" },
+                  { title: "Interview scheduling", desc: "Another tool, another status sync" },
+                ].map((item, idx) => (
+                  <div key={item.title} className="flex items-start gap-3 rounded-2xl border border-dashed border-[#e2e8f0] p-4">
+                    <div className="w-7 h-7 rounded-full bg-[#fee2e2] text-[#ef4444] flex items-center justify-center text-xs font-black">{idx + 1}</div>
+                    <div>
+                      <div className="font-bold text-[#0f172a] text-sm">{item.title}</div>
+                      <div className="text-xs text-[#64748b] mt-1">{item.desc}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
+            <div className={`rounded-3xl p-6 shadow-sm transition-all duration-300 ${activeMode === "with" ? "bg-[#0f172a] text-white ring-2 ring-[#4f46e5]/30" : "bg-white/60 text-[#0f172a] border border-[#e5e7eb] opacity-80"}`}>
+              <div className="flex items-center gap-2 mb-4">
+                <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${activeMode === "with" ? "bg-white/10" : "bg-[#eef2ff]"}`}>
+                  <CircleDashed className={`w-5 h-5 ${activeMode === "with" ? "text-[#86efac]" : "text-[#4f46e5]"}`} />
+                </div>
+                <div>
+                  <div className="font-black">With KodeTalent</div>
+                  <div className={`text-xs ${activeMode === "with" ? "text-white/55" : "text-[#94a3b8]"}`}>All-in-one recruiter workflow</div>
+                </div>
+              </div>
+              <div className="space-y-3">
+                {[
+                  { title: "Discover", desc: "Verified campus pool with projects, GitHub, and commitment score" },
+                  { title: "Screen", desc: "AI ranks candidates inside the same system — no tool switching" },
+                  { title: "Shortlist", desc: "One-click shortlist with reason, tags, and fit summary" },
+                  { title: "Move faster", desc: "Invite, schedule, and track status in one place" },
+                ].map((item, idx) => (
+                  <motion.div
+                    key={item.title}
+                    whileHover={{ scale: 1.015, x: 2 }}
+                    className={`flex items-start gap-3 rounded-2xl p-4 cursor-pointer ${activeMode === "with" ? "bg-white/5" : "bg-[#f8fafc] border border-[#e2e8f0]"}`}
+                  >
+                    <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black ${activeMode === "with" ? "bg-[#10b981]/20 text-[#86efac]" : "bg-[#dbeafe] text-[#2563eb]"}`}>
+                      {idx + 1}
+                    </div>
+                    <div>
+                      <div className="font-bold text-sm">{item.title}</div>
+                      <div className={`text-xs mt-1 ${activeMode === "with" ? "text-white/70" : "text-[#64748b]"}`}>{item.desc}</div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="mt-3 text-center text-xs text-[#64748b] flex items-center justify-center gap-2">
+            <MousePointerClick className="w-3.5 h-3.5" />
+            Click the toggle to switch the recruiter story
           </div>
         </div>
 
