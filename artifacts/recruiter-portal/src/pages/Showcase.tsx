@@ -18,7 +18,7 @@ interface MaskedCandidate {
 
 const MARKET_STATS = [
   { value: "1,200+", label: "verified student profiles", note: "active across campuses" },
-  { value: "180+", label: "colleges covered", note: "tier-1 to emerging campuses" },
+  { value: "15+", label: "colleges covered", note: "select campuses and partner institutes" },
   { value: "90%+", label: "profiles with project data", note: "not resume-only entries" },
   { value: "48 hrs", label: "median time to shortlist", note: "from post to first shortlist" },
 ] as const;
