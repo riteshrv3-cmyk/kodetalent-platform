@@ -1,49 +1,16 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Zap, ArrowRight, Lock, Github, Users, GraduationCap, TrendingUp,
-  CheckCircle, X, Sparkles, ChevronRight, Clock
+  CheckCircle, X, Sparkles, ChevronRight, Search, Brain, FileText,
+  Calendar, Filter, Database, BarChart3, Check, Minus
 } from "lucide-react";
 
-interface MaskedCandidate {
-  id: number;
-  initials: string;
-  maskedName: string;
-  college: string;
-  field: string;
-  year: number;
-  profileStrength: number;
-  overallScore: number;
-  topSkills: string[];
-  hasGithub: boolean;
-}
-
 const PREVIEW_CANDIDATE = {
-  initials: "AR",
-  name: "Arjun R.",
-  college: "BITS Pilani",
-  field: "Computer Science",
-  year: 3,
-  profileStrength: 87,
-  overallScore: 82,
-  skills: ["React", "Node.js", "PostgreSQL"],
+  initials: "AR", college: "BITS Pilani", field: "Computer Science", year: 3,
+  profileStrength: 87, overallScore: 82, skills: ["React", "Node.js", "PostgreSQL"],
   github: { repos: 14, stars: 47, streak: 32 },
-};
-
-const FUNNEL_DATA = {
-  without: [
-    { stage: "Source", action: "Post on Naukri / LinkedIn", result: "200 applications, 80% irrelevant or auto-applied" },
-    { stage: "Screen", action: "Manual resume review or separate AI screener", result: "2–3 days of effort. No GitHub. No proof." },
-    { stage: "Shortlist", action: "Spreadsheet: name, phone, 'maybe'", result: "No score. Biased gut call. Easy to forget." },
-    { stage: "Close", action: "Email → reschedule → reschedule → no-show", result: "3 weeks wasted. Low quality outcome." },
-  ],
-  with: [
-    { stage: "Discover", action: "Browse pre-verified campus pool", result: "Every profile has GitHub, projects, and AI commitment score." },
-    { stage: "Screen", action: "AI ranks by skills, field, and project quality", result: "Done inside the same system. Zero tool-switching." },
-    { stage: "Shortlist", action: "One click. Fit summary auto-generated.", result: "Clean pipeline. No spreadsheet. No data loss." },
-    { stage: "Close", action: "Candidate is already prepared — status tracked", result: "48 hr median shortlist. Higher accept rate." },
-  ],
 };
 
 const STATS = [
@@ -53,26 +20,92 @@ const STATS = [
   { value: "48 hrs", label: "Median shortlist", icon: TrendingUp, color: "#f97316" },
 ];
 
+// The "old stack" tools recruiters currently use
+const OLD_TOOLS = [
+  { name: "Naukri / LinkedIn", icon: Search, color: "#0077b5", pain: "200+ irrelevant applications" },
+  { name: "HackerRank / Test", icon: FileText, color: "#00b94a", pain: "Manual test setup & grading" },
+  { name: "Calendly", icon: Calendar, color: "#006bff", pain: "No-shows. Reschedule loops." },
+  { name: "ATS / Sheets", icon: Database, color: "#34a853", pain: "Data scattered everywhere" },
+  { name: "Analytics tool", icon: BarChart3, color: "#ff6d00", pain: "No insight on why hires fail" },
+];
+
+// Sample JD for the demo
+const SAMPLE_JD = `We're looking for a Backend Engineering Intern at our Bangalore office.
+
+Requirements:
+- Strong in Node.js or Python
+- Familiarity with REST APIs and PostgreSQL
+- CGPA 7.5 or above preferred
+- Open to hybrid work (3 days/week in office)
+- 6-month internship, stipend ₹25,000/month`;
+
+// Fake candidates for the demo (never hits real API)
+const DEMO_MATCHES = [
+  { initials: "PR", name: "Priya R.", college: "IIT Bombay", field: "CSE", year: 3, match: 94, skills: ["Node.js", "PostgreSQL", "REST APIs"], cgpa: "8.9", github: true },
+  { initials: "AK", name: "Arjun K.", college: "BITS Pilani", field: "CS", year: 3, match: 88, skills: ["Python", "FastAPI", "SQL"], cgpa: "8.4", github: true },
+  { initials: "SM", name: "Shreya M.", college: "NIT Trichy", field: "IT", year: 4, match: 81, skills: ["Node.js", "Express", "MongoDB"], cgpa: "8.1", github: true },
+];
+
+const COMPARISON = [
+  { feature: "Pre-verified profiles", kt: true, ats: false, linkedin: false },
+  { feature: "GitHub + project proof", kt: true, ats: false, linkedin: "partial" },
+  { feature: "AI commitment score", kt: true, ats: false, linkedin: false },
+  { feature: "Instant JD → ranked matches", kt: true, ats: false, linkedin: false },
+  { feature: "No-code campus targeting", kt: true, ats: false, linkedin: false },
+  { feature: "Student readiness signal", kt: true, ats: false, linkedin: false },
+  { feature: "Free to start", kt: true, ats: false, linkedin: false },
+  { feature: "Setup time", kt: "2 min", ats: "2–4 weeks", linkedin: "1 hour" },
+];
+
+type DemoStep = "idle" | "parsing" | "matching" | "done";
+
 export default function Showcase() {
   const [, setLocation] = useLocation();
-  const [candidates, setCandidates] = useState<MaskedCandidate[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [funnelMode, setFunnelMode] = useState<"without" | "with">("without");
-  const [activeStep, setActiveStep] = useState(0);
+  const [collapsed, setCollapsed] = useState(false);
+  const [demoStep, setDemoStep] = useState<DemoStep>("idle");
+  const [parsedSkills, setParsedSkills] = useState<string[]>([]);
+  const [visibleCards, setVisibleCards] = useState(0);
+  const [activeOldTool, setActiveOldTool] = useState(0);
+  const demoRef = useRef<HTMLDivElement>(null);
 
+  // Cycle through old tool pain points
   useEffect(() => {
-    fetch(`/api/talent-pool/showcase`)
-      .then(async r => r.ok ? r.json() : { candidates: [] })
-      .then(data => setCandidates(data.candidates || []))
-      .finally(() => setLoading(false));
-  }, []);
-
-  useEffect(() => {
-    const t = setInterval(() => setActiveStep(s => (s + 1) % 4), 2000);
+    const t = setInterval(() => setActiveOldTool(i => (i + 1) % OLD_TOOLS.length), 2200);
     return () => clearInterval(t);
   }, []);
 
-  const funnel = FUNNEL_DATA[funnelMode];
+  const runDemo = async () => {
+    if (demoStep !== "idle") return;
+    setDemoStep("parsing");
+    setParsedSkills([]);
+    setVisibleCards(0);
+
+    // Step 1: animate skill extraction
+    await new Promise(r => setTimeout(r, 600));
+    const skills = ["Node.js", "Python", "PostgreSQL", "REST APIs", "CGPA 7.5+", "Hybrid"];
+    for (const s of skills) {
+      setParsedSkills(prev => [...prev, s]);
+      await new Promise(r => setTimeout(r, 280));
+    }
+
+    // Step 2: show matching
+    await new Promise(r => setTimeout(r, 500));
+    setDemoStep("matching");
+    await new Promise(r => setTimeout(r, 700));
+
+    // Step 3: reveal cards one by one
+    setDemoStep("done");
+    for (let i = 1; i <= 3; i++) {
+      await new Promise(r => setTimeout(r, 380));
+      setVisibleCards(i);
+    }
+  };
+
+  const resetDemo = () => {
+    setDemoStep("idle");
+    setParsedSkills([]);
+    setVisibleCards(0);
+  };
 
   return (
     <div className="min-h-screen bg-[#f8fafc]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
@@ -91,75 +124,46 @@ export default function Showcase() {
             onClick={() => setLocation("/login")}
             className="bg-[#4f46e5] hover:bg-[#4338ca] active:scale-95 text-white font-bold px-4 py-2 rounded-xl text-sm flex items-center gap-1.5 transition-all"
           >
-            Request access <ArrowRight className="w-3.5 h-3.5" />
+            Get early access <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
       </nav>
 
-      {/* HERO — light split layout */}
+      {/* ── HERO ── */}
       <section className="bg-white border-b border-[#f0f4ff] relative overflow-hidden">
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-[#4f46e5]/5 rounded-full blur-[120px]" />
           <div className="absolute bottom-0 left-[10%] w-[400px] h-[400px] bg-[#f97316]/5 rounded-full blur-[100px]" />
         </div>
         <div className="max-w-6xl mx-auto px-5 py-16 sm:py-24 grid lg:grid-cols-[1fr_340px] gap-10 lg:gap-16 items-center relative z-10">
-          {/* Left */}
           <div>
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="inline-flex items-center gap-2 bg-[#fff7ed] border border-[#fed7aa] rounded-full px-3.5 py-1.5 mb-7"
-            >
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+              className="inline-flex items-center gap-2 bg-[#fff7ed] border border-[#fed7aa] rounded-full px-3.5 py-1.5 mb-7">
               <span className="w-1.5 h-1.5 rounded-full bg-[#f97316] animate-pulse" />
               <span className="text-[11px] font-bold text-[#ea580c] tracking-wider uppercase">Private beta · Invite-only</span>
             </motion.div>
-
-            <motion.h1
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.07 }}
-              className="text-[38px] sm:text-[52px] font-black text-[#0f172a] leading-[1.1] tracking-tight mb-5"
-            >
-              You're spending weeks<br />
-              finding candidates<br />
-              <span className="text-[#4f46e5]">who don't respond.</span>
+            <motion.h1 initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.07 }}
+              className="text-[38px] sm:text-[52px] font-black text-[#0f172a] leading-[1.1] tracking-tight mb-5">
+              Stop juggling<br />5 hiring tools.<br />
+              <span className="text-[#4f46e5]">Get one that works.</span>
             </motion.h1>
-
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.14 }}
-              className="text-[17px] text-[#64748b] mb-8 leading-relaxed max-w-md"
-            >
-              KodeTalent gives you a pre-screened campus pool — GitHub verified, AI scored, and ready to respond.
+            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.14 }}
+              className="text-[17px] text-[#64748b] mb-8 leading-relaxed max-w-md">
+              KodeTalent replaces your entire campus hiring stack — sourcing, screening, scoring — with one AI-powered pool of verified engineering students.
             </motion.p>
-
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="flex flex-col sm:flex-row gap-3"
-            >
-              <button
-                onClick={() => setLocation("/login")}
-                className="bg-[#4f46e5] hover:bg-[#4338ca] text-white font-black px-7 py-3.5 rounded-xl flex items-center gap-2 shadow-[0_4px_20px_rgba(79,70,229,0.3)] hover:shadow-[0_8px_32px_rgba(79,70,229,0.4)] transition-all active:scale-[0.98] text-[15px]"
-              >
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+              className="flex flex-col sm:flex-row gap-3">
+              <button onClick={() => setLocation("/login")}
+                className="bg-[#4f46e5] hover:bg-[#4338ca] text-white font-black px-7 py-3.5 rounded-xl flex items-center gap-2 shadow-[0_4px_20px_rgba(79,70,229,0.3)] hover:shadow-[0_8px_32px_rgba(79,70,229,0.4)] transition-all active:scale-[0.98] text-[15px]">
                 Get early access <ArrowRight className="w-4 h-4" />
               </button>
-              <button
-                onClick={() => document.getElementById("funnel")?.scrollIntoView({ behavior: "smooth" })}
-                className="text-[#64748b] hover:text-[#4f46e5] font-semibold px-5 py-3.5 rounded-xl transition-colors text-[15px] flex items-center gap-1.5 border border-[#e5e7eb] hover:border-[#4f46e5]/30"
-              >
-                See how it works <ChevronRight className="w-4 h-4" />
+              <button onClick={() => demoRef.current?.scrollIntoView({ behavior: "smooth" })}
+                className="text-[#64748b] hover:text-[#4f46e5] font-semibold px-5 py-3.5 rounded-xl transition-colors text-[15px] flex items-center gap-1.5 border border-[#e5e7eb] hover:border-[#4f46e5]/30">
+                See live demo <ChevronRight className="w-4 h-4" />
               </button>
             </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.3 }}
-              className="mt-6 flex flex-wrap gap-4"
-            >
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}
+              className="mt-6 flex flex-wrap gap-4">
               {["No credit card", "2-min setup", "Works immediately"].map(t => (
                 <div key={t} className="flex items-center gap-1.5 text-xs text-[#94a3b8] font-medium">
                   <CheckCircle className="w-3.5 h-3.5 text-[#10b981]" /> {t}
@@ -168,13 +172,10 @@ export default function Showcase() {
             </motion.div>
           </div>
 
-          {/* Right — product preview card (light version) */}
-          <motion.div
-            initial={{ opacity: 0, x: 24 }}
-            animate={{ opacity: 1, x: 0 }}
+          {/* Hero card */}
+          <motion.div initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.25, type: "spring", stiffness: 90 }}
-            className="hidden lg:block flex-shrink-0"
-          >
+            className="hidden lg:block flex-shrink-0">
             <div className="relative">
               <div className="absolute inset-0 -m-3 bg-[#4f46e5]/8 rounded-3xl blur-xl" />
               <div className="relative bg-white border border-[#e5e7eb] rounded-2xl p-5 shadow-[0_8px_32px_rgba(0,0,0,0.08)]">
@@ -185,49 +186,30 @@ export default function Showcase() {
                     <span className="text-[9px] font-bold text-[#b45309]">Locked</span>
                   </div>
                 </div>
-
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#4f46e5] to-[#6366f1] flex items-center justify-center text-white font-black text-base flex-shrink-0">
                     {PREVIEW_CANDIDATE.initials}
                   </div>
                   <div>
-                    <div className="font-black text-[#0f172a] text-sm blur-sm select-none">{PREVIEW_CANDIDATE.name}</div>
+                    <div className="font-black text-[#0f172a] text-sm blur-sm select-none">Arjun R.</div>
                     <div className="text-xs text-[#64748b] mt-0.5">{PREVIEW_CANDIDATE.college}</div>
                     <div className="text-[10px] text-[#94a3b8]">{PREVIEW_CANDIDATE.field} · Year {PREVIEW_CANDIDATE.year}</div>
                   </div>
                 </div>
-
                 <div className="space-y-2.5 mb-4">
-                  <div>
-                    <div className="flex justify-between mb-1">
-                      <span className="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wider">Profile Strength</span>
-                      <span className="text-[11px] font-black text-[#10b981]">{PREVIEW_CANDIDATE.profileStrength}/100</span>
+                  {[["Profile Strength", PREVIEW_CANDIDATE.profileStrength, "#10b981"], ["AI Score", PREVIEW_CANDIDATE.overallScore, "#4f46e5"]].map(([label, val, color]) => (
+                    <div key={label as string}>
+                      <div className="flex justify-between mb-1">
+                        <span className="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wider">{label as string}</span>
+                        <span className="text-[11px] font-black" style={{ color: color as string }}>{val as number}/100</span>
+                      </div>
+                      <div className="h-1.5 bg-[#f1f5f9] rounded-full overflow-hidden">
+                        <motion.div initial={{ width: 0 }} animate={{ width: `${val}%` }}
+                          transition={{ delay: 0.8, duration: 1 }} className="h-full rounded-full" style={{ background: color as string }} />
+                      </div>
                     </div>
-                    <div className="h-1.5 bg-[#f1f5f9] rounded-full overflow-hidden">
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${PREVIEW_CANDIDATE.profileStrength}%` }}
-                        transition={{ delay: 0.8, duration: 1, ease: "easeOut" }}
-                        className="h-full bg-[#10b981] rounded-full"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex justify-between mb-1">
-                      <span className="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wider">AI Score</span>
-                      <span className="text-[11px] font-black text-[#4f46e5]">{PREVIEW_CANDIDATE.overallScore}/100</span>
-                    </div>
-                    <div className="h-1.5 bg-[#f1f5f9] rounded-full overflow-hidden">
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${PREVIEW_CANDIDATE.overallScore}%` }}
-                        transition={{ delay: 1, duration: 1, ease: "easeOut" }}
-                        className="h-full bg-[#4f46e5] rounded-full"
-                      />
-                    </div>
-                  </div>
+                  ))}
                 </div>
-
                 <div className="bg-[#f8fafc] border border-[#f0f4ff] rounded-xl p-3 mb-4">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-1.5">
@@ -245,36 +227,22 @@ export default function Showcase() {
                     ))}
                   </div>
                 </div>
-
                 <div className="flex flex-wrap gap-1.5 mb-4">
                   {PREVIEW_CANDIDATE.skills.map(s => (
                     <span key={s} className="text-[10px] font-bold bg-[#eef2ff] text-[#4f46e5] px-2 py-1 rounded-lg">{s}</span>
                   ))}
                 </div>
-
-                <button
-                  onClick={() => setLocation("/login")}
-                  className="w-full bg-[#4f46e5] hover:bg-[#4338ca] text-white font-bold py-2.5 rounded-xl text-sm flex items-center justify-center gap-1.5 transition-all active:scale-[0.98]"
-                >
+                <button onClick={() => setLocation("/login")}
+                  className="w-full bg-[#4f46e5] text-white font-bold py-2.5 rounded-xl text-sm flex items-center justify-center gap-1.5">
                   <Lock className="w-3.5 h-3.5" /> Unlock full profile
                 </button>
               </div>
-
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
+              <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 1.1 }}
-                className="absolute -top-3 -right-3 bg-[#10b981] text-white text-[10px] font-black px-2.5 py-1.5 rounded-xl shadow-md"
-              >
+                className="absolute -top-3 -right-3 bg-[#10b981] text-white text-[10px] font-black px-2.5 py-1.5 rounded-xl shadow-md">
                 4 projects · Open to work
               </motion.div>
             </div>
-          </motion.div>
-        </div>
-
-        <div className="pb-6 flex justify-center">
-          <motion.div animate={{ y: [0, 4, 0] }} transition={{ repeat: Infinity, duration: 1.5 }} className="text-[#cbd5e1]">
-            <ChevronRight className="w-5 h-5 rotate-90" />
           </motion.div>
         </div>
       </section>
@@ -286,14 +254,9 @@ export default function Showcase() {
             {STATS.map((s, i) => {
               const Icon = s.icon;
               return (
-                <motion.div
-                  key={s.label}
-                  initial={{ opacity: 0, y: 6 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.06 }}
-                  className="py-5 px-5 flex items-center gap-3"
-                >
+                <motion.div key={s.label} initial={{ opacity: 0, y: 6 }} whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }} transition={{ delay: i * 0.06 }}
+                  className="py-5 px-5 flex items-center gap-3">
                   <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${s.color}12` }}>
                     <Icon className="w-4 h-4" style={{ color: s.color }} />
                   </div>
@@ -308,167 +271,300 @@ export default function Showcase() {
         </div>
       </section>
 
-      {/* FUNNEL COMPARISON */}
-      <section id="funnel" className="py-20 px-5 max-w-6xl mx-auto">
-        <div className="text-center mb-10">
-          <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}
-            className="text-xs font-black uppercase tracking-widest text-[#f97316] mb-2">
-            The recruiter problem
-          </motion.p>
-          <motion.h2 initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-            className="text-3xl sm:text-[38px] font-black text-[#0f172a] leading-[1.15] mb-3">
-            4 steps. Same outcome.<br />
-            <span className="text-[#4f46e5]">Unless the talent is already verified.</span>
-          </motion.h2>
-          <p className="text-[#64748b] max-w-lg mx-auto text-[15px]">Toggle to see what disappears when the pool is pre-screened.</p>
-        </div>
-
-        <div className="flex justify-center mb-8">
-          <div className="bg-[#f1f5f9] rounded-2xl p-1 flex">
-            <button
-              onClick={() => setFunnelMode("without")}
-              className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 ${funnelMode === "without" ? "bg-white text-[#0f172a] shadow" : "text-[#64748b]"}`}
-            >
-              <X className="w-3.5 h-3.5 text-[#ef4444]" /> Old stack
-            </button>
-            <button
-              onClick={() => setFunnelMode("with")}
-              className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 ${funnelMode === "with" ? "bg-[#4f46e5] text-white shadow" : "text-[#64748b]"}`}
-            >
-              <CheckCircle className="w-3.5 h-3.5" /> With KodeTalent
-            </button>
+      {/* ── TOOL COLLAPSE SECTION ── */}
+      <section className="py-20 px-5 bg-[#f8fafc] border-b border-[#f0f4ff]">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-12">
+            <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}
+              className="text-xs font-black uppercase tracking-widest text-[#f97316] mb-2">The problem</motion.p>
+            <motion.h2 initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+              className="text-3xl sm:text-[38px] font-black text-[#0f172a] leading-[1.15] mb-3">
+              You're already paying for<br />5 tools that don't talk to each other.
+            </motion.h2>
+            <p className="text-[#64748b] max-w-lg mx-auto">Each one adds friction. None of them know if a candidate actually codes.</p>
           </div>
-        </div>
 
-        <div className="max-w-2xl mx-auto">
-          <AnimatePresence mode="wait">
-            <motion.div key={funnelMode} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }} className="space-y-3">
-              {funnel.map((item, i) => {
-                const isActive = i === activeStep;
-                const isGreen = funnelMode === "with";
+          {/* Animated tool pain cycle */}
+          <div className="flex flex-col items-center gap-6">
+            <div className={`grid grid-cols-5 gap-3 transition-all duration-700 ${collapsed ? "opacity-0 scale-90 pointer-events-none h-0 overflow-hidden" : ""}`}>
+              {OLD_TOOLS.map((tool, i) => {
+                const Icon = tool.icon;
+                const isActive = activeOldTool === i;
                 return (
-                  <motion.div
-                    key={item.stage}
-                    initial={{ opacity: 0, x: isGreen ? 16 : -16 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.06 }}
-                    onClick={() => setActiveStep(i)}
-                    className={`rounded-2xl border p-4 cursor-pointer transition-all duration-200 ${
-                      isActive
-                        ? isGreen ? "bg-[#f0fdf4] border-[#86efac] shadow-sm" : "bg-[#fff5f5] border-[#fca5a5] shadow-sm"
-                        : "bg-white border-[#f0f0f0] hover:border-[#e2e8f0]"
-                    }`}
-                  >
-                    <div className="flex gap-3 items-start">
-                      <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black flex-shrink-0 ${isGreen ? "bg-[#dcfce7] text-[#10b981]" : "bg-[#fee2e2] text-[#ef4444]"}`}>
-                        {i + 1}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <span className={`text-[10px] font-black uppercase tracking-wider ${isGreen ? "text-[#10b981]" : "text-[#ef4444]"}`}>{item.stage}</span>
-                        <div className="font-bold text-[#0f172a] text-sm mt-0.5">{item.action}</div>
-                        <AnimatePresence>
-                          {isActive && (
-                            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-                              <div className={`text-xs mt-2 flex items-start gap-1.5 ${isGreen ? "text-[#15803d]" : "text-[#b91c1c]"}`}>
-                                {isGreen ? <CheckCircle className="w-3 h-3 mt-0.5 flex-shrink-0" /> : <X className="w-3 h-3 mt-0.5 flex-shrink-0" />}
-                                {item.result}
-                              </div>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
+                  <motion.div key={tool.name}
+                    animate={{ scale: isActive ? 1.05 : 1, y: isActive ? -4 : 0 }}
+                    className={`bg-white rounded-2xl border-2 p-4 text-center transition-all cursor-default ${isActive ? "border-[#ef4444]/40 shadow-[0_4px_20px_rgba(239,68,68,0.12)]" : "border-[#f0f4ff]"}`}>
+                    <div className="w-10 h-10 rounded-xl mx-auto mb-2 flex items-center justify-center" style={{ background: `${tool.color}18` }}>
+                      <Icon className="w-5 h-5" style={{ color: tool.color }} />
                     </div>
+                    <div className="text-[10px] font-bold text-[#0f172a] leading-tight">{tool.name}</div>
+                    <AnimatePresence>
+                      {isActive && (
+                        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
+                          className="text-[9px] text-[#ef4444] font-semibold mt-1.5 leading-tight overflow-hidden">
+                          {tool.pain}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </motion.div>
                 );
               })}
-            </motion.div>
-          </AnimatePresence>
-          <div className={`mt-4 rounded-2xl p-4 text-center border ${funnelMode === "with" ? "bg-[#f0fdf4] border-[#bbf7d0]" : "bg-[#fff5f5] border-[#fecaca]"}`}>
-            <p className={`font-black text-sm ${funnelMode === "with" ? "text-[#10b981]" : "text-[#ef4444]"}`}>
-              {funnelMode === "with" ? "Shortlist in 48 hrs. Better candidates. Recruiter wins." : "3–4 weeks. Burnout. Wrong hire. Repeat."}
-            </p>
+            </div>
+
+            {/* Collapse arrow */}
+            <div className="flex flex-col items-center gap-2">
+              {!collapsed ? (
+                <>
+                  <div className="flex gap-1">
+                    {OLD_TOOLS.map((_, i) => (
+                      <motion.div key={i} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.05 }}
+                        className="w-1.5 h-1.5 rounded-full bg-[#ef4444]/40" />
+                    ))}
+                  </div>
+                  <button onClick={() => setCollapsed(true)}
+                    className="flex items-center gap-2 bg-[#4f46e5] hover:bg-[#4338ca] text-white font-bold px-5 py-2.5 rounded-xl text-sm transition-all active:scale-[0.98]">
+                    <Sparkles className="w-4 h-4" /> Replace all 5 with KodeTalent
+                  </button>
+                </>
+              ) : (
+                <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}
+                  className="flex flex-col items-center gap-4">
+                  <div className="w-20 h-20 bg-[#4f46e5] rounded-3xl flex items-center justify-center shadow-[0_8px_32px_rgba(79,70,229,0.4)]">
+                    <Zap className="w-10 h-10 text-white fill-white" />
+                  </div>
+                  <div className="text-center">
+                    <div className="font-black text-[#0f172a] text-xl mb-1">KodeTalent</div>
+                    <div className="text-[#64748b] text-sm">One platform. Everything done.</div>
+                  </div>
+                  <div className="flex flex-wrap justify-center gap-2">
+                    {["Source ✓", "Screen ✓", "Score ✓", "Shortlist ✓", "Track ✓"].map(t => (
+                      <span key={t} className="text-xs font-bold bg-[#f0fdf4] border border-[#86efac] text-[#10b981] px-2.5 py-1 rounded-full">{t}</span>
+                    ))}
+                  </div>
+                  <button onClick={() => setCollapsed(false)} className="text-xs text-[#94a3b8] hover:text-[#64748b] underline underline-offset-2">
+                    Show old stack again
+                  </button>
+                </motion.div>
+              )}
+            </div>
           </div>
         </div>
       </section>
 
-      {/* CANDIDATE POOL — light version */}
-      <section className="bg-[#f8fafc] border-t border-[#f0f4ff] py-20 px-5">
-        <div className="max-w-6xl mx-auto">
+      {/* ── LIVE INTERACTIVE DEMO ── */}
+      <section ref={demoRef} className="py-20 px-5 bg-white border-b border-[#f0f4ff]">
+        <div className="max-w-4xl mx-auto">
           <div className="text-center mb-10">
             <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}
-              className="text-xs font-black uppercase tracking-widest text-[#4f46e5] mb-2">Live talent pool</motion.p>
+              className="text-xs font-black uppercase tracking-widest text-[#4f46e5] mb-2">Live demo — try it now</motion.p>
             <motion.h2 initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
               className="text-3xl font-black text-[#0f172a] mb-2">
-              Your next hire is already in here.
+              Paste a JD. Watch AI find your candidates.
             </motion.h2>
-            <p className="text-[#64748b] text-sm">Profiles are anonymized until you sign in. Scores and signals are real.</p>
+            <p className="text-[#64748b] text-sm">No sign-up needed to try. We'll show you what's waiting.</p>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {loading
-              ? [1,2,3,4,5,6].map(i => <div key={i} className="rounded-2xl bg-white border border-[#f0f4ff] h-48 animate-pulse" />)
-              : candidates.slice(0, 6).map((c, i) => (
-                <motion.div
-                  key={c.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.05 }}
-                  className="bg-white border border-[#f0f4ff] rounded-2xl p-5 hover:border-[#c7d2fe] hover:shadow-md transition-all group"
-                >
-                  <div className="flex items-start gap-3 mb-4">
-                    <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#4f46e5] to-[#818cf8] flex items-center justify-center text-white font-black flex-shrink-0">
-                      {c.initials}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="font-black text-[#0f172a] text-sm blur-sm select-none">{c.maskedName}</div>
-                      <div className="text-[11px] text-[#64748b] mt-0.5 truncate">{c.college}</div>
-                      <div className="text-[10px] text-[#94a3b8]">{c.field} · Year {c.year}</div>
-                    </div>
-                    <Lock className="w-3.5 h-3.5 text-[#cbd5e1] mt-0.5 flex-shrink-0" />
-                  </div>
+          <div className="grid lg:grid-cols-2 gap-6">
+            {/* Left: JD input */}
+            <div className="bg-[#f8fafc] border border-[#e5e7eb] rounded-2xl p-5">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-black uppercase tracking-wider text-[#94a3b8]">Job Description</span>
+                {demoStep !== "idle" && (
+                  <button onClick={resetDemo} className="text-xs text-[#94a3b8] hover:text-[#64748b] font-medium">Reset</button>
+                )}
+              </div>
+              <div className="bg-white border border-[#e5e7eb] rounded-xl p-4 text-sm text-[#475569] font-mono leading-relaxed whitespace-pre-wrap min-h-[180px]">
+                {SAMPLE_JD}
+              </div>
 
-                  <div className="grid grid-cols-3 gap-2 mb-3">
-                    <div className="bg-[#f0fdf4] rounded-xl p-2 text-center">
-                      <div className="text-sm font-black text-[#10b981]">{c.profileStrength}</div>
-                      <div className="text-[9px] text-[#94a3b8] uppercase font-bold">Profile</div>
+              {/* Parsed skills chips */}
+              <AnimatePresence>
+                {parsedSkills.length > 0 && (
+                  <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="mt-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Brain className="w-3.5 h-3.5 text-[#4f46e5]" />
+                      <span className="text-[11px] font-bold text-[#4f46e5] uppercase tracking-wider">AI extracted</span>
                     </div>
-                    <div className="bg-[#eef2ff] rounded-xl p-2 text-center">
-                      <div className="text-sm font-black text-[#4f46e5]">{c.overallScore}</div>
-                      <div className="text-[9px] text-[#94a3b8] uppercase font-bold">AI</div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {parsedSkills.map((s, i) => (
+                        <motion.span key={s} initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: i * 0.05 }}
+                          className="text-[11px] font-bold bg-[#eef2ff] text-[#4f46e5] px-2.5 py-1 rounded-lg">
+                          {s}
+                        </motion.span>
+                      ))}
                     </div>
-                    <div className="bg-[#f8fafc] rounded-xl p-2 text-center">
-                      {c.hasGithub
-                        ? <Github className="w-4 h-4 text-[#10b981] mx-auto" />
-                        : <span className="text-sm font-black text-[#e2e8f0]">—</span>
-                      }
-                      <div className="text-[9px] text-[#94a3b8] uppercase font-bold">GH</div>
-                    </div>
-                  </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
-                  <div className="flex flex-wrap gap-1.5">
-                    {c.topSkills.slice(0, 3).map(s => (
-                      <span key={s} className="text-[10px] font-semibold bg-[#f8fafc] border border-[#e2e8f0] text-[#475569] px-2 py-0.5 rounded-lg">{s}</span>
-                    ))}
+              <button onClick={runDemo} disabled={demoStep !== "idle"}
+                className="mt-4 w-full bg-gradient-to-r from-[#4f46e5] to-[#6366f1] text-white font-black py-3 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-60 text-sm">
+                {demoStep === "idle" && <><Search className="w-4 h-4" /> Find matching candidates</>}
+                {demoStep === "parsing" && <><Brain className="w-4 h-4 animate-pulse" /> Parsing JD requirements…</>}
+                {demoStep === "matching" && <><Sparkles className="w-4 h-4 animate-spin" /> Ranking candidates by fit…</>}
+                {demoStep === "done" && <><CheckCircle className="w-4 h-4" /> Matches found — sign in to unlock</>}
+              </button>
+            </div>
+
+            {/* Right: candidate cards */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs font-black uppercase tracking-wider text-[#94a3b8]">
+                  {demoStep === "done" ? "Top matches for your JD" : "Waiting for JD…"}
+                </span>
+                {demoStep === "done" && (
+                  <span className="text-[10px] font-bold text-[#10b981] bg-[#f0fdf4] border border-[#86efac] px-2 py-0.5 rounded-full">
+                    23 candidates found
+                  </span>
+                )}
+              </div>
+
+              {demoStep === "idle" && (
+                <div className="bg-[#f8fafc] border-2 border-dashed border-[#e2e8f0] rounded-2xl h-[280px] flex flex-col items-center justify-center gap-3">
+                  <div className="w-12 h-12 bg-[#f1f5f9] rounded-2xl flex items-center justify-center">
+                    <Users className="w-6 h-6 text-[#cbd5e1]" />
                   </div>
-                </motion.div>
-              ))
-            }
+                  <p className="text-sm text-[#94a3b8] font-medium text-center">Hit "Find candidates" to see<br />who matches your JD</p>
+                </div>
+              )}
+
+              {(demoStep === "parsing" || demoStep === "matching") && (
+                <div className="space-y-3">
+                  {[1, 2, 3].map(i => (
+                    <div key={i} className="bg-white border border-[#f0f4ff] rounded-2xl p-4 animate-pulse">
+                      <div className="flex gap-3 items-center mb-3">
+                        <div className="w-10 h-10 rounded-xl bg-[#f1f5f9]" />
+                        <div className="flex-1 space-y-2">
+                          <div className="h-3 bg-[#f1f5f9] rounded w-2/3" />
+                          <div className="h-2 bg-[#f1f5f9] rounded w-1/2" />
+                        </div>
+                        <div className="w-10 h-10 rounded-xl bg-[#f1f5f9]" />
+                      </div>
+                      <div className="flex gap-2">
+                        {[1, 2, 3].map(j => <div key={j} className="h-5 bg-[#f1f5f9] rounded-lg w-16" />)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {demoStep === "done" && (
+                <div className="space-y-3 relative">
+                  {DEMO_MATCHES.map((m, i) => (
+                    <AnimatePresence key={m.initials}>
+                      {visibleCards > i && (
+                        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.3 }}
+                          className={`bg-white border-2 rounded-2xl p-4 ${i === 0 ? "border-[#4f46e5]/30 shadow-[0_4px_20px_rgba(79,70,229,0.1)]" : "border-[#f0f4ff]"}`}>
+                          <div className="flex items-center gap-3 mb-3">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#4f46e5] to-[#6366f1] flex items-center justify-center text-white font-black text-sm flex-shrink-0">
+                              {m.initials}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className={`font-black text-[#0f172a] text-sm ${i > 0 ? "blur-sm select-none" : ""}`}>{m.name}</div>
+                              <div className="text-xs text-[#64748b]">{m.college} · {m.field} · Year {m.year}</div>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-xl font-black text-[#10b981]">{m.match}</div>
+                              <div className="text-[9px] uppercase font-bold text-[#94a3b8]">match</div>
+                            </div>
+                          </div>
+                          <div className="flex flex-wrap gap-1.5 mb-2">
+                            {m.skills.map(s => (
+                              <span key={s} className="text-[10px] font-bold bg-[#eef2ff] text-[#4f46e5] px-2 py-0.5 rounded-lg">{s}</span>
+                            ))}
+                          </div>
+                          <div className="flex items-center gap-3 text-[10px] text-[#94a3b8]">
+                            <span>CGPA {m.cgpa}</span>
+                            {m.github && <><span>·</span><span className="flex items-center gap-0.5 text-[#10b981]"><Github className="w-3 h-3" /> GitHub verified</span></>}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  ))}
+
+                  {/* Blur wall after first card */}
+                  {visibleCards >= 3 && (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                      className="absolute bottom-0 left-0 right-0 h-36 bg-gradient-to-t from-white to-transparent pointer-events-none" />
+                  )}
+
+                  {visibleCards >= 3 && (
+                    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                      className="relative z-10 text-center pt-2">
+                      <p className="text-sm text-[#64748b] mb-3">
+                        <span className="font-black text-[#0f172a]">+20 more candidates</span> matched your JD.
+                      </p>
+                      <button onClick={() => setLocation("/login")}
+                        className="bg-[#4f46e5] hover:bg-[#4338ca] text-white font-black px-6 py-3 rounded-xl text-sm flex items-center gap-2 mx-auto transition-all active:scale-[0.98]">
+                        <Lock className="w-4 h-4" /> Sign up to unlock all profiles
+                      </button>
+                    </motion.div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── COMPARISON TABLE ── */}
+      <section className="py-20 px-5 bg-[#f8fafc] border-b border-[#f0f4ff]">
+        <div className="max-w-3xl mx-auto">
+          <div className="text-center mb-10">
+            <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}
+              className="text-xs font-black uppercase tracking-widest text-[#4f46e5] mb-2">Honest comparison</motion.p>
+            <motion.h2 initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+              className="text-3xl font-black text-[#0f172a] mb-2">
+              Why not just use LinkedIn or an ATS?
+            </motion.h2>
+            <p className="text-[#64748b] text-sm">Short answer: they don't know if candidates actually code.</p>
           </div>
 
-          <div className="mt-8 text-center">
-            <button
-              onClick={() => setLocation("/login")}
-              className="inline-flex items-center gap-2 bg-[#4f46e5] hover:bg-[#4338ca] text-white font-black px-7 py-3.5 rounded-xl transition-all active:scale-[0.98] text-[15px] shadow-[0_4px_16px_rgba(79,70,229,0.25)] hover:shadow-[0_8px_24px_rgba(79,70,229,0.35)]"
-            >
-              Unlock full profiles <ArrowRight className="w-4 h-4" />
-            </button>
+          <div className="bg-white border border-[#e5e7eb] rounded-2xl overflow-hidden shadow-sm">
+            <div className="grid grid-cols-4 text-xs font-black uppercase tracking-wider text-[#94a3b8] bg-[#f8fafc] border-b border-[#f0f4ff]">
+              <div className="px-4 py-3">Feature</div>
+              <div className="px-4 py-3 text-center bg-[#eef2ff] text-[#4f46e5]">KodeTalent</div>
+              <div className="px-4 py-3 text-center">ATS Tools</div>
+              <div className="px-4 py-3 text-center">LinkedIn</div>
+            </div>
+            {COMPARISON.map((row, i) => (
+              <motion.div key={row.feature} initial={{ opacity: 0, x: -8 }} whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }} transition={{ delay: i * 0.04 }}
+                className={`grid grid-cols-4 border-b border-[#f0f4ff] last:border-0 ${i % 2 === 0 ? "" : "bg-[#fafafa]"}`}>
+                <div className="px-4 py-3 text-sm font-semibold text-[#0f172a]">{row.feature}</div>
+                <div className="px-4 py-3 text-center bg-[#eef2ff]/50">
+                  {row.kt === true
+                    ? <Check className="w-4 h-4 text-[#10b981] mx-auto" />
+                    : row.kt === false
+                    ? <X className="w-4 h-4 text-[#ef4444] mx-auto" />
+                    : <span className="text-xs font-bold text-[#4f46e5]">{row.kt}</span>}
+                </div>
+                <div className="px-4 py-3 text-center">
+                  {row.ats === true
+                    ? <Check className="w-4 h-4 text-[#10b981] mx-auto" />
+                    : row.ats === false
+                    ? <X className="w-4 h-4 text-[#ef4444] mx-auto" />
+                    : <span className="text-xs font-semibold text-[#64748b]">{row.ats}</span>}
+                </div>
+                <div className="px-4 py-3 text-center">
+                  {row.linkedin === true
+                    ? <Check className="w-4 h-4 text-[#10b981] mx-auto" />
+                    : row.linkedin === false
+                    ? <X className="w-4 h-4 text-[#ef4444] mx-auto" />
+                    : row.linkedin === "partial"
+                    ? <Minus className="w-4 h-4 text-[#f59e0b] mx-auto" />
+                    : <span className="text-xs font-semibold text-[#64748b]">{row.linkedin}</span>}
+                </div>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>
 
       {/* FINAL CTA */}
-      <section className="py-20 px-5 bg-white border-t border-[#f0f4ff]">
+      <section className="py-20 px-5 bg-white">
         <div className="max-w-xl mx-auto text-center">
           <motion.div initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
             <div className="inline-flex items-center gap-2 bg-[#eef2ff] border border-[#c7d2fe] rounded-full px-4 py-1.5 mb-5">
@@ -482,10 +578,8 @@ export default function Showcase() {
             <p className="text-[#64748b] mb-8 text-[15px] leading-relaxed">
               No credit card. No sales call. Sign in with your work email and start browsing verified talent right now.
             </p>
-            <button
-              onClick={() => setLocation("/login")}
-              className="bg-gradient-to-r from-[#4f46e5] to-[#6366f1] text-white font-black px-10 py-4 rounded-2xl inline-flex items-center gap-2 shadow-[0_8px_32px_rgba(79,70,229,0.25)] hover:shadow-[0_12px_40px_rgba(79,70,229,0.4)] transition-all active:scale-[0.98] text-[15px] w-full sm:w-auto justify-center"
-            >
+            <button onClick={() => setLocation("/login")}
+              className="bg-gradient-to-r from-[#4f46e5] to-[#6366f1] text-white font-black px-10 py-4 rounded-2xl inline-flex items-center gap-2 shadow-[0_8px_32px_rgba(79,70,229,0.25)] hover:shadow-[0_12px_40px_rgba(79,70,229,0.4)] transition-all active:scale-[0.98] text-[15px] w-full sm:w-auto justify-center">
               Request access now <ArrowRight className="w-5 h-5" />
             </button>
             <p className="mt-4 text-xs text-[#cbd5e1]">Only verified hiring teams accepted. No public sign-up.</p>
