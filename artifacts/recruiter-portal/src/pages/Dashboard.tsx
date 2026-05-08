@@ -57,8 +57,8 @@ export default function Dashboard() {
   useEffect(() => {
     if (!recruiter?.id) { setLocation("/login"); return; }
     fetch(`/api/recruiters/${recruiter.id}/dashboard`)
-      .then(r => r.json())
-      .then(setData)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d) setData(d); })
       .finally(() => setLoading(false));
   }, []);
 
