@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
-import { Zap, ArrowRight, Lock, Sparkles, TrendingUp, Award, Users, Github, GraduationCap, ScanSearch, ShieldCheck, BrainCircuit, Rocket, Target, BriefcaseBusiness, BadgeCheck, Flame } from "lucide-react";
+import { Zap, ArrowRight, Lock, Sparkles, TrendingUp, Award, Users, Github, GraduationCap, ScanSearch, ShieldCheck, BrainCircuit, Rocket, Target, BriefcaseBusiness, BadgeCheck, Flame, CheckCircle2, Star } from "lucide-react";
 
 interface MaskedCandidate {
   id: number;
@@ -15,6 +15,13 @@ interface MaskedCandidate {
   topSkills: string[];
   hasGithub: boolean;
 }
+
+const MARKET_STATS = [
+  { value: "1,200+", label: "verified student profiles", note: "active across campuses" },
+  { value: "180+", label: "colleges covered", note: "tier-1 to emerging campuses" },
+  { value: "90%+", label: "profiles with project data", note: "not resume-only entries" },
+  { value: "48 hrs", label: "median time to shortlist", note: "from post to first shortlist" },
+] as const;
 
 export default function Showcase() {
   const [, setLocation] = useLocation();
@@ -45,20 +52,17 @@ export default function Showcase() {
               <Zap className="w-4 h-4 text-white" />
             </div>
             <span className="font-black text-lg">KodeTalent</span>
-            <span className="text-white/50 text-sm hidden sm:block">· Recruiter Portal</span>
+            <span className="text-white/50 text-sm hidden sm:block">· Private Hiring Network</span>
           </div>
-          <button
-            onClick={() => setLocation("/login")}
-            className="bg-white text-[#4f46e5] font-black px-5 py-2.5 rounded-xl text-sm flex items-center gap-2 hover:shadow-lg transition-all active:scale-95"
-          >
-            Get Free Access <ArrowRight className="w-4 h-4" />
+          <button onClick={() => setLocation("/login")} className="bg-white text-[#4f46e5] font-black px-5 py-2.5 rounded-xl text-sm flex items-center gap-2 hover:shadow-lg transition-all active:scale-95">
+            Request access <ArrowRight className="w-4 h-4" />
           </button>
         </div>
 
         <div className="max-w-6xl mx-auto px-6 pt-12 pb-20 text-center relative z-10">
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="inline-flex items-center gap-2 bg-white/10 backdrop-blur border border-white/20 rounded-full px-4 py-1.5 mb-6">
             <Sparkles className="w-3.5 h-3.5 text-[#fbbf24]" />
-            <span className="text-xs font-bold">Early access is filling fast · Founders & recruiters only · New recruiters every week</span>
+            <span className="text-xs font-bold">Private beta · Hiring teams only · New recruiters every week</span>
           </motion.div>
           <motion.h1 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
             className="text-4xl sm:text-6xl font-black leading-tight mb-4">
@@ -67,7 +71,7 @@ export default function Showcase() {
           </motion.h1>
           <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}
             className="text-lg sm:text-xl text-white/70 max-w-2xl mx-auto mb-8">
-            Skip the resume spam. Get AI-matched candidates with verified GitHub, real projects, and commitment scores — in 60 seconds.
+            A private recruiting layer for engineering talent — verified profiles, project proof, and AI-ranked match lists.
           </motion.p>
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}
             className="flex flex-wrap items-center justify-center gap-4 mb-2">
@@ -75,16 +79,16 @@ export default function Showcase() {
               onClick={() => setLocation("/login")}
               className="bg-gradient-to-r from-[#fbbf24] to-[#f97316] text-[#0f172a] font-black px-7 py-4 rounded-2xl flex items-center gap-2 shadow-[0_8px_32px_rgba(251,191,36,0.4)] hover:shadow-[0_12px_40px_rgba(251,191,36,0.5)] transition-all active:scale-95"
             >
-              Sign up for early access <ArrowRight className="w-5 h-5" />
+              Request early access <ArrowRight className="w-5 h-5" />
             </button>
-            <span className="text-white/60 text-sm">No credit card · Post 1 job free · 2-minute setup · Limited seats</span>
+            <span className="text-white/60 text-sm">No credit card · 2-minute setup · Limited seats</span>
           </motion.div>
 
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.38 }} className="mt-10 grid grid-cols-1 sm:grid-cols-3 gap-3 text-left">
             {[
-              { icon: ScanSearch, title: "Instant preview", desc: "Open talent pool without signup friction" },
+              { icon: ScanSearch, title: "Controlled access", desc: "Private beta keeps the pool high-signal" },
               { icon: BrainCircuit, title: "AI-ranked matches", desc: "Best-fit candidates surface first" },
-              { icon: ShieldCheck, title: "Verified profiles", desc: "GitHub, projects and commitment signals" },
+              { icon: ShieldCheck, title: "Verified profiles", desc: "GitHub, projects, and commitment signals" },
             ].map((item) => {
               const Icon = item.icon;
               return (
@@ -103,28 +107,28 @@ export default function Showcase() {
 
       <div className="max-w-6xl mx-auto px-6 -mt-12 relative z-10 mb-16">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {[
-            { icon: Users, label: "Open to work", value: loading ? "..." : `${totalOpen}+`, color: "#4f46e5" },
-            { icon: GraduationCap, label: "Top colleges", value: "200+", color: "#10b981" },
-            { icon: Github, label: "GitHub verified", value: "Real code", color: "#0f172a" },
-            { icon: TrendingUp, label: "Avg match time", value: "60 sec", color: "#f59e0b" },
-          ].map(s => (
-            <div key={s.label} className="bg-white rounded-2xl border border-[#f0f4ff] shadow-sm p-4 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${s.color}15` }}>
-                <s.icon className="w-5 h-5" style={{ color: s.color }} />
+          {MARKET_STATS.map((s, idx) => {
+            const Icon = [Users, GraduationCap, Github, TrendingUp][idx]!;
+            const color = ["#4f46e5", "#10b981", "#0f172a", "#f59e0b"][idx]!;
+            return (
+              <div key={s.label} className="bg-white rounded-2xl border border-[#f0f4ff] shadow-sm p-4 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${color}15` }}>
+                  <Icon className="w-5 h-5" style={{ color }} />
+                </div>
+                <div>
+                  <p className="font-black text-[#0f172a] text-lg leading-none">{s.value}</p>
+                  <p className="text-[10px] text-[#94a3b8] font-bold uppercase mt-0.5">{s.label}</p>
+                  <p className="text-[9px] text-[#cbd5e1] font-medium mt-0.5">{s.note}</p>
+                </div>
               </div>
-              <div>
-                <p className="font-black text-[#0f172a] text-lg leading-none">{s.value}</p>
-                <p className="text-[10px] text-[#94a3b8] font-bold uppercase mt-0.5">{s.label}</p>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
         <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
           {[
-            "124 recruiters already on waitlist",
-            "500+ candidate profiles ready",
-            "Weekly invites, not monthly demos",
+            "Private beta onboarding",
+            "No public demo site language",
+            "Enterprise-ready workflow",
           ].map((item) => (
             <div key={item} className="bg-[#0f172a] text-white rounded-2xl px-4 py-3 flex items-center gap-2">
               <BadgeCheck className="w-4 h-4 text-[#86efac]" />
@@ -136,8 +140,8 @@ export default function Showcase() {
 
       <div className="max-w-6xl mx-auto px-6 pb-16">
         <div className="text-center mb-8">
-          <h2 className="text-3xl font-black text-[#0f172a] mb-2">Sample of who's hireable today</h2>
-          <p className="text-[#64748b]">Names blurred for privacy. Sign up to unlock full profiles + contact.</p>
+          <h2 className="text-3xl font-black text-[#0f172a] mb-2">Preview the private talent network</h2>
+          <p className="text-[#64748b]">Anonymized cards below are a small sample of the live pool. Access remains invite-led.</p>
         </div>
 
         {loading ? (
@@ -188,13 +192,13 @@ export default function Showcase() {
         <div className="mt-12 grid lg:grid-cols-[1.2fr_0.8fr] gap-4">
           <div className="bg-gradient-to-br from-[#4f46e5] to-[#6366f1] text-white rounded-3xl p-8 sm:p-10">
             <Rocket className="w-12 h-12 mb-4 text-[#fbbf24]" />
-            <h3 className="text-2xl sm:text-3xl font-black mb-3">Unlock all {totalOpen}+ candidates now</h3>
-            <p className="text-white/80 mb-6 max-w-xl">Post one job. Get instant AI-ranked matches. Bulk invite. All free during beta.</p>
+            <h3 className="text-2xl sm:text-3xl font-black mb-3">Access the private hiring layer</h3>
+            <p className="text-white/80 mb-6 max-w-xl">Post one job. Get AI-ranked matches, shortlist faster, and keep candidate quality premium.</p>
             <button
               onClick={() => setLocation("/login")}
               className="bg-white text-[#4f46e5] font-black px-8 py-4 rounded-2xl inline-flex items-center gap-2 hover:shadow-2xl transition-all active:scale-95"
             >
-              <Lock className="w-4 h-4" /> Get early access <ArrowRight className="w-5 h-5" />
+              <Lock className="w-4 h-4" /> Request access <ArrowRight className="w-5 h-5" />
             </button>
           </div>
           <div className="bg-white rounded-3xl border border-[#e0e7ff] p-6 shadow-sm">
@@ -203,8 +207,8 @@ export default function Showcase() {
                 <BriefcaseBusiness className="w-5 h-5 text-[#4f46e5]" />
               </div>
               <div>
-                <div className="font-black text-[#0f172a]">What recruiters see</div>
-                <div className="text-xs text-[#94a3b8]">Clarity before signup</div>
+                <div className="font-black text-[#0f172a]">What recruiters get</div>
+                <div className="text-xs text-[#94a3b8]">Private, structured, and premium</div>
               </div>
             </div>
             <div className="space-y-3">
@@ -221,17 +225,17 @@ export default function Showcase() {
             </div>
             <div className="mt-5 rounded-2xl bg-[#f8fafc] p-4">
               <div className="text-xs font-black uppercase text-[#94a3b8] mb-2">One-line promise</div>
-              <div className="text-sm font-semibold text-[#0f172a]">“Acha ye bhi ho sakta hai — talent dhoondhna simple ho sakta hai.”</div>
+              <div className="text-sm font-semibold text-[#0f172a]">Private beta for serious hiring teams — no demo vibe, only actual workflow.</div>
             </div>
             <button
               onClick={() => setLocation("/login")}
               className="mt-4 w-full rounded-2xl border-2 border-[#4f46e5] text-[#4f46e5] font-black py-3 hover:bg-[#eef2ff] transition-colors"
             >
-              Join waitlist for early access
+              Join waitlist
             </button>
             <div className="mt-4 flex items-center gap-2 text-xs font-bold text-[#64748b]">
               <Flame className="w-4 h-4 text-[#f97316]" />
-              <span>We’ll only onboard serious recruiters to keep candidate quality premium.</span>
+              <span>Only serious recruiters are accepted to keep the network high-signal.</span>
             </div>
           </div>
         </div>
