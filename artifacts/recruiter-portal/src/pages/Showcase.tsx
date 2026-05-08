@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
-import { Zap, ArrowRight, Lock, Sparkles, TrendingUp, Award, Users, Github, GraduationCap, ScanSearch, ShieldCheck, BrainCircuit, Rocket, Target, BriefcaseBusiness, BadgeCheck, Flame, CheckCircle2, Star } from "lucide-react";
+import { Zap, ArrowRight, Lock, Sparkles, TrendingUp, Award, Users, Github, GraduationCap, ScanSearch, ShieldCheck, BrainCircuit, Rocket, Target, BriefcaseBusiness, BadgeCheck, Flame, CheckCircle2, Star, CircleDashed, LayoutList, FileSearch, Filter, GitPullRequest, CheckCheck, Workflow, Brain, CalendarCheck2, BadgeInfo } from "lucide-react";
 
 interface MaskedCandidate {
   id: number;
@@ -139,6 +139,63 @@ export default function Showcase() {
       </div>
 
       <div className="max-w-6xl mx-auto px-6 pb-16">
+        <div className="grid lg:grid-cols-2 gap-4 mb-12">
+          <div className="bg-white rounded-3xl border border-[#e5e7eb] p-6 shadow-sm">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-10 h-10 rounded-2xl bg-[#f1f5f9] flex items-center justify-center">
+                <Workflow className="w-5 h-5 text-[#4f46e5]" />
+              </div>
+              <div>
+                <div className="font-black text-[#0f172a]">Without KodeTalent</div>
+                <div className="text-xs text-[#94a3b8]">Traditional SaaS hiring stack</div>
+              </div>
+            </div>
+            <div className="space-y-3">
+              {[
+                { title: "ATS tracker", desc: "Open applications, duplicate profiles, manual tagging" },
+                { title: "AI screening", desc: "Separate tool, separate login, separate scoring logic" },
+                { title: "Spreadsheet shortlist", desc: "Recruiter moves data across tabs and WhatsApp" },
+                { title: "Interview scheduling", desc: "Another tool, another status sync" },
+              ].map((item, idx) => (
+                <div key={item.title} className="flex items-start gap-3 rounded-2xl border border-dashed border-[#e2e8f0] p-4">
+                  <div className="w-7 h-7 rounded-full bg-[#fee2e2] text-[#ef4444] flex items-center justify-center text-xs font-black">{idx + 1}</div>
+                  <div>
+                    <div className="font-bold text-[#0f172a] text-sm">{item.title}</div>
+                    <div className="text-xs text-[#64748b] mt-1">{item.desc}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="bg-[#0f172a] text-white rounded-3xl p-6 shadow-sm">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center">
+                <CircleDashed className="w-5 h-5 text-[#86efac]" />
+              </div>
+              <div>
+                <div className="font-black">With KodeTalent</div>
+                <div className="text-xs text-white/55">All-in-one recruiter workflow</div>
+              </div>
+            </div>
+            <div className="space-y-3">
+              {[
+                { title: "Discover", desc: "Verified campus pool with projects, GitHub, and commitment score" },
+                { title: "Screen", desc: "AI ranks candidates inside the same system — no tool switching" },
+                { title: "Shortlist", desc: "One-click shortlist with reason, tags, and fit summary" },
+                { title: "Move faster", desc: "Invite, schedule, and track status in one place" },
+              ].map((item, idx) => (
+                <div key={item.title} className="flex items-start gap-3 rounded-2xl bg-white/5 p-4">
+                  <div className="w-7 h-7 rounded-full bg-[#10b981]/20 text-[#86efac] flex items-center justify-center text-xs font-black">{idx + 1}</div>
+                  <div>
+                    <div className="font-bold text-sm">{item.title}</div>
+                    <div className="text-xs text-white/70 mt-1">{item.desc}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
         <div className="text-center mb-8">
           <h2 className="text-3xl font-black text-[#0f172a] mb-2">Preview the private talent network</h2>
           <p className="text-[#64748b]">Anonymized cards below are a small sample of the live pool. Access remains invite-led.</p>
