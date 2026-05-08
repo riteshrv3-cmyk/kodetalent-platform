@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
-import { Zap, ArrowRight, Lock, Sparkles, TrendingUp, Award, Users, Github, GraduationCap, ScanSearch, ShieldCheck, Wand2, BrainCircuit, Rocket, Target, BriefcaseBusiness } from "lucide-react";
+import { Zap, ArrowRight, Lock, Sparkles, TrendingUp, Award, Users, Github, GraduationCap, ScanSearch, ShieldCheck, BrainCircuit, Rocket, Target, BriefcaseBusiness, BadgeCheck, Flame } from "lucide-react";
 
 interface MaskedCandidate {
   id: number;
@@ -58,7 +58,7 @@ export default function Showcase() {
         <div className="max-w-6xl mx-auto px-6 pt-12 pb-20 text-center relative z-10">
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="inline-flex items-center gap-2 bg-white/10 backdrop-blur border border-white/20 rounded-full px-4 py-1.5 mb-6">
             <Sparkles className="w-3.5 h-3.5 text-[#fbbf24]" />
-            <span className="text-xs font-bold">100% verified · No fake resumes · AI-scored</span>
+            <span className="text-xs font-bold">Early access is filling fast · Founders & recruiters only · New recruiters every week</span>
           </motion.div>
           <motion.h1 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
             className="text-4xl sm:text-6xl font-black leading-tight mb-4">
@@ -75,9 +75,9 @@ export default function Showcase() {
               onClick={() => setLocation("/login")}
               className="bg-gradient-to-r from-[#fbbf24] to-[#f97316] text-[#0f172a] font-black px-7 py-4 rounded-2xl flex items-center gap-2 shadow-[0_8px_32px_rgba(251,191,36,0.4)] hover:shadow-[0_12px_40px_rgba(251,191,36,0.5)] transition-all active:scale-95"
             >
-              Start Hiring Free <ArrowRight className="w-5 h-5" />
+              Sign up for early access <ArrowRight className="w-5 h-5" />
             </button>
-            <span className="text-white/60 text-sm">No credit card · Post 1 job free</span>
+            <span className="text-white/60 text-sm">No credit card · Post 1 job free · 2-minute setup · Limited seats</span>
           </motion.div>
 
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.38 }} className="mt-10 grid grid-cols-1 sm:grid-cols-3 gap-3 text-left">
@@ -117,6 +117,18 @@ export default function Showcase() {
                 <p className="font-black text-[#0f172a] text-lg leading-none">{s.value}</p>
                 <p className="text-[10px] text-[#94a3b8] font-bold uppercase mt-0.5">{s.label}</p>
               </div>
+            </div>
+          ))}
+        </div>
+        <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {[
+            "124 recruiters already on waitlist",
+            "500+ candidate profiles ready",
+            "Weekly invites, not monthly demos",
+          ].map((item) => (
+            <div key={item} className="bg-[#0f172a] text-white rounded-2xl px-4 py-3 flex items-center gap-2">
+              <BadgeCheck className="w-4 h-4 text-[#86efac]" />
+              <span className="text-xs font-bold">{item}</span>
             </div>
           ))}
         </div>
@@ -182,7 +194,7 @@ export default function Showcase() {
               onClick={() => setLocation("/login")}
               className="bg-white text-[#4f46e5] font-black px-8 py-4 rounded-2xl inline-flex items-center gap-2 hover:shadow-2xl transition-all active:scale-95"
             >
-              <Lock className="w-4 h-4" /> Create Free Account <ArrowRight className="w-5 h-5" />
+              <Lock className="w-4 h-4" /> Get early access <ArrowRight className="w-5 h-5" />
             </button>
           </div>
           <div className="bg-white rounded-3xl border border-[#e0e7ff] p-6 shadow-sm">
@@ -210,6 +222,16 @@ export default function Showcase() {
             <div className="mt-5 rounded-2xl bg-[#f8fafc] p-4">
               <div className="text-xs font-black uppercase text-[#94a3b8] mb-2">One-line promise</div>
               <div className="text-sm font-semibold text-[#0f172a]">“Acha ye bhi ho sakta hai — talent dhoondhna simple ho sakta hai.”</div>
+            </div>
+            <button
+              onClick={() => setLocation("/login")}
+              className="mt-4 w-full rounded-2xl border-2 border-[#4f46e5] text-[#4f46e5] font-black py-3 hover:bg-[#eef2ff] transition-colors"
+            >
+              Join waitlist for early access
+            </button>
+            <div className="mt-4 flex items-center gap-2 text-xs font-bold text-[#64748b]">
+              <Flame className="w-4 h-4 text-[#f97316]" />
+              <span>We’ll only onboard serious recruiters to keep candidate quality premium.</span>
             </div>
           </div>
         </div>
