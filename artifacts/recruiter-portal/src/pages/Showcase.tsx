@@ -43,15 +43,74 @@ const DEMO_MATCHES = [
   { initials: "SM", name: "Shreya M.", college: "NIT Trichy", field: "IT", year: 4, match: 81, skills: ["Node.js", "Express", "MongoDB"], cgpa: "8.1", github: true },
 ];
 
-const COMPARISON = [
-  { feature: "Pre-verified profiles", kt: true, ats: false, linkedin: false },
-  { feature: "GitHub + project proof", kt: true, ats: false, linkedin: false },
-  { feature: "AI commitment score", kt: true, ats: false, linkedin: false },
-  { feature: "Instant JD → ranked matches", kt: true, ats: false, linkedin: false },
-  { feature: "No-code campus targeting", kt: true, ats: false, linkedin: false },
-  { feature: "Student readiness signal", kt: true, ats: false, linkedin: false },
-  { feature: "Free to start", kt: true, ats: false, linkedin: false },
-  { feature: "Setup time", kt: "2 min", ats: "2–4 weeks", linkedin: "1 hour" },
+const COMPARISON: {
+  feature: string;
+  note?: string;
+  kt: boolean | "partial" | string;
+  linkedin: boolean | "partial" | string;
+  ats: boolean | "partial" | string;
+  campus: boolean | "partial" | string;
+  boards: boolean | "partial" | string;
+}[] = [
+  {
+    feature: "Verified coding proof",
+    note: "Real GitHub repos, not self-declared skills",
+    kt: true, linkedin: false, ats: false, campus: false, boards: false,
+  },
+  {
+    feature: "Large professional network",
+    note: "Reach across seniority levels & industries",
+    kt: false, linkedin: true, ats: false, campus: false, boards: "partial",
+  },
+  {
+    feature: "AI-ranked candidate matches",
+    note: "JD → ranked shortlist without manual screening",
+    kt: true, linkedin: "partial", ats: "partial", campus: false, boards: false,
+  },
+  {
+    feature: "HRMS / workflow integrations",
+    note: "Greenhouse, Workday, Lever, JIRA HR etc.",
+    kt: false, linkedin: "partial", ats: true, campus: false, boards: "partial",
+  },
+  {
+    feature: "Engineering-specific talent pool",
+    note: "CS / IT / ECE students from IIT, NIT, BITS",
+    kt: true, linkedin: false, ats: false, campus: true, boards: false,
+  },
+  {
+    feature: "Activity & commitment score",
+    note: "Streak, XP, test scores — not just resume words",
+    kt: true, linkedin: false, ats: false, campus: false, boards: false,
+  },
+  {
+    feature: "Team hiring workflow",
+    note: "Stage tracking, feedback, collaboration tools",
+    kt: "partial", linkedin: false, ats: true, campus: false, boards: false,
+  },
+  {
+    feature: "Instant JD → top matches",
+    note: "Paste JD, get ranked candidates in seconds",
+    kt: true, linkedin: "partial", ats: false, campus: false, boards: "partial",
+  },
+  {
+    feature: "Real project portfolios",
+    note: "Deployed apps, open-source contributions, demos",
+    kt: true, linkedin: "partial", ats: false, campus: false, boards: false,
+  },
+  {
+    feature: "Interview scheduling",
+    note: "Built-in calendar coordination with candidates",
+    kt: false, linkedin: false, ats: true, campus: "partial", boards: false,
+  },
+  {
+    feature: "Free to browse talent",
+    note: "No per-seat or per-InMail fees to start",
+    kt: true, linkedin: false, ats: false, campus: false, boards: false,
+  },
+  {
+    feature: "Setup time",
+    kt: "2 min", linkedin: "~1 hour", ats: "2–4 weeks", campus: "3–6 months", boards: "~30 min",
+  },
 ];
 
 type DemoStep = "idle" | "parsing" | "matching" | "done";
@@ -380,30 +439,59 @@ export default function Showcase() {
       </section>
 
       <section className="py-20 px-5 bg-[#f8fafc] border-b border-[#f0f4ff]">
-        <div className="max-w-3xl mx-auto">
+        <div className="max-w-5xl mx-auto">
           <div className="text-center mb-10">
             <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="text-xs font-black uppercase tracking-widest text-[#4f46e5] mb-2">Honest comparison</motion.p>
             <motion.h2 initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-3xl font-black text-[#0f172a] mb-2">
-              Why not just use LinkedIn or an ATS?
+              How does KodeTalent actually stack up?
             </motion.h2>
-            <p className="text-[#64748b] text-sm">Short answer: they don't know if candidates actually code.</p>
+            <p className="text-[#64748b] text-sm max-w-lg mx-auto">We're not trying to replace everything. We're great at what others can't do — and we're honest about the rest.</p>
           </div>
 
-          <div className="bg-white border border-[#e5e7eb] rounded-2xl overflow-hidden shadow-sm">
-            <div className="grid grid-cols-4 text-xs font-black uppercase tracking-wider text-[#94a3b8] bg-[#f8fafc] border-b border-[#f0f4ff]">
-              <div className="px-4 py-3">Feature</div>
-              <div className="px-4 py-3 text-center bg-[#eef2ff] text-[#4f46e5]">KodeTalent</div>
-              <div className="px-4 py-3 text-center">ATS Tools</div>
-              <div className="px-4 py-3 text-center">LinkedIn</div>
+          <div className="bg-white border border-[#e5e7eb] rounded-2xl overflow-hidden shadow-sm overflow-x-auto">
+            {/* Header */}
+            <div className="grid text-[10px] font-black uppercase tracking-wider" style={{ gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 1fr" }}>
+              <div className="px-5 py-3.5 text-[#94a3b8] bg-[#f8fafc] border-b border-[#f0f4ff]">Feature</div>
+              <div className="px-3 py-3.5 text-center text-[#4f46e5] bg-[#eef2ff] border-b border-[#c7d2fe]">KodeTalent</div>
+              <div className="px-3 py-3.5 text-center text-[#0077b5] bg-[#f8fafc] border-b border-[#f0f4ff]">LinkedIn</div>
+              <div className="px-3 py-3.5 text-center text-[#64748b] bg-[#f8fafc] border-b border-[#f0f4ff]">ATS Tools</div>
+              <div className="px-3 py-3.5 text-center text-[#64748b] bg-[#f8fafc] border-b border-[#f0f4ff]">Campus Drive</div>
+              <div className="px-3 py-3.5 text-center text-[#64748b] bg-[#f8fafc] border-b border-[#f0f4ff]">Job Boards</div>
             </div>
-            {COMPARISON.map((row, i) => (
-              <motion.div key={row.feature} initial={{ opacity: 0, x: -8 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.04 }} className={`grid grid-cols-4 border-b border-[#f0f4ff] last:border-0 ${i % 2 === 0 ? "" : "bg-[#fafafa]"}`}>
-                <div className="px-4 py-3 text-sm font-semibold text-[#0f172a]">{row.feature}</div>
-                <div className="px-4 py-3 text-center bg-[#eef2ff]/50">{row.kt === true ? <Check className="w-4 h-4 text-[#10b981] mx-auto" /> : row.kt === false ? <X className="w-4 h-4 text-[#ef4444] mx-auto" /> : <span className="text-xs font-bold text-[#4f46e5]">{row.kt}</span>}</div>
-                <div className="px-4 py-3 text-center">{row.ats === true ? <Check className="w-4 h-4 text-[#10b981] mx-auto" /> : row.ats === false ? <X className="w-4 h-4 text-[#ef4444] mx-auto" /> : <span className="text-xs font-semibold text-[#64748b]">{row.ats}</span>}</div>
-                <div className="px-4 py-3 text-center">{row.linkedin === true ? <Check className="w-4 h-4 text-[#10b981] mx-auto" /> : row.linkedin === false ? <X className="w-4 h-4 text-[#ef4444] mx-auto" /> : row.linkedin === "partial" ? <Minus className="w-4 h-4 text-[#f59e0b] mx-auto" /> : <span className="text-xs font-semibold text-[#64748b]">{row.linkedin}</span>}</div>
-              </motion.div>
-            ))}
+
+            {/* Rows */}
+            {COMPARISON.map((row, i) => {
+              const renderCell = (val: boolean | "partial" | string, highlight = false) => {
+                const base = highlight ? "bg-[#eef2ff]/60" : (i % 2 === 0 ? "" : "bg-[#fafafa]");
+                const inner =
+                  val === true ? <Check className="w-4 h-4 text-[#10b981] mx-auto" /> :
+                  val === false ? <X className="w-4 h-4 text-[#dc2626]/50 mx-auto" /> :
+                  val === "partial" ? <Minus className="w-4 h-4 text-[#f59e0b] mx-auto" title="Partial support" /> :
+                  <span className={`text-[10px] font-bold ${highlight ? "text-[#4f46e5]" : "text-[#64748b]"}`}>{val}</span>;
+                return <div className={`px-3 py-3.5 text-center ${base} border-b border-[#f0f4ff]`}>{inner}</div>;
+              };
+              return (
+                <motion.div key={row.feature} initial={{ opacity: 0, x: -6 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.03 }} className="grid last:border-0" style={{ gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 1fr" }}>
+                  <div className={`px-5 py-3.5 border-b border-[#f0f4ff] ${i % 2 === 0 ? "" : "bg-[#fafafa]"}`}>
+                    <div className="text-sm font-bold text-[#0f172a] leading-tight">{row.feature}</div>
+                    {row.note && <div className="text-[10px] text-[#94a3b8] mt-0.5 leading-tight">{row.note}</div>}
+                  </div>
+                  {renderCell(row.kt, true)}
+                  {renderCell(row.linkedin)}
+                  {renderCell(row.ats)}
+                  {renderCell(row.campus)}
+                  {renderCell(row.boards)}
+                </motion.div>
+              );
+            })}
+
+            {/* Legend */}
+            <div className="px-5 py-3 bg-[#f8fafc] border-t border-[#f0f4ff] flex items-center gap-5 flex-wrap">
+              <span className="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wider">Legend</span>
+              <div className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-[#10b981]" /><span className="text-[11px] text-[#64748b]">Full support</span></div>
+              <div className="flex items-center gap-1.5"><Minus className="w-3.5 h-3.5 text-[#f59e0b]" /><span className="text-[11px] text-[#64748b]">Partial / limited</span></div>
+              <div className="flex items-center gap-1.5"><X className="w-3.5 h-3.5 text-[#dc2626]/50" /><span className="text-[11px] text-[#64748b]">Not available</span></div>
+            </div>
           </div>
         </div>
       </section>
