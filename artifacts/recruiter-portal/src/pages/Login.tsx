@@ -1,25 +1,21 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
-import { Building2, User, Briefcase, ArrowRight, Zap, Mail } from "lucide-react";
+import { Building2, User, Briefcase, ArrowRight, Zap, Mail, Users, GraduationCap, Clock } from "lucide-react";
 
 const ROLES = ["HR Manager", "Technical Recruiter", "Campus Recruiter", "Talent Acquisition Lead", "Founder / CEO"];
 
-interface PlatformStats { totalStudents: number; totalColleges: number; avgScore: number; openToWork: number; }
+const STATIC_STATS = [
+  { label: "Verified students", value: "1,200+", icon: Users, color: "#4f46e5" },
+  { label: "Partner colleges", value: "15+", icon: GraduationCap, color: "#10b981" },
+  { label: "Median shortlist", value: "48 hrs", icon: Clock, color: "#f97316" },
+];
 
 export default function Login() {
   const [, setLocation] = useLocation();
   const [form, setForm] = useState({ company: "", name: "", email: "", role: "" });
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [platformStats, setPlatformStats] = useState<PlatformStats | null>(null);
-
-  useEffect(() => {
-    fetch("/api/platform/stats")
-      .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d) setPlatformStats(d); })
-      .catch(() => null);
-  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,39 +46,65 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#312e81] to-[#4338ca] flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-2 mb-6">
-            <Zap className="w-4 h-4 text-[#a78bfa]" />
-            <span className="text-white/80 text-sm font-bold">Recruiter Portal</span>
-          </div>
-          <h1 className="text-4xl font-black text-white mb-2">KodeTalent</h1>
-          <p className="text-white/60 text-base">India's freshest engineering talent, verified & scored</p>
-        </motion.div>
+    <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center p-4" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+      {/* Subtle background pattern */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#4f46e5]/5 rounded-full blur-[100px]" />
+        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-[#f97316]/5 rounded-full blur-[80px]" />
+      </div>
 
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="grid grid-cols-3 gap-3 mb-8">
-          {[
-            { label: "Students", value: platformStats ? `${platformStats.totalStudents.toLocaleString("en-IN")}` : "…" },
-            { label: "Colleges", value: platformStats ? `${platformStats.totalColleges}` : "…" },
-            { label: "Avg. Score", value: platformStats ? `${platformStats.avgScore}/100` : "…" },
-          ].map(stat => (
-            <div key={stat.label} className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-3 text-center">
-              <p className="text-white font-black text-xl">{stat.value}</p>
-              <p className="text-white/50 text-xs mt-0.5">{stat.label}</p>
-            </div>
-          ))}
-        </motion.div>
-
-        <motion.form
-          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
-          onSubmit={handleSubmit}
-          className="bg-white rounded-3xl p-6 shadow-[0_32px_64px_rgba(0,0,0,0.3)]"
+      <div className="w-full max-w-md relative z-10">
+        {/* Logo */}
+        <motion.div
+          initial={{ opacity: 0, y: -12 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-center justify-center gap-2.5 mb-8"
         >
-          <h2 className="text-xl font-black text-[#0f172a] mb-1">Sign in / Create account</h2>
-          <p className="text-sm text-[#94a3b8] mb-5">No password — your work email is your account.</p>
+          <div className="w-9 h-9 bg-[#f97316] rounded-xl flex items-center justify-center shadow-md">
+            <Zap className="w-5 h-5 text-white fill-white" />
+          </div>
+          <div>
+            <div className="font-black text-[#0f172a] text-xl tracking-tight leading-none">KodeTalent</div>
+            <div className="text-xs text-[#94a3b8] font-medium">Private Hiring Network</div>
+          </div>
+        </motion.div>
 
-          <div className="space-y-4">
+        {/* Stats bar */}
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.07 }}
+          className="grid grid-cols-3 gap-3 mb-6"
+        >
+          {STATIC_STATS.map((s) => {
+            const Icon = s.icon;
+            return (
+              <div key={s.label} className="bg-white border border-[#f0f4ff] rounded-2xl p-3 text-center shadow-sm">
+                <div className="flex items-center justify-center mb-1.5">
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: `${s.color}15` }}>
+                    <Icon className="w-3.5 h-3.5" style={{ color: s.color }} />
+                  </div>
+                </div>
+                <p className="font-black text-[#0f172a] text-base leading-none">{s.value}</p>
+                <p className="text-[10px] text-[#94a3b8] font-semibold mt-0.5">{s.label}</p>
+              </div>
+            );
+          })}
+        </motion.div>
+
+        {/* Form card */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.12 }}
+          className="bg-white rounded-3xl border border-[#e5e7eb] p-6 shadow-[0_4px_24px_rgba(0,0,0,0.06)]"
+        >
+          <div className="mb-5">
+            <h2 className="text-xl font-black text-[#0f172a] mb-0.5">Sign in / Create account</h2>
+            <p className="text-sm text-[#94a3b8]">No password — your work email is your account.</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="text-xs font-bold text-[#64748b] uppercase tracking-wider mb-1.5 block">Work Email *</label>
               <div className="relative">
@@ -90,7 +112,7 @@ export default function Login() {
                 <input
                   type="email" required placeholder="you@company.com"
                   value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-                  className="w-full pl-10 pr-4 py-3 border border-[#e5e7eb] rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#4f46e5]/30 focus:border-[#4f46e5] transition-colors"
+                  className="w-full pl-10 pr-4 py-3 border border-[#e5e7eb] rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#4f46e5]/20 focus:border-[#4f46e5] transition-colors bg-[#fafafa] focus:bg-white"
                 />
               </div>
             </div>
@@ -102,7 +124,7 @@ export default function Login() {
                 <input
                   type="text" required placeholder="e.g. Razorpay, Zerodha, Infosys"
                   value={form.company} onChange={e => setForm(f => ({ ...f, company: e.target.value }))}
-                  className="w-full pl-10 pr-4 py-3 border border-[#e5e7eb] rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#4f46e5]/30 focus:border-[#4f46e5] transition-colors"
+                  className="w-full pl-10 pr-4 py-3 border border-[#e5e7eb] rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#4f46e5]/20 focus:border-[#4f46e5] transition-colors bg-[#fafafa] focus:bg-white"
                 />
               </div>
             </div>
@@ -114,7 +136,7 @@ export default function Login() {
                 <input
                   type="text" required placeholder="Full name"
                   value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                  className="w-full pl-10 pr-4 py-3 border border-[#e5e7eb] rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#4f46e5]/30 focus:border-[#4f46e5] transition-colors"
+                  className="w-full pl-10 pr-4 py-3 border border-[#e5e7eb] rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#4f46e5]/20 focus:border-[#4f46e5] transition-colors bg-[#fafafa] focus:bg-white"
                 />
               </div>
             </div>
@@ -125,31 +147,43 @@ export default function Login() {
                 <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#94a3b8]" />
                 <select
                   value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value }))}
-                  className="w-full pl-10 pr-4 py-3 border border-[#e5e7eb] rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#4f46e5]/30 focus:border-[#4f46e5] transition-colors bg-white appearance-none"
+                  className="w-full pl-10 pr-4 py-3 border border-[#e5e7eb] rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#4f46e5]/20 focus:border-[#4f46e5] transition-colors bg-[#fafafa] focus:bg-white appearance-none"
                 >
                   <option value="">Select role</option>
                   {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
                 </select>
               </div>
             </div>
-          </div>
 
-          {error && <p className="text-[#ef4444] text-sm mt-3 font-medium">{error}</p>}
+            {error && (
+              <div className="bg-[#fff5f5] border border-[#fecaca] rounded-xl px-4 py-2.5">
+                <p className="text-[#ef4444] text-sm font-medium">{error}</p>
+              </div>
+            )}
 
-          <button
-            type="submit" disabled={submitting}
-            className="w-full mt-5 bg-gradient-to-r from-[#4f46e5] to-[#6366f1] text-white font-black py-4 rounded-2xl flex items-center justify-center gap-2 shadow-[0_8px_24px_rgba(124,58,237,0.35)] hover:shadow-[0_12px_32px_rgba(124,58,237,0.45)] transition-all active:scale-[0.98] disabled:opacity-60"
-          >
-            {submitting ? "Signing in..." : <>Continue to Dashboard <ArrowRight className="w-5 h-5" /></>}
-          </button>
+            <button
+              type="submit" disabled={submitting}
+              className="w-full mt-1 bg-gradient-to-r from-[#4f46e5] to-[#6366f1] text-white font-black py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-[0_4px_16px_rgba(79,70,229,0.3)] hover:shadow-[0_8px_24px_rgba(79,70,229,0.4)] transition-all active:scale-[0.98] disabled:opacity-60"
+            >
+              {submitting ? "Signing in..." : <>Continue to Dashboard <ArrowRight className="w-4 h-4" /></>}
+            </button>
+          </form>
 
-          <p className="text-center text-xs text-[#94a3b8] mt-4">
-            Free during beta · No credit card · Account persists across devices
+          <p className="text-center text-xs text-[#cbd5e1] mt-4">
+            Free during beta · No credit card · Private access only
           </p>
-        </motion.form>
+        </motion.div>
 
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="text-center mt-6">
-          <button onClick={() => setLocation("/welcome")} className="text-white/60 hover:text-white text-sm font-medium underline underline-offset-2">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3 }}
+          className="text-center mt-4"
+        >
+          <button
+            onClick={() => setLocation("/welcome")}
+            className="text-[#94a3b8] hover:text-[#4f46e5] text-sm font-medium transition-colors"
+          >
             See sample candidates first →
           </button>
         </motion.div>
