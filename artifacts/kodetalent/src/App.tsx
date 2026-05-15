@@ -24,6 +24,7 @@ const Resume = lazy(() => import("@/pages/Resume"));
 const Inbox = lazy(() => import("@/pages/Inbox"));
 const DriveCheck = lazy(() => import("@/pages/DriveCheck"));
 const RecruiterPortalShortcut = lazy(() => import("@/pages/RecruiterPortalShortcut"));
+const Onboarding = lazy(() => import("@/pages/Onboarding"));
 
 function PageSkeleton() {
   return (
@@ -62,6 +63,7 @@ function Router() {
               <Route path="/leaderboard" component={Leaderboard} />
               <Route path="/resume" component={Resume} />
               <Route path="/inbox" component={Inbox} />
+              <Route path="/onboarding" component={Onboarding} />
               <Route path="/drive-check" component={DriveCheck} />
               <Route path="/recruiter" component={RecruiterPortalShortcut} />
               <Route component={NotFound} />

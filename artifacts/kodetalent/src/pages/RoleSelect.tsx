@@ -144,7 +144,7 @@ export default function RoleSelect() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.3, type: "spring", stiffness: 100 }}
             whileTap={{ scale: 0.98 }}
-            onClick={() => setLocation("/home")}
+            onClick={() => setLocation("/onboarding")}
             className="w-full text-left group relative overflow-hidden rounded-2xl"
             style={{
               background: "white",

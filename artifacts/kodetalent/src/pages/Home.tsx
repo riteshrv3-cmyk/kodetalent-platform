@@ -198,7 +198,7 @@ export default function Home() {
 
   useEffect(() => {
     const id = localStorage.getItem("studentId");
-    if (!id) { setLocation("/"); return; }
+    if (!id) { setLocation("/onboarding"); return; }
     let alive = true;
 
     fetch(`${BASE}/api/students/${id}/full-profile`)
