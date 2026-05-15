@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Download, FileText, Plus, Trash2, Sparkles,
   Loader2, Building2, AlignLeft, ChevronRight, X, Pencil,
-  Check, PlusCircle, MinusCircle
+  Check, PlusCircle, MinusCircle, Target, TrendingUp, Zap
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -77,6 +77,230 @@ const TEMPLATES = [
 
 function templateBadge(templateId: string) {
   return TEMPLATES.find(t => t.id === templateId) ?? TEMPLATES[0];
+}
+
+// ─── Recommendation Engine ────────────────────────────────────────────────────
+
+interface RoleRec {
+  company: string;
+  role: string;
+  salaryRange: string;
+  tier: "tier1" | "tier2" | "startup";
+  triggerSkills: string[];
+  logo: string;
+  openings: string;
+}
+
+const ALL_RECS: RoleRec[] = [
+  // Tier 1 — Product companies
+  { company: "Google", role: "SDE-1", salaryRange: "₹25–45 LPA", tier: "tier1", logo: "G", triggerSkills: ["python", "java", "c++", "dsa", "algorithms", "data structures"], openings: "35+" },
+  { company: "Microsoft", role: "SDE-1", salaryRange: "₹22–40 LPA", tier: "tier1", logo: "M", triggerSkills: ["java", "c#", ".net", "azure", "python", "typescript", "dsa"], openings: "20+" },
+  { company: "Amazon", role: "SDE-1", salaryRange: "₹20–38 LPA", tier: "tier1", logo: "A", triggerSkills: ["java", "python", "aws", "dsa", "distributed systems"], openings: "50+" },
+  { company: "Flipkart", role: "SDE-1", salaryRange: "₹18–32 LPA", tier: "tier1", logo: "F", triggerSkills: ["java", "python", "react", "dsa", "kafka", "mysql"], openings: "25+" },
+  { company: "Atlassian", role: "Software Dev", salaryRange: "₹20–35 LPA", tier: "tier1", logo: "AT", triggerSkills: ["java", "python", "javascript", "react", "jira"], openings: "10+" },
+  { company: "Adobe", role: "MTS-1", salaryRange: "₹18–30 LPA", tier: "tier1", logo: "AD", triggerSkills: ["java", "c++", "python", "ml", "graphics", "javascript"], openings: "15+" },
+  // Data / ML
+  { company: "Google", role: "Data Analyst", salaryRange: "₹18–30 LPA", tier: "tier1", logo: "G", triggerSkills: ["python", "sql", "pandas", "machine learning", "bigquery", "data analytics"], openings: "20+" },
+  { company: "Meesho", role: "Data Analyst", salaryRange: "₹10–18 LPA", tier: "tier2", logo: "ME", triggerSkills: ["python", "pandas", "sql", "machine learning", "tableau", "data analytics", "numpy"], openings: "12+" },
+  { company: "Juspay", role: "ML Engineer", salaryRange: "₹14–24 LPA", tier: "tier2", logo: "JP", triggerSkills: ["machine learning", "python", "tensorflow", "pytorch", "data science", "ai", "ml"], openings: "8+" },
+  // Tier 2 — Indian unicorns
+  { company: "Razorpay", role: "Backend Engineer", salaryRange: "₹14–26 LPA", tier: "tier2", logo: "R", triggerSkills: ["node.js", "python", "java", "golang", "go", "postgresql", "redis"], openings: "18+" },
+  { company: "Swiggy", role: "SDE-1", salaryRange: "₹14–24 LPA", tier: "tier2", logo: "SW", triggerSkills: ["react", "node.js", "python", "java", "golang", "mongodb"], openings: "22+" },
+  { company: "Zomato", role: "SDE-1", salaryRange: "₹13–22 LPA", tier: "tier2", logo: "Z", triggerSkills: ["react", "node.js", "python", "redis", "kafka", "mysql"], openings: "15+" },
+  { company: "PhonePe", role: "SDE-1", salaryRange: "₹16–28 LPA", tier: "tier2", logo: "PP", triggerSkills: ["java", "kotlin", "spring", "mysql", "kafka", "microservices"], openings: "20+" },
+  { company: "CRED", role: "SDE-1", salaryRange: "₹15–25 LPA", tier: "tier2", logo: "CR", triggerSkills: ["kotlin", "swift", "react native", "java", "ios", "android", "mobile"], openings: "10+" },
+  { company: "Zerodha", role: "Software Dev", salaryRange: "₹12–22 LPA", tier: "tier2", logo: "ZE", triggerSkills: ["python", "javascript", "react", "go", "golang", "postgresql"], openings: "8+" },
+  { company: "Groww", role: "SDE-1", salaryRange: "₹12–22 LPA", tier: "tier2", logo: "GR", triggerSkills: ["react", "java", "kotlin", "spring", "android", "mysql"], openings: "12+" },
+  { company: "Ola", role: "SDE-1", salaryRange: "₹12–20 LPA", tier: "tier2", logo: "OL", triggerSkills: ["react", "node.js", "python", "java", "kafka", "aws"], openings: "15+" },
+  // Frontend / Full-stack
+  { company: "upGrad", role: "Full Stack Dev", salaryRange: "₹10–18 LPA", tier: "startup", logo: "UG", triggerSkills: ["react", "node.js", "mongodb", "express", "javascript", "typescript", "nextjs"], openings: "10+" },
+  { company: "BrowserStack", role: "SDE-1", salaryRange: "₹12–22 LPA", tier: "startup", logo: "BS", triggerSkills: ["java", "javascript", "react", "selenium", "qa", "testing", "automation"], openings: "8+" },
+  { company: "Freshworks", role: "SDE-1", salaryRange: "₹10–18 LPA", tier: "startup", logo: "FW", triggerSkills: ["ruby", "react", "javascript", "python", "salesforce"], openings: "12+" },
+  { company: "Postman", role: "SDE-1", salaryRange: "₹14–24 LPA", tier: "startup", logo: "PM", triggerSkills: ["javascript", "typescript", "react", "node.js", "api", "rest"], openings: "6+" },
+  { company: "Hasura", role: "Backend Dev", salaryRange: "₹12–22 LPA", tier: "startup", logo: "HA", triggerSkills: ["graphql", "postgresql", "haskell", "node.js", "typescript", "api"], openings: "5+" },
+  // Cloud / DevOps
+  { company: "Nutanix", role: "SDE-1", salaryRange: "₹18–28 LPA", tier: "tier2", logo: "NU", triggerSkills: ["kubernetes", "docker", "cloud", "aws", "azure", "devops", "linux"], openings: "10+" },
+  { company: "Druva", role: "Cloud Dev", salaryRange: "₹14–22 LPA", tier: "startup", logo: "DR", triggerSkills: ["aws", "go", "golang", "kubernetes", "docker", "cloud", "devops"], openings: "8+" },
+  // Cybersec
+  { company: "Rubrik", role: "SDE-1", salaryRange: "₹16–26 LPA", tier: "tier2", logo: "RU", triggerSkills: ["cybersecurity", "security", "python", "c++", "networking"], openings: "6+" },
+];
+
+function getMatchScore(rec: RoleRec, userSkills: string[]): number {
+  if (!userSkills.length) return 0.5;
+  const lower = userSkills.map(s => s.toLowerCase());
+  let hits = 0;
+  for (const trigger of rec.triggerSkills) {
+    if (lower.some(us => us.includes(trigger) || trigger.includes(us))) hits++;
+  }
+  return hits / rec.triggerSkills.length;
+}
+
+function getRecommendations(userSkills: string[]): (RoleRec & { matchPct: number })[] {
+  const scored = ALL_RECS.map(rec => ({
+    ...rec,
+    matchPct: Math.round((0.55 + getMatchScore(rec, userSkills) * 0.45) * 100),
+  }));
+
+  if (!userSkills.length) {
+    // Default: show a balanced mix
+    return scored
+      .filter(r => ["Google", "Flipkart", "Razorpay", "Swiggy", "upGrad", "Freshworks"].includes(r.company))
+      .slice(0, 8);
+  }
+
+  // Deduplicate by company+role, sort by match desc, keep top 8
+  const seen = new Set<string>();
+  return scored
+    .filter(r => { const k = `${r.company}|${r.role}`; if (seen.has(k)) return false; seen.add(k); return true; })
+    .sort((a, b) => b.matchPct - a.matchPct)
+    .slice(0, 8);
+}
+
+const TIER_META = {
+  tier1: { label: "Tier 1", bg: "bg-[#fef3c7]", text: "text-[#92400e]", dot: "bg-[#f59e0b]" },
+  tier2: { label: "Unicorn", bg: "bg-[#e0e7ff]", text: "text-[#3730a3]", dot: "bg-[#4f46e5]" },
+  startup: { label: "Startup", bg: "bg-[#d1fae5]", text: "text-[#065f46]", dot: "bg-[#10b981]" },
+};
+
+function TargetRecommendations({
+  studentId,
+  onGenerate,
+}: {
+  studentId: number;
+  onGenerate: (company: string, role: string) => void;
+}) {
+  const [recs, setRecs] = useState<(RoleRec & { matchPct: number })[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`${BASE}/api/students/${studentId}/full-profile`)
+      .then(r => r.ok ? r.json() : null)
+      .then((profile: { skillSections?: { items: string }[] } | null) => {
+        const skills = (profile?.skillSections ?? [])
+          .flatMap(s => s.items.split(",").map(i => i.trim().toLowerCase()))
+          .filter(Boolean);
+        setRecs(getRecommendations(skills));
+      })
+      .catch(() => setRecs(getRecommendations([])))
+      .finally(() => setLoading(false));
+  }, [studentId]);
+
+  if (loading) {
+    return (
+      <div className="space-y-2">
+        <Skeleton className="h-5 w-48 rounded-lg" />
+        <div className="flex gap-3 overflow-x-auto pb-1">
+          {[1, 2, 3].map(i => <Skeleton key={i} className="h-36 w-44 rounded-2xl shrink-0" />)}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2">
+        <Target className="w-4 h-4 text-[#4f46e5]" />
+        <h2 className="text-sm font-black text-[#0f172a]">Target Companies & Roles</h2>
+        <span className="text-[10px] text-[#64748b] bg-[#f1f5f9] px-2 py-0.5 rounded-full font-medium ml-auto">
+          {recs.length} matches
+        </span>
+      </div>
+      <p className="text-[11px] text-[#64748b] -mt-1">Based on your skills — click to instantly generate a tailored resume</p>
+
+      <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4" style={{ scrollbarWidth: "none" }}>
+        {recs.map((rec, i) => {
+          const tier = TIER_META[rec.tier];
+          return (
+            <motion.div
+              key={`${rec.company}-${rec.role}-${i}`}
+              initial={{ opacity: 0, x: 12 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: i * 0.05 }}
+              className="shrink-0 w-44 bg-white rounded-2xl border border-[#e2e8f0] shadow-sm overflow-hidden"
+            >
+              {/* Top accent bar */}
+              <div
+                className="h-1"
+                style={{
+                  background: rec.tier === "tier1"
+                    ? "linear-gradient(90deg, #f59e0b, #f97316)"
+                    : rec.tier === "tier2"
+                    ? "linear-gradient(90deg, #4f46e5, #7c3aed)"
+                    : "linear-gradient(90deg, #10b981, #0ea5e9)",
+                }}
+              />
+              <div className="p-3 space-y-2.5">
+                {/* Logo + Tier badge */}
+                <div className="flex items-center justify-between">
+                  <div
+                    className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-black text-[10px]"
+                    style={{
+                      background: rec.tier === "tier1"
+                        ? "linear-gradient(135deg, #f59e0b, #f97316)"
+                        : rec.tier === "tier2"
+                        ? "linear-gradient(135deg, #4f46e5, #7c3aed)"
+                        : "linear-gradient(135deg, #10b981, #0ea5e9)",
+                    }}
+                  >
+                    {rec.logo}
+                  </div>
+                  <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${tier.bg} ${tier.text}`}>
+                    {tier.label}
+                  </span>
+                </div>
+
+                {/* Company + Role */}
+                <div>
+                  <p className="font-black text-[#0f172a] text-sm leading-tight">{rec.company}</p>
+                  <p className="text-[11px] text-[#4f46e5] font-semibold leading-tight mt-0.5">{rec.role}</p>
+                </div>
+
+                {/* Salary + Match */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-0.5">
+                    <TrendingUp className="w-3 h-3 text-[#10b981]" />
+                    <span className="text-[10px] font-bold text-[#10b981]">{rec.salaryRange}</span>
+                  </div>
+                </div>
+
+                {/* Match bar */}
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[9px] text-[#94a3b8] font-medium">Match</span>
+                    <span className="text-[10px] font-black text-[#0f172a]">{rec.matchPct}%</span>
+                  </div>
+                  <div className="h-1.5 bg-[#f1f5f9] rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full"
+                      style={{
+                        width: `${rec.matchPct}%`,
+                        background: rec.matchPct >= 85
+                          ? "linear-gradient(90deg, #10b981, #0ea5e9)"
+                          : rec.matchPct >= 70
+                          ? "linear-gradient(90deg, #4f46e5, #7c3aed)"
+                          : "linear-gradient(90deg, #f59e0b, #f97316)",
+                      }}
+                    />
+                  </div>
+                  <p className="text-[9px] text-[#94a3b8]">{rec.openings} openings</p>
+                </div>
+
+                {/* CTA */}
+                <button
+                  onClick={() => onGenerate(rec.company, rec.role)}
+                  className="w-full h-7 rounded-xl text-white font-bold text-[10px] flex items-center justify-center gap-1 active:scale-95 transition-transform"
+                  style={{ background: "linear-gradient(135deg, #4f46e5, #7c3aed)" }}
+                >
+                  <Zap className="w-3 h-3" />
+                  Generate Resume
+                </button>
+              </div>
+            </motion.div>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 // ─── PDF generators ───────────────────────────────────────────────────────────
@@ -935,16 +1159,22 @@ function GenerateSheet({
   onClose,
   onGenerated,
   studentId,
+  initialCompany = "",
+  initialRole = "",
 }: {
   onClose: () => void;
   onGenerated: (r: SavedResume) => void;
   studentId: number;
+  initialCompany?: string;
+  initialRole?: string;
 }) {
   const { toast } = useToast();
   const [templateId, setTemplateId] = useState("classic");
   const [jdText, setJdText] = useState("");
-  const [companyName, setCompanyName] = useState("");
-  const [resumeName, setResumeName] = useState("");
+  const [companyName, setCompanyName] = useState(initialCompany);
+  const [resumeName, setResumeName] = useState(
+    initialCompany && initialRole ? `${initialCompany} — ${initialRole}` : ""
+  );
   const [generating, setGenerating] = useState(false);
 
   const generate = async () => {
@@ -1092,7 +1322,7 @@ export default function Resume() {
   const [studentId, setStudentId] = useState<number | null>(null);
   const [resumes, setResumes] = useState<SavedResume[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showGenerate, setShowGenerate] = useState(false);
+  const [generateFor, setGenerateFor] = useState<{ company: string; role: string } | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [editingResume, setEditingResume] = useState<SavedResume | null>(null);
 
@@ -1175,7 +1405,7 @@ export default function Resume() {
           </div>
           <motion.div whileTap={{ scale: 0.96 }}>
             <Button
-              onClick={() => setShowGenerate(true)}
+              onClick={() => setGenerateFor({ company: "", role: "" })}
               className="rounded-full text-white font-bold shadow-[0_4px_16px_rgba(79,70,229,0.3)] px-4 h-10"
               style={{ background: "linear-gradient(135deg, #4f46e5, #7c3aed)" }}
             >
@@ -1184,6 +1414,14 @@ export default function Resume() {
             </Button>
           </motion.div>
         </div>
+
+        {/* ── Company & Role Recommendations */}
+        {studentId && (
+          <TargetRecommendations
+            studentId={studentId}
+            onGenerate={(company, role) => setGenerateFor({ company, role })}
+          />
+        )}
 
         {resumes.length === 0 ? (
           <motion.div
@@ -1197,11 +1435,11 @@ export default function Resume() {
             <div>
               <p className="font-black text-[#0f172a] text-base">No resumes yet</p>
               <p className="text-xs text-[#64748b] mt-1 leading-relaxed">
-                Generate your first ATS-friendly resume. Paste a JD to tailor it for a specific role.
+                Pick a company above or generate a blank resume to get started.
               </p>
             </div>
             <Button
-              onClick={() => setShowGenerate(true)}
+              onClick={() => setGenerateFor({ company: "", role: "" })}
               className="rounded-full text-white font-bold px-6 h-11"
               style={{ background: "linear-gradient(135deg, #4f46e5, #7c3aed)" }}
             >
@@ -1211,6 +1449,7 @@ export default function Resume() {
           </motion.div>
         ) : (
           <div className="space-y-3">
+            <p className="text-xs font-extrabold text-[#64748b] uppercase tracking-wider">Your Resumes</p>
             <AnimatePresence mode="popLayout">
               {resumes.map(resume => (
                 <ResumeCard
@@ -1229,9 +1468,9 @@ export default function Resume() {
 
         <Card className="border-0 shadow-sm rounded-2xl bg-[#fef3c7]">
           <CardContent className="p-4">
-            <p className="text-sm font-black text-[#92400e] mb-1">💡 Pro tip</p>
+            <p className="text-sm font-black text-[#92400e] mb-1">Pro tip</p>
             <p className="text-xs text-[#78350f] leading-relaxed">
-              Add your real projects and certifications in your Profile first — the AI will use them to create a stronger, more accurate resume. Paste the JD of the role you're applying for to get a tailored version.
+              Complete your Profile with real projects and certifications — the AI will use them to generate a much stronger, targeted resume for each company.
             </p>
             <button
               onClick={() => setLocation("/profile")}
@@ -1244,11 +1483,13 @@ export default function Resume() {
       </div>
 
       <AnimatePresence>
-        {showGenerate && studentId && (
+        {generateFor !== null && studentId && (
           <GenerateSheet
             studentId={studentId}
-            onClose={() => setShowGenerate(false)}
+            onClose={() => setGenerateFor(null)}
             onGenerated={handleGenerated}
+            initialCompany={generateFor.company}
+            initialRole={generateFor.role}
           />
         )}
       </AnimatePresence>
