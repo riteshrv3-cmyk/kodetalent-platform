@@ -83,126 +83,178 @@ function templateBadge(templateId: string) {
 
 function downloadClassicPDF(r: ResumeContent, filename: string) {
   const doc = new jsPDF({ unit: "pt", format: "letter" });
-  const PW = 612, PH = 792, M = 45, CW = PW - 2 * M;
-  let y = M;
+  const PW = 612, PH = 792, ML = 48, MR = 48, MT = 44, MB = 44;
+  const CW = PW - ML - MR;
+  let y = MT;
 
   const checkPage = (needed = 20) => {
-    if (y + needed > PH - M) { doc.addPage(); y = M; }
-  };
-
-  const line = (col = "#c7d2fe") => {
-    checkPage(12);
-    doc.setDrawColor(col);
-    doc.setLineWidth(0.5);
-    doc.line(M, y, PW - M, y);
-    y += 8;
+    if (y + needed > PH - MB) { doc.addPage(); y = MT; }
   };
 
   const section = (title: string) => {
-    checkPage(30);
-    y += 8;
+    checkPage(38);
+    y += 14;
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(9.5);
+    doc.setFontSize(9);
     doc.setTextColor(79, 70, 229);
-    doc.text(title.toUpperCase(), M, y);
-    y += 3;
+    doc.text(title.toUpperCase(), ML, y);
+    y += 4;
     doc.setDrawColor(79, 70, 229);
-    doc.setLineWidth(1);
-    doc.line(M, y, PW - M, y);
-    y += 10;
+    doc.setLineWidth(0.75);
+    doc.line(ML, y, PW - MR, y);
+    y += 11;
     doc.setTextColor(15, 23, 42);
+    doc.setFont("helvetica", "normal");
   };
 
+  const bullet = (text: string, indent = 0, color: [number, number, number] = [55, 65, 81]) => {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9.5);
+    doc.setTextColor(...color);
+    const bx = ML + indent;
+    const bw = CW - indent;
+    const lines = doc.splitTextToSize(text, bw) as string[];
+    for (let i = 0; i < lines.length; i++) {
+      checkPage(13);
+      doc.text(lines[i], bx, y);
+      y += 12;
+    }
+  };
+
+  // ── Name
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(20);
+  doc.setFontSize(22);
   doc.setTextColor(15, 23, 42);
   doc.text(r.name.toUpperCase(), PW / 2, y, { align: "center" });
-  y += 14;
+  y += 4;
 
-  const contact = [r.email, r.phone, r.city, r.githubUrl, r.linkedinUrl].filter(Boolean) as string[];
+  // ── Role / title line
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  doc.setTextColor(79, 70, 229);
+  doc.text(r.degree, PW / 2, y + 10, { align: "center" });
+  y += 22;
+
+  // ── Contact line
+  const contact = [r.email, r.phone, r.city, r.githubUrl, r.linkedinUrl, r.portfolioUrl]
+    .filter(Boolean) as string[];
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8.5);
   doc.setTextColor(100, 116, 139);
-  doc.text(contact.join("  |  "), PW / 2, y, { align: "center" });
-  y += 6;
-  line();
+  const contactStr = contact.join("  |  ");
+  const contactLines = doc.splitTextToSize(contactStr, CW) as string[];
+  for (const cl of contactLines) {
+    doc.text(cl, PW / 2, y, { align: "center" });
+    y += 11;
+  }
+  y += 2;
 
+  // ── Header rule
+  doc.setDrawColor(203, 213, 225);
+  doc.setLineWidth(0.75);
+  doc.line(ML, y, PW - MR, y);
+  y += 4;
+
+  // ── Summary
   if (r.summary) {
     section("Professional Summary");
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
+    doc.setFontSize(9.5);
     doc.setTextColor(55, 65, 81);
-    const lines = doc.splitTextToSize(r.summary, CW) as string[];
-    for (const l of lines) { checkPage(14); doc.text(l, M, y); y += 11; }
+    const ls = doc.splitTextToSize(r.summary, CW) as string[];
+    for (const l of ls) { checkPage(13); doc.text(l, ML, y); y += 12; }
   }
 
+  // ── Education
   section("Education");
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
   doc.setTextColor(15, 23, 42);
-  doc.text(r.degree, M, y);
+  const degreeW = doc.getTextWidth(r.degree);
+  doc.text(r.degree, ML, y);
   doc.setFont("helvetica", "normal");
-  doc.text(`${r.startYear}–${r.gradYear}`, PW - M, y, { align: "right" });
-  y += 12;
-  doc.setFont("helvetica", "italic");
-  doc.setFontSize(9);
+  doc.setFontSize(9.5);
   doc.setTextColor(100, 116, 139);
-  doc.text(`${r.college}, ${r.city}${r.cgpa ? `  |  CGPA: ${r.cgpa}` : ""}`, M, y);
-  y += 12;
+  doc.text(`${r.startYear} – ${r.gradYear}`, PW - MR, y, { align: "right" });
+  y += 13;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9.5);
+  doc.setTextColor(100, 116, 139);
+  const eduSub = `${r.college}, ${r.city}${r.cgpa ? `  ·  CGPA ${r.cgpa}` : ""}`;
+  doc.text(eduSub, ML, y);
+  if (degreeW) { /* suppress unused warning */ }
+  y += 4;
 
+  // ── Technical Skills
   if (r.skillSections.length > 0) {
     section("Technical Skills");
     for (const s of r.skillSections) {
-      checkPage(14);
+      checkPage(15);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(9.5);
       doc.setTextColor(15, 23, 42);
       const lbl = `${s.category}: `;
-      doc.text(lbl, M, y);
       const lw = doc.getTextWidth(lbl);
+      doc.text(lbl, ML, y);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(55, 65, 81);
       const wrapped = doc.splitTextToSize(s.items, CW - lw) as string[];
-      doc.text(wrapped[0] ?? "", M + lw, y);
-      y += 12;
+      for (let wi = 0; wi < wrapped.length; wi++) {
+        checkPage(13);
+        if (wi === 0) {
+          doc.text(wrapped[wi], ML + lw, y);
+          y += 12;
+        } else {
+          doc.text(wrapped[wi], ML + lw, y);
+          y += 12;
+        }
+      }
     }
   }
 
+  // ── Projects
   if (r.projects.length > 0) {
     section("Projects");
     for (const p of r.projects) {
-      checkPage(40);
+      checkPage(44);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(10);
       doc.setTextColor(15, 23, 42);
-      doc.text(p.title, M, y);
+      doc.text(p.title, ML, y);
       doc.setFont("helvetica", "italic");
-      doc.setFontSize(9);
+      doc.setFontSize(8.5);
       doc.setTextColor(79, 70, 229);
-      doc.text(p.tech, PW - M, y, { align: "right" });
-      y += 12;
+      const techW = doc.getTextWidth(p.tech);
+      if (techW < CW * 0.45) {
+        doc.text(p.tech, PW - MR, y, { align: "right" });
+      }
+      y += 13;
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(9);
+      doc.setFontSize(9.5);
       doc.setTextColor(55, 65, 81);
       for (const b of p.bullets) {
-        const ls = doc.splitTextToSize(`• ${b}`, CW) as string[];
-        for (const l of ls) { checkPage(12); doc.text(l, M, y); y += 10; }
+        const ls = doc.splitTextToSize(`\u2022  ${b}`, CW - 6) as string[];
+        for (let li = 0; li < ls.length; li++) {
+          checkPage(13);
+          doc.text(ls[li], ML + (li > 0 ? 8 : 0), y);
+          y += 12;
+        }
       }
-      y += 4;
+      y += 5;
     }
   }
 
+  // ── Achievements & Certifications
   if (r.certifications.length > 0 || r.achievements.length > 0) {
     section("Achievements & Certifications");
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9.5);
     doc.setTextColor(55, 65, 81);
     for (const c of r.certifications) {
-      checkPage(14); doc.text(`• ${c.name} — ${c.issuer}${c.date ? ` (${c.date})` : ""}`, M, y); y += 11;
+      bullet(`\u2022  ${c.name} — ${c.issuer}${c.date ? ` (${c.date})` : ""}`);
     }
     for (const a of r.achievements) {
-      const ls = doc.splitTextToSize(`• ${a}`, CW) as string[];
-      for (const l of ls) { checkPage(14); doc.text(l, M, y); y += 11; }
+      bullet(`\u2022  ${a}`);
     }
   }
 
@@ -211,114 +263,156 @@ function downloadClassicPDF(r: ResumeContent, filename: string) {
 
 function downloadTechPDF(r: ResumeContent, filename: string) {
   const doc = new jsPDF({ unit: "pt", format: "letter" });
-  const PW = 612, PH = 792, M = 45, CW = PW - 2 * M;
-  let y = M;
+  const PW = 612, PH = 792, ML = 45, MR = 45, MB = 44;
+  const CW = PW - ML - MR;
+  let y = 0;
 
   const checkPage = (needed = 20) => {
-    if (y + needed > PH - M) { doc.addPage(); y = M; }
+    if (y + needed > PH - MB) { doc.addPage(); y = 44; }
   };
 
+  // Section header: explicit rect then content — no more y-11 overlap bug
   const section = (title: string) => {
-    checkPage(30);
-    y += 10;
+    checkPage(44);
+    y += 16;
+    const rectTop = y;
+    const rectH = 20;
     doc.setFillColor(15, 23, 42);
-    doc.rect(M, y - 11, CW, 16, "F");
+    doc.rect(ML, rectTop, CW, rectH, "F");
     doc.setFont("helvetica", "bold");
     doc.setFontSize(9.5);
     doc.setTextColor(255, 255, 255);
-    doc.text(title.toUpperCase(), M + 6, y);
-    y += 10;
+    // Baseline at rectTop + 14 (centered in 20pt rect)
+    doc.text(title.toUpperCase(), ML + 8, rectTop + 14);
+    y = rectTop + rectH + 10;
     doc.setTextColor(15, 23, 42);
+    doc.setFont("helvetica", "normal");
   };
 
+  // ── Full-width dark header bar
+  const HEADER_H = 66;
   doc.setFillColor(15, 23, 42);
-  doc.rect(0, 0, PW, 56, "F");
+  doc.rect(0, 0, PW, HEADER_H, "F");
+
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(20);
+  doc.setFontSize(21);
   doc.setTextColor(255, 255, 255);
-  doc.text(r.name.toUpperCase(), M, y + 14);
+  doc.text(r.name.toUpperCase(), ML, 26);
+
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.setTextColor(148, 163, 184);
-  const contact = [r.email, r.phone, r.githubUrl].filter(Boolean) as string[];
-  doc.text(contact.join("  |  "), M, y + 28);
-  y += 60;
+  const contactParts = [r.email, r.phone, r.city, r.githubUrl, r.linkedinUrl]
+    .filter(Boolean) as string[];
+  const contactLine = contactParts.join("  ·  ");
+  const contactWrapped = doc.splitTextToSize(contactLine, CW) as string[];
+  doc.text(contactWrapped[0] ?? "", ML, 44);
+  if (contactWrapped[1]) {
+    doc.text(contactWrapped[1], ML, 57);
+  }
 
+  // ── Accent stripe
+  doc.setFillColor(16, 185, 129);
+  doc.rect(0, HEADER_H, PW, 3, "F");
+  y = HEADER_H + 3 + 16;
+
+  // ── Summary
   if (r.summary) {
     section("About");
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
+    doc.setFontSize(9.5);
     doc.setTextColor(55, 65, 81);
     const ls = doc.splitTextToSize(r.summary, CW) as string[];
-    for (const l of ls) { checkPage(14); doc.text(l, M, y); y += 11; }
+    for (const l of ls) { checkPage(13); doc.text(l, ML, y); y += 12; }
   }
 
+  // ── Education
   section("Education");
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
   doc.setTextColor(15, 23, 42);
-  doc.text(r.degree, M, y);
+  doc.text(r.degree, ML, y);
   doc.setFont("helvetica", "normal");
-  doc.text(`${r.startYear}–${r.gradYear}`, PW - M, y, { align: "right" });
-  y += 12;
-  doc.setFontSize(9);
+  doc.setFontSize(9.5);
   doc.setTextColor(100, 116, 139);
-  doc.text(`${r.college}, ${r.city}${r.cgpa ? `  |  CGPA: ${r.cgpa}` : ""}`, M, y);
-  y += 12;
+  doc.text(`${r.startYear} – ${r.gradYear}`, PW - MR, y, { align: "right" });
+  y += 13;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text(`${r.college}, ${r.city}${r.cgpa ? `  ·  CGPA ${r.cgpa}` : ""}`, ML, y);
+  y += 4;
 
+  // ── Technical Skills
   if (r.skillSections.length > 0) {
     section("Technical Skills");
     for (const s of r.skillSections) {
-      checkPage(14);
+      checkPage(15);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(9.5);
       doc.setTextColor(15, 23, 42);
       const lbl = `${s.category}: `;
-      doc.text(lbl, M, y);
       const lw = doc.getTextWidth(lbl);
+      doc.text(lbl, ML, y);
       doc.setFont("courier", "normal");
+      doc.setFontSize(9);
       doc.setTextColor(16, 185, 129);
       const wrapped = doc.splitTextToSize(s.items, CW - lw) as string[];
-      doc.text(wrapped[0] ?? "", M + lw, y);
-      y += 12;
+      for (let wi = 0; wi < wrapped.length; wi++) {
+        checkPage(13);
+        doc.text(wrapped[wi], ML + lw, y);
+        y += 12;
+      }
     }
   }
 
+  // ── Projects
   if (r.projects.length > 0) {
     section("Projects");
     for (const p of r.projects) {
-      checkPage(40);
+      checkPage(44);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(10);
       doc.setTextColor(15, 23, 42);
-      doc.text(p.title, M, y);
+      doc.text(p.title, ML, y);
       doc.setFont("courier", "normal");
       doc.setFontSize(8.5);
       doc.setTextColor(16, 185, 129);
-      doc.text(`[${p.tech}]`, PW - M, y, { align: "right" });
-      y += 12;
+      const tag = `[ ${p.tech} ]`;
+      if (doc.getTextWidth(tag) < CW * 0.5) {
+        doc.text(tag, PW - MR, y, { align: "right" });
+      }
+      y += 13;
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(9);
+      doc.setFontSize(9.5);
       doc.setTextColor(55, 65, 81);
       for (const b of p.bullets) {
-        const ls = doc.splitTextToSize(`▸ ${b}`, CW) as string[];
-        for (const l of ls) { checkPage(12); doc.text(l, M, y); y += 10; }
+        const ls = doc.splitTextToSize(`\u25b8  ${b}`, CW - 6) as string[];
+        for (let li = 0; li < ls.length; li++) {
+          checkPage(13);
+          doc.text(ls[li], ML + (li > 0 ? 10 : 0), y);
+          y += 12;
+        }
       }
-      y += 4;
+      y += 5;
     }
   }
 
+  // ── Achievements
   if (r.certifications.length > 0 || r.achievements.length > 0) {
-    section("Achievements");
+    section("Achievements & Certifications");
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9.5);
     doc.setTextColor(55, 65, 81);
     for (const c of r.certifications) {
-      checkPage(14); doc.text(`▸ ${c.name} — ${c.issuer}${c.date ? ` (${c.date})` : ""}`, M, y); y += 11;
+      const ls = doc.splitTextToSize(
+        `\u25b8  ${c.name} — ${c.issuer}${c.date ? ` (${c.date})` : ""}`, CW
+      ) as string[];
+      for (const l of ls) { checkPage(13); doc.text(l, ML, y); y += 12; }
     }
     for (const a of r.achievements) {
-      const ls = doc.splitTextToSize(`▸ ${a}`, CW) as string[];
-      for (const l of ls) { checkPage(14); doc.text(l, M, y); y += 11; }
+      const ls = doc.splitTextToSize(`\u25b8  ${a}`, CW) as string[];
+      for (const l of ls) { checkPage(13); doc.text(l, ML, y); y += 12; }
     }
   }
 
@@ -327,117 +421,156 @@ function downloadTechPDF(r: ResumeContent, filename: string) {
 
 function downloadMinimalPDF(r: ResumeContent, filename: string) {
   const doc = new jsPDF({ unit: "pt", format: "letter" });
-  const PW = 612, PH = 792, M = 55, CW = PW - 2 * M;
-  let y = M;
+  const PW = 612, PH = 792, ML = 54, MR = 54, MT = 48, MB = 44;
+  const CW = PW - ML - MR;
+  let y = MT;
 
   const checkPage = (needed = 20) => {
-    if (y + needed > PH - M) { doc.addPage(); y = M; }
+    if (y + needed > PH - MB) { doc.addPage(); y = MT; }
   };
 
   const section = (title: string) => {
-    checkPage(30);
-    y += 12;
+    checkPage(38);
+    y += 16;
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(8);
+    doc.setFontSize(7.5);
     doc.setTextColor(148, 163, 184);
-    doc.text(title.toUpperCase(), M, y);
-    y += 4;
+    doc.text(title.toUpperCase(), ML, y);
+    y += 5;
     doc.setDrawColor(226, 232, 240);
     doc.setLineWidth(0.5);
-    doc.line(M, y, PW - M, y);
-    y += 10;
+    doc.line(ML, y, PW - MR, y);
+    y += 11;
     doc.setTextColor(15, 23, 42);
+    doc.setFont("helvetica", "normal");
   };
 
+  // ── Name
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(22);
+  doc.setFontSize(24);
   doc.setTextColor(15, 23, 42);
-  doc.text(r.name, M, y);
-  y += 14;
+  doc.text(r.name, ML, y);
+  y += 4;
+
+  // ── Degree under name
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  doc.setTextColor(100, 116, 139);
+  doc.text(r.degree, ML, y + 11);
+  y += 22;
+
+  // ── Contact
+  const contact = [r.email, r.phone, r.city, r.githubUrl, r.linkedinUrl, r.portfolioUrl]
+    .filter(Boolean) as string[];
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8.5);
   doc.setTextColor(100, 116, 139);
-  const contact = [r.email, r.phone, r.city, r.githubUrl, r.linkedinUrl].filter(Boolean) as string[];
-  doc.text(contact.join(" · "), M, y);
-  y += 6;
-  doc.setDrawColor(15, 23, 42);
-  doc.setLineWidth(1.5);
-  doc.line(M, y, PW - M, y);
-  y += 10;
+  const contactStr = contact.join("  ·  ");
+  const contactLines = doc.splitTextToSize(contactStr, CW) as string[];
+  for (const cl of contactLines) { doc.text(cl, ML, y); y += 11; }
+  y += 3;
 
+  // ── Bold rule
+  doc.setDrawColor(15, 23, 42);
+  doc.setLineWidth(1.25);
+  doc.line(ML, y, PW - MR, y);
+  y += 6;
+
+  // ── Summary
   if (r.summary) {
     doc.setFont("helvetica", "italic");
     doc.setFontSize(9.5);
     doc.setTextColor(71, 85, 105);
     const ls = doc.splitTextToSize(r.summary, CW) as string[];
-    for (const l of ls) { checkPage(14); doc.text(l, M, y); y += 12; }
+    for (const l of ls) { checkPage(13); doc.text(l, ML, y); y += 12; }
+    y += 2;
   }
 
+  // ── Education
   section("Education");
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(10);
-  doc.text(r.degree, M, y);
+  doc.setFontSize(10.5);
+  doc.setTextColor(15, 23, 42);
+  doc.text(r.degree, ML, y);
   doc.setFont("helvetica", "normal");
-  doc.text(`${r.startYear}–${r.gradYear}`, PW - M, y, { align: "right" });
-  y += 12;
-  doc.setFontSize(9);
+  doc.setFontSize(9.5);
   doc.setTextColor(100, 116, 139);
-  doc.text(`${r.college}, ${r.city}${r.cgpa ? `  ·  CGPA: ${r.cgpa}` : ""}`, M, y);
-  y += 12;
+  doc.text(`${r.startYear} – ${r.gradYear}`, PW - MR, y, { align: "right" });
+  y += 13;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text(`${r.college}, ${r.city}${r.cgpa ? `  ·  CGPA ${r.cgpa}` : ""}`, ML, y);
+  y += 4;
 
+  // ── Skills
   if (r.skillSections.length > 0) {
     section("Skills");
     for (const s of r.skillSections) {
-      checkPage(14);
+      checkPage(15);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(9.5);
       doc.setTextColor(15, 23, 42);
-      const lbl = `${s.category}  `;
-      doc.text(lbl, M, y);
+      const lbl = `${s.category}:  `;
       const lw = doc.getTextWidth(lbl);
+      doc.text(lbl, ML, y);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(71, 85, 105);
       const wrapped = doc.splitTextToSize(s.items, CW - lw) as string[];
-      doc.text(wrapped[0] ?? "", M + lw, y);
-      y += 12;
+      for (let wi = 0; wi < wrapped.length; wi++) {
+        checkPage(13);
+        doc.text(wrapped[wi], ML + lw, y);
+        y += 12;
+      }
     }
   }
 
+  // ── Projects
   if (r.projects.length > 0) {
     section("Projects");
     for (const p of r.projects) {
-      checkPage(40);
+      checkPage(44);
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(10);
+      doc.setFontSize(10.5);
       doc.setTextColor(15, 23, 42);
-      doc.text(p.title, M, y);
+      doc.text(p.title, ML, y);
       doc.setFont("helvetica", "normal");
       doc.setFontSize(8.5);
       doc.setTextColor(100, 116, 139);
-      doc.text(p.tech, PW - M, y, { align: "right" });
-      y += 12;
+      if (doc.getTextWidth(p.tech) < CW * 0.45) {
+        doc.text(p.tech, PW - MR, y, { align: "right" });
+      }
+      y += 13;
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(9);
+      doc.setFontSize(9.5);
       doc.setTextColor(71, 85, 105);
       for (const b of p.bullets) {
-        const ls = doc.splitTextToSize(`– ${b}`, CW) as string[];
-        for (const l of ls) { checkPage(12); doc.text(l, M, y); y += 10; }
+        const ls = doc.splitTextToSize(`\u2013  ${b}`, CW - 6) as string[];
+        for (let li = 0; li < ls.length; li++) {
+          checkPage(13);
+          doc.text(ls[li], ML + (li > 0 ? 10 : 0), y);
+          y += 12;
+        }
       }
-      y += 4;
+      y += 5;
     }
   }
 
+  // ── Achievements
   if (r.certifications.length > 0 || r.achievements.length > 0) {
     section("Achievements");
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9.5);
     doc.setTextColor(71, 85, 105);
     for (const c of r.certifications) {
-      checkPage(14); doc.text(`– ${c.name} — ${c.issuer}${c.date ? ` (${c.date})` : ""}`, M, y); y += 11;
+      const ls = doc.splitTextToSize(
+        `\u2013  ${c.name} — ${c.issuer}${c.date ? ` (${c.date})` : ""}`, CW
+      ) as string[];
+      for (const l of ls) { checkPage(13); doc.text(l, ML, y); y += 12; }
     }
     for (const a of r.achievements) {
-      const ls = doc.splitTextToSize(`– ${a}`, CW) as string[];
-      for (const l of ls) { checkPage(14); doc.text(l, M, y); y += 11; }
+      const ls = doc.splitTextToSize(`\u2013  ${a}`, CW) as string[];
+      for (const l of ls) { checkPage(13); doc.text(l, ML, y); y += 12; }
     }
   }
 
