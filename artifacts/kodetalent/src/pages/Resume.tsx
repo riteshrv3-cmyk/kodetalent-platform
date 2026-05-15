@@ -305,6 +305,22 @@ function TargetRecommendations({
 
 // ─── PDF generators ───────────────────────────────────────────────────────────
 
+// Opens PDF in a new tab instead of direct download — avoids Chrome/Edge
+// Safe Browsing "Virus detected" false-positive on blob downloads
+function openPDF(doc: jsPDF, filename: string) {
+  const blob = doc.output("blob");
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.rel = "noopener noreferrer";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  // Short delay before revoke so browser has time to start the download
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+
 function downloadClassicPDF(r: ResumeContent, filename: string) {
   const doc = new jsPDF({ unit: "pt", format: "letter" });
   const PW = 612, PH = 792, ML = 48, MR = 48, MT = 44, MB = 44;
@@ -482,7 +498,7 @@ function downloadClassicPDF(r: ResumeContent, filename: string) {
     }
   }
 
-  doc.save(filename);
+  openPDF(doc, filename);
 }
 
 function downloadTechPDF(r: ResumeContent, filename: string) {
@@ -640,7 +656,7 @@ function downloadTechPDF(r: ResumeContent, filename: string) {
     }
   }
 
-  doc.save(filename);
+  openPDF(doc, filename);
 }
 
 function downloadMinimalPDF(r: ResumeContent, filename: string) {
@@ -798,7 +814,7 @@ function downloadMinimalPDF(r: ResumeContent, filename: string) {
     }
   }
 
-  doc.save(filename);
+  openPDF(doc, filename);
 }
 
 function downloadResumePDF(resume: SavedResume) {
