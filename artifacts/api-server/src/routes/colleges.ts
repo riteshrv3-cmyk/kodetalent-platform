@@ -40,7 +40,7 @@ router.get("/tpo/my-college", async (req, res) => {
     return res.status(201).json(created);
   } catch (err) {
     req.log.error({ err }, "Failed my-college");
-    res.status(500).json({ error: "Failed to load college" });
+    return res.status(500).json({ error: "Failed to load college" });
   }
 });
 
@@ -52,10 +52,10 @@ router.post("/tpo/colleges/:id/regenerate", async (req, res) => {
     const code = await uniqueCode();
     const [updated] = await db.update(collegesTable).set({ inviteCode: code }).where(eq(collegesTable.id, id)).returning();
     if (!updated) return res.status(404).json({ error: "not found" });
-    res.json(updated);
+    return res.json(updated);
   } catch (err) {
     req.log.error({ err }, "Failed regenerate");
-    res.status(500).json({ error: "Failed to regenerate" });
+    return res.status(500).json({ error: "Failed to regenerate" });
   }
 });
 
@@ -73,10 +73,10 @@ router.get("/invite/:code", async (req, res) => {
       inviteCode: collegesTable.inviteCode,
     }).from(collegesTable).where(eq(collegesTable.inviteCode, code)).limit(1);
     if (!college) return res.status(404).json({ error: "Invalid invite link" });
-    res.json(college);
+    return res.json(college);
   } catch (err) {
     req.log.error({ err }, "Failed resolve invite");
-    res.status(500).json({ error: "Failed to resolve invite" });
+    return res.status(500).json({ error: "Failed to resolve invite" });
   }
 });
 
@@ -94,10 +94,10 @@ router.post("/invite/:code/claim", async (req, res) => {
     await db.update(collegesTable)
       .set({ signupCount: sql`${collegesTable.signupCount} + 1` })
       .where(eq(collegesTable.id, college.id));
-    res.json({ ok: true, collegeId: college.id, collegeName: college.name });
+    return res.json({ ok: true, collegeId: college.id, collegeName: college.name });
   } catch (err) {
     req.log.error({ err }, "Failed claim invite");
-    res.status(500).json({ error: "Failed to claim invite" });
+    return res.status(500).json({ error: "Failed to claim invite" });
   }
 });
 

@@ -93,10 +93,10 @@ Rules:
 
     res.setHeader("X-Cache", cached ? "HIT" : "MISS");
     if (cached) req.log.info({ subDomainName }, "course cache HIT");
-    res.json(value);
+    return res.json(value);
   } catch (err) {
     req.log.error({ err }, "Course generation failed");
-    res.status(500).json({ error: "Course generation failed" });
+    return res.status(500).json({ error: "Course generation failed" });
   }
 });
 

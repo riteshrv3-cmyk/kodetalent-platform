@@ -134,10 +134,12 @@ router.post("/anthropic/conversations/:id/messages", rlAiMedium, async (req, res
 
     res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
     res.end();
+    return;
   } catch (err) {
     req.log.error({ err }, "Failed to send message");
-    if (!res.headersSent) return res.status(500).json({ error: "Failed to send message" });
+    if (!res.headersSent) { res.status(500).json({ error: "Failed to send message" }); return; }
     res.end();
+    return;
   }
 });
 

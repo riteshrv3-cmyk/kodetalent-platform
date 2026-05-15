@@ -108,8 +108,9 @@ export default function Interview() {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: session, isLoading: sessionLoading } = useGetInterviewSession(sessionId, {
-    query: { enabled: !!sessionId }
+    query: { enabled: !!sessionId } as any
   });
   const getNextQuestion = useGetNextInterviewQuestion();
   const evaluateInterview = useEvaluateInterview();
@@ -243,7 +244,7 @@ export default function Interview() {
         fetchNextQuestion("Start interview");
       }
     } else if (session?.completed) {
-      if (session.evaluation) setEvalData(session.evaluation as EvalData);
+      if ((session as any).evaluation) setEvalData((session as any).evaluation as EvalData);
       setIsFinished(true);
     }
   }, [session]);

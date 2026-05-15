@@ -361,6 +361,7 @@ RULES:
 
     res.write(`data: ${JSON.stringify({ done: true, profileUpdated })}\n\n`);
     res.end();
+    return;
   } catch (err) {
     req.log.error({ err }, "AI chat failed");
     if (!res.headersSent) {
@@ -368,6 +369,7 @@ RULES:
     }
     res.write(`data: ${JSON.stringify({ done: true, error: true })}\n\n`);
     res.end();
+    return;
   }
 });
 

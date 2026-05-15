@@ -54,7 +54,7 @@ router.post("/recruiters/login", async (req, res) => {
     .insert(recruitersTable)
     .values({ email: normalizedEmail, name: name.trim(), company: company.trim(), role: role?.trim() || null })
     .returning();
-  res.json(created);
+  return res.json(created);
 });
 
 router.get("/recruiters/:id", async (req, res) => {
@@ -62,7 +62,7 @@ router.get("/recruiters/:id", async (req, res) => {
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
   const [recruiter] = await db.select().from(recruitersTable).where(eq(recruitersTable.id, id)).limit(1);
   if (!recruiter) return res.status(404).json({ error: "Not found" });
-  res.json(recruiter);
+  return res.json(recruiter);
 });
 
 router.get("/recruiters/:id/dashboard", async (req, res) => {
@@ -131,7 +131,7 @@ router.get("/recruiters/:id/dashboard", async (req, res) => {
   const studentNameMap: Record<number, string> = {};
   for (const s of recentStudents) studentNameMap[s.id] = s.name;
 
-  res.json({
+  return res.json({
     recruiter,
     stats: {
       totalInvites: total,
@@ -168,7 +168,7 @@ router.patch("/recruiter-invites/:id/status", async (req, res) => {
     .where(eq(recruiterInvites.id, id))
     .returning();
   if (!updated) return res.status(404).json({ error: "Invite not found" });
-  res.json(updated);
+  return res.json(updated);
 });
 
 // GET invites for a specific student from a specific recruiter (for status buttons in StudentDetail)
@@ -182,7 +182,7 @@ router.get("/recruiters/:recruiterId/invites/student/:studentId", async (req, re
     .where(and(eq(recruiterInvites.recruiterId, recruiterId), eq(recruiterInvites.studentId, studentId)))
     .orderBy(desc(recruiterInvites.createdAt))
     .limit(5);
-  res.json(rows);
+  return res.json(rows);
 });
 
 router.get("/recruiters/:id/jobs", async (req, res) => {
@@ -193,7 +193,7 @@ router.get("/recruiters/:id/jobs", async (req, res) => {
     .from(recruiterJobsTable)
     .where(eq(recruiterJobsTable.recruiterId, id))
     .orderBy(desc(recruiterJobsTable.createdAt));
-  res.json(jobs);
+  return res.json(jobs);
 });
 
 async function parseJobWithAI(rawDescription: string): Promise<ParsedJob> {
@@ -398,7 +398,7 @@ router.post("/recruiter-jobs", async (req, res) => {
     .sort((a, b) => b.matchScore - a.matchScore)
     .slice(0, 20);
 
-  res.json({ job, parsed, matches: ranked });
+  return res.json({ job, parsed, matches: ranked });
 });
 
 router.get("/recruiter-jobs/:id/matches", async (req, res) => {
@@ -427,7 +427,7 @@ router.get("/recruiter-jobs/:id/matches", async (req, res) => {
     .sort((a, b) => b.matchScore - a.matchScore)
     .slice(0, 30);
 
-  res.json({ job, matches: ranked });
+  return res.json({ job, matches: ranked });
 });
 
 router.post("/recruiter-jobs/:id/bulk-invite", async (req, res) => {
@@ -473,7 +473,7 @@ router.post("/recruiter-jobs/:id/bulk-invite", async (req, res) => {
     .set({ invitesSent: sql`${recruitersTable.invitesSent} + ${rows.length}`, lastSeenAt: new Date() })
     .where(eq(recruitersTable.id, recruiter.id));
 
-  res.json({ sent: rows.length });
+  return res.json({ sent: rows.length });
 });
 
 router.get("/platform/stats", async (req, res) => {

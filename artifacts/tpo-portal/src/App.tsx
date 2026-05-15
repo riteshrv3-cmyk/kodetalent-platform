@@ -40,8 +40,8 @@ function Guard({ children }: { children: React.ReactNode }) {
   return <Layout>{children}</Layout>;
 }
 
-function StudentProfileRoute({ id }: { id: string }) {
-  return <Guard><StudentProfile id={Number(id)} /></Guard>;
+function StudentProfileRoute({ params }: { params: { id: string } }) {
+  return <Guard><StudentProfile id={Number(params.id ?? "0")} /></Guard>;
 }
 
 function CatchAll() {

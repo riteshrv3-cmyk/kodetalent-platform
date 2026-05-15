@@ -19,8 +19,9 @@ export default function Test() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [testResult, setTestResult] = useState<any>(null);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: session, isLoading } = useGetTestSession(sessionId, {
-    query: { enabled: !!sessionId }
+    query: { enabled: !!sessionId } as any
   });
 
   const submitTest = useSubmitTest();

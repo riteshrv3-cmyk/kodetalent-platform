@@ -157,7 +157,7 @@ export default function Onboarding() {
 
   function next() {
     if (!step || !canContinue) return;
-    if (isLast) return submit();
+    if (isLast) { void submit(); return; }
     setStepIdx(i => i + 1);
   }
 

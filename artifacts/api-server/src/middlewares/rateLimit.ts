@@ -56,11 +56,12 @@ export function rateLimit(opts: LimiterOptions): RequestHandler {
       const retryAfter = Math.ceil(Math.abs(tokens) / refillPerMs / 1000);
       res.setHeader("Retry-After", String(retryAfter));
       req.log?.warn({ key, name }, "rate limit exceeded");
-      return res.status(429).json({
+      res.status(429).json({
         error: "Too many requests",
         message: `You're going a bit fast. Try again in ${retryAfter}s.`,
         retryAfter,
       });
+      return;
     }
     next();
   };

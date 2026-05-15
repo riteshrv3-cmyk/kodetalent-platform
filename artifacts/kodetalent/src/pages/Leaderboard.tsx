@@ -23,9 +23,10 @@ export default function Leaderboard() {
     setStudentCollege(college);
   }, [setLocation]);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: collegeLeaderboard, isLoading: collegeLoading } = useGetCollegeLeaderboard(
     { college: studentCollege },
-    { query: { enabled: !!studentCollege } }
+    { query: { enabled: !!studentCollege } as any }
   );
   const { data: indiaLeaderboard, isLoading: indiaLoading } = useGetIndiaLeaderboard();
 

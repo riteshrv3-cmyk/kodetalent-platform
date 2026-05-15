@@ -133,10 +133,10 @@ Return JSON only, no prose before or after.`;
       }
     );
 
-    res.json({ ...value, cached, candidate: { id: student.id, name: student.name, college: student.college, profileStrength: student.profileStrength, commitmentScore: student.commitmentScore } });
+    return res.json({ ...value, cached, candidate: { id: student.id, name: student.name, college: student.college, profileStrength: student.profileStrength, commitmentScore: student.commitmentScore } });
   } catch (err) {
     req.log.error({ err }, "Failed candidate report");
-    res.status(500).json({ error: "Failed to generate candidate report" });
+    return res.status(500).json({ error: "Failed to generate candidate report" });
   }
 });
 

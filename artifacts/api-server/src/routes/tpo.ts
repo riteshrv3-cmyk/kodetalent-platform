@@ -48,7 +48,7 @@ router.get("/colleges/:college/activity", async (req, res) => {
     .limit(50);
   const studentMap = Object.fromEntries(collegeStudents.map(s => [s.id, s]));
   const enriched = invites.map(inv => ({ ...inv, student: studentMap[inv.studentId] }));
-  res.json(enriched);
+  return res.json(enriched);
 });
 
 router.get("/colleges/:college/mentors", async (req, res) => {
@@ -101,7 +101,7 @@ router.patch("/recruiter-invites/:id", async (req, res) => {
     .set({ status, studentSeen: true })
     .where(eq(recruiterInvites.id, id))
     .returning();
-  res.json(updated);
+  return res.json(updated);
 });
 
 router.post("/students/:id/mark-invites-seen", async (req, res) => {
@@ -237,7 +237,7 @@ router.get("/colleges/:college/digest", async (req, res) => {
   const scamsBlocked = recentDrives.filter(d => d.scamVerdict === "scam").length;
   const ghostedDrives = recentDrives.filter(d => d.outcome === "ghosted").length;
 
-  res.json({
+  return res.json({
     topReady,
     openToWorkList,
     newInvites,
@@ -345,7 +345,7 @@ router.get("/colleges/:college/drive-feed", async (req, res) => {
 
   const scamCount = checks.filter(c => c.scamVerdict === "scam").length;
 
-  res.json({
+  return res.json({
     recentChecks,
     topGhostingCompanies,
     scamCount,

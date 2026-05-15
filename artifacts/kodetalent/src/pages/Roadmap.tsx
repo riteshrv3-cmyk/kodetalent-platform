@@ -71,10 +71,8 @@ export default function Roadmap() {
     
     try {
       await completeQuest.mutateAsync({
-        data: {
-          studentId: studentId,
-          questId: selectedQuest.quest.id
-        }
+        id: studentId,
+        questId: selectedQuest.quest.id,
       });
 
       // Fire confetti and XP animation
