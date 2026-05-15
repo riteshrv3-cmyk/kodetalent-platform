@@ -152,7 +152,7 @@ export default function RoleSelect() {
               border: "1.5px solid rgba(79,70,229,0.15)",
             }}
           >
-            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl" style={{ background: "linear-gradient(135deg, rgba(79,70,229,0.03), rgba(99,102,241,0.06))" }} />
+            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl pointer-events-none" style={{ background: "linear-gradient(135deg, rgba(79,70,229,0.03), rgba(99,102,241,0.06))" }} />
             <div className="relative p-5">
               <div className="flex items-start gap-4">
                 <div className="w-[52px] h-[52px] rounded-xl flex items-center justify-center shrink-0" style={{ background: "linear-gradient(135deg, #4f46e5, #6366f1)", boxShadow: "0 6px 20px rgba(79,70,229,0.35)" }}>
@@ -196,8 +196,8 @@ export default function RoleSelect() {
               border: "1.5px solid rgba(99,102,241,0.3)",
             }}
           >
-            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl" style={{ background: "linear-gradient(135deg, rgba(249,115,22,0.08), rgba(236,72,153,0.06))" }} />
-            <div className="absolute top-0 right-0 w-48 h-48 rounded-full opacity-20" style={{ background: "radial-gradient(circle, #f97316, transparent)", transform: "translate(30%,-30%)" }} />
+            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl pointer-events-none" style={{ background: "linear-gradient(135deg, rgba(249,115,22,0.08), rgba(236,72,153,0.06))" }} />
+            <div className="absolute top-0 right-0 w-48 h-48 rounded-full opacity-20 pointer-events-none" style={{ background: "radial-gradient(circle, #f97316, transparent)", transform: "translate(30%,-30%)" }} />
             <div className="relative p-5">
               <div className="flex items-start gap-4">
                 <div className="w-[52px] h-[52px] rounded-xl flex items-center justify-center shrink-0" style={{ background: "linear-gradient(135deg, #f97316, #ea580c)", boxShadow: "0 6px 20px rgba(249,115,22,0.4)" }}>
