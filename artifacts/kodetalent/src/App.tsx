@@ -47,7 +47,6 @@ function Router() {
       <Route path="/" component={RootRedirect} />
       <Route path="/join/:code">{(p) => <Join code={p.code} />}</Route>
       <Route path="/onboarding" component={Onboarding} />
-      <Route path="/role-select" component={RoleSelect} />
       <Route>
         <AppLayout>
           <Suspense fallback={<PageSkeleton />}>
