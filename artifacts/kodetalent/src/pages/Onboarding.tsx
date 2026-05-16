@@ -266,8 +266,8 @@ export default function Onboarding() {
         <span className="text-[13px] font-bold text-[#64748b] w-10 text-right">{stepIdx + 1}/{total}</span>
       </div>
 
-      {/* Content */}
-      <div className="flex-1 flex flex-col px-5 pt-6 overflow-hidden">
+      {/* Content — centered vertically & horizontally */}
+      <div className="flex-1 flex flex-col items-center justify-center px-5">
         <AnimatePresence mode="wait" custom={direction}>
           <motion.div
             key={stepIdx}
@@ -277,7 +277,7 @@ export default function Onboarding() {
             animate="center"
             exit="exit"
             transition={{ duration: 0.28, ease: [0.4, 0, 0.2, 1] }}
-            className="flex flex-col flex-1"
+            className="w-full max-w-sm"
           >
             {/* Illustration + label */}
             <div className="flex items-center gap-3 mb-6">
