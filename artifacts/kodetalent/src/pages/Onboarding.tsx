@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { Helmet } from "react-helmet-async";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -240,6 +241,10 @@ export default function Onboarding() {
   if (screen === "welcome") {
     return (
       <div className="min-h-[100dvh] flex flex-col items-center justify-between p-6" style={{ background: "#f8fafc" }}>
+        <Helmet>
+          <title>KodeTalent — Create Your Profile</title>
+          <meta name="description" content="Join 1,200+ engineering students on KodeTalent. Answer a quick 2-minute quiz and get your AI career profile set up instantly — for free." />
+        </Helmet>
         <div className="flex-1 flex flex-col items-center justify-center max-w-sm text-center">
           <motion.div
             initial={{ scale: 0, rotate: -20 }}

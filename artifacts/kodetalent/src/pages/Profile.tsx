@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { Helmet } from "react-helmet-async";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -445,6 +446,10 @@ export default function Profile() {
 
   return (
     <div className="pb-28 max-w-md mx-auto min-h-screen bg-[#f8fafc]">
+      <Helmet>
+        <title>KodeTalent — My Profile</title>
+        <meta name="description" content="Build your verified engineering profile. Add projects, certifications, GitHub stats and LinkedIn data to boost your recruiter visibility score." />
+      </Helmet>
 
       {/* ── Header ── */}
       <div className="relative bg-gradient-to-br from-[#312e81] via-[#3730a3] to-[#4f46e5] pt-12 pb-20 px-6 text-center text-white">

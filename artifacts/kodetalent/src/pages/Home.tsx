@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import { Helmet } from "react-helmet-async";
 import { useLocation } from "wouter";
 import { motion, useSpring, useInView } from "framer-motion";
 import {
@@ -261,6 +262,10 @@ export default function Home() {
 
   return (
     <div className="pb-8 min-h-screen bg-[#f8fafc]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+      <Helmet>
+        <title>KodeTalent — Career Dashboard</title>
+        <meta name="description" content="Your AI-powered career dashboard. Track your score, streak, and XP — and discover opportunities matched to your skills." />
+      </Helmet>
 
       {/* ── HERO BANNER ─────────────────────────────────────────── */}
       <div className="relative overflow-hidden bg-[#0f172a] rounded-b-[40px] shadow-[0_24px_64px_rgba(15,23,42,0.4)]">

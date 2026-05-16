@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Helmet } from "react-helmet-async";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { Trophy, Medal, MapPin } from "lucide-react";
@@ -32,6 +33,10 @@ export default function Leaderboard() {
 
   return (
     <div className="p-4 pb-28 max-w-md mx-auto space-y-6 min-h-screen bg-[#f8fafc]">
+      <Helmet>
+        <title>KodeTalent — Campus & India Leaderboard</title>
+        <meta name="description" content="See how you rank among engineering students at your college and across India. Top scorers get priority visibility in the recruiter marketplace." />
+      </Helmet>
       <div className="mb-4">
         <h1 className="text-2xl font-bold flex items-center text-[#0f172a]">
           <Trophy className="mr-2 text-primary" /> Leaderboard

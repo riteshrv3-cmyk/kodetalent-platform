@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { Helmet } from "react-helmet-async";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -480,6 +481,10 @@ export default function Course() {
 
   return (
     <div className="min-h-screen bg-[#f8fafc] pb-28">
+      <Helmet>
+        <title>{ctx ? `${ctx.subDomainName} Course — KodeTalent` : "KodeTalent — AI Skill Course"}</title>
+        <meta name="description" content={ctx ? `Master ${ctx.subDomainName} with an AI-generated course, SM-2 flashcards, and a 5-question quiz. Part of the ${ctx.domainName} learning track on KodeTalent.` : "Learn in-demand engineering skills with AI-generated courses, spaced-repetition flashcards, and quizzes on KodeTalent."} />
+      </Helmet>
       {/* Sticky header */}
       <div className="sticky top-0 z-10 bg-[#f8fafc] px-4 pt-4 pb-0">
         <div className="flex items-center gap-2 mb-3">
