@@ -172,7 +172,7 @@ export default function Onboarding() {
   };
 
   return (
-    <div className="min-h-[100dvh] flex flex-col bg-white" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+    <div className="min-h-[100dvh] flex flex-col bg-white relative" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
       <Helmet><title>KodeTalent — Create Your Profile</title></Helmet>
 
       {/* Top bar */}
@@ -193,8 +193,8 @@ export default function Onboarding() {
         </div>
       </div>
 
-      {/* Content — animated per step */}
-      <div className="flex-1 flex flex-col px-5 pt-10 overflow-hidden">
+      {/* Content — animated per step, centered on screen */}
+      <div className="flex-1 flex flex-col items-center justify-center px-5">
         <AnimatePresence mode="wait" custom={direction}>
           <motion.div
             key={stepIdx}
@@ -204,7 +204,7 @@ export default function Onboarding() {
             animate="center"
             exit="exit"
             transition={{ duration: 0.28, ease: [0.4, 0, 0.2, 1] }}
-            className="flex flex-col flex-1"
+            className="w-full max-w-sm"
           >
             {/* Question */}
             <h1 className="text-[28px] font-black text-[#0f172a] leading-tight mb-2">
