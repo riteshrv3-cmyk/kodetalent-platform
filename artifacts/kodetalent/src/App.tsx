@@ -8,7 +8,7 @@ import { useEffect, lazy, Suspense } from "react";
 import NotFound from "@/pages/not-found";
 import Join from "@/pages/Join";
 import { AppLayout } from "@/components/layout/AppLayout";
-import RoleSelect from "@/pages/RoleSelect";
+import Landing from "@/pages/Landing";
 
 const Home = lazy(() => import("@/pages/Home"));
 const AIChat = lazy(() => import("@/pages/AIChat"));
@@ -38,7 +38,7 @@ function PageSkeleton() {
 }
 
 function RootRedirect() {
-  return <RoleSelect />;
+  return <Landing />;
 }
 
 function Router() {
