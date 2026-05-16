@@ -46,6 +46,8 @@ function Router() {
     <Switch>
       <Route path="/" component={RootRedirect} />
       <Route path="/join/:code">{(p) => <Join code={p.code} />}</Route>
+      <Route path="/onboarding" component={Onboarding} />
+      <Route path="/role-select" component={RoleSelect} />
       <Route>
         <AppLayout>
           <Suspense fallback={<PageSkeleton />}>
@@ -63,7 +65,6 @@ function Router() {
               <Route path="/leaderboard" component={Leaderboard} />
               <Route path="/resume" component={Resume} />
               <Route path="/inbox" component={Inbox} />
-              <Route path="/onboarding" component={Onboarding} />
               <Route path="/drive-check" component={DriveCheck} />
               <Route path="/recruiter" component={RecruiterPortalShortcut} />
               <Route component={NotFound} />

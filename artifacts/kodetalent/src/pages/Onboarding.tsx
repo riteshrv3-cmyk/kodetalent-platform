@@ -414,7 +414,7 @@ export default function Onboarding() {
 
       {/* Continue bar (hidden for chip steps which auto-advance) */}
       {step.type !== "chips" && (
-        <div className="fixed bottom-0 left-0 right-0 p-4 pb-safe z-20">
+        <div className="fixed bottom-0 left-0 right-0 p-4 pb-6 z-20">
           <div className="max-w-md mx-auto">
             <Button
               onClick={next}
