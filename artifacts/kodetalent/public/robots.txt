@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+
+# Disallow internal/auth paths that don't need indexing
+Disallow: /onboarding
+Disallow: /practice/interview/
+Disallow: /practice/test/
+
+Sitemap: https://kodetalent.com/sitemap.xml
