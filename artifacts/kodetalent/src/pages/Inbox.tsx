@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { Helmet } from "react-helmet-async";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { Mail, Building2, Briefcase, Clock, CheckCircle, XCircle, ChevronRight, Inbox as InboxIcon, ExternalLink, Loader2 } from "lucide-react";
@@ -205,10 +204,6 @@ export default function Inbox() {
 
   return (
     <div className="min-h-screen bg-[#f8fafc] pb-28">
-      <Helmet>
-        <title>KodeTalent — Recruiter Inbox</title>
-        <meta name="description" content="View and respond to interview invites from recruiters. Accept or decline with one tap, and unlock recruiter contact details instantly." />
-      </Helmet>
       {/* Header */}
       <div className="sticky top-0 z-10 bg-[#f8fafc] px-4 pt-5 pb-3">
         <div className="flex items-center justify-between mb-4">

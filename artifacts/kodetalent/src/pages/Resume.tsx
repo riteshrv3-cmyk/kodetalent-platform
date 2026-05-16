@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from "react";
-import { Helmet } from "react-helmet-async";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -283,7 +282,7 @@ function TargetRecommendations({
                       }}
                     />
                   </div>
-                  <p className="text-[9px] text-[#94a3b8]">{rec.tier === "tier1" ? "Tier 1" : rec.tier === "tier2" ? "Tier 2" : "Startup"}</p>
+                  <p className="text-[9px] text-[#94a3b8]">{rec.openings} openings</p>
                 </div>
 
                 {/* CTA */}
@@ -1402,10 +1401,6 @@ export default function Resume() {
 
   return (
     <>
-      <Helmet>
-        <title>KodeTalent — AI Resume Builder</title>
-        <meta name="description" content="Generate an ATS-optimised one-page resume from your KodeTalent profile in seconds. Download as PDF and send to any recruiter instantly." />
-      </Helmet>
       <div className="p-4 pb-28 max-w-md mx-auto space-y-5 min-h-screen bg-[#f8fafc]">
         <Button
           variant="ghost"

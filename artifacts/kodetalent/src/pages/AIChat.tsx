@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Helmet } from "react-helmet-async";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { Send, RefreshCw, CheckCircle, Zap, Mic, MicOff, Volume2 } from "lucide-react";
@@ -599,10 +598,6 @@ export default function AIChat() {
 
   return (
     <div className="flex flex-col h-[calc(100dvh-7rem)]" style={{ background: "radial-gradient(ellipse at top, #eef2ff 0%, #f8fafc 60%)" }}>
-      <Helmet>
-        <title>KodeTalent — AI Career Chat with Kit</title>
-        <meta name="description" content="Chat with Kit, your AI career companion. Get personalised advice, update your profile, and prepare for placements — all through conversation." />
-      </Helmet>
 
       {/* Confetti */}
       <AnimatePresence>{showConfetti && <Confetti key="confetti" />}</AnimatePresence>

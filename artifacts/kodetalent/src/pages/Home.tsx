@@ -1,5 +1,4 @@
 import { useEffect, useState, useRef } from "react";
-import { Helmet } from "react-helmet-async";
 import { useLocation } from "wouter";
 import { motion, useSpring, useInView } from "framer-motion";
 import {
@@ -59,7 +58,7 @@ interface ResumeCourse {
 }
 
 const categories = [
-  { id: "opportunities", label: "Opportunities", icon: Briefcase, href: "/opportunities", gradient: "from-[#4f46e5] to-[#3730a3]", glow: "#4f46e5", accent: "#eef2ff" },
+  { id: "opportunities", label: "Opportunities", icon: Briefcase, href: "/opportunities", gradient: "from-[#4f46e5] to-[#3730a3]", glow: "#4f46e5", count: "200+ Jobs", accent: "#eef2ff" },
   { id: "leaderboard", label: "Leaderboard", icon: Trophy, href: "/leaderboard", gradient: "from-[#f59e0b] to-[#d97706]", glow: "#f59e0b", count: "Your Rank", accent: "#fffbeb" },
   { id: "resume", label: "Resume", icon: FileText, href: "/resume", gradient: "from-[#10b981] to-[#059669]", glow: "#10b981", count: "AI Builder", accent: "#ecfdf5" },
   { id: "practice", label: "Practice", icon: Zap, href: "/practice", gradient: "from-[#0ea5e9] to-[#0891b2]", glow: "#0ea5e9", count: "Mock Tests", accent: "#ecfeff" },
@@ -186,7 +185,6 @@ export default function Home() {
   const [resume, setResume] = useState<ResumeCourse | null>(null);
   const [activityLog, setActivityLog] = useState<ActivityEntry[]>([]);
   const [myRank, setMyRank] = useState<number | null>(null);
-  const [showNudge, setShowNudge] = useState(() => !!localStorage.getItem("newUser"));
 
   useEffect(() => { setResume(loadResumeCourse()); }, []);
 
@@ -263,10 +261,6 @@ export default function Home() {
 
   return (
     <div className="pb-8 min-h-screen bg-[#f8fafc]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-      <Helmet>
-        <title>KodeTalent — Career Dashboard</title>
-        <meta name="description" content="Your AI-powered career dashboard. Track your score, streak, and XP — and discover opportunities matched to your skills." />
-      </Helmet>
 
       {/* ── HERO BANNER ─────────────────────────────────────────── */}
       <div className="relative overflow-hidden bg-[#0f172a] rounded-b-[40px] shadow-[0_24px_64px_rgba(15,23,42,0.4)]">
@@ -469,36 +463,6 @@ export default function Home() {
               <PlayCircle className="w-5 h-5" />
             </div>
           </motion.button>
-        )}
-
-        {/* ── Profile nudge (shown once after signup) ───────────── */}
-        {showNudge && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-            className="flex items-center gap-3 bg-white border border-[#e2e8f0] rounded-2xl p-4 mb-1"
-          >
-            <div className="w-10 h-10 rounded-xl bg-[#f97316]/10 flex items-center justify-center flex-shrink-0">
-              <Sparkles className="w-5 h-5 text-[#f97316]" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-[13px] font-black text-[#0f172a]">Complete your profile</p>
-              <p className="text-[11px] text-[#64748b]">Add GitHub, bio & projects to get recruiter visibility</p>
-            </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <button
-                onClick={() => setLocation("/profile")}
-                className="text-[12px] font-bold text-[#4f46e5] hover:underline"
-              >
-                Go
-              </button>
-              <button
-                onClick={() => { setShowNudge(false); localStorage.removeItem("newUser"); }}
-                className="text-[11px] text-[#94a3b8] hover:text-[#64748b] px-1"
-              >
-                ✕
-              </button>
-            </div>
-          </motion.div>
         )}
 
         {/* ── Categories grid ───────────────────────────────────── */}

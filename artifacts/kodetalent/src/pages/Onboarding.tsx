@@ -1,180 +1,198 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { Helmet } from "react-helmet-async";
-import { ArrowRight, Zap, Loader2, Send, Check } from "lucide-react";
+import {
+  ArrowRight, ArrowLeft, Check, Sparkles, GraduationCap, Code2,
+  Building2, Github, Trophy, Target, User, Mail, Loader2,
+} from "lucide-react";
 import { useCreateStudent } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 type FormData = {
   name: string;
+  email: string;
   year: string;
   field: string;
   collegeFull: string;
+  cgpa: string;
+  githubUrl: string;
+  dreamCompany: string;
+  targetPackage: string;
+};
+
+const initialData: FormData = {
+  name: "", email: "", year: "", field: "", collegeFull: "",
+  cgpa: "", githubUrl: "", dreamCompany: "", targetPackage: "",
 };
 
 type Step = {
   key: keyof FormData;
-  ask: string;
-  react?: (val: string) => string;
-  type: "text" | "chips";
+  icon: typeof User;
+  emoji: string;
+  title: string;
+  subtitle: string;
+  type: "text" | "email" | "chips";
   placeholder?: string;
   options?: string[];
+  optional?: boolean;
+  showIf?: (d: FormData) => boolean;
 };
 
 const STEPS: Step[] = [
   {
-    key: "name",
-    ask: "Hey! I'm Kode, your AI career companion. What should I call you?",
-    react: v => `Nice to meet you, ${v.split(" ")[0]}!`,
-    type: "text",
-    placeholder: "e.g. Aarav",
+    key: "name", icon: User, emoji: "👋",
+    title: "What should we call you?",
+    subtitle: "First name works. No formal vibes here.",
+    type: "text", placeholder: "e.g. Aarav", optional: true,
   },
   {
-    key: "year",
-    ask: "Which year are you in right now?",
-    react: v => ({
-      "1st Year": "Fresh start — best time to build habits!",
-      "2nd Year": "Perfect time to go deep into your domain.",
-      "3rd Year": "Internship season is coming. Let's prep.",
-      "4th Year": "Placement mode. We'll hustle together.",
-    }[v] ?? "Let's get to work."),
-    type: "chips",
-    options: ["1st Year", "2nd Year", "3rd Year", "4th Year"],
+    key: "email", icon: Mail, emoji: "📬",
+    title: "Drop your email",
+    subtitle: "So you can come back to your progress anytime",
+    type: "email", placeholder: "you@college.edu", optional: true,
   },
   {
-    key: "field",
-    ask: "What excites you the most?",
-    react: v => ({
-      "Web Dev": "Solid pick — always in demand.",
-      "AI/ML": "The hottest field right now.",
-      "App Dev": "Mobile apps run the world.",
-      "Cybersecurity": "Security experts are rare and valued.",
-      "Data": "Data is the new oil. Great call.",
-    }[v] ?? "Great — I'll tailor your roadmap around this."),
+    key: "year", icon: GraduationCap, emoji: "🎓",
+    title: "Which year are you in?",
+    subtitle: "Tap the one that fits — no judgement",
+    type: "chips", options: ["1st Year", "2nd Year", "3rd Year", "4th Year"],
+    optional: true,
+  },
+  {
+    key: "field", icon: Code2, emoji: "💻",
+    title: "What's your jam?",
+    subtitle: "Pick the one that excites you most. Change it anytime.",
     type: "chips",
     options: ["Web Dev", "AI/ML", "App Dev", "Cybersecurity", "Data"],
+    optional: true,
   },
   {
-    key: "collegeFull",
-    ask: "Which college are you from?",
-    react: () => "Perfect. Your profile is ready — let's go!",
-    type: "text",
-    placeholder: "e.g. PICT Pune",
+    key: "collegeFull", icon: Building2, emoji: "🏫",
+    title: "Where you studying?",
+    subtitle: "College + city, like PICT Pune or VIT Vellore",
+    type: "text", placeholder: "College name + City", optional: true,
+  },
+  {
+    key: "cgpa", icon: Trophy, emoji: "📊",
+    title: "Current CGPA?",
+    subtitle: "Out of 10. Be honest, recruiters check 😉",
+    type: "text", placeholder: "e.g. 8.4", optional: true,
+  },
+  {
+    key: "githubUrl", icon: Github, emoji: "🐙",
+    title: "GitHub profile?",
+    subtitle: "Paste the URL — our AI will analyse your repos",
+    type: "text", placeholder: "github.com/username",
+    optional: true,
+    showIf: d => d.year === "3rd Year" || d.year === "4th Year",
+  },
+  {
+    key: "dreamCompany", icon: Sparkles, emoji: "✨",
+    title: "Dream company?",
+    subtitle: "We'll secretly bias your roadmap towards them 🤫",
+    type: "text", placeholder: "e.g. Google, Razorpay, OpenAI",
+    optional: true,
+  },
+  {
+    key: "targetPackage", icon: Target, emoji: "🎯",
+    title: "Goal package?",
+    subtitle: "Dream big — we love an ambitious answer",
+    type: "chips",
+    options: ["<6 LPA", "6–10 LPA", "10–20 LPA", "20+ LPA"],
+    optional: true,
   },
 ];
 
-type Msg = { role: "ai" | "user"; text: string };
+// Hype line above each question — keeps energy up
+const HYPE_LINES = [
+  "Let's gooo 🚀",
+  "Nice. Two down.",
+  "Tell us your vibe ⚡",
+  "Ooh, this is the fun part",
+  "Halfway there, legend 🔥",
+  "You're crushing it ✨",
+  "Almost done — keep going",
+  "Last few questions",
+  "Final one. Make it count 💫",
+];
 
-function TypingDots() {
-  return (
-    <div className="flex gap-1 items-center h-4 px-1">
-      {[0, 1, 2].map(i => (
-        <motion.div
-          key={i}
-          className="w-1.5 h-1.5 rounded-full bg-[#94a3b8]"
-          animate={{ opacity: [0.3, 1, 0.3] }}
-          transition={{ duration: 1.1, repeat: Infinity, delay: i * 0.18 }}
-        />
-      ))}
-    </div>
-  );
-}
+const FIELD_TONE: Record<string, string> = {
+  "Web Dev": "from-[#4f46e5] to-[#7c3aed]",
+  "AI/ML": "from-[#ec4899] to-[#f59e0b]",
+  "App Dev": "from-[#10b981] to-[#0ea5e9]",
+  "Cybersecurity": "from-[#0f172a] to-[#4f46e5]",
+  "Data": "from-[#0ea5e9] to-[#10b981]",
+};
 
 export default function Onboarding() {
   const [, setLocation] = useLocation();
   const inviteCode = typeof window !== "undefined" ? sessionStorage.getItem("inviteCode") : null;
   const inviteCollegeName = typeof window !== "undefined" ? sessionStorage.getItem("inviteCollegeName") : null;
   const inviteCollegeCity = typeof window !== "undefined" ? sessionStorage.getItem("inviteCollegeCity") : null;
-
-  const [screen, setScreen] = useState<"welcome" | "chat" | "submitting">("welcome");
-  const [stepIdx, setStepIdx] = useState(0);
-  const [msgs, setMsgs] = useState<Msg[]>([]);
-  const [typing, setTyping] = useState(false);
-  const [inputVal, setInputVal] = useState("");
-  const [form, setForm] = useState<FormData>({
-    name: "", year: "", field: "",
-    collegeFull: inviteCollegeName
-      ? `${inviteCollegeName}${inviteCollegeCity ? " " + inviteCollegeCity : ""}`.trim()
-      : "",
-  });
+  const [data, setData] = useState<FormData>(() => ({
+    ...initialData,
+    collegeFull: inviteCollegeName ? `${inviteCollegeName}${inviteCollegeCity ? " " + inviteCollegeCity : ""}`.trim() : "",
+  }));
+  const [stepIdx, setStepIdx] = useState(-1); // -1 = welcome screen
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
   const createStudent = useCreateStudent();
 
-  const visibleSteps = STEPS.filter(s => !(inviteCode && s.key === "collegeFull"));
-  const step = visibleSteps[stepIdx];
+  const visibleSteps = useMemo(
+    () => STEPS.filter(s => !s.showIf || s.showIf(data)).filter(s => !(inviteCode && s.key === "collegeFull")),
+    [data, inviteCode]
+  );
+
+  const step = stepIdx >= 0 ? visibleSteps[stepIdx] : null;
+  const value = step ? data[step.key] : "";
+  const progress = step ? Math.round(((stepIdx + 1) / visibleSteps.length) * 100) : 0;
   const isLast = stepIdx === visibleSteps.length - 1;
+  const canContinue = step ? (step.optional || value.trim().length > 0) : true;
 
-  useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [msgs, typing]);
-
-  useEffect(() => {
-    if (screen === "chat" && step?.type === "text" && !typing) {
-      setTimeout(() => inputRef.current?.focus(), 150);
-    }
-  }, [stepIdx, typing, screen, step?.type]);
-
-  async function pushAI(text: string, delay = 500) {
-    setTyping(true);
-    await new Promise(r => setTimeout(r, delay));
-    setTyping(false);
-    setMsgs(m => [...m, { role: "ai", text }]);
+  function setVal(v: string) {
+    if (!step) return;
+    setData(d => ({ ...d, [step.key]: v }));
   }
 
-  async function startChat() {
-    setScreen("chat");
-    await pushAI(STEPS[0].ask, 400);
-  }
-
-  async function handleAnswer(val: string) {
-    const trimmed = val.trim();
-    if (!trimmed || typing) return;
-
-    setMsgs(m => [...m, { role: "user", text: trimmed }]);
-    setInputVal("");
-    setForm(f => ({ ...f, [step.key]: trimmed }));
-
-    if (step.react) {
-      await pushAI(step.react(trimmed), 380);
-    }
-
-    if (isLast) {
-      await submit({ ...form, [step.key]: trimmed });
-      return;
-    }
-
-    const nextStep = visibleSteps[stepIdx + 1];
-    await pushAI(nextStep.ask, 300);
+  function next() {
+    if (!step || !canContinue) return;
+    if (isLast) { void submit(); return; }
     setStepIdx(i => i + 1);
   }
 
-  async function submit(finalForm: FormData) {
-    setScreen("submitting");
+  function back() {
+    if (stepIdx > 0) setStepIdx(i => i - 1);
+    else if (stepIdx === 0) setStepIdx(-1);
+  }
+
+  async function submit() {
+    setSubmitting(true);
+    setError(null);
     try {
       const yearMap: Record<string, number> = {
         "1st Year": 1, "2nd Year": 2, "3rd Year": 3, "4th Year": 4,
       };
-      const parts = finalForm.collegeFull.trim().split(/\s+/);
+      const parts = data.collegeFull.trim().split(/\s+/);
       const city = parts.length > 1 ? parts.pop()! : "Unknown";
-      const college = parts.join(" ") || finalForm.collegeFull || "College";
+      const college = parts.join(" ") || data.collegeFull || "College";
 
       const student = await createStudent.mutateAsync({
         data: {
-          name: finalForm.name.trim() || "Student",
-          email: "student@example.com",
-          college, city,
-          year: yearMap[finalForm.year] || 1,
-          field: finalForm.field || "Web Dev",
+          name: data.name.trim() || "Student",
+          email: data.email.trim() || "student@example.com",
+          college,
+          city,
+          year: yearMap[data.year] || 1,
+          field: data.field || "Web Dev",
+          githubUrl: data.githubUrl.trim() || undefined,
+          cgpa: data.cgpa.trim() || undefined,
+          dreamCompany: data.dreamCompany.trim() || undefined,
+          targetPackage: data.targetPackage || undefined,
         },
       });
       localStorage.setItem("studentId", student.id.toString());
       localStorage.setItem("studentCollege", student.college || college);
-      localStorage.setItem("newUser", "1");
-
       if (inviteCode) {
         try {
           await fetch(`/api/invite/${encodeURIComponent(inviteCode)}/claim`, {
@@ -182,203 +200,256 @@ export default function Onboarding() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ studentId: student.id }),
           });
-        } catch { /* ignore */ }
+        } catch (e) { console.warn("invite claim failed", e); }
         sessionStorage.removeItem("inviteCode");
         sessionStorage.removeItem("inviteCollegeName");
         sessionStorage.removeItem("inviteCollegeCity");
       }
-      setTimeout(() => setLocation("/home"), 1200);
+      setTimeout(() => setLocation("/home"), 1400);
     } catch (e) {
       console.error(e);
-      setError("Something went wrong. Please try again.");
-      setScreen("chat");
+      setError("Something went wrong. Tap continue to retry.");
+      setSubmitting(false);
     }
   }
 
-  // ── Welcome ─────────────────────────────────────────────────
-  if (screen === "welcome") {
+  // ── Submitting screen ────────────────────────────────────────
+  if (submitting) {
     return (
-      <div className="min-h-[100dvh] flex flex-col items-center justify-between p-6" style={{ background: "#f8fafc" }}>
-        <Helmet><title>KodeTalent — Create Your Profile</title></Helmet>
-        <div className="flex-1 flex flex-col items-center justify-center max-w-sm text-center">
+      <div className="min-h-[100dvh] bg-gradient-to-br from-[#4f46e5] via-[#7c3aed] to-[#ec4899] flex flex-col items-center justify-center p-6 text-center">
+        <motion.div
+          initial={{ scale: 0.6, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="w-24 h-24 rounded-3xl bg-white/15 backdrop-blur-sm flex items-center justify-center mb-6 shadow-2xl"
+        >
+          <Sparkles className="w-12 h-12 text-white" />
+        </motion.div>
+        <h2 className="text-2xl font-black text-white mb-2">Building your career profile…</h2>
+        <p className="text-white/80 text-sm mb-8">Setting up your AI companion</p>
+        <div className="w-full max-w-xs h-1.5 bg-white/20 rounded-full overflow-hidden">
           <motion.div
-            initial={{ scale: 0.7, opacity: 0 }}
+            className="h-full bg-white rounded-full"
+            initial={{ width: "0%" }}
+            animate={{ width: "100%" }}
+            transition={{ duration: 1.4, ease: "easeOut" }}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // ── Welcome screen ───────────────────────────────────────────
+  if (stepIdx === -1) {
+    return (
+      <div className="min-h-[100dvh] bg-gradient-to-br from-[#4f46e5] via-[#7c3aed] to-[#ec4899] flex flex-col items-center justify-between p-6 text-center text-white">
+        <div className="flex-1 flex flex-col items-center justify-center max-w-md">
+          <motion.div
+            initial={{ scale: 0.5, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: "spring", stiffness: 200, damping: 16 }}
-            className="w-20 h-20 rounded-2xl bg-[#f97316] flex items-center justify-center mb-8"
+            transition={{ type: "spring", stiffness: 180, damping: 18 }}
+            className="w-28 h-28 rounded-[28px] bg-white/15 backdrop-blur-md flex items-center justify-center text-5xl mb-8 shadow-2xl"
           >
-            <Zap className="w-10 h-10 text-white" />
+            ⭐
           </motion.div>
           <motion.h1
-            initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="text-3xl font-black text-[#0f172a] mb-3 leading-tight"
+            initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.15 }}
+            className="text-4xl font-black mb-3 leading-tight"
           >
             Your AI Career<br />Companion
           </motion.h1>
           <motion.p
-            initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.35 }}
-            className="text-[#64748b] text-base mb-8 max-w-[260px]"
+            initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.25 }}
+            className="text-white/85 text-base mb-10 max-w-xs"
           >
-            4 quick questions to personalise your journey.
+            We'll set you up in under a minute. 9 quick questions, then you're in.
           </motion.p>
           <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-            className="flex flex-wrap justify-center gap-2"
+            initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.35 }}
+            className="grid grid-cols-3 gap-3 w-full max-w-sm mb-2"
           >
-            {["AI Roadmaps", "Mock Interviews", "Recruiter Connect"].map(l => (
-              <span key={l} className="text-[11px] font-semibold text-[#475569] bg-white border border-[#e2e8f0] rounded-full px-3 py-1">
-                {l}
-              </span>
+            {[
+              { e: "🎯", l: "Personalised roadmap" },
+              { e: "🚀", l: "Real opportunities" },
+              { e: "🤝", l: "Recruiter network" },
+            ].map(it => (
+              <div key={it.l} className="bg-white/10 backdrop-blur-sm rounded-2xl p-3">
+                <div className="text-2xl mb-1">{it.e}</div>
+                <div className="text-[10px] font-bold text-white/90 leading-tight">{it.l}</div>
+              </div>
             ))}
           </motion.div>
         </div>
         <motion.div
-          initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
-          className="w-full max-w-sm pb-safe"
+          initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.5 }}
+          className="w-full max-w-md pb-safe"
         >
           <Button
             data-testid="onboarding-start"
-            onClick={startChat}
-            className="w-full h-12 rounded-xl bg-[#0f172a] text-white hover:bg-[#1e293b] font-bold text-base"
+            onClick={() => setStepIdx(0)}
+            className="w-full h-14 rounded-2xl bg-white text-[#4f46e5] hover:bg-white/95 font-extrabold text-base shadow-2xl"
           >
             Get Started <ArrowRight className="ml-2 w-5 h-5" />
           </Button>
+          <p className="text-[11px] text-white/60 mt-3">Free forever · No credit card</p>
         </motion.div>
       </div>
     );
   }
 
-  // ── Submitting ────────────────────────────────────────────────
-  if (screen === "submitting") {
-    return (
-      <div className="min-h-[100dvh] flex flex-col items-center justify-center p-6 text-center" style={{ background: "#f8fafc" }}>
-        <motion.div
-          initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-          className="w-16 h-16 rounded-2xl bg-[#f97316] flex items-center justify-center mb-5"
-        >
-          <Loader2 className="w-8 h-8 text-white animate-spin" />
-        </motion.div>
-        <h2 className="text-xl font-black text-[#0f172a] mb-1">Setting things up...</h2>
-        <p className="text-[#64748b] text-sm">Your career companion is ready soon</p>
-      </div>
-    );
-  }
+  // ── Question screen ──────────────────────────────────────────
+  if (!step) return null;
+  const Icon = step.icon;
+  const tone = FIELD_TONE[data.field] || "from-[#4f46e5] to-[#7c3aed]";
 
-  // ── Chat ──────────────────────────────────────────────────────
   return (
-    <div className="min-h-[100dvh] flex flex-col" style={{ background: "#f8fafc" }}>
-      <Helmet><title>KodeTalent — Create Your Profile</title></Helmet>
-
-      {/* Header */}
-      <div className="shrink-0 bg-white border-b border-[#e2e8f0] px-4 py-3 flex items-center gap-3">
-        <div className="w-9 h-9 rounded-xl bg-[#f97316] flex items-center justify-center">
-          <Zap className="w-5 h-5 text-white" />
-        </div>
-        <div className="flex-1">
-          <p className="text-sm font-bold text-[#0f172a]">Kode</p>
-          <p className="text-[11px] text-[#10b981] font-semibold">Online</p>
-        </div>
-        {/* Step dots */}
-        <div className="flex gap-1.5">
-          {visibleSteps.map((_, i) => (
-            <div
-              key={i}
-              className="w-2 h-2 rounded-full transition-all"
-              style={{ background: i <= stepIdx ? "#f97316" : "#e2e8f0" }}
-            />
-          ))}
-        </div>
-      </div>
-
-      {/* Messages */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
-        <AnimatePresence initial={false}>
-          {msgs.map((msg, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.2 }}
-              className={`flex ${msg.role === "ai" ? "justify-start" : "justify-end"}`}
-            >
-              <div className={`max-w-[80%] px-4 py-3 rounded-2xl text-[15px] leading-relaxed ${
-                msg.role === "ai"
-                  ? "bg-white border border-[#e2e8f0] text-[#0f172a] rounded-tl-sm"
-                  : "bg-[#0f172a] text-white rounded-tr-sm"
-              }`}>
-                {msg.text}
-              </div>
-            </motion.div>
-          ))}
-        </AnimatePresence>
-
-        {/* Typing indicator */}
-        <AnimatePresence>
-          {typing && (
-            <motion.div
-              initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-              className="flex justify-start"
-            >
-              <div className="bg-white border border-[#e2e8f0] rounded-2xl rounded-tl-sm px-4 py-3">
-                <TypingDots />
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Chip options */}
-        {step?.type === "chips" && !typing && (
-          <motion.div
-            initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-            className="flex flex-wrap gap-2 justify-end"
+    <div className="min-h-[100dvh] bg-[#f8fafc] flex flex-col max-w-md mx-auto">
+      {/* Progress header */}
+      <div className="sticky top-0 z-10 bg-[#f8fafc] px-4 pt-4 pb-3">
+        <div className="flex items-center gap-3 mb-3">
+          <button
+            onClick={back}
+            data-testid="onboarding-back"
+            className="w-9 h-9 rounded-full bg-white shadow-sm flex items-center justify-center flex-shrink-0 hover:bg-[#f1f5f9] transition"
           >
-            {step.options!.map(opt => (
-              <button
-                key={opt}
-                data-testid={`onboarding-chip-${opt}`}
-                onClick={() => void handleAnswer(opt)}
-                className="h-10 px-4 rounded-full border border-[#e2e8f0] bg-white text-[#0f172a] font-semibold text-[14px] hover:border-[#0f172a] hover:bg-[#f8fafc] transition active:scale-[0.97]"
-              >
-                {opt}
-              </button>
-            ))}
-          </motion.div>
-        )}
-
-        {error && (
-          <p className="text-center text-sm font-bold text-[#ef4444]">{error}</p>
-        )}
+            <ArrowLeft className="w-4 h-4 text-[#0f172a]" />
+          </button>
+          <div className="flex-1 h-1.5 bg-[#e2e8f0] rounded-full overflow-hidden">
+            <motion.div
+              className={`h-full bg-gradient-to-r ${tone} rounded-full`}
+              initial={false}
+              animate={{ width: `${progress}%` }}
+              transition={{ duration: 0.4, ease: "easeOut" }}
+            />
+          </div>
+          <span className="text-xs font-extrabold text-[#64748b] tabular-nums">
+            {stepIdx + 1}/{visibleSteps.length}
+          </span>
+        </div>
       </div>
 
-      {/* Input bar — only for text steps */}
-      {step?.type === "text" && (
-        <div className="shrink-0 bg-white border-t border-[#e2e8f0] p-3 pb-6">
-          <div className="max-w-md mx-auto flex items-center gap-2">
-            <Input
-              ref={inputRef}
-              placeholder={step.placeholder ?? "Type here..."}
-              value={inputVal}
-              onChange={e => setInputVal(e.target.value)}
-              onKeyDown={e => {
-                if (e.key === "Enter" && inputVal.trim() && !typing) {
-                  e.preventDefault();
-                  void handleAnswer(inputVal);
-                }
-              }}
-              className="h-11 rounded-full bg-[#f8fafc] border border-[#e2e8f0] focus-visible:border-[#0f172a] focus-visible:ring-0 text-[15px] px-5 font-medium text-[#0f172a]"
-              data-testid={`onboarding-input-${step.key}`}
-            />
-            <button
-              onClick={() => void handleAnswer(inputVal)}
-              disabled={!inputVal.trim() || typing}
-              className="w-11 h-11 rounded-full bg-[#0f172a] flex items-center justify-center shrink-0 disabled:opacity-30 transition hover:bg-[#1e293b] active:scale-95"
+      {/* Question card */}
+      <div className="flex-1 px-5 pt-4 pb-32 overflow-y-auto">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={step.key}
+            initial={{ opacity: 0, x: 24 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -24 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+          >
+            <motion.div
+              initial={{ scale: 0.6, rotate: -10, opacity: 0 }}
+              animate={{ scale: 1, rotate: 0, opacity: 1 }}
+              transition={{ type: "spring", stiffness: 240, damping: 14 }}
+              className={`relative inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br ${tone} text-white mb-4 shadow-xl`}
             >
-              {isLast ? <Check className="w-5 h-5 text-white" /> : <Send className="w-5 h-5 text-white" />}
-            </button>
+              <Icon className="w-8 h-8" />
+              <motion.div
+                className="absolute -top-2 -right-2 text-2xl"
+                animate={{ y: [0, -4, 0], rotate: [0, 8, -8, 0] }}
+                transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+              >
+                {step.emoji}
+              </motion.div>
+            </motion.div>
+            <motion.p
+              initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className={`inline-block text-[11px] font-extrabold uppercase tracking-wider mb-2 px-2.5 py-1 rounded-full bg-gradient-to-r ${tone} text-white`}
+            >
+              {HYPE_LINES[stepIdx] || "Keep going ✨"}
+            </motion.p>
+            <h1 className="text-[28px] font-black text-[#0f172a] leading-[1.15] mb-2">
+              {step.title}
+            </h1>
+            <p className="text-[15px] text-[#64748b] mb-6">{step.subtitle}</p>
+
+            {step.type === "chips" ? (
+              <div className="grid grid-cols-2 gap-3">
+                {step.options!.map(opt => {
+                  const selected = value === opt;
+                  return (
+                    <motion.button
+                      key={opt}
+                      data-testid={`onboarding-chip-${opt}`}
+                      whileTap={{ scale: 0.97 }}
+                      onClick={() => {
+                        setVal(opt);
+                        setTimeout(() => {
+                          if (isLast) submit();
+                          else setStepIdx(i => i + 1);
+                        }, 220);
+                      }}
+                      className={`relative h-16 rounded-2xl border-2 font-bold text-[15px] transition-all ${
+                        selected
+                          ? `bg-gradient-to-br ${tone} text-white border-transparent shadow-lg`
+                          : "bg-white border-[#e2e8f0] text-[#0f172a] hover:border-[#4f46e5]/40"
+                      }`}
+                    >
+                      {opt}
+                      {selected && (
+                        <motion.span
+                          initial={{ scale: 0 }} animate={{ scale: 1 }}
+                          className="absolute top-2 right-2 w-5 h-5 rounded-full bg-white/25 flex items-center justify-center"
+                        >
+                          <Check className="w-3 h-3 text-white" />
+                        </motion.span>
+                      )}
+                    </motion.button>
+                  );
+                })}
+              </div>
+            ) : (
+              <Input
+                autoFocus
+                type={step.type === "email" ? "email" : "text"}
+                inputMode={step.type === "email" ? "email" : undefined}
+                placeholder={step.placeholder}
+                value={value}
+                onChange={e => setVal(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter" && canContinue) next(); }}
+                className="h-14 rounded-2xl bg-white border-2 border-[#e2e8f0] focus-visible:border-[#4f46e5] focus-visible:ring-0 text-[16px] px-5 font-medium text-[#0f172a]"
+                data-testid={`onboarding-input-${step.key}`}
+              />
+            )}
+
+            {step.optional && (
+              <button
+                onClick={() => { setVal(""); next(); }}
+                data-testid="onboarding-skip"
+                className="mt-5 inline-flex items-center gap-1.5 text-[13px] font-bold text-[#94a3b8] hover:text-[#4f46e5] transition px-3 py-1.5 rounded-full hover:bg-[#eef2ff]"
+              >
+                Skip — I'll add it later
+              </button>
+            )}
+
+            {error && (
+              <p className="mt-4 text-sm font-bold text-[#ef4444]">{error}</p>
+            )}
+          </motion.div>
+        </AnimatePresence>
+      </div>
+
+      {/* Continue bar (hidden for chip steps which auto-advance) */}
+      {step.type !== "chips" && (
+        <div className="fixed bottom-0 left-0 right-0 p-4 pb-safe bg-gradient-to-t from-[#f8fafc] via-[#f8fafc] to-transparent z-20">
+          <div className="max-w-md mx-auto">
+            <Button
+              onClick={next}
+              disabled={!canContinue}
+              data-testid="onboarding-continue"
+              className={`w-full h-14 rounded-2xl font-extrabold text-base text-white shadow-lg disabled:opacity-40 disabled:shadow-none bg-gradient-to-r ${tone}`}
+            >
+              {isLast ? (
+                <>{submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Finish <Sparkles className="ml-2 w-5 h-5" /></>}</>
+              ) : (
+                <>Continue <ArrowRight className="ml-2 w-5 h-5" /></>
+              )}
+            </Button>
           </div>
         </div>
       )}

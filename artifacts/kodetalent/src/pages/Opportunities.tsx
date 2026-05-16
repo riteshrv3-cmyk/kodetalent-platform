@@ -1,5 +1,4 @@
 import { useState, useMemo } from "react";
-import { Helmet } from "react-helmet-async";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
@@ -286,10 +285,6 @@ export default function Opportunities() {
 
   return (
     <div className="min-h-screen bg-[#f8fafc] pb-28">
-      <Helmet>
-        <title>KodeTalent — Jobs, Internships & Freelance for Engineers</title>
-        <meta name="description" content="Explore 200+ jobs, internships and freelancing opportunities across 12 engineering domains. Prepare with AI skill courses and apply directly." />
-      </Helmet>
       {/* Header */}
       <div className="sticky top-0 z-10 bg-[#f8fafc] px-4 pt-4 pb-2">
         <div className="flex items-center gap-2 mb-1">

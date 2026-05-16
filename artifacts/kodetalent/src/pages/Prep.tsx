@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { Helmet } from "react-helmet-async";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { Target, ChevronRight, MessageSquare, Briefcase, X, Cpu, Users, Shuffle, Building2, Flame, Mic, Camera } from "lucide-react";
@@ -78,10 +77,6 @@ export default function Prep() {
 
   return (
     <div className="p-4 pb-28 max-w-md mx-auto space-y-4 min-h-screen bg-[#f8fafc]">
-      <Helmet>
-        <title>KodeTalent — AI Mock Interviews & Aptitude Tests</title>
-        <meta name="description" content="Practice unlimited AI mock interviews and timed aptitude tests. Get instant feedback and an overall score to ace your campus placements." />
-      </Helmet>
       <div className="pt-2 mb-2 flex items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold flex items-center text-[#0f172a]">

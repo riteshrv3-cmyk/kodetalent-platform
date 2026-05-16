@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { Helmet } from "react-helmet-async";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { ShieldCheck, AlertTriangle, ShieldAlert, Sparkles, Download, ChevronRight, ArrowLeft, Clipboard, TrendingUp, CheckCircle2, XCircle, Award, Phone, Ghost, Megaphone } from "lucide-react";
@@ -541,10 +540,6 @@ export default function DriveCheck() {
 
   return (
     <div className="min-h-screen bg-[#f8fafc] pb-8">
-      <Helmet>
-        <title>KodeTalent — Placement Drive Verifier</title>
-        <meta name="description" content="Instantly verify college placement drives before you apply. AI-powered scam detection keeps engineering students safe from fake job offers." />
-      </Helmet>
       {/* Header */}
       <div className="bg-gradient-to-br from-[#0f172a] via-[#3730a3] to-[#4f46e5] px-5 pt-5 pb-6 text-white">
         <button
