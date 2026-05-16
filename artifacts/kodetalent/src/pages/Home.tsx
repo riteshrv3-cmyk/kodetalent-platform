@@ -186,6 +186,7 @@ export default function Home() {
   const [resume, setResume] = useState<ResumeCourse | null>(null);
   const [activityLog, setActivityLog] = useState<ActivityEntry[]>([]);
   const [myRank, setMyRank] = useState<number | null>(null);
+  const [showNudge, setShowNudge] = useState(() => !!localStorage.getItem("newUser"));
 
   useEffect(() => { setResume(loadResumeCourse()); }, []);
 
@@ -468,6 +469,36 @@ export default function Home() {
               <PlayCircle className="w-5 h-5" />
             </div>
           </motion.button>
+        )}
+
+        {/* ── Profile nudge (shown once after signup) ───────────── */}
+        {showNudge && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+            className="flex items-center gap-3 bg-white border border-[#e2e8f0] rounded-2xl p-4 mb-1"
+          >
+            <div className="w-10 h-10 rounded-xl bg-[#f97316]/10 flex items-center justify-center flex-shrink-0">
+              <Sparkles className="w-5 h-5 text-[#f97316]" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[13px] font-black text-[#0f172a]">Complete your profile</p>
+              <p className="text-[11px] text-[#64748b]">Add GitHub, bio & projects to get recruiter visibility</p>
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <button
+                onClick={() => setLocation("/profile")}
+                className="text-[12px] font-bold text-[#4f46e5] hover:underline"
+              >
+                Go
+              </button>
+              <button
+                onClick={() => { setShowNudge(false); localStorage.removeItem("newUser"); }}
+                className="text-[11px] text-[#94a3b8] hover:text-[#64748b] px-1"
+              >
+                ✕
+              </button>
+            </div>
+          </motion.div>
         )}
 
         {/* ── Categories grid ───────────────────────────────────── */}
