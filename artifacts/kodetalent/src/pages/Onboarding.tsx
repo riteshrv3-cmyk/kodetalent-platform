@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRight, ArrowLeft, Check, Sparkles, GraduationCap, Code2,
-  Building2, Github, Trophy, Target, User, Mail, Loader2,
+  Building2, Github, Trophy, Target, User, Mail, Loader2, Zap,
 } from "lucide-react";
 import { useCreateStudent } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
@@ -105,24 +105,12 @@ const STEPS: Step[] = [
 ];
 
 // Hype line above each question — keeps energy up
-const HYPE_LINES = [
-  "Let's gooo 🚀",
-  "Nice. Two down.",
-  "Tell us your vibe ⚡",
-  "Ooh, this is the fun part",
-  "Halfway there, legend 🔥",
-  "You're crushing it ✨",
-  "Almost done — keep going",
-  "Last few questions",
-  "Final one. Make it count 💫",
-];
-
 const FIELD_TONE: Record<string, string> = {
-  "Web Dev": "from-[#4f46e5] to-[#7c3aed]",
-  "AI/ML": "from-[#ec4899] to-[#f59e0b]",
-  "App Dev": "from-[#10b981] to-[#0ea5e9]",
-  "Cybersecurity": "from-[#0f172a] to-[#4f46e5]",
-  "Data": "from-[#0ea5e9] to-[#10b981]",
+  "Web Dev": "#4f46e5",
+  "AI/ML": "#f97316",
+  "App Dev": "#10b981",
+  "Cybersecurity": "#0f172a",
+  "Data": "#0ea5e9",
 };
 
 export default function Onboarding() {
@@ -216,19 +204,19 @@ export default function Onboarding() {
   // ── Submitting screen ────────────────────────────────────────
   if (submitting) {
     return (
-      <div className="min-h-[100dvh] bg-gradient-to-br from-[#4f46e5] via-[#7c3aed] to-[#ec4899] flex flex-col items-center justify-center p-6 text-center">
+      <div className="min-h-[100dvh] flex flex-col items-center justify-center p-6 text-center" style={{ background: "#f8fafc" }}>
         <motion.div
-          initial={{ scale: 0.6, opacity: 0 }}
+          initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="w-24 h-24 rounded-3xl bg-white/15 backdrop-blur-sm flex items-center justify-center mb-6 shadow-2xl"
+          className="w-16 h-16 rounded-2xl bg-[#f97316] flex items-center justify-center mb-6"
         >
-          <Sparkles className="w-12 h-12 text-white" />
+          <Sparkles className="w-8 h-8 text-white" />
         </motion.div>
-        <h2 className="text-2xl font-black text-white mb-2">Building your career profile…</h2>
-        <p className="text-white/80 text-sm mb-8">Setting up your AI companion</p>
-        <div className="w-full max-w-xs h-1.5 bg-white/20 rounded-full overflow-hidden">
+        <h2 className="text-xl font-black text-[#0f172a] mb-2">Building your profile…</h2>
+        <p className="text-[#64748b] text-sm mb-8">Setting up your career companion</p>
+        <div className="w-full max-w-xs h-1 bg-[#e2e8f0] rounded-full overflow-hidden">
           <motion.div
-            className="h-full bg-white rounded-full"
+            className="h-full bg-[#f97316] rounded-full"
             initial={{ width: "0%" }}
             animate={{ width: "100%" }}
             transition={{ duration: 1.4, ease: "easeOut" }}
@@ -241,60 +229,58 @@ export default function Onboarding() {
   // ── Welcome screen ───────────────────────────────────────────
   if (stepIdx === -1) {
     return (
-      <div className="min-h-[100dvh] bg-gradient-to-br from-[#4f46e5] via-[#7c3aed] to-[#ec4899] flex flex-col items-center justify-between p-6 text-center text-white">
-        <div className="flex-1 flex flex-col items-center justify-center max-w-md">
+      <div className="min-h-[100dvh] flex flex-col items-center justify-between p-6 text-center" style={{ background: "#f8fafc" }}>
+        <div className="flex-1 flex flex-col items-center justify-center max-w-sm">
           <motion.div
-            initial={{ scale: 0.5, opacity: 0 }}
+            initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: "spring", stiffness: 180, damping: 18 }}
-            className="w-28 h-28 rounded-[28px] bg-white/15 backdrop-blur-md flex items-center justify-center text-5xl mb-8 shadow-2xl"
+            className="w-20 h-20 rounded-2xl bg-[#f97316] flex items-center justify-center mb-8"
           >
-            ⭐
+            <Zap className="w-10 h-10 text-white" />
           </motion.div>
           <motion.h1
-            initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
+            initial={{ y: 12, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.15 }}
-            className="text-4xl font-black mb-3 leading-tight"
+            className="text-3xl font-black text-[#0f172a] mb-3 leading-tight"
           >
             Your AI Career<br />Companion
           </motion.h1>
           <motion.p
-            initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
+            initial={{ y: 12, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.25 }}
-            className="text-white/85 text-base mb-10 max-w-xs"
+            className="text-[#64748b] text-base mb-10 max-w-xs"
           >
-            We'll set you up in under a minute. 9 quick questions, then you're in.
+            A few quick questions and you'll be ready to go.
           </motion.p>
           <motion.div
-            initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
+            initial={{ y: 12, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.35 }}
-            className="grid grid-cols-3 gap-3 w-full max-w-sm mb-2"
+            className="flex flex-wrap justify-center gap-2 w-full max-w-sm"
           >
             {[
-              { e: "🎯", l: "Personalised roadmap" },
-              { e: "🚀", l: "Real opportunities" },
-              { e: "🤝", l: "Recruiter network" },
-            ].map(it => (
-              <div key={it.l} className="bg-white/10 backdrop-blur-sm rounded-2xl p-3">
-                <div className="text-2xl mb-1">{it.e}</div>
-                <div className="text-[10px] font-bold text-white/90 leading-tight">{it.l}</div>
-              </div>
+              "Personalised roadmap",
+              "Real opportunities",
+              "Recruiter network",
+            ].map(l => (
+              <span key={l} className="text-[11px] font-semibold text-[#475569] bg-white border border-[#e2e8f0] rounded-full px-3 py-1">
+                {l}
+              </span>
             ))}
           </motion.div>
         </div>
         <motion.div
-          initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.5 }}
-          className="w-full max-w-md pb-safe"
+          initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.45 }}
+          className="w-full max-w-sm pb-safe"
         >
           <Button
             data-testid="onboarding-start"
             onClick={() => setStepIdx(0)}
-            className="w-full h-14 rounded-2xl bg-white text-[#4f46e5] hover:bg-white/95 font-extrabold text-base shadow-2xl"
+            className="w-full h-12 rounded-xl bg-[#0f172a] text-white hover:bg-[#1e293b] font-bold text-base"
           >
             Get Started <ArrowRight className="ml-2 w-5 h-5" />
           </Button>
-          <p className="text-[11px] text-white/60 mt-3">Free forever · No credit card</p>
         </motion.div>
       </div>
     );
@@ -303,7 +289,7 @@ export default function Onboarding() {
   // ── Question screen ──────────────────────────────────────────
   if (!step) return null;
   const Icon = step.icon;
-  const tone = FIELD_TONE[data.field] || "from-[#4f46e5] to-[#7c3aed]";
+  const tone = FIELD_TONE[data.field] || "#4f46e5";
 
   return (
     <div className="min-h-[100dvh] bg-[#f8fafc] flex flex-col max-w-md mx-auto">
@@ -317,9 +303,10 @@ export default function Onboarding() {
           >
             <ArrowLeft className="w-4 h-4 text-[#0f172a]" />
           </button>
-          <div className="flex-1 h-1.5 bg-[#e2e8f0] rounded-full overflow-hidden">
+          <div className="flex-1 h-1 bg-[#e2e8f0] rounded-full overflow-hidden">
             <motion.div
-              className={`h-full bg-gradient-to-r ${tone} rounded-full`}
+              className="h-full rounded-full"
+              style={{ backgroundColor: tone }}
               initial={false}
               animate={{ width: `${progress}%` }}
               transition={{ duration: 0.4, ease: "easeOut" }}
@@ -342,27 +329,17 @@ export default function Onboarding() {
             transition={{ duration: 0.25, ease: "easeOut" }}
           >
             <motion.div
-              initial={{ scale: 0.6, rotate: -10, opacity: 0 }}
-              animate={{ scale: 1, rotate: 0, opacity: 1 }}
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
               transition={{ type: "spring", stiffness: 240, damping: 14 }}
-              className={`relative inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br ${tone} text-white mb-4 shadow-xl`}
+              className="inline-flex items-center justify-center w-12 h-12 rounded-xl text-white mb-4"
+              style={{ backgroundColor: tone }}
             >
-              <Icon className="w-8 h-8" />
-              <motion.div
-                className="absolute -top-2 -right-2 text-2xl"
-                animate={{ y: [0, -4, 0], rotate: [0, 8, -8, 0] }}
-                transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
-              >
-                {step.emoji}
-              </motion.div>
+              <Icon className="w-6 h-6" />
             </motion.div>
-            <motion.p
-              initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className={`inline-block text-[11px] font-extrabold uppercase tracking-wider mb-2 px-2.5 py-1 rounded-full bg-gradient-to-r ${tone} text-white`}
-            >
-              {HYPE_LINES[stepIdx] || "Keep going ✨"}
-            </motion.p>
+            <p className="text-[11px] font-bold text-[#94a3b8] mb-1">
+              Step {stepIdx + 1} of {visibleSteps.length}
+            </p>
             <h1 className="text-[28px] font-black text-[#0f172a] leading-[1.15] mb-2">
               {step.title}
             </h1>
@@ -384,11 +361,12 @@ export default function Onboarding() {
                           else setStepIdx(i => i + 1);
                         }, 220);
                       }}
-                      className={`relative h-16 rounded-2xl border-2 font-bold text-[15px] transition-all ${
+                      className={`relative h-14 rounded-xl border font-bold text-[15px] transition-all ${
                         selected
-                          ? `bg-gradient-to-br ${tone} text-white border-transparent shadow-lg`
-                          : "bg-white border-[#e2e8f0] text-[#0f172a] hover:border-[#4f46e5]/40"
+                          ? "text-white border-transparent shadow-sm"
+                          : "bg-white border-[#e2e8f0] text-[#0f172a] hover:border-[#94a3b8]"
                       }`}
+                      style={selected ? { backgroundColor: tone } : undefined}
                     >
                       {opt}
                       {selected && (
@@ -436,13 +414,14 @@ export default function Onboarding() {
 
       {/* Continue bar (hidden for chip steps which auto-advance) */}
       {step.type !== "chips" && (
-        <div className="fixed bottom-0 left-0 right-0 p-4 pb-safe bg-gradient-to-t from-[#f8fafc] via-[#f8fafc] to-transparent z-20">
+        <div className="fixed bottom-0 left-0 right-0 p-4 pb-safe z-20">
           <div className="max-w-md mx-auto">
             <Button
               onClick={next}
               disabled={!canContinue}
               data-testid="onboarding-continue"
-              className={`w-full h-14 rounded-2xl font-extrabold text-base text-white shadow-lg disabled:opacity-40 disabled:shadow-none bg-gradient-to-r ${tone}`}
+              className="w-full h-12 rounded-xl font-bold text-base text-white shadow-sm disabled:opacity-40 disabled:shadow-none"
+              style={{ backgroundColor: tone }}
             >
               {isLast ? (
                 <>{submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Finish <Sparkles className="ml-2 w-5 h-5" /></>}</>
