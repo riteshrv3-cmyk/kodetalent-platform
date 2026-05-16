@@ -2,11 +2,11 @@ import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { GraduationCap, BriefcaseBusiness, ArrowRight, Zap, Users, Shield, Star } from "lucide-react";
 
-const STATS = [
-  { value: "1,200+", label: "Students" },
-  { value: "15+", label: "Colleges" },
-  { value: "200+", label: "Jobs" },
-  { value: "48h", label: "Shortlist" },
+const FEATURES = [
+  { label: "AI Mock Interviews", icon: Zap },
+  { label: "Skill Roadmaps", icon: Users },
+  { label: "Resume Builder", icon: Zap },
+  { label: "Recruiter Connect", icon: Zap },
 ];
 
 const STUDENT_FEATURES = [
@@ -103,34 +103,23 @@ export default function RoleSelect() {
           <p className="text-[#64748b] text-sm font-medium">AI Career Companion for Engineers</p>
         </motion.div>
 
-        {/* Trust pill */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.18 }}
-          className="flex items-center gap-2 mb-7 bg-white border border-[#e2e8f0] shadow-sm rounded-full px-3.5 py-1.5"
-        >
-          <span className="w-1.5 h-1.5 rounded-full bg-[#10b981] animate-pulse" />
-          <span className="text-[11px] font-bold text-[#475569]">Trusted by students from IIT, NIT, BITS & more</span>
-        </motion.div>
-
-        {/* Stats */}
+        {/* Features */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.22 }}
-          className="grid grid-cols-4 gap-2 w-full mb-7"
+          className="grid grid-cols-2 gap-2 w-full mb-7"
         >
-          {STATS.map((s, i) => (
+          {FEATURES.map((f, i) => (
             <motion.div
-              key={s.label}
+              key={f.label}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.25 + i * 0.06 }}
-              className="flex flex-col items-center bg-white border border-[#e2e8f0] shadow-sm rounded-2xl py-3 px-1"
+              className="flex items-center gap-2 bg-white border border-[#e2e8f0] shadow-sm rounded-2xl py-3 px-3"
             >
-              <span className="text-[17px] font-black text-[#0f172a] leading-none">{s.value}</span>
-              <span className="text-[9px] font-bold text-[#94a3b8] mt-1 uppercase tracking-wider">{s.label}</span>
+              <f.icon className="w-4 h-4 text-[#f97316]" />
+              <span className="text-[11px] font-bold text-[#475569]">{f.label}</span>
             </motion.div>
           ))}
         </motion.div>
@@ -240,7 +229,7 @@ export default function RoleSelect() {
             <div className="w-px h-3 bg-[#e2e8f0]" />
             <div className="flex items-center gap-1.5"><Star className="w-3 h-3" /><span>Free to join</span></div>
             <div className="w-px h-3 bg-[#e2e8f0]" />
-            <div className="flex items-center gap-1.5"><Users className="w-3 h-3" /><span>1,200+ active</span></div>
+            <div className="flex items-center gap-1.5"><Users className="w-3 h-3" /><span>Student-first, always</span></div>
           </div>
           <p className="text-[10px] text-[#cbd5e1] font-medium">Made for Indian Engineering Students 🇮🇳</p>
         </motion.div>

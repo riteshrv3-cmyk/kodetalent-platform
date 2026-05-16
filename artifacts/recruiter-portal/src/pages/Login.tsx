@@ -5,10 +5,10 @@ import { Building2, User, Briefcase, ArrowRight, Zap, Mail, Users, GraduationCap
 
 const ROLES = ["HR Manager", "Technical Recruiter", "Campus Recruiter", "Talent Acquisition Lead", "Founder / CEO"];
 
-const STATIC_STATS = [
-  { label: "Verified students", value: "1,200+", icon: Users, color: "#4f46e5" },
-  { label: "Partner colleges", value: "15+", icon: GraduationCap, color: "#10b981" },
-  { label: "Median shortlist", value: "48 hrs", icon: Clock, color: "#f97316" },
+const FEATURES = [
+  { label: "Verified profiles", icon: Users, color: "#4f46e5" },
+  { label: "AI scoring", icon: GraduationCap, color: "#10b981" },
+  { label: "Instant shortlist", icon: Clock, color: "#f97316" },
 ];
 
 export default function Login() {
@@ -76,17 +76,16 @@ export default function Login() {
           transition={{ delay: 0.07 }}
           className="grid grid-cols-3 gap-3 mb-6"
         >
-          {STATIC_STATS.map((s) => {
-            const Icon = s.icon;
+          {FEATURES.map((f) => {
+            const Icon = f.icon;
             return (
-              <div key={s.label} className="bg-white border border-[#f0f4ff] rounded-2xl p-3 text-center shadow-sm">
+              <div key={f.label} className="bg-white border border-[#f0f4ff] rounded-2xl p-3 text-center shadow-sm">
                 <div className="flex items-center justify-center mb-1.5">
-                  <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: `${s.color}15` }}>
-                    <Icon className="w-3.5 h-3.5" style={{ color: s.color }} />
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: `${f.color}15` }}>
+                    <Icon className="w-3.5 h-3.5" style={{ color: f.color }} />
                   </div>
                 </div>
-                <p className="font-black text-[#0f172a] text-base leading-none">{s.value}</p>
-                <p className="text-[10px] text-[#94a3b8] font-semibold mt-0.5">{s.label}</p>
+                <p className="font-black text-[#0f172a] text-base leading-none">{f.label}</p>
               </div>
             );
           })}

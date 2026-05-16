@@ -58,7 +58,7 @@ interface ResumeCourse {
 }
 
 const categories = [
-  { id: "opportunities", label: "Opportunities", icon: Briefcase, href: "/opportunities", gradient: "from-[#4f46e5] to-[#3730a3]", glow: "#4f46e5", count: "200+ Jobs", accent: "#eef2ff" },
+  { id: "opportunities", label: "Opportunities", icon: Briefcase, href: "/opportunities", gradient: "from-[#4f46e5] to-[#3730a3]", glow: "#4f46e5", accent: "#eef2ff" },
   { id: "leaderboard", label: "Leaderboard", icon: Trophy, href: "/leaderboard", gradient: "from-[#f59e0b] to-[#d97706]", glow: "#f59e0b", count: "Your Rank", accent: "#fffbeb" },
   { id: "resume", label: "Resume", icon: FileText, href: "/resume", gradient: "from-[#10b981] to-[#059669]", glow: "#10b981", count: "AI Builder", accent: "#ecfdf5" },
   { id: "practice", label: "Practice", icon: Zap, href: "/practice", gradient: "from-[#0ea5e9] to-[#0891b2]", glow: "#0ea5e9", count: "Mock Tests", accent: "#ecfeff" },

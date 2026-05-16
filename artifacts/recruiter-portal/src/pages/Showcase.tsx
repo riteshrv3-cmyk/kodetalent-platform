@@ -13,15 +13,15 @@ const PREVIEW_CANDIDATE = {
   github: { repos: 14, stars: 47, streak: 32 },
 };
 
-const STATS = [
-  { value: "1,200+", label: "Verified students", icon: Users, color: "#4f46e5" },
-  { value: "15+", label: "Partner colleges", icon: GraduationCap, color: "#10b981" },
-  { value: "90%+", label: "Have real projects", icon: Github, color: "#0f172a" },
-  { value: "48 hrs", label: "Median shortlist", icon: TrendingUp, color: "#f97316" },
+const FEATURES = [
+  { label: "Verified profiles", icon: Users, color: "#4f46e5" },
+  { label: "Partner colleges", icon: GraduationCap, color: "#10b981" },
+  { label: "Real projects", icon: Github, color: "#0f172a" },
+  { label: "AI shortlisting", icon: TrendingUp, color: "#f97316" },
 ];
 
 const OLD_TOOLS = [
-  { name: "Naukri / LinkedIn", icon: Search, color: "#0077b5", pain: "200+ irrelevant applications" },
+  { name: "Naukri / LinkedIn", icon: Search, color: "#0077b5", pain: "Irrelevant applications" },
   { name: "HackerRank / Test", icon: FileText, color: "#00b94a", pain: "Manual test setup & grading" },
   { name: "Calendly", icon: Calendar, color: "#006bff", pain: "No-shows. Reschedule loops." },
   { name: "ATS / Sheets", icon: Database, color: "#34a853", pain: "Data scattered everywhere" },
@@ -280,7 +280,7 @@ export default function Showcase() {
         </div>
       </section>
 
-      <section className="bg-white border-b border-[#f0f4ff]"><div className="max-w-6xl mx-auto px-5"><div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-[#f1f5f9]">{STATS.map((s, i) => { const Icon = s.icon; return (<motion.div key={s.label} initial={{ opacity: 0, y: 6 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.06 }} className="py-5 px-5 flex items-center gap-3"><div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${s.color}12` }}><Icon className="w-4 h-4" style={{ color: s.color }} /></div><div><p className="font-black text-[#0f172a] text-lg leading-none">{s.value}</p><p className="text-[10px] text-[#94a3b8] font-semibold mt-0.5">{s.label}</p></div></motion.div>)})}</div></div></section>
+      <section className="bg-white border-b border-[#f0f4ff]"><div className="max-w-6xl mx-auto px-5"><div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-[#f1f5f9]">{FEATURES.map((f, i) => { const Icon = f.icon; return (<motion.div key={f.label} initial={{ opacity: 0, y: 6 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.06 }} className="py-5 px-5 flex items-center gap-3"><div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${f.color}12` }}><Icon className="w-4 h-4" style={{ color: f.color }} /></div><div><p className="font-black text-[#0f172a] text-lg leading-none">{f.label}</p></div></motion.div>)})}</div></div></section>
 
       <section className="py-20 px-5 bg-[#f8fafc] border-b border-[#f0f4ff]">
         <div className="max-w-4xl mx-auto">
@@ -553,8 +553,8 @@ export default function Showcase() {
               <span className="text-xs font-bold text-[#4f46e5]">Private beta — serious hiring teams only</span>
             </div>
             <h2 className="text-3xl sm:text-4xl font-black text-[#0f172a] mb-4 leading-[1.15]">
-              Shortlist in 48 hours.<br />
-              <span className="text-[#4f46e5]">Not 4 weeks.</span>
+              AI-powered shortlisting.<br />
+              <span className="text-[#4f46e5]">Instant, not manual.</span>
             </h2>
             <p className="text-[#64748b] mb-8 text-[15px] leading-relaxed">No credit card. No sales call. Sign in with your work email and start browsing verified talent right now.</p>
             <button onClick={() => setLocation("/login")} className="bg-gradient-to-r from-[#4f46e5] to-[#6366f1] text-white font-black px-10 py-4 rounded-2xl inline-flex items-center gap-2 shadow-[0_8px_32px_rgba(79,70,229,0.25)] hover:shadow-[0_12px_40px_rgba(79,70,229,0.4)] transition-all active:scale-[0.98] text-[15px] w-full sm:w-auto justify-center">

@@ -282,7 +282,7 @@ function TargetRecommendations({
                       }}
                     />
                   </div>
-                  <p className="text-[9px] text-[#94a3b8]">{rec.openings} openings</p>
+                  <p className="text-[9px] text-[#94a3b8]">{rec.tier === "tier1" ? "Tier 1" : rec.tier === "tier2" ? "Tier 2" : "Startup"}</p>
                 </div>
 
                 {/* CTA */}

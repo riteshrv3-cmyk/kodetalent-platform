@@ -75,7 +75,7 @@ export default function PostJob() {
               </div>
               <h2 className="text-2xl font-black text-[#0f172a] mb-1.5">Paste your JD. We'll do the rest.</h2>
               <p className="text-[#64748b] text-sm leading-relaxed">
-                Our team will manually review and curate the best-fit candidates from our verified pool — and send them your way within 24–48 hours.
+                Paste your job description and we'll match it against verified student profiles using AI scoring.
               </p>
             </div>
 
@@ -172,7 +172,7 @@ export default function PostJob() {
               <p className="text-[#64748b] text-[15px] leading-relaxed max-w-md mx-auto mb-8">
                 We're currently in <strong className="text-[#0f172a]">private beta</strong> — our team manually reviews every job posting and personally curates the best-fit candidates from our verified pool.
                 <br /><br />
-                You'll hear from us at <strong className="text-[#4f46e5]">{recruiter.email}</strong> within <strong className="text-[#0f172a]">24–48 hours</strong> with shortlisted profiles.
+                We'll reach out at <strong className="text-[#4f46e5]">{recruiter.email}</strong> once your job goes live with matching candidates.
               </p>
 
               {/* What happens next */}
