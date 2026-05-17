@@ -13,7 +13,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const [pendingCount, setPendingCount] = useState(0);
   const [initials, setInitials] = useState("?");
 
-  const isFullscreenRoute = location.startsWith("/practice/interview/");
+  const isFullscreenRoute = location.startsWith("/practice/interview/") || location === "/onboarding";
 
   useEffect(() => {
     const name = localStorage.getItem("studentName") || "";
