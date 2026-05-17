@@ -676,9 +676,9 @@ export default function Profile() {
             </div>
 
             {/* Only show scores when they have real data */}
-            {(profile.commitmentScore > 0 || profile.overallScore > 0) && (
-              <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-[#f8fafc]">
-                {profile.commitmentScore > 0 && (
+            {(profile.githubUrl || profile.overallScore > 0) && (
+              <div className={`grid gap-3 mt-4 pt-4 border-t border-[#f8fafc] ${profile.githubUrl && profile.overallScore > 0 ? "grid-cols-2" : ""}`}>
+                {profile.githubUrl && (
                   <div className="bg-[#f8fafc] rounded-2xl p-3 text-center">
                     <p className="text-xl font-black text-[#4f46e5]">{profile.commitmentScore}</p>
                     <p className="text-[10px] font-bold text-[#64748b] uppercase">Commitment</p>
@@ -693,7 +693,7 @@ export default function Profile() {
               </div>
             )}
 
-            {(profile.commitmentScore > 0 || profile.overallScore > 0) && (
+            {(profile.githubUrl || profile.overallScore > 0) && (
               <p className="text-[10px] text-center text-[#94a3b8] mt-2 font-bold">Recruiters see these scores on your profile</p>
             )}
           </CardContent>
@@ -1160,7 +1160,7 @@ export default function Profile() {
                   <p className="text-3xl font-black">{profile.profileStrength}%</p>
                   <p className="text-xs text-white/70 mt-1">Profile</p>
                 </div>
-                {profile.commitmentScore > 0 && (
+                {profile.githubUrl && (
                   <div className="bg-white/15 rounded-2xl p-4">
                     <p className="text-3xl font-black">{profile.commitmentScore}</p>
                     <p className="text-xs text-white/70 mt-1">Commitment</p>

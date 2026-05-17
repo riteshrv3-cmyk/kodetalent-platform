@@ -23,6 +23,7 @@ interface StudentProfile {
   profileStrength: number;
   commitmentScore: number;
   skills: Record<string, number>;
+  githubUrl?: string;
 }
 
 interface Invite {
@@ -298,16 +299,18 @@ export default function Home() {
           </motion.div>
 
           {/* Score rings row */}
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12, duration: 0.5 }} className="grid grid-cols-3 gap-3 mb-6">
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12, duration: 0.5 }} className={`grid gap-3 mb-6 ${profile?.githubUrl ? "grid-cols-3" : "grid-cols-2"}`}>
             <div className="bg-white/6 border border-white/10 rounded-2xl py-4 flex flex-col items-center gap-1 backdrop-blur-sm">
               <ScoreRing value={Math.round(profile?.overallScore ?? 0)} size={68} strokeWidth={5} color="#60a5fa" label="AI Score" sublabel="/100" />
             </div>
             <div className="bg-white/6 border border-white/10 rounded-2xl py-4 flex flex-col items-center gap-1 backdrop-blur-sm">
               <ScoreRing value={Math.round(profile?.profileStrength ?? 0)} size={68} strokeWidth={5} color="#34d399" label="Profile" sublabel="%" />
             </div>
-            <div className="bg-white/6 border border-white/10 rounded-2xl py-4 flex flex-col items-center gap-1 backdrop-blur-sm">
-              <ScoreRing value={Math.round(profile?.commitmentScore ?? 0)} size={68} strokeWidth={5} color="#f97316" label="Commit" sublabel="/100" />
-            </div>
+            {profile?.githubUrl && (
+              <div className="bg-white/6 border border-white/10 rounded-2xl py-4 flex flex-col items-center gap-1 backdrop-blur-sm">
+                <ScoreRing value={Math.round(profile?.commitmentScore ?? 0)} size={68} strokeWidth={5} color="#f97316" label="Commit" sublabel="/100" />
+              </div>
+            )}
           </motion.div>
 
           {/* XP Level bar */}

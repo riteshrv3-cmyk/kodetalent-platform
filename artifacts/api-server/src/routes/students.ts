@@ -287,24 +287,8 @@ function formatQuest(q: typeof questsTable.$inferSelect) {
   };
 }
 
-function getDefaultSkills(field: string): Record<string, number> {
-  const base: Record<string, number> = {
-    "Python": 30 + Math.floor(Math.random() * 40),
-    "DSA": 20 + Math.floor(Math.random() * 30),
-    "Git": 40 + Math.floor(Math.random() * 30),
-  };
-  if (field === "Web Dev" || field === "App Dev") {
-    base["React"] = 20 + Math.floor(Math.random() * 40);
-    base["JavaScript"] = 30 + Math.floor(Math.random() * 40);
-  } else if (field === "AI/ML" || field === "Data") {
-    base["NumPy"] = 20 + Math.floor(Math.random() * 40);
-    base["Pandas"] = 20 + Math.floor(Math.random() * 30);
-    base["ML"] = 10 + Math.floor(Math.random() * 30);
-  } else if (field === "Cybersecurity") {
-    base["Networking"] = 20 + Math.floor(Math.random() * 30);
-    base["Linux"] = 30 + Math.floor(Math.random() * 30);
-  }
-  return base;
+function getDefaultSkills(_field: string): Record<string, number> {
+  return {};
 }
 
 export default router;

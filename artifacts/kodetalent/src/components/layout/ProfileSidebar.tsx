@@ -145,8 +145,17 @@ export function ProfileSidebar({ onClose }: { onClose: () => void }) {
                       <p className="text-[10px] text-[#64748b] font-bold uppercase">AI Score</p>
                     </div>
                     <div className="bg-[#f8fafc] rounded-xl p-2.5 text-center">
-                      <p className="text-lg font-black text-[#0ea5e9]">{profile?.commitmentScore ?? "—"}</p>
-                      <p className="text-[10px] text-[#64748b] font-bold uppercase">Commitment</p>
+                      {profile?.githubUrl ? (
+                        <>
+                          <p className="text-lg font-black text-[#0ea5e9]">{profile?.commitmentScore ?? "—"}</p>
+                          <p className="text-[10px] text-[#64748b] font-bold uppercase">Commitment</p>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-lg font-black text-[#94a3b8]">—</p>
+                          <p className="text-[10px] text-[#94a3b8] font-bold uppercase">Link GitHub</p>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
