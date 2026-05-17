@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Mail, UserCircle2 } from "lucide-react";
+import { Mail, UserCircle2, ChevronLeft } from "lucide-react";
 import { motion } from "framer-motion";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -11,13 +11,32 @@ interface TopBarProps {
 }
 
 export function TopBar({ pendingCount, initials, onProfileClick }: TopBarProps) {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const isInbox = location === "/inbox";
+  const showBack = location !== "/home" && location !== "/dashboard" && location !== "/onboarding";
+
+  const goBack = () => {
+    if (window.history.length > 1) {
+      window.history.back();
+    } else {
+      setLocation("/home");
+    }
+  };
 
   return (
     <div className="fixed top-0 left-0 right-0 z-40 bg-white/90 backdrop-blur-md border-b border-[#e0e7ff]/60 shadow-sm" style={{ transform: "translateZ(0)", backfaceVisibility: "hidden", willChange: "transform" }}>
       <div className="max-w-md mx-auto px-4 h-14 flex items-center justify-between">
         <div className="flex items-center gap-2">
+          {showBack && (
+            <motion.button
+              whileTap={{ scale: 0.92 }}
+              onClick={goBack}
+              className="w-8 h-8 rounded-xl bg-[#f8fafc] hover:bg-[#e0e7ff] flex items-center justify-center transition-colors"
+              aria-label="Go back"
+            >
+              <ChevronLeft className="w-5 h-5 text-[#64748b]" />
+            </motion.button>
+          )}
           <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#4f46e5] to-[#6366f1] flex items-center justify-center">
             <span className="text-white font-black text-sm">KT</span>
           </div>
