@@ -279,7 +279,7 @@ Rules:
     const rawSkills = JSON.parse(text.replace(/```json\n?|\n?```/g, "").trim());
 
     // Filter out generic / non-technical skills
-    const GENERIC = new Set(["dsa","data structures","algorithms","problem solving","communication","teamwork","leadership","time management","critical thinking"]);
+    const GENERIC = new Set(["dsa","data structures","algorithms","problem solving","communication","teamwork","leadership","time management","critical thinking","git","linux","python","networking"]);
     const skills: Record<string, number> = {};
     for (const [key, val] of Object.entries(rawSkills)) {
       if (typeof val === "number" && !GENERIC.has(key.toLowerCase().trim())) {

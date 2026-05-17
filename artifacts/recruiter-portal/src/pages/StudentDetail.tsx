@@ -237,7 +237,7 @@ export default function StudentDetail({ id }: { id: number }) {
   );
 
   const initials = profile.name.split(" ").map((n: string) => n[0]).join("").substring(0, 2).toUpperCase();
-  const GENERIC_SKILLS = new Set(["dsa","data structures","algorithms","problem solving","communication","teamwork","leadership","time management","critical thinking"]);
+  const GENERIC_SKILLS = new Set(["dsa","data structures","algorithms","problem solving","communication","teamwork","leadership","time management","critical thinking","git","linux","python","networking"]);
   const topSkills = Object.entries(profile.skills || {})
     .filter(([name]) => !GENERIC_SKILLS.has(name.toLowerCase().trim()))
     .sort(([, a], [, b]) => (b as number) - (a as number))

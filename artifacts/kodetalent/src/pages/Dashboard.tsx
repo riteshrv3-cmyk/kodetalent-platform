@@ -99,7 +99,7 @@ export default function Dashboard() {
   const { student, todayQuest, collegeRank } = data;
   const pendingInvites = invites.filter(i => i.status === "pending");
   const powerUps = getPowerUps(profile);
-  const GENERIC_SKILLS = new Set(["dsa","data structures","algorithms","problem solving","communication","teamwork","leadership","time management","critical thinking"]);
+  const GENERIC_SKILLS = new Set(["dsa","data structures","algorithms","problem solving","communication","teamwork","leadership","time management","critical thinking","git","linux","python","networking"]);
   const topSkills = Object.entries(profile?.skills || {})
     .filter(([name]) => !GENERIC_SKILLS.has(name.toLowerCase().trim()))
     .sort(([, a], [, b]) => (b as number) - (a as number))
