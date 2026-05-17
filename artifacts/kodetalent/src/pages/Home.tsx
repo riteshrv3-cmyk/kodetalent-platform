@@ -235,7 +235,11 @@ export default function Home() {
   const firstName = profile?.name?.split(" ")[0] ?? "there";
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Morning" : hour < 17 ? "Afternoon" : "Evening";
-  const topSkills = Object.entries(profile?.skills ?? {}).sort(([, a], [, b]) => (b as number) - (a as number)).slice(0, 4);
+  const GENERIC_SKILLS = new Set(["dsa","data structures","algorithms","problem solving","communication","teamwork","leadership","time management","critical thinking"]);
+  const topSkills = Object.entries(profile?.skills ?? {})
+    .filter(([name]) => !GENERIC_SKILLS.has(name.toLowerCase().trim()))
+    .sort(([, a], [, b]) => (b as number) - (a as number))
+    .slice(0, 4);
 
   if (loading) {
     return (

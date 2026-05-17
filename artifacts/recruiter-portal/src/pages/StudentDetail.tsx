@@ -237,7 +237,11 @@ export default function StudentDetail({ id }: { id: number }) {
   );
 
   const initials = profile.name.split(" ").map((n: string) => n[0]).join("").substring(0, 2).toUpperCase();
-  const topSkills = Object.entries(profile.skills || {}).sort(([, a], [, b]) => (b as number) - (a as number)).slice(0, 8);
+  const GENERIC_SKILLS = new Set(["dsa","data structures","algorithms","problem solving","communication","teamwork","leadership","time management","critical thinking"]);
+  const topSkills = Object.entries(profile.skills || {})
+    .filter(([name]) => !GENERIC_SKILLS.has(name.toLowerCase().trim()))
+    .sort(([, a], [, b]) => (b as number) - (a as number))
+    .slice(0, 8);
   const strengthColor = profile.profileStrength >= 70 ? "#10b981" : profile.profileStrength >= 40 ? "#f97316" : "#ef4444";
 
   return (

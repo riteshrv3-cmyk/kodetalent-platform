@@ -99,7 +99,11 @@ export default function Dashboard() {
   const { student, todayQuest, collegeRank } = data;
   const pendingInvites = invites.filter(i => i.status === "pending");
   const powerUps = getPowerUps(profile);
-  const topSkills = Object.entries(profile?.skills || {}).sort(([, a], [, b]) => (b as number) - (a as number)).slice(0, 4);
+  const GENERIC_SKILLS = new Set(["dsa","data structures","algorithms","problem solving","communication","teamwork","leadership","time management","critical thinking"]);
+  const topSkills = Object.entries(profile?.skills || {})
+    .filter(([name]) => !GENERIC_SKILLS.has(name.toLowerCase().trim()))
+    .sort(([, a], [, b]) => (b as number) - (a as number))
+    .slice(0, 4);
 
   return (
     <div className="p-4 space-y-4 pb-28 min-h-screen bg-[#f8fafc]">

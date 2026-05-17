@@ -256,15 +256,17 @@ GitHub username: ${username}
 Repositories:
 ${reposText}
 
-Return a JSON object (no markdown) with skill names as keys and scores (0-100) as values:
+Return a JSON object (no markdown) with specific technical skill names as keys and scores (0-100) as values:
 {
-  "Python": 65,
   "JavaScript": 45,
   "React": 30,
-  "DSA": 20,
-  "Git": 70
+  "Node.js": 55
 }
-Include only skills you can actually infer from the repos. Include Git as a base skill.`;
+Rules:
+- ONLY include specific technical skills: programming languages, frameworks, libraries, databases, tools, platforms.
+- Do NOT include generic categories like DSA, Problem Solving, Communication, Teamwork, Data Structures, Algorithms, or soft skills.
+- Scores must be based ONLY on what you can actually infer from the repository names, descriptions, and languages.
+- Do NOT assume skills not evidenced by repos.`;
 
     const message = await anthropic.messages.create({
       model: "claude-haiku-4-5",
@@ -274,9 +276,17 @@ Include only skills you can actually infer from the repos. Include Git as a base
 
     const content = message.content[0];
     const text = content.type === "text" ? content.text : "{}";
-    const skills = JSON.parse(text.replace(/```json\n?|\n?```/g, "").trim());
+    const rawSkills = JSON.parse(text.replace(/```json\n?|\n?```/g, "").trim());
 
-    // Update student skills
+    // Filter out generic / non-technical skills
+    const GENERIC = new Set(["dsa","data structures","algorithms","problem solving","communication","teamwork","leadership","time management","critical thinking"]);
+    const skills: Record<string, number> = {};
+    for (const [key, val] of Object.entries(rawSkills)) {
+      if (typeof val === "number" && !GENERIC.has(key.toLowerCase().trim())) {
+        skills[key] = val;
+      }
+    }
+
     await db.update(studentsTable).set({ skills }).where(eq(studentsTable.id, studentId));
 
     return res.json({ skills });
