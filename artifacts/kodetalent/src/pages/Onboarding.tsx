@@ -166,6 +166,29 @@ export default function Onboarding() {
     else if (stepIdx === 0) setStepIdx(-1);
   }
 
+  async function skipOnboarding() {
+    setSubmitting(true);
+    setError(null);
+    try {
+      const student = await createStudent.mutateAsync({
+        data: {
+          name: "Student",
+          email: "student@example.com",
+          college: "College",
+          city: "Unknown",
+          year: 1,
+          field: "Web Dev",
+        },
+      });
+      localStorage.setItem("studentId", student.id.toString());
+      localStorage.setItem("studentCollege", student.college || "College");
+      setTimeout(() => setLocation("/home"), 1400);
+    } catch (e) {
+      console.error(e);
+      setSubmitting(false);
+    }
+  }
+
   async function submit() {
     setSubmitting(true);
     setError(null);
@@ -294,6 +317,12 @@ export default function Onboarding() {
           >
             Get Started <ArrowRight className="ml-2 w-5 h-5" />
           </Button>
+          <button
+            onClick={() => void skipOnboarding()}
+            className="w-full mt-3 text-sm font-bold text-white/70 hover:text-white transition"
+          >
+            Skip for now
+          </button>
           <p className="text-[11px] text-white/60 mt-3">Free forever · No credit card</p>
         </motion.div>
       </div>
