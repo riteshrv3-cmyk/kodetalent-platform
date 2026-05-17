@@ -41,6 +41,7 @@ const RecruiterPortalShortcut = lazy(
   () => import("@/pages/RecruiterPortalShortcut"),
 );
 const Onboarding = lazy(() => import("@/pages/Onboarding"));
+const Welcome = lazy(() => import("@/pages/Welcome"));
 
 const clerkPubKey = publishableKeyFromHost(
   window.location.hostname,
@@ -130,7 +131,8 @@ function RoleSelectRedirect() {
     if (!isLoaded || !isSignedIn) return;
     const studentId = localStorage.getItem("studentId");
     if (studentId) {
-      setLocation("/home");
+      const welcomeSeen = localStorage.getItem("welcomeSeen");
+      setLocation(welcomeSeen ? "/home" : "/welcome");
     } else {
       if (user?.primaryEmailAddress?.emailAddress) {
         localStorage.setItem("clerkEmail", user.primaryEmailAddress.emailAddress);
@@ -202,6 +204,7 @@ function Router() {
               <Route path="/resume" component={Resume} />
               <Route path="/inbox" component={Inbox} />
               <Route path="/onboarding" component={Onboarding} />
+              <Route path="/welcome" component={Welcome} />
               <Route path="/drive-check" component={DriveCheck} />
               <Route path="/recruiter" component={RecruiterPortalShortcut} />
               <Route component={NotFound} />
