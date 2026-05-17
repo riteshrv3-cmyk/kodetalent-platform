@@ -144,7 +144,7 @@ export default function RoleSelect() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.3, type: "spring", stiffness: 100 }}
             whileTap={{ scale: 0.98 }}
-            onClick={() => setLocation("/onboarding")}
+            onClick={() => setLocation("/sign-up")}
             className="w-full text-left group relative overflow-hidden rounded-2xl"
             style={{
               background: "white",
@@ -243,6 +243,12 @@ export default function RoleSelect() {
             <div className="flex items-center gap-1.5"><Users className="w-3 h-3" /><span>1,200+ active</span></div>
           </div>
           <p className="text-[10px] text-[#cbd5e1] font-medium">Made for Indian Engineering Students 🇮🇳</p>
+          <button
+            onClick={() => setLocation("/sign-in")}
+            className="text-xs font-bold text-[#4f46e5] hover:text-[#3730a3] transition"
+          >
+            Already have an account? Sign In
+          </button>
         </motion.div>
 
       </div>

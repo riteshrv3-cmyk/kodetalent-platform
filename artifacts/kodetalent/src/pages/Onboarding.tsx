@@ -130,8 +130,10 @@ export default function Onboarding() {
   const inviteCode = typeof window !== "undefined" ? sessionStorage.getItem("inviteCode") : null;
   const inviteCollegeName = typeof window !== "undefined" ? sessionStorage.getItem("inviteCollegeName") : null;
   const inviteCollegeCity = typeof window !== "undefined" ? sessionStorage.getItem("inviteCollegeCity") : null;
+  const clerkEmail = typeof window !== "undefined" ? localStorage.getItem("clerkEmail") : null;
   const [data, setData] = useState<FormData>(() => ({
     ...initialData,
+    email: clerkEmail ?? "",
     collegeFull: inviteCollegeName ? `${inviteCollegeName}${inviteCollegeCity ? " " + inviteCollegeCity : ""}`.trim() : "",
   }));
   const [stepIdx, setStepIdx] = useState(-1); // -1 = welcome screen
