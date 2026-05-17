@@ -128,12 +128,22 @@ function RoleSelectRedirect() {
   const { isSignedIn, user, isLoaded } = useUser();
 
   useEffect(() => {
-    if (!isLoaded || !isSignedIn) return;
+    if (!isLoaded || !isSignedIn || !user) return;
+    const clerkId = user.id;
+    const savedClerkId = localStorage.getItem("clerkUserId");
     const studentId = localStorage.getItem("studentId");
-    if (studentId) {
+    // If different Clerk user signed in, treat as new user
+    const isSameUser = savedClerkId === clerkId;
+    if (studentId && isSameUser) {
       const welcomeSeen = localStorage.getItem("welcomeSeen");
       setLocation(welcomeSeen ? "/home" : "/welcome");
     } else {
+      // Different account — clear old data
+      localStorage.removeItem("studentId");
+      localStorage.removeItem("studentName");
+      localStorage.removeItem("studentCollege");
+      localStorage.removeItem("welcomeSeen");
+      localStorage.setItem("clerkUserId", clerkId);
       if (user?.primaryEmailAddress?.emailAddress) {
         localStorage.setItem("clerkEmail", user.primaryEmailAddress.emailAddress);
       }

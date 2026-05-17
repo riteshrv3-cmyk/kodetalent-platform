@@ -184,6 +184,11 @@ export default function Onboarding() {
       });
       localStorage.setItem("studentId", student.id.toString());
       localStorage.setItem("studentCollege", student.college || "College");
+      // Mark this studentId as belonging to current Clerk user
+      const clerkId = localStorage.getItem("clerkUserId");
+      if (clerkId) {
+        localStorage.setItem(`studentId_${clerkId}`, student.id.toString());
+      }
       setTimeout(() => setLocation("/home"), 1400);
     } catch (e) {
       console.error(e);
@@ -218,6 +223,11 @@ export default function Onboarding() {
       });
       localStorage.setItem("studentId", student.id.toString());
       localStorage.setItem("studentCollege", student.college || college);
+      // Mark this studentId as belonging to current Clerk user
+      const clerkId = localStorage.getItem("clerkUserId");
+      if (clerkId) {
+        localStorage.setItem(`studentId_${clerkId}`, student.id.toString());
+      }
       if (inviteCode) {
         try {
           await fetch(`/api/invite/${encodeURIComponent(inviteCode)}/claim`, {

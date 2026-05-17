@@ -67,6 +67,7 @@ export function ProfileSidebar({ onClose }: { onClose: () => void }) {
   const logout = () => {
     localStorage.removeItem("studentId");
     localStorage.removeItem("studentName");
+    localStorage.removeItem("clerkUserId");
     onClose();
     setLocation("/");
   };
