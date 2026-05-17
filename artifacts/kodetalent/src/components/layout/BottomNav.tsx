@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Home, Sparkles, Zap, BriefcaseBusiness } from "lucide-react";
+import { Home, Sparkles, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 
@@ -10,7 +10,6 @@ export function BottomNav() {
     { href: "/home", icon: Home, label: "Home" },
     { href: "/chat", icon: Sparkles, label: "AI" },
     { href: "/practice", icon: Zap, label: "Practice" },
-    { href: "/recruiter", icon: BriefcaseBusiness, label: "Recruiter" },
   ];
 
   return (
