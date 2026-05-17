@@ -1,6 +1,6 @@
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
-import { GraduationCap, BriefcaseBusiness, ArrowRight, Zap, Users, Shield, Star } from "lucide-react";
+import { GraduationCap, BriefcaseBusiness, ArrowRight, Zap, Users, Shield, Star, Compass } from "lucide-react";
 
 const STATS = [
   { value: "1,200+", label: "Students" },
@@ -29,6 +29,30 @@ const FLOATING_ORBS = [
 
 export default function RoleSelect() {
   const [, setLocation] = useLocation();
+
+  async function exploreAsGuest() {
+    try {
+      const r = await fetch("/api/students", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: "Guest",
+          email: `guest_${Date.now()}@example.com`,
+          college: "Exploring",
+          city: "India",
+          year: 1,
+          field: "Web Dev",
+        }),
+      });
+      if (!r.ok) throw new Error("Failed");
+      const student = await r.json();
+      localStorage.setItem("studentId", student.id.toString());
+      localStorage.setItem("studentCollege", "Exploring");
+      setLocation("/home");
+    } catch {
+      // Silently ignore — user can still sign in normally
+    }
+  }
 
   return (
     <div
@@ -228,12 +252,26 @@ export default function RoleSelect() {
           </motion.button>
         </div>
 
+        {/* Explore as Guest */}
+        <motion.button
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.45, type: "spring", stiffness: 100 }}
+          whileTap={{ scale: 0.97 }}
+          onClick={exploreAsGuest}
+          className="mt-5 w-full flex items-center justify-center gap-2 py-3 rounded-2xl border-2 border-dashed border-[#cbd5e1] bg-white/60 hover:bg-white hover:border-[#94a3b8] transition-all group"
+        >
+          <Compass className="w-4 h-4 text-[#94a3b8] group-hover:text-[#4f46e5] transition-colors" />
+          <span className="text-[13px] font-bold text-[#64748b] group-hover:text-[#334155]">Explore as Guest</span>
+          <span className="text-[10px] font-semibold text-[#94a3b8] bg-[#f1f5f9] px-2 py-0.5 rounded-full">no sign-in required</span>
+        </motion.button>
+
         {/* Footer */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.55 }}
-          className="mt-7 flex flex-col items-center gap-2.5"
+          className="mt-5 flex flex-col items-center gap-2.5"
         >
           <div className="flex items-center gap-4 text-[10px] font-bold text-[#94a3b8]">
             <div className="flex items-center gap-1.5"><Shield className="w-3 h-3" /><span>No spam ever</span></div>

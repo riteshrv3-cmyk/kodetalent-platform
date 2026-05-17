@@ -139,6 +139,30 @@ export default function Onboarding() {
   const [stepIdx, setStepIdx] = useState(-1); // -1 = welcome screen
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  async function skipToHome() {
+    setSubmitting(true);
+    try {
+      const student = await createStudent.mutateAsync({
+        data: {
+          name: "Guest",
+          email: `guest_${Date.now()}@example.com`,
+          college: "Exploring",
+          city: "India",
+          year: 1,
+          field: "Web Dev",
+        },
+      });
+      localStorage.setItem("studentId", student.id.toString());
+      localStorage.setItem("studentCollege", "Exploring");
+      const clerkId = localStorage.getItem("clerkUserId");
+      if (clerkId) localStorage.setItem(`studentId_${clerkId}`, student.id.toString());
+      setLocation("/home");
+    } catch (e) {
+      setError("Something went wrong. Try again.");
+      setSubmitting(false);
+    }
+  }
   const createStudent = useCreateStudent();
 
   const visibleSteps = useMemo(
@@ -478,7 +502,7 @@ export default function Onboarding() {
       {/* Continue bar (hidden for chip steps which auto-advance) */}
       {step.type !== "chips" && (
         <div className="fixed bottom-0 left-0 right-0 p-4 pb-safe bg-gradient-to-t from-[#f8fafc] via-[#f8fafc] to-transparent z-20">
-          <div className="max-w-md mx-auto">
+          <div className="max-w-md mx-auto space-y-2.5">
             <Button
               onClick={next}
               disabled={!canContinue}
@@ -491,6 +515,13 @@ export default function Onboarding() {
                 <>Continue <ArrowRight className="ml-2 w-5 h-5" /></>
               )}
             </Button>
+            <button
+              onClick={skipToHome}
+              disabled={submitting}
+              className="w-full h-11 rounded-2xl text-[13px] font-bold text-[#94a3b8] hover:text-[#4f46e5] hover:bg-[#eef2ff] transition-colors border border-dashed border-[#e2e8f0]"
+            >
+              {submitting ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : "Skip for now — explore the app first"}
+            </button>
           </div>
         </div>
       )}

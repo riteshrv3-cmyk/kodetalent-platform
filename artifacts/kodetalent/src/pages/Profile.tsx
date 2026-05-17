@@ -6,7 +6,7 @@ import {
   Briefcase, Award, MapPin, DollarSign, Share2, FileText,
   Loader2, ExternalLink, Star,
   Code2, Building2, TrendingUp, Zap, ChevronRight, Sparkles,
-  Camera, User, BookOpen, Save,
+  Camera, User, BookOpen, Save, LogIn,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -444,9 +444,26 @@ export default function Profile() {
     .slice(0, 5);
 
   const isEditingBasic = editSection === "basic";
+  const isGuest = profile.name === "Guest" || profile.email?.startsWith("guest_");
 
   return (
     <div className="pb-28 max-w-md mx-auto min-h-screen bg-[#f8fafc]">
+
+      {/* Guest banner */}
+      {isGuest && (
+        <div className="bg-gradient-to-r from-[#f97316] to-[#ea580c] px-4 py-3 flex items-center justify-between">
+          <div>
+            <p className="text-white text-xs font-black">Exploring as Guest</p>
+            <p className="text-white/70 text-[10px] font-semibold">Sign in to save your real profile</p>
+          </div>
+          <button
+            onClick={() => setLocation("/sign-up")}
+            className="bg-white text-[#f97316] text-[11px] font-black px-3 py-1.5 rounded-full hover:bg-white/90 transition"
+          >
+            Sign In →
+          </button>
+        </div>
+      )}
 
       {/* ── Header ── */}
       <div className="relative bg-gradient-to-br from-[#312e81] via-[#3730a3] to-[#4f46e5] pt-12 pb-20 px-6 text-center text-white">
