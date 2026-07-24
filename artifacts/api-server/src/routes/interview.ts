@@ -2,7 +2,7 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import { interviewSessionsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
-import { anthropic } from "@workspace/integrations-anthropic-ai";
+import { anthropic, AI_MODEL } from "@workspace/integrations-anthropic-ai";
 import {
   CreateInterviewSessionBody,
   GetNextInterviewQuestionBody,
@@ -194,7 +194,7 @@ Respond ONLY with a JSON object (no markdown, no explanation) with this exact st
 }`;
 
     const message = await anthropic.messages.create({
-      model: "claude-haiku-4-5",
+      model: AI_MODEL,
       max_tokens: 8192,
       messages: [{ role: "user", content: evaluationPrompt }],
     });
@@ -269,7 +269,7 @@ Format your response EXACTLY like this:
   }
 
   const message = await anthropic.messages.create({
-    model: "claude-haiku-4-5",
+    model: AI_MODEL,
     max_tokens: 512,
     messages: [{ role: "user", content: prompt }],
   });

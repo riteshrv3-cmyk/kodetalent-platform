@@ -2,7 +2,7 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import { testSessionsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
-import { anthropic } from "@workspace/integrations-anthropic-ai";
+import { anthropic, AI_MODEL } from "@workspace/integrations-anthropic-ai";
 import { CreateTestSessionBody, SubmitTestBody } from "@workspace/api-zod";
 
 const router = Router();
@@ -130,7 +130,7 @@ Return ONLY a JSON array (no markdown) with this exact structure:
 Make questions realistic and relevant to ${testType} placement tests.`;
 
   const message = await anthropic.messages.create({
-    model: "claude-haiku-4-5",
+    model: AI_MODEL,
     max_tokens: 8192,
     messages: [{ role: "user", content: prompt }],
   });

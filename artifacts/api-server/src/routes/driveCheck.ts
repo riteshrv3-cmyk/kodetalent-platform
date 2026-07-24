@@ -2,7 +2,7 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import { studentsTable, driveChecksTable, tpoDrivesTable } from "@workspace/db";
 import { eq, desc, and, sql, ilike, lte, isNotNull, gte } from "drizzle-orm";
-import { anthropic } from "@workspace/integrations-anthropic-ai";
+import { anthropic, AI_MODEL } from "@workspace/integrations-anthropic-ai";
 import { rlDriveCheck } from "../middlewares/rateLimit";
 
 const router = Router();
@@ -108,7 +108,7 @@ Return EXACTLY this JSON shape:
 }`;
 
     const response = await anthropic.messages.create({
-      model: "claude-haiku-4-5",
+      model: AI_MODEL,
       max_tokens: 800,
       messages: [{ role: "user", content: prompt }],
     });

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { anthropic } from "@workspace/integrations-anthropic-ai";
+import { anthropic, AI_MODEL } from "@workspace/integrations-anthropic-ai";
 import { cacheGetOrSet, sweepExpiredIfDue } from "../lib/aiCache";
 import { rlAiHeavy } from "../middlewares/rateLimit";
 
@@ -27,7 +27,7 @@ router.post("/course/generate", rlAiHeavy, async (req, res) => {
       },
       async () => {
         const modulesResp = await anthropic.messages.create({
-          model: "claude-haiku-4-5",
+          model: AI_MODEL,
           max_tokens: 4000,
           messages: [
             {
@@ -52,7 +52,7 @@ Rules:
         });
 
         const practiceResp = await anthropic.messages.create({
-          model: "claude-haiku-4-5",
+          model: AI_MODEL,
           max_tokens: 3000,
           messages: [
             {

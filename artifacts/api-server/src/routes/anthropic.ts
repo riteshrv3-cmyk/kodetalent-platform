@@ -2,7 +2,7 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import { conversations as conversationsTable, messages as messagesTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
-import { anthropic } from "@workspace/integrations-anthropic-ai";
+import { anthropic, AI_MODEL } from "@workspace/integrations-anthropic-ai";
 import { rlAiLight, rlAiMedium } from "../middlewares/rateLimit";
 
 const router = Router();
@@ -118,7 +118,7 @@ router.post("/anthropic/conversations/:id/messages", rlAiMedium, async (req, res
     let fullResponse = "";
 
     const stream = anthropic.messages.stream({
-      model: "claude-haiku-4-5",
+      model: AI_MODEL,
       max_tokens: 8192,
       messages: chatMessages,
     });

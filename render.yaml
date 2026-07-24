@@ -1,0 +1,37 @@
+# Render Blueprint — one web service that builds the frontend + API and serves
+# both from a single origin. Deploy: push this repo to GitHub, then in Render
+# choose "New +" -> "Blueprint" and point it at the repo.
+#
+# Secrets (marked sync:false) are NOT stored here — Render prompts for them on
+# first deploy. Fill them with the same values from your local .env.
+services:
+  - type: web
+    name: kodetalent
+    runtime: node
+    plan: free
+    buildCommand: corepack enable && pnpm install --no-frozen-lockfile && pnpm run build:deploy
+    startCommand: node artifacts/api-server/dist/index.mjs
+    healthCheckPath: /api/healthz
+    envVars:
+      - key: NODE_VERSION
+        value: "24"
+      - key: NODE_ENV
+        value: production
+      - key: AI_INTEGRATIONS_ANTHROPIC_BASE_URL
+        value: https://agentrouter.org
+      - key: AI_MODEL
+        value: claude-opus-4-8
+      # --- secrets: entered in the Render dashboard, never committed ---
+      - key: DATABASE_URL
+        sync: false
+      - key: AI_INTEGRATIONS_ANTHROPIC_API_KEY
+        sync: false
+      - key: CLERK_PUBLISHABLE_KEY
+        sync: false
+      # VITE_CLERK_PUBLISHABLE_KEY is baked into the frontend at build time.
+      - key: VITE_CLERK_PUBLISHABLE_KEY
+        sync: false
+      - key: CLERK_SECRET_KEY
+        sync: false
+      - key: ADMIN_API_TOKEN
+        sync: false

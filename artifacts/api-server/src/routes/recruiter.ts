@@ -7,7 +7,7 @@ import {
   studentsTable,
 } from "@workspace/db";
 import { eq, desc, and, inArray, sql } from "drizzle-orm";
-import { anthropic } from "@workspace/integrations-anthropic-ai";
+import { anthropic, AI_MODEL } from "@workspace/integrations-anthropic-ai";
 
 const router = Router();
 
@@ -220,7 +220,7 @@ Return ONLY a JSON object with these exact fields:
 Normalize skills to lowercase canonical names. No extra commentary, just JSON.`;
 
   const response = await anthropic.messages.create({
-    model: "claude-haiku-4-5",
+    model: AI_MODEL,
     max_tokens: 800,
     messages: [{ role: "user", content: prompt }],
   });

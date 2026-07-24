@@ -2,7 +2,7 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import { jobsTable, matchesTable, studentsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
-import { anthropic } from "@workspace/integrations-anthropic-ai";
+import { anthropic, AI_MODEL } from "@workspace/integrations-anthropic-ai";
 
 const router = Router();
 
@@ -88,7 +88,7 @@ Return a JSON array (no markdown) matching ALL jobs:
 ]`;
 
     const message = await anthropic.messages.create({
-      model: "claude-haiku-4-5",
+      model: AI_MODEL,
       max_tokens: 2048,
       messages: [{ role: "user", content: prompt }],
     });

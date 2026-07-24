@@ -1,5 +1,7 @@
 import express, { type Express } from "express";
 import cors from "cors";
+import path from "node:path";
+import fs from "node:fs";
 import pinoHttp from "pino-http";
 import { clerkMiddleware } from "@clerk/express";
 import { publishableKeyFromHost } from "@clerk/shared/keys";
@@ -57,6 +59,21 @@ app.use("/api", router);
 
 // 404 for any /api/* route that didn't match
 app.use("/api", notFoundHandler);
+
+// Serve the built frontend from a single origin (production/deploy).
+// The deploy build copies artifacts/kodetalent/dist/public into ./public next
+// to the bundle. When that folder isn't present (local dev, where Vite serves
+// the frontend separately), this whole block is skipped.
+const publicDir = process.env.PUBLIC_DIR ?? path.join(__dirname, "public");
+if (fs.existsSync(path.join(publicDir, "index.html"))) {
+  app.use(express.static(publicDir));
+  // SPA fallback: any non-/api GET returns index.html so client-side routing works.
+  // (/api/* is already handled + 404'd above, so it never reaches here.)
+  app.use((req, res, next) => {
+    if (req.method !== "GET") return next();
+    res.sendFile(path.join(publicDir, "index.html"));
+  });
+}
 
 // Global error handler — must be last
 app.use(errorHandler);

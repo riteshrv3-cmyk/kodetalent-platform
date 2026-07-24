@@ -2,7 +2,7 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import { studentsTable, questsTable, studentQuestsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
-import { anthropic } from "@workspace/integrations-anthropic-ai";
+import { anthropic, AI_MODEL } from "@workspace/integrations-anthropic-ai";
 import { AnalyzeGithubBody, GenerateRoadmapBody } from "@workspace/api-zod";
 import { rlAiHeavy, rlAiMedium } from "../middlewares/rateLimit";
 import { cacheGetOrSet } from "../lib/aiCache";
@@ -91,7 +91,7 @@ Write an HONEST report. Don't sugarcoat weak candidates. Format as STRICT JSON o
 Return JSON only, no prose before or after.`;
 
         const message = await anthropic.messages.create({
-          model: "claude-haiku-4-5",
+          model: AI_MODEL,
           max_tokens: 1500,
           messages: [{ role: "user", content: prompt }],
         });
@@ -193,7 +193,7 @@ Return STRICT JSON (no markdown) with this exact shape:
 Plan should have 2-3 items, totalling under 60 hours, focused on the highest-leverage gaps. Be specific and Indian-context aware. Be brutally honest with fitScore — do not inflate.`;
 
         const message = await anthropic.messages.create({
-          model: "claude-haiku-4-5",
+          model: AI_MODEL,
           max_tokens: 800,
           messages: [{ role: "user", content: prompt }],
         });
@@ -269,7 +269,7 @@ Rules:
 - Do NOT assume skills not evidenced by repos.`;
 
     const message = await anthropic.messages.create({
-      model: "claude-haiku-4-5",
+      model: AI_MODEL,
       max_tokens: 512,
       messages: [{ role: "user", content: prompt }],
     });
@@ -339,7 +339,7 @@ Return ONLY a JSON array (no markdown):
 Generate 5-7 milestones per year (years 1-4), 20-28 total. Make them specific to ${field}.`;
 
     const message = await anthropic.messages.create({
-      model: "claude-haiku-4-5",
+      model: AI_MODEL,
       max_tokens: 8192,
       messages: [{ role: "user", content: prompt }],
     });

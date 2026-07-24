@@ -2,7 +2,7 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import { studentsTable, studentResumesTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
-import { anthropic } from "@workspace/integrations-anthropic-ai";
+import { anthropic, AI_MODEL } from "@workspace/integrations-anthropic-ai";
 import { rlAiHeavy } from "../middlewares/rateLimit";
 
 const router = Router();
@@ -164,7 +164,7 @@ Rules:
 - Tailor everything to the provided job description / company if given`;
 
     const response = await anthropic.messages.create({
-      model: "claude-haiku-4-5",
+      model: AI_MODEL,
       max_tokens: 2000,
       system: systemPrompt,
       messages: [{ role: "user", content: userPrompt }],

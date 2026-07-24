@@ -2,7 +2,7 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import { studentsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
-import { anthropic } from "@workspace/integrations-anthropic-ai";
+import { anthropic, AI_MODEL } from "@workspace/integrations-anthropic-ai";
 import { rlAiHeavy, rlAiMedium } from "../middlewares/rateLimit";
 
 const router = Router();
@@ -214,7 +214,7 @@ Return ONLY valid JSON with this structure:
 }`;
 
     const response = await anthropic.messages.create({
-      model: "claude-haiku-4-5",
+      model: AI_MODEL,
       max_tokens: 600,
       messages: [{ role: "user", content: prompt }],
     });
@@ -320,7 +320,7 @@ RULES:
     let fullResponse = "";
 
     const stream = anthropic.messages.stream({
-      model: "claude-haiku-4-5",
+      model: AI_MODEL,
       max_tokens: 1024,
       system: systemPrompt,
       messages: [{ role: "user", content: message }],
