@@ -106,6 +106,12 @@ export default function Interview() {
   const recognitionRef = useRef<any>(null);
   const autoSubmitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // OpenAI voice: TTS playback + MediaRecorder->Whisper transcription
+  const ttsAudioRef = useRef<HTMLAudioElement | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -120,10 +126,14 @@ export default function Interview() {
   useEffect(() => { timerSecondsRef.current = timerSeconds; }, [timerSeconds]);
 
   useEffect(() => {
-    const vm = localStorage.getItem("voiceMode") === "true";
+    // Default new users into the audio+video experience; respect an explicit "false"
+    // for anyone who has previously turned a mode off.
+    const vmStored = localStorage.getItem("voiceMode");
+    const vm = vmStored === null ? true : vmStored === "true";
     setVoiceMode(vm);
     voiceModeRef.current = vm;
-    const cm = localStorage.getItem("cameraMode") === "true";
+    const cmStored = localStorage.getItem("cameraMode");
+    const cm = cmStored === null ? true : cmStored === "true";
     setCameraMode(cm);
   }, []);
 
@@ -205,10 +215,10 @@ export default function Interview() {
     if (last?.sender === "bot") speakText(last.text);
   }, [messages, isTyping, voiceMode]);
 
-  const speakText = useCallback((text: string) => {
-    if (!voiceModeRef.current || typeof window === "undefined" || !window.speechSynthesis) return;
+  // Fallback: robotic browser voice if OpenAI TTS is unavailable.
+  const speakTextFallback = useCallback((clean: string) => {
+    if (typeof window === "undefined" || !window.speechSynthesis) return;
     window.speechSynthesis.cancel();
-    const clean = stripMarkdown(text);
     const utterance = new SpeechSynthesisUtterance(clean);
     utterance.rate = 0.88;
     utterance.pitch = 1.05;
@@ -230,7 +240,35 @@ export default function Interview() {
     window.speechSynthesis.speak(utterance);
   }, []);
 
+  // Primary: natural OpenAI TTS voice for the interviewer.
+  const speakText = useCallback(async (text: string) => {
+    if (!voiceModeRef.current) return;
+    const clean = stripMarkdown(text);
+    if (ttsAudioRef.current) { ttsAudioRef.current.pause(); ttsAudioRef.current = null; }
+    window.speechSynthesis?.cancel();
+    try {
+      const res = await fetch("/api/interview/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: clean }),
+      });
+      if (!res.ok) throw new Error("tts failed");
+      const blob = await res.blob();
+      if (!voiceModeRef.current) return; // user turned voice off while fetching
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      ttsAudioRef.current = audio;
+      audio.onplay = () => setIsSpeaking(true);
+      audio.onended = () => { setIsSpeaking(false); URL.revokeObjectURL(url); ttsAudioRef.current = null; };
+      audio.onerror = () => { setIsSpeaking(false); URL.revokeObjectURL(url); ttsAudioRef.current = null; };
+      await audio.play();
+    } catch {
+      speakTextFallback(clean); // graceful fallback to browser voice
+    }
+  }, [speakTextFallback]);
+
   const stopSpeaking = () => {
+    if (ttsAudioRef.current) { ttsAudioRef.current.pause(); ttsAudioRef.current = null; }
     window.speechSynthesis?.cancel();
     setIsSpeaking(false);
   };
@@ -317,16 +355,68 @@ export default function Interview() {
     setConfidenceSent(true);
   };
 
-  const toggleRecording = () => {
+  const blobToBase64 = (blob: Blob) => new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(String(reader.result));
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+
+  const toggleRecording = async () => {
+    // Stop an in-progress recording (either engine).
     if (isRecording) {
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+        mediaRecorderRef.current.stop();
+        return;
+      }
       recognitionRef.current?.stop();
       if (autoSubmitTimerRef.current) clearTimeout(autoSubmitTimerRef.current);
       return;
     }
     stopSpeaking();
+
+    // Primary: record with MediaRecorder, transcribe via OpenAI Whisper.
+    if (typeof navigator !== "undefined" && navigator.mediaDevices?.getUserMedia && typeof MediaRecorder !== "undefined") {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const mr = new MediaRecorder(stream);
+        audioChunksRef.current = [];
+        mr.ondataavailable = (e) => { if (e.data.size > 0) audioChunksRef.current.push(e.data); };
+        mr.onstop = async () => {
+          stream.getTracks().forEach(t => t.stop());
+          setIsRecording(false);
+          const blob = new Blob(audioChunksRef.current, { type: mr.mimeType || "audio/webm" });
+          if (blob.size === 0) return;
+          setIsTranscribing(true);
+          try {
+            const base64 = await blobToBase64(blob);
+            const res = await fetch("/api/interview/transcribe", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ audio: base64, mimeType: blob.type }),
+            });
+            const data = await res.json();
+            setIsTranscribing(false);
+            const text = (data?.text ?? "").trim();
+            if (text) { setInputValue(text); submitAnswer(text); }
+          } catch {
+            setIsTranscribing(false);
+          }
+        };
+        mediaRecorderRef.current = mr;
+        setInputValue("");
+        mr.start();
+        setIsRecording(true);
+        return;
+      } catch {
+        // mic blocked or MediaRecorder failed -> fall through to browser recognition
+      }
+    }
+
+    // Fallback: browser SpeechRecognition (Chrome/Edge only).
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SR) {
-      alert("Voice recognition is not supported in this browser. Try Chrome on Android or desktop.");
+      alert("Microphone/voice input isn't available in this browser. Try Chrome or Edge, and allow mic access.");
       return;
     }
     const recognition = new SR();
@@ -719,10 +809,12 @@ export default function Interview() {
 
       {/* Input area */}
       <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-white via-white to-transparent pt-6 pb-5 px-4 max-w-md mx-auto">
-        {isRecording && (
+        {(isRecording || isTranscribing || isSpeaking) && (
           <motion.div animate={{ opacity: [0.5, 1, 0.5] }} transition={{ duration: 1, repeat: Infinity }}
             className="text-center text-xs font-bold text-primary mb-2">
-            🎤 Listening… speak now
+            {isRecording ? "🎤 Listening… speak now, tap Stop when done"
+              : isTranscribing ? "✍️ Transcribing your answer…"
+              : "🔊 Interviewer speaking…"}
           </motion.div>
         )}
         <form onSubmit={handleTextSubmit} className="flex gap-2 items-end">
@@ -731,15 +823,16 @@ export default function Interview() {
               type="button"
               whileTap={{ scale: 0.92 }}
               onClick={toggleRecording}
+              disabled={isTranscribing || isTyping}
               className={cn(
-                "flex-1 h-14 rounded-full font-bold flex items-center justify-center gap-2 transition-all",
+                "flex-1 h-14 rounded-full font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-60",
                 isRecording
                   ? "bg-[#ef4444] text-white shadow-[0_0_0_6px_rgba(239,68,68,0.2)]"
                   : "bg-primary text-white shadow-[0_4px_16px_rgba(124,58,237,0.3)]"
               )}
             >
               <Mic className="w-5 h-5" />
-              {isRecording ? "Stop" : "Tap to speak"}
+              {isRecording ? "Stop" : isTranscribing ? "Transcribing…" : "Tap to speak"}
             </motion.button>
           ) : (
             <Textarea

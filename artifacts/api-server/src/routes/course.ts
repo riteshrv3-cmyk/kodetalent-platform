@@ -26,9 +26,11 @@ router.post("/course/generate", rlAiHeavy, async (req, res) => {
         ttlSeconds: COURSE_TTL_SECONDS,
       },
       async () => {
-        const modulesResp = await anthropic.messages.create({
+        const [modulesResp, practiceResp] = await Promise.all([
+        anthropic.messages.create({
           model: AI_MODEL,
-          max_tokens: 4000,
+          max_tokens: 4096,
+          response_format: { type: "json_object" },
           messages: [
             {
               role: "user",
@@ -49,11 +51,11 @@ Rules:
 - All content must relate to ${subDomainName}`,
             },
           ],
-        });
-
-        const practiceResp = await anthropic.messages.create({
+        }),
+        anthropic.messages.create({
           model: AI_MODEL,
-          max_tokens: 3000,
+          max_tokens: 3500,
+          response_format: { type: "json_object" },
           messages: [
             {
               role: "user",
@@ -68,7 +70,8 @@ Rules:
 - Skills: ${skillList}`,
             },
           ],
-        });
+        }),
+        ]);
 
         const parseRaw = (raw: string) => {
           try { return JSON.parse(raw); }

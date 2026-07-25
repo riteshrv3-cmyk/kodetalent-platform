@@ -2,7 +2,7 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import { interviewSessionsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
-import { anthropic, AI_MODEL } from "@workspace/integrations-anthropic-ai";
+import { anthropic, AI_MODEL, textToSpeech, transcribeAudio } from "@workspace/integrations-anthropic-ai";
 import {
   CreateInterviewSessionBody,
   GetNextInterviewQuestionBody,
@@ -11,6 +11,41 @@ import {
 import { rlInterview } from "../middlewares/rateLimit";
 
 const router = Router();
+
+// POST /interview/tts — speak the interviewer's question (returns mp3 audio).
+router.post("/interview/tts", rlInterview, async (req, res) => {
+  const { text } = (req.body ?? {}) as { text?: string };
+  if (!text?.trim()) return res.status(400).json({ error: "text is required" });
+  try {
+    const audio = await textToSpeech(text.trim());
+    res.setHeader("Content-Type", "audio/mpeg");
+    res.setHeader("Cache-Control", "no-store");
+    return res.end(audio);
+  } catch (err) {
+    req.log.error({ err }, "TTS failed");
+    return res.status(500).json({ error: "TTS failed" });
+  }
+});
+
+// POST /interview/transcribe — transcribe a recorded answer (base64 audio -> text).
+router.post("/interview/transcribe", rlInterview, async (req, res) => {
+  const { audio, mimeType } = (req.body ?? {}) as { audio?: string; mimeType?: string };
+  if (!audio) return res.status(400).json({ error: "audio (base64) is required" });
+  try {
+    // Accept raw base64 or a data URL ("data:audio/webm;base64,....").
+    const base64 = audio.includes(",") ? audio.slice(audio.indexOf(",") + 1) : audio;
+    const buffer = Buffer.from(base64, "base64");
+    if (buffer.length === 0) return res.status(400).json({ error: "empty audio" });
+    const ext = (mimeType ?? "").includes("mp4") ? "mp4"
+      : (mimeType ?? "").includes("ogg") ? "ogg"
+      : (mimeType ?? "").includes("wav") ? "wav" : "webm";
+    const text = await transcribeAudio(buffer, `answer.${ext}`);
+    return res.json({ text });
+  } catch (err) {
+    req.log.error({ err }, "Transcription failed");
+    return res.status(500).json({ error: "Transcription failed" });
+  }
+});
 
 // POST /interview/sessions
 router.post("/interview/sessions", rlInterview, async (req, res) => {

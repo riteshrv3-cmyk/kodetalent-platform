@@ -1,0 +1,15 @@
+# Keep the upload small so `railway up` doesn't time out.
+# Railway rebuilds from source (pnpm install + build:deploy), so none of
+# these are needed in the upload — they're regenerated on the build host.
+node_modules
+.git
+.local
+**/dist
+**/.cache
+**/.vite
+*.map
+*.pptx
+attached_assets
+.env
+.env.*
+!.env.example
