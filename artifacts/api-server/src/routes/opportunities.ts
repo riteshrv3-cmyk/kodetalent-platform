@@ -116,6 +116,78 @@ async function fetchRemoteOk(skill: string): Promise<Opportunity[]> {
   }
 }
 
+/**
+ * Titles that mark a post as a clearly-non-engineering function. RemoteOK's own
+ * tags are unreliable (a "Business Development Manager" post ships with react/
+ * front-end tags), so this list is checked against the TITLE only. Each entry
+ * is skipped when its words overlap the student's chosen role/skills — a
+ * Product Mgmt student must still see "Product Manager" titles, a DevRel/Tech
+ * Writing student must still see writer roles.
+ */
+const TITLE_DENYLIST = [
+  "business development",
+  "sales",
+  "marketing",
+  "account manager",
+  "account executive",
+  "recruiter",
+  "talent",
+  "human resources",
+  " hr ",
+  "medical",
+  "nurse",
+  "clinical",
+  "legal",
+  "customer support",
+  "customer success",
+  "copywriter",
+  "content writer",
+  "community manager",
+  "virtual assistant",
+  "growth manager",
+  "operations manager",
+];
+
+const ROLE_STOPWORDS = new Set(["and", "or", "the", "of", "in", "a", "an"]);
+
+function keywordSet(skills: string[], role: string): string[] {
+  const words = [
+    ...skills.map(s => s.toLowerCase().trim()),
+    ...role.toLowerCase().split(/[\s/>-]+/),
+  ];
+  return words.filter(w => w.length > 1 && !ROLE_STOPWORDS.has(w));
+}
+
+/**
+ * Topical relevance gate for RemoteOK results. RemoteOK's tag query falls back
+ * to the general feed when the tag matches loosely, so without this the role
+ * feed surfaces ops/marketing/BD posts on what is now the first screen a
+ * student lands on after onboarding. Exported for direct testing.
+ */
+export function isRelevant(o: Pick<Opportunity, "title" | "tags">, skills: string[], role: string): boolean {
+  const keywords = keywordSet(skills, role);
+  if (keywords.length === 0) return true;
+
+  const titleHay = ` ${o.title.toLowerCase()} `;
+  const activeDenylist = TITLE_DENYLIST.filter(
+    entry => !entry.trim().split(/\s+/).some(w => keywords.some(k => k.includes(w) || w.includes(k))),
+  );
+  if (activeDenylist.some(entry => titleHay.includes(entry))) return false;
+
+  // A keyword in the title is a strong signal — keep.
+  if (keywords.some(k => titleHay.includes(k))) return true;
+
+  // A keyword only in the tags is weak (RemoteOK stuffs `react` etc. onto
+  // couriers and merchandisers), so it must be backed by a title that at
+  // least reads as a tech role.
+  const tagHay = o.tags.join(" ").toLowerCase();
+  return keywords.some(k => tagHay.includes(k)) && TECH_TITLE.test(o.title);
+}
+
+/** Backstop for tag-only matches: does the title itself read as a tech role? */
+const TECH_TITLE =
+  /\b(developer|engineer(ing)?|programmer|software|swe|sde|front.?end|back.?end|full.?stack|devops|sre|architect|machine learning|data (scien|engineer|analy)|qa|tester|testing|security|cloud|mobile|ios|android|web|ux|ui|designer|analyst|scientist)\b/i;
+
 function isInternshipLike(o: Opportunity): boolean {
   const hay = `${o.title} ${o.tags.join(" ")}`.toLowerCase();
   return /\b(intern|internship|trainee|graduate|entry.?level|junior|jr\.?)\b/.test(hay);
@@ -252,7 +324,9 @@ router.get("/opportunities", async (req, res) => {
   const skills = skillsRaw ? skillsRaw.split(",").map(s => s.trim()).filter(Boolean) : [];
   const primarySkill = skills[0] || "";
 
-  const cacheKey = `${kind}::${primarySkill}::${role}`;
+  // Full skills list, not just primarySkill: the relevance filter below
+  // depends on every skill, so results differ per skills set.
+  const cacheKey = `${kind}::${skills.join(",")}::${role}`;
   const cached = cache.get(cacheKey);
   if (cached && Date.now() - cached.ts < CACHE_TTL_MS) {
     return res.json({ items: cached.data, cached: true });
@@ -261,19 +335,21 @@ router.get("/opportunities", async (req, res) => {
   try {
     let items: Opportunity[] = [];
 
+    const remoteRaw = primarySkill ? await fetchRemoteOk(primarySkill) : [];
+    // Topical gate first — RemoteOK's tag query and tags are both noisy, and
+    // this feed is the first screen after onboarding.
+    const remote = remoteRaw.filter(o => isRelevant(o, skills, role));
+
     if (kind === "freelancing") {
       // No reliable free freelance API — use platform-direct search links.
       // Also try RemoteOK contracts as a bonus.
-      const remote = primarySkill ? await fetchRemoteOk(primarySkill) : [];
       const freelance = remote.filter(isFreelanceLike).slice(0, 4);
       items = [...freelance, ...buildFreelancePlatformLinks(primarySkill, role || "Freelancer")];
     } else if (kind === "internship") {
-      const remote = primarySkill ? await fetchRemoteOk(primarySkill) : [];
       const interns = remote.filter(isInternshipLike).slice(0, 6);
       items = [...interns, ...buildInternshipPlatformLinks(primarySkill, role || "Intern")];
     } else {
       // jobs
-      const remote = primarySkill ? await fetchRemoteOk(primarySkill) : [];
       const jobs = remote
         .filter(o => !isInternshipLike(o))
         .slice(0, 10);
