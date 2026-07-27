@@ -45,10 +45,25 @@ interface JdGap {
   plan: Array<{ title: string; hours: number; action: string }>;
 }
 
+/**
+ * Deep-link support: `/opportunities?domain=webdev&sub=fullstack` opens straight
+ * into that specialisation's live feed. Onboarding uses this to drop a new
+ * student onto real jobs/internships/freelance work for the role they picked.
+ * Unknown or missing ids fall back to the normal domain grid.
+ */
+function deepLinkSelection(): { domain: Domain | null; sub: SubDomain | null } {
+  const params = new URLSearchParams(window.location.search);
+  const domain = DOMAINS.find(d => d.id === params.get("domain")) ?? null;
+  if (!domain) return { domain: null, sub: null };
+  const sub = domain.subDomains.find(s => s.id === params.get("sub")) ?? null;
+  return { domain, sub };
+}
+
 export default function Opportunities() {
   const [, setLocation] = useLocation();
-  const [selectedDomain, setSelectedDomain] = useState<Domain | null>(null);
-  const [selectedSubDomain, setSelectedSubDomain] = useState<SubDomain | null>(null);
+  const initialSelection = useState(deepLinkSelection)[0];
+  const [selectedDomain, setSelectedDomain] = useState<Domain | null>(initialSelection.domain);
+  const [selectedSubDomain, setSelectedSubDomain] = useState<SubDomain | null>(initialSelection.sub);
   const [activeTab, setActiveTab] = useState<OpportunityType>("jobs");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -321,10 +336,21 @@ export default function Opportunities() {
       </div>
 
       <div className="px-4 pt-2">
+        {/* mode="wait" requires exactly ONE child at a time. Level 0's search bar
+            and domain grid are therefore wrapped in a single keyed child — as two
+            sibling children they deadlocked the exit queue, leaving the outgoing
+            level stuck at opacity:0 and the incoming one never mounting (which is
+            what froze the feed when switching Jobs/Internship/Freelancing tabs). */}
         <AnimatePresence mode="wait">
           {/* Level 0 — Search bar + Domain grid */}
           {!selectedDomain && (
-            <motion.div key="search" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-4">
+            <motion.div
+              key="level-0"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+            <div className="mb-4">
               <div className="relative">
                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted" />
                 <input
@@ -385,15 +411,10 @@ export default function Opportunities() {
                   )}
                 </div>
               )}
-            </motion.div>
-          )}
-          {!selectedDomain && !searchQuery.trim() && (
-            <motion.div
-              key="domains"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-            >
+            </div>
+
+            {!searchQuery.trim() && (
+            <div>
               <button
                 onClick={() => setLocation("/pipeline")}
                 className="w-full mb-4 flex items-center gap-3 px-4 py-3 rounded-2xl bg-paper shadow-soft text-left transition-colors"
@@ -426,6 +447,8 @@ export default function Opportunities() {
                   </motion.button>
                 ))}
               </div>
+            </div>
+            )}
             </motion.div>
           )}
 
@@ -482,10 +505,17 @@ export default function Opportunities() {
             </motion.div>
           )}
 
-          {/* Level 2 — Opportunity cards */}
+          {/* Level 2 — Opportunity cards.
+              Keyed on the level, NOT on activeTab: switching Jobs/Internship/
+              Freelancing should swap the list in place, not unmount and remount
+              the whole level. Re-keying per tab made each switch wait on an exit
+              animation before the new tab could mount — a needless dependency
+              that leaves the feed blank if that animation never completes (e.g.
+              the tab is backgrounded, which suspends requestAnimationFrame).
+              The per-card stagger below still animates on every refetch. */}
           {selectedSubDomain && (
             <motion.div
-              key={`cards-${activeTab}`}
+              key="cards"
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 20 }}

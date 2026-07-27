@@ -2,10 +2,29 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { apiFetch, setGuestToken } from "@/lib/api/authFetch";
 
-type Screen = "goal" | "first-mock";
+type Screen = "goal" | "explore";
 
 const ROLES = ["SDE", "Data/ML", "App Dev", "Cybersecurity", "Not sure"];
 const BATCHES = [2025, 2026, 2027, 2028];
+
+/**
+ * Where each goal drops the student in the Opportunities taxonomy, so the
+ * screen right after onboarding is real jobs/internships/freelance work for
+ * the role they picked rather than an empty browse grid. Each role maps to
+ * its most general specialisation — they can switch once they're in.
+ * "Not sure" intentionally has no mapping: it lands on the domain grid.
+ */
+const ROLE_DESTINATIONS: Record<string, { domain: string; sub: string; label: string }> = {
+  "SDE": { domain: "webdev", sub: "fullstack", label: "Full Stack" },
+  "Data/ML": { domain: "data", sub: "data-science", label: "Data Science" },
+  "App Dev": { domain: "mobile", sub: "rn", label: "React Native" },
+  "Cybersecurity": { domain: "security", sub: "security-analysis", label: "Security Analysis" },
+};
+
+function opportunitiesHref(role: string | null): string {
+  const dest = role ? ROLE_DESTINATIONS[role] : undefined;
+  return dest ? `/opportunities?domain=${dest.domain}&sub=${dest.sub}` : "/opportunities";
+}
 
 export default function Onboarding() {
   const [, setLocation] = useLocation();
@@ -77,7 +96,7 @@ export default function Onboarding() {
         }).catch(() => null);
       }
 
-      setScreen("first-mock");
+      setScreen("explore");
     } catch {
       setError("Something went wrong. Try again.");
     } finally {
@@ -85,19 +104,23 @@ export default function Onboarding() {
     }
   }
 
-  if (screen === "first-mock") {
+  if (screen === "explore") {
+    const dest = targetRole ? ROLE_DESTINATIONS[targetRole] : undefined;
     return (
       <div className="min-h-[100dvh] bg-brand flex flex-col items-center justify-center px-6 text-center">
         <p className="text-[13px] font-semibold uppercase tracking-wider text-white/70 mb-3">You're in</p>
-        <h1 className="text-[28px] font-extrabold text-white leading-[1.1] mb-3">Your first mock interview is free.</h1>
+        <h1 className="text-[28px] font-extrabold text-white leading-[1.1] mb-3">
+          {dest ? `Here's what's open in ${dest.label}.` : "Let's find your opportunities."}
+        </h1>
         <p className="text-[14px] text-white/70 mb-8 max-w-xs">
-          15 minutes with an AI interviewer. No sign-in needed to try it.
+          Live jobs, internships and freelance work
+          {targetRole && targetRole !== "Not sure" ? ` for ${targetRole}` : ""} — updated daily.
         </p>
         <button
-          onClick={() => setLocation("/practice?start=1")}
+          onClick={() => setLocation(opportunitiesHref(targetRole))}
           className="w-full max-w-xs bg-white text-brand text-[15px] font-bold rounded-full py-4"
         >
-          Start my first mock
+          See opportunities
         </button>
         <button onClick={() => setLocation("/home")} className="mt-4 text-[13px] text-white/70 underline">
           Skip for now
