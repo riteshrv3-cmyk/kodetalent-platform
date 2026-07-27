@@ -163,14 +163,19 @@ export default function Prep() {
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="fixed bottom-0 left-0 right-0 bg-paper rounded-t-3xl z-[60] shadow-[0_-10px_40px_rgba(0,0,0,0.12)] max-w-md mx-auto overflow-y-auto max-h-[90vh] pb-[env(safe-area-inset-bottom)]"
+              className="fixed bottom-0 left-0 right-0 bg-paper rounded-t-3xl z-[60] shadow-[0_-10px_40px_rgba(0,0,0,0.12)] max-w-md mx-auto flex flex-col max-h-[90dvh]"
             >
-              <div className="p-6 pb-8">
-                <div className="w-12 h-1.5 bg-line rounded-full mx-auto mb-5" />
-                <button className="absolute top-6 right-6 text-ink-muted rounded-full p-1" onClick={closeDrawers}>
+              {/* Header stays put; only the form body scrolls, and the CTA
+                  lives in a pinned footer below so it can never scroll out
+                  of reach or collide with the bottom nav. */}
+              <div className="relative flex-shrink-0 pt-4 pb-1">
+                <div className="w-12 h-1.5 bg-line rounded-full mx-auto" />
+                <button className="absolute top-4 right-6 text-ink-muted rounded-full p-1" onClick={closeDrawers}>
                   <X className="w-5 h-5" />
                 </button>
+              </div>
 
+              <div className="flex-1 min-h-0 overflow-y-auto px-6 pt-3 pb-4">
                 {interviewDrawerOpen && (
                   <div className="space-y-5">
                     <div>
@@ -283,16 +288,6 @@ export default function Prep() {
                         />
                       </div>
                     </button>
-
-                    <motion.div whileTap={{ scale: 0.97 }}>
-                      <Button
-                        onClick={handleStartInterview}
-                        disabled={createInterview.isPending}
-                        className="w-full bg-ink hover:bg-ink/90 text-paper font-bold h-14 rounded-full text-lg"
-                      >
-                        {createInterview.isPending ? "Setting up..." : voiceMode ? "🎤 Start Voice Interview →" : "Start Interview →"}
-                      </Button>
-                    </motion.div>
                   </div>
                 )}
 
@@ -300,16 +295,32 @@ export default function Prep() {
                   <div className="space-y-4">
                     <h2 className="text-2xl font-bold text-ink mb-2">Start Mock Test</h2>
                     <p className="text-ink-muted text-[15px]">A 20-minute timed aptitude test — just like your campus placement rounds. You can't pause once it starts.</p>
-                    <motion.div whileTap={{ scale: 0.97 }}>
-                      <Button
-                        onClick={handleStartTest}
-                        disabled={createTest.isPending}
-                        className="w-full bg-ink hover:bg-ink/90 text-paper font-bold h-14 rounded-full text-lg"
-                      >
-                        {createTest.isPending ? "Generating questions..." : "Start Test →"}
-                      </Button>
-                    </motion.div>
                   </div>
+                )}
+              </div>
+
+              <div className="flex-shrink-0 border-t border-line px-6 pt-3 pb-[calc(1.25rem+env(safe-area-inset-bottom))]">
+                {interviewDrawerOpen && (
+                  <motion.div whileTap={{ scale: 0.97 }}>
+                    <Button
+                      onClick={handleStartInterview}
+                      disabled={createInterview.isPending}
+                      className="w-full bg-ink hover:bg-ink/90 text-paper font-bold h-14 rounded-full text-lg"
+                    >
+                      {createInterview.isPending ? "Setting up..." : voiceMode ? "🎤 Start Voice Interview →" : "Start Interview →"}
+                    </Button>
+                  </motion.div>
+                )}
+                {testDrawerOpen && (
+                  <motion.div whileTap={{ scale: 0.97 }}>
+                    <Button
+                      onClick={handleStartTest}
+                      disabled={createTest.isPending}
+                      className="w-full bg-ink hover:bg-ink/90 text-paper font-bold h-14 rounded-full text-lg"
+                    >
+                      {createTest.isPending ? "Generating questions..." : "Start Test →"}
+                    </Button>
+                  </motion.div>
                 )}
               </div>
             </motion.div>

@@ -889,7 +889,7 @@ function EditResumeSheet({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 bg-ink/40 flex items-end"
+      className="fixed inset-0 z-[60] bg-ink/40 flex items-end"
       onClick={onClose}
     >
       <motion.div
@@ -1188,7 +1188,7 @@ function GenerateSheet({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 bg-ink/40 flex items-end"
+      className="fixed inset-0 z-[60] bg-ink/40 flex items-end"
       onClick={onClose}
     >
       <motion.div
@@ -1196,7 +1196,7 @@ function GenerateSheet({
         animate={{ y: 0 }}
         exit={{ y: "100%" }}
         transition={{ type: "spring", damping: 28, stiffness: 300 }}
-        className="w-full max-w-lg mx-auto bg-paper rounded-t-3xl p-5 pb-8 space-y-5"
+        className="w-full max-w-lg mx-auto bg-paper rounded-t-3xl p-5 pb-8 space-y-5 max-h-[92dvh] overflow-y-auto"
         onClick={e => e.stopPropagation()}
       >
         <div className="flex justify-center -mt-2 mb-1">

@@ -69,6 +69,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
       />
 
       <main className="max-w-md mx-auto w-full pt-14 pb-[calc(4rem+env(safe-area-inset-bottom))] min-h-[100dvh]">
+        {/* No willChange/backfaceVisibility on this wrapper: a persistent
+            stacking context here traps every in-page fixed overlay
+            (Prep/Resume/Opportunities bottom sheets) beneath BottomNav. */}
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={location}
@@ -77,7 +80,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15, ease: "easeOut" }}
             className="w-full"
-            style={{ backfaceVisibility: "hidden", willChange: "opacity" }}
           >
             {children}
           </motion.div>

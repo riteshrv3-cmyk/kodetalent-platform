@@ -540,14 +540,14 @@ export default function Opportunities() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={closeGap}
-              className="fixed inset-0 bg-ink/40 z-40"
+              className="fixed inset-0 bg-ink/40 z-[60]"
             />
             <motion.div
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 30, stiffness: 280 }}
-              className="fixed bottom-0 left-0 right-0 z-50 bg-paper rounded-t-3xl max-h-[85vh] overflow-y-auto max-w-md mx-auto border-t border-line"
+              className="fixed bottom-0 left-0 right-0 z-[60] bg-paper rounded-t-3xl max-h-[85dvh] overflow-y-auto max-w-md mx-auto border-t border-line pb-[env(safe-area-inset-bottom)]"
               data-testid="jd-gap-sheet"
             >
               <div className="sticky top-0 bg-paper rounded-t-3xl px-5 pt-3 pb-2 border-b border-line">
