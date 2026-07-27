@@ -88,32 +88,132 @@ function normalizeRemoteOk(raw: RemoteOkRaw): Opportunity | null {
   };
 }
 
-async function fetchRemoteOk(skill: string): Promise<Opportunity[]> {
-  const tag = skill.trim().toLowerCase().replace(/[^a-z0-9.+-]/g, "");
-  const url = tag
-    ? `https://remoteok.com/api?tags=${encodeURIComponent(tag)}`
-    : `https://remoteok.com/api`;
-
+/** Shared timed GET returning parsed JSON, or null on any failure. */
+async function fetchJson(url: string, timeoutMs = 6000): Promise<unknown | null> {
   const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 6000);
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
     const res = await fetch(url, {
       headers: { "user-agent": UA, accept: "application/json" },
       signal: ctrl.signal,
     });
-    if (!res.ok) return [];
-    const json: unknown = await res.json();
-    if (!Array.isArray(json)) return [];
-    // First element is metadata in RemoteOK responses.
-    const items = (json as RemoteOkRaw[]).slice(1);
-    return items
-      .map(normalizeRemoteOk)
-      .filter((x): x is Opportunity => x !== null);
+    if (!res.ok) return null;
+    return await res.json();
   } catch {
-    return [];
+    return null;
   } finally {
     clearTimeout(timer);
   }
+}
+
+async function fetchRemoteOk(skill: string): Promise<Opportunity[]> {
+  const tag = skill.trim().toLowerCase().replace(/[^a-z0-9.+-]/g, "");
+  const url = tag
+    ? `https://remoteok.com/api?tags=${encodeURIComponent(tag)}`
+    : `https://remoteok.com/api`;
+  const json = await fetchJson(url);
+  if (!Array.isArray(json)) return [];
+  // First element is metadata in RemoteOK responses.
+  const items = (json as RemoteOkRaw[]).slice(1);
+  return items
+    .map(normalizeRemoteOk)
+    .filter((x): x is Opportunity => x !== null);
+}
+
+interface RemotiveRaw {
+  id?: number;
+  url?: string;
+  title?: string;
+  company_name?: string;
+  company_logo?: string;
+  tags?: string[];
+  job_type?: string; // "full_time" | "contract" | "internship" | ...
+  publication_date?: string;
+  candidate_required_location?: string;
+  salary?: string;
+}
+
+/**
+ * Remotive's free API (remote jobs, searchable). Their terms require linking
+ * to the job's Remotive URL and naming Remotive as the source — the card UI
+ * does both (`url` + `source`). Jobs are delayed ~24h on their side.
+ */
+async function fetchRemotive(query: string): Promise<Opportunity[]> {
+  const q = query.trim();
+  if (!q) return [];
+  const json = await fetchJson(
+    `https://remotive.com/api/remote-jobs?search=${encodeURIComponent(q)}&limit=20`,
+  );
+  const jobs = (json as { jobs?: RemotiveRaw[] } | null)?.jobs;
+  if (!Array.isArray(jobs)) return [];
+  return jobs
+    .filter(j => j.title && j.company_name && j.url)
+    .map(j => ({
+      id: `rmv-${j.id ?? `${j.company_name}-${j.title}`}`,
+      title: j.title!,
+      company: j.company_name!,
+      logo: j.company_logo || null,
+      location: j.candidate_required_location || "Remote",
+      pay: j.salary || null,
+      postedAt: timeAgo(j.publication_date),
+      // Surface job_type as a tag so the internship/freelance heuristics see it.
+      tags: [...(j.tags || []).slice(0, 3), ...(j.job_type ? [j.job_type.replace("_", " ")] : [])],
+      url: j.url!,
+      source: "Remotive",
+    }));
+}
+
+interface AdzunaRaw {
+  id?: string;
+  title?: string;
+  company?: { display_name?: string };
+  location?: { display_name?: string };
+  salary_min?: number;
+  salary_max?: number;
+  redirect_url?: string;
+  created?: string;
+}
+
+function fmtPayInr(min?: number, max?: number): string | null {
+  if (!min && !max) return null;
+  const lakh = (n: number) => `₹${(n / 100_000).toFixed(1).replace(/\.0$/, "")}L`;
+  if (min && max) return `${lakh(min)}–${lakh(max)}`;
+  return lakh(min ?? max ?? 0);
+}
+
+/**
+ * Adzuna's India index — the one source here with on-site Indian listings.
+ * Free tier, but keyed: create an app at developer.adzuna.com and set
+ * ADZUNA_APP_ID / ADZUNA_APP_KEY. Silently skipped while the keys are absent
+ * so the feed still works keyless (RemoteOK + Remotive + platform links).
+ */
+async function fetchAdzunaIndia(query: string): Promise<Opportunity[]> {
+  const appId = process.env.ADZUNA_APP_ID;
+  const appKey = process.env.ADZUNA_APP_KEY;
+  const q = query.trim();
+  if (!appId || !appKey || !q) return [];
+  const url =
+    `https://api.adzuna.com/v1/api/jobs/in/search/1?app_id=${encodeURIComponent(appId)}` +
+    `&app_key=${encodeURIComponent(appKey)}&results_per_page=10&what=${encodeURIComponent(q)}` +
+    `&content-type=application/json`;
+  const json = await fetchJson(url);
+  const results = (json as { results?: AdzunaRaw[] } | null)?.results;
+  if (!Array.isArray(results)) return [];
+  return results
+    .filter(r => r.title && r.redirect_url)
+    .map(r => ({
+      id: `adz-${r.id ?? r.redirect_url}`,
+      // Adzuna wraps matched terms in <strong> tags.
+      title: r.title!.replace(/<\/?strong>/g, ""),
+      company: r.company?.display_name || "Company on Adzuna",
+      logo: null,
+      location: r.location?.display_name || "India",
+      pay: fmtPayInr(r.salary_min, r.salary_max),
+      postedAt: timeAgo(r.created),
+      tags: ["India"],
+      url: r.redirect_url!,
+      source: "Adzuna",
+    }));
 }
 
 /**
@@ -164,15 +264,32 @@ function keywordSet(skills: string[], role: string): string[] {
  * feed surfaces ops/marketing/BD posts on what is now the first screen a
  * student lands on after onboarding. Exported for direct testing.
  */
-export function isRelevant(o: Pick<Opportunity, "title" | "tags">, skills: string[], role: string): boolean {
+/**
+ * Denylist-only check, for sources whose own search is already topical
+ * (Adzuna matches the query against title+description server-side): reject
+ * clearly-non-engineering titles but don't demand a literal keyword hit.
+ */
+export function passesTitleDenylist(
+  o: Pick<Opportunity, "title">,
+  skills: string[],
+  role: string,
+): boolean {
   const keywords = keywordSet(skills, role);
   if (keywords.length === 0) return true;
-
   const titleHay = ` ${o.title.toLowerCase()} `;
   const activeDenylist = TITLE_DENYLIST.filter(
     entry => !entry.trim().split(/\s+/).some(w => keywords.some(k => k.includes(w) || w.includes(k))),
   );
-  if (activeDenylist.some(entry => titleHay.includes(entry))) return false;
+  return !activeDenylist.some(entry => titleHay.includes(entry));
+}
+
+export function isRelevant(o: Pick<Opportunity, "title" | "tags">, skills: string[], role: string): boolean {
+  const keywords = keywordSet(skills, role);
+  if (keywords.length === 0) return true;
+
+  if (!passesTitleDenylist(o, skills, role)) return false;
+
+  const titleHay = ` ${o.title.toLowerCase()} `;
 
   // A keyword in the title is a strong signal — keep.
   if (keywords.some(k => titleHay.includes(k))) return true;
@@ -335,24 +452,55 @@ router.get("/opportunities", async (req, res) => {
   try {
     let items: Opportunity[] = [];
 
-    const remoteRaw = primarySkill ? await fetchRemoteOk(primarySkill) : [];
-    // Topical gate first — RemoteOK's tag query and tags are both noisy, and
-    // this feed is the first screen after onboarding.
-    const remote = remoteRaw.filter(o => isRelevant(o, skills, role));
+    // Search-based sources do best with the role name; RemoteOK is tag-based
+    // so it keeps the primary skill. Internship searches append the word so
+    // Remotive/Adzuna surface actual intern postings.
+    const query = role || primarySkill;
+    const searchQuery = kind === "internship" ? `${query} intern` : query;
+
+    const settled = await Promise.allSettled([
+      primarySkill ? fetchRemoteOk(primarySkill) : Promise.resolve([]),
+      fetchRemotive(searchQuery),
+      fetchAdzunaIndia(searchQuery),
+    ]);
+    const [remoteOk, remotive, adzuna] = settled.map(s =>
+      s.status === "fulfilled" ? s.value : [],
+    );
+
+    // Adzuna's own search is topical, so it only needs the denylist;
+    // RemoteOK/Remotive results are noisy and get the full keyword gate.
+    const gatedAdzuna = adzuna.filter(o => passesTitleDenylist(o, skills, role));
+    const gatedRemotive = remotive.filter(o => isRelevant(o, skills, role));
+    const gatedRemoteOk = remoteOk.filter(o => isRelevant(o, skills, role));
+
+    // Round-robin across sources (India-first) so no single board fills the
+    // cap and pushes the others' relevant listings out. Dedupe title+company.
+    const seen = new Set<string>();
+    const real: Opportunity[] = [];
+    const pools = [gatedAdzuna, gatedRemotive, gatedRemoteOk];
+    const maxLen = Math.max(...pools.map(p => p.length), 0);
+    for (let i = 0; i < maxLen; i++) {
+      for (const pool of pools) {
+        const o = pool[i];
+        if (!o) continue;
+        const key = `${o.title.toLowerCase().trim()}|${o.company.toLowerCase().trim()}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        real.push(o);
+      }
+    }
 
     if (kind === "freelancing") {
-      // No reliable free freelance API — use platform-direct search links.
-      // Also try RemoteOK contracts as a bonus.
-      const freelance = remote.filter(isFreelanceLike).slice(0, 4);
+      const freelance = real.filter(isFreelanceLike).slice(0, 6);
       items = [...freelance, ...buildFreelancePlatformLinks(primarySkill, role || "Freelancer")];
     } else if (kind === "internship") {
-      const interns = remote.filter(isInternshipLike).slice(0, 6);
+      const interns = real.filter(isInternshipLike).slice(0, 8);
       items = [...interns, ...buildInternshipPlatformLinks(primarySkill, role || "Intern")];
     } else {
       // jobs
-      const jobs = remote
+      const jobs = real
         .filter(o => !isInternshipLike(o))
-        .slice(0, 10);
+        .slice(0, 12);
       items = [...jobs, ...buildJobPlatformLinks(primarySkill, role || "Engineer")];
     }
 
