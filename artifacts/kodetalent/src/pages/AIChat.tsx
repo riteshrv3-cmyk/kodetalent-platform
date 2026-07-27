@@ -104,7 +104,7 @@ function dayLabel(ts: number): string {
 
 // ── Confetti particles ────────────────────────────────────────────────────────
 
-const CONFETTI_COLORS = ["#0f0f10", "#9a9aa2", "#ececf0"];
+const CONFETTI_COLORS = ["#4a55c7", "#8b93e0", "#eef0fb"];
 
 function Confetti() {
   const particles = Array.from({ length: 18 }, (_, i) => ({
@@ -143,9 +143,9 @@ function KitAvatar() {
   return (
     <div
       aria-label="Kit"
-      className="w-8 h-8 rounded-full border-2 border-line flex items-center justify-center shrink-0"
+      className="w-8 h-8 rounded-full bg-brand-soft flex items-center justify-center shrink-0"
     >
-      <Cat className="w-4 h-4 text-ink" strokeWidth={2} />
+      <Cat className="w-4 h-4 text-brand" strokeWidth={2} />
     </div>
   );
 }
@@ -190,29 +190,29 @@ function AIBubble({
       <div className="flex flex-col gap-1.5 min-w-0">
         {/* Bubble */}
         <div className="relative group">
-          <div className="bg-line text-ink rounded-2xl rounded-bl-md px-4 py-3">
+          <div className="bg-brand text-white rounded-2xl rounded-bl-md px-4 py-3">
             {msg.streaming && !displayText ? (
               <div className="flex items-center gap-2 py-0.5">
-                <span className="text-[12px] text-ink-muted italic">Kit is on it</span>
+                <span className="text-[12px] text-white/70 italic">Kit is on it</span>
                 <div className="flex gap-0.5">
                   {[0, 1, 2].map((i) => (
                     <motion.div
                       key={i}
                       animate={{ y: [0, -4, 0] }}
                       transition={{ duration: 0.6, delay: i * 0.15, repeat: Infinity }}
-                      className="w-1.5 h-1.5 rounded-full bg-ink-muted"
+                      className="w-1.5 h-1.5 rounded-full bg-white/70"
                     />
                   ))}
                 </div>
               </div>
             ) : (
-              <p className="text-[13px] text-ink leading-relaxed whitespace-pre-wrap break-words">
+              <p className="text-[13px] text-white leading-relaxed whitespace-pre-wrap break-words">
                 {displayText}
                 {msg.streaming && (
                   <motion.span
                     animate={{ opacity: [1, 0] }}
                     transition={{ duration: 0.5, repeat: Infinity }}
-                    className="inline-block w-0.5 h-3.5 bg-ink ml-0.5 rounded-sm align-middle"
+                    className="inline-block w-0.5 h-3.5 bg-white ml-0.5 rounded-sm align-middle"
                   />
                 )}
               </p>
@@ -269,7 +269,7 @@ function AIBubble({
           >
             {msg.suggestions.map((s) => (
               <button key={s} onClick={() => !streaming && onSuggestion(s)} disabled={streaming}
-                className="text-[12px] font-semibold border border-line text-ink px-3 py-1.5 rounded-full active:scale-95 transition-transform disabled:opacity-40 whitespace-nowrap"
+                className="text-[12px] font-semibold bg-brand-soft text-brand px-3 py-1.5 rounded-full active:scale-95 transition-transform disabled:opacity-40 whitespace-nowrap"
               >{s}</button>
             ))}
           </motion.div>
@@ -291,12 +291,12 @@ function UserBubble({ msg }: { msg: Message }) {
       transition={{ type: "spring", stiffness: 400, damping: 30 }}
       className="flex items-end gap-2 max-w-[82%] ml-auto flex-row-reverse"
     >
-      <div className="w-8 h-8 rounded-full border-2 border-line flex items-center justify-center text-ink text-[10px] font-black shrink-0 mb-1">
+      <div className="w-8 h-8 rounded-full bg-brand flex items-center justify-center text-white text-[10px] font-black shrink-0 mb-1">
         me
       </div>
       <div className="flex flex-col items-end gap-1">
-        <div className="bg-ink rounded-2xl rounded-br-md px-4 py-3">
-          <p className="text-[13px] text-paper leading-relaxed">{msg.text}</p>
+        <div className="bg-paper shadow-soft rounded-2xl rounded-br-md px-4 py-3">
+          <p className="text-[13px] text-ink leading-relaxed">{msg.text}</p>
         </div>
         <span className="text-[9px] text-ink-muted mr-0.5">{fmtTime(msg.ts)}</span>
       </div>
@@ -312,7 +312,7 @@ function ResumeBanner({ onContinue, onFresh }: { onContinue: () => void; onFresh
       initial={{ opacity: 0, y: -12 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -12 }}
-      className="mx-4 mt-3 bg-paper border border-line rounded-2xl px-4 py-3 flex items-center gap-3"
+      className="mx-4 mt-3 bg-paper shadow-soft rounded-2xl px-4 py-3 flex items-center gap-3"
     >
       <KitAvatar />
       <div className="flex-1 min-w-0">
@@ -321,10 +321,10 @@ function ResumeBanner({ onContinue, onFresh }: { onContinue: () => void; onFresh
       </div>
       <div className="flex gap-2 shrink-0">
         <button onClick={onContinue}
-          className="text-[11px] font-bold bg-ink text-paper px-3 py-1.5 rounded-xl active:scale-95 transition-transform"
+          className="text-[11px] font-bold bg-brand text-white px-3 py-1.5 rounded-full active:scale-95 transition-transform"
         >Yes!</button>
         <button onClick={onFresh}
-          className="text-[11px] font-bold border border-line text-ink px-3 py-1.5 rounded-xl active:scale-95 transition-transform"
+          className="text-[11px] font-bold border border-line text-brand px-3 py-1.5 rounded-full active:scale-95 transition-transform"
         >Fresh start</button>
       </div>
     </motion.div>
@@ -340,7 +340,7 @@ function WelcomeChips({ onSelect, disabled }: { onSelect: (s: string) => void; d
     >
       {GLOBAL_CHIPS.slice(0, 6).map(({ emoji, label }) => (
         <button key={label} onClick={() => onSelect(label)} disabled={disabled}
-          className="flex items-center gap-1.5 text-[12px] font-semibold border border-line text-ink px-3 py-1.5 rounded-full active:scale-95 transition-transform disabled:opacity-40"
+          className="flex items-center gap-1.5 text-[12px] font-semibold bg-brand-soft text-brand px-3 py-1.5 rounded-full active:scale-95 transition-transform disabled:opacity-40"
         >
           <span className="text-base leading-none">{emoji}</span>{label}
         </button>
@@ -348,9 +348,9 @@ function WelcomeChips({ onSelect, disabled }: { onSelect: (s: string) => void; d
       <button
         onClick={() => { const p = GLOBAL_CHIPS[Math.floor(Math.random() * GLOBAL_CHIPS.length)]; onSelect(p.label); }}
         disabled={disabled}
-        className="flex items-center gap-1.5 text-[12px] font-semibold border border-line text-ink px-3 py-1.5 rounded-full active:scale-95 transition-transform disabled:opacity-40"
+        className="flex items-center gap-1.5 text-[12px] font-semibold bg-brand-soft text-brand px-3 py-1.5 rounded-full active:scale-95 transition-transform disabled:opacity-40"
       >
-        <Zap className="w-3.5 h-3.5 text-ink" />Surprise me!
+        <Zap className="w-3.5 h-3.5 text-brand" />Surprise me!
       </button>
     </motion.div>
   );
@@ -587,30 +587,35 @@ export default function AIChat() {
   const showWelcomeChips = messages.length === 1 && messages[0].id === "welcome";
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-7rem)] bg-paper">
+    <div className="flex flex-col h-[calc(100dvh-7rem)] bg-canvas">
 
       {/* Confetti */}
       <AnimatePresence>{showConfetti && <Confetti key="confetti" />}</AnimatePresence>
 
       {/* ── Header ── */}
-      <div className="bg-paper border-b border-line px-4 py-2.5 flex items-center gap-3">
-        <KitAvatar />
+      <div className="bg-brand px-4 py-2.5 flex items-center gap-3">
+        <div
+          aria-label="Kit"
+          className="w-8 h-8 rounded-full bg-white/15 flex items-center justify-center shrink-0"
+        >
+          <Cat className="w-4 h-4 text-white" strokeWidth={2} />
+        </div>
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
-            <p className="font-black text-ink text-sm">Kit</p>
-            <span className="text-[9px] font-bold text-ink-muted border border-line px-1.5 py-0.5 rounded-full">AI</span>
+            <p className="font-black text-white text-sm">Kit</p>
+            <span className="text-[9px] font-bold text-white/80 border border-white/30 px-1.5 py-0.5 rounded-full">AI</span>
           </div>
-          <p className="text-[10px] text-ink-muted font-semibold">
+          <p className="text-[10px] text-white/70 font-semibold">
             {kitMood === "thinking" ? "Kit is thinking..." : "purrfessional career coach • online"}
           </p>
         </div>
 
         <button onClick={resetChat}
-          className="w-8 h-8 rounded-xl border border-line flex items-center justify-center active:scale-90 transition-transform"
+          className="w-8 h-8 rounded-xl bg-white/15 flex items-center justify-center active:scale-90 transition-transform"
           title="New chat"
         >
-          <RefreshCw className="w-3.5 h-3.5 text-ink-muted" />
+          <RefreshCw className="w-3.5 h-3.5 text-white" />
         </button>
       </div>
 
@@ -684,7 +689,7 @@ export default function AIChat() {
               disabled={streaming}
               className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-all active:scale-90 disabled:opacity-40 ${
                 listening
-                  ? "bg-ink text-paper"
+                  ? "bg-brand text-white"
                   : "border border-line text-ink-muted"
               }`}
               title="Hold to speak"
@@ -711,7 +716,7 @@ export default function AIChat() {
               rows={1}
               disabled={streaming}
               className={`w-full resize-none text-[13px] text-ink placeholder:text-ink-muted bg-paper rounded-2xl px-4 py-2.5 outline-none border transition-all max-h-[96px] disabled:opacity-60 ${
-                listening ? "border-ink" : "border-line focus:border-ink"
+                listening ? "border-brand" : "border-line focus:border-brand"
               }`}
             />
           </div>
@@ -720,12 +725,12 @@ export default function AIChat() {
             whileTap={{ scale: 0.85 }}
             onClick={() => sendMessage(input)}
             disabled={!input.trim() || streaming}
-            className="w-10 h-10 rounded-full bg-ink text-paper flex items-center justify-center disabled:opacity-35 shrink-0 transition-opacity"
+            className="w-10 h-10 rounded-full bg-brand text-white flex items-center justify-center disabled:opacity-35 shrink-0 transition-opacity"
           >
             {streaming ? (
-              <div className="w-4 h-4 border-2 border-paper border-t-transparent rounded-full animate-spin" />
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
             ) : (
-              <Send className="w-4 h-4 text-paper" />
+              <Send className="w-4 h-4 text-white" />
             )}
           </motion.button>
         </div>

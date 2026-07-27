@@ -36,7 +36,7 @@ function stripMarkdown(text: string) {
 }
 
 // `color` is kept in the prop signature for compatibility but is ignored —
-// score colour is always ink, never a threshold-based colour.
+// score colour is always brand, never a threshold-based colour.
 function ScoreRing({ score, max, label }: { score: number; max: number; label: string; color?: string }) {
   const pct = Math.round((score / max) * 100);
   const r = 28;
@@ -45,13 +45,13 @@ function ScoreRing({ score, max, label }: { score: number; max: number; label: s
     <div className="flex flex-col items-center gap-1">
       <div className="relative w-16 h-16">
         <svg className="w-16 h-16 -rotate-90" viewBox="0 0 64 64">
-          <circle cx="32" cy="32" r={r} fill="none" stroke="#ececf0" strokeWidth="6" />
-          <motion.circle cx="32" cy="32" r={r} fill="none" stroke="#0f0f10" strokeWidth="6" strokeLinecap="round"
+          <circle cx="32" cy="32" r={r} fill="none" stroke="#ecedf3" strokeWidth="6" />
+          <motion.circle cx="32" cy="32" r={r} fill="none" stroke="#4a55c7" strokeWidth="6" strokeLinecap="round"
             strokeDasharray={circ} initial={{ strokeDashoffset: circ }}
             animate={{ strokeDashoffset: circ - (pct / 100) * circ }} transition={{ duration: 1, delay: 0.3 }} />
         </svg>
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-base font-black text-ink">{score}</span>
+          <span className="text-base font-black text-brand">{score}</span>
         </div>
       </div>
       <span className="text-[10px] font-bold text-ink-muted uppercase tracking-wide">{label}</span>
@@ -496,7 +496,7 @@ export default function Interview() {
       : [session?.round || "Technical"];
 
     return (
-      <div className="p-4 pb-24 max-w-md mx-auto space-y-4 min-h-screen bg-paper">
+      <div className="p-4 pb-24 max-w-md mx-auto space-y-4 min-h-screen bg-canvas">
         <Button variant="ghost" onClick={() => setLocation("/practice")} className="mb-2 -ml-2 text-ink-muted font-bold">
           <ArrowLeft className="w-5 h-5 mr-2" /> Back
         </Button>
@@ -506,14 +506,14 @@ export default function Interview() {
         </div>
 
         {/* Main score card */}
-        <Card className="border border-line shadow-none rounded-2xl bg-paper overflow-hidden">
+        <Card className="rounded-2xl bg-paper shadow-soft overflow-hidden">
           <CardContent className="p-6 text-center">
-            <div className="text-[80px] font-black leading-none mb-1 text-ink">
+            <div className="text-[80px] font-black leading-none mb-1 text-brand">
               {evalData?.overallScore ?? 85}
             </div>
             <p className="text-[11px] font-bold uppercase tracking-wider text-ink-muted mb-3">Overall Score</p>
             {evalData?.overallRating && (
-              <span className="px-4 py-1.5 rounded-full text-sm font-bold bg-ink text-paper">
+              <span className="px-4 py-1.5 rounded-full text-sm font-bold bg-brand text-paper">
                 {evalData.overallRating}
               </span>
             )}
@@ -529,7 +529,7 @@ export default function Interview() {
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{ delay: 0.3 }}
             >
-              <Card className="border border-line shadow-none rounded-2xl bg-paper">
+              <Card className="rounded-2xl bg-paper shadow-soft">
                 <CardContent className="p-4">
                   {!showRealInterviewQ ? (
                     <>
@@ -543,7 +543,7 @@ export default function Interview() {
                             title={label}
                             className={cn(
                               "text-2xl w-11 h-11 rounded-full border transition active:scale-90 flex items-center justify-center",
-                              pendingRating === i + 1 ? "border-ink" : "border-line"
+                              pendingRating === i + 1 ? "border-brand bg-brand-soft" : "border-line"
                             )}
                           >
                             {emoji}
@@ -557,13 +557,13 @@ export default function Interview() {
                       <div className="flex gap-3">
                         <button
                           onClick={() => handleRealInterview("yes")}
-                          className="flex-1 py-2.5 rounded-xl bg-ink text-paper font-bold text-sm transition"
+                          className="flex-1 py-2.5 rounded-full bg-brand text-paper font-bold text-sm transition"
                         >
                           Yes, soon!
                         </button>
                         <button
                           onClick={() => handleRealInterview("no")}
-                          className="flex-1 py-2.5 rounded-xl border border-line text-ink font-bold text-sm transition"
+                          className="flex-1 py-2.5 rounded-full border border-line text-brand font-bold text-sm transition"
                         >
                           Not yet
                         </button>
@@ -576,7 +576,7 @@ export default function Interview() {
           )}
           {confidenceSent && (
             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
-              <Card className="border border-line shadow-none rounded-2xl bg-paper">
+              <Card className="rounded-2xl bg-paper shadow-soft">
                 <CardContent className="p-4 text-center">
                   <p className="text-[14px] font-bold text-ink">
                     <span className="text-done">✓</span> Thanks for the feedback!
@@ -589,7 +589,7 @@ export default function Interview() {
 
         {/* Category scores */}
         {evalData && (
-          <Card className="border border-line shadow-none rounded-2xl bg-paper">
+          <Card className="rounded-2xl bg-paper shadow-soft">
             <CardContent className="p-5">
               <p className="text-[11px] font-bold uppercase tracking-wider text-ink-muted mb-4">Category Scores</p>
               <div className="flex justify-around">
@@ -603,7 +603,7 @@ export default function Interview() {
 
         {evalData && (
           <div className="space-y-3">
-            <Card className="border-0 border-l-2 border-line shadow-none rounded-none bg-paper">
+            <Card className="border-0 border-l-2 border-done shadow-none rounded-none bg-paper">
               <CardContent className="p-4">
                 <p className="text-[11px] font-bold text-ink-muted uppercase tracking-wider mb-1">Strength</p>
                 <p className="text-[14px] font-medium text-ink">{evalData.strongPoint}</p>
@@ -616,7 +616,10 @@ export default function Interview() {
                 <button
                   onClick={addWeakPointToTomorrow}
                   disabled={addedToTomorrow}
-                  className="text-[12px] font-bold text-ink disabled:text-ink-muted disabled:cursor-default"
+                  className={cn(
+                    "text-[12px] font-bold disabled:cursor-default",
+                    addedToTomorrow ? "text-done" : "text-brand"
+                  )}
                 >
                   {addedToTomorrow ? "Added to tomorrow's checklist ✓" : "Add to tomorrow's checklist"}
                 </button>
@@ -626,7 +629,7 @@ export default function Interview() {
         )}
 
         {times.length > 0 && (
-          <Card className="border border-line shadow-none rounded-2xl bg-paper">
+          <Card className="rounded-2xl bg-paper shadow-soft">
             <CardContent className="p-4">
               <p className="text-[11px] font-bold text-ink-muted uppercase tracking-wider mb-3">
                 <Clock className="w-3 h-3 inline mr-1" /> Response Times
@@ -649,7 +652,7 @@ export default function Interview() {
                   <button className="w-full py-4 text-left flex justify-between items-center gap-2"
                     onClick={() => setExpandedFeedback(expandedFeedback === i ? null : i)}>
                     <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <span className="w-7 h-7 rounded-full border border-line text-ink text-xs font-black flex items-center justify-center flex-shrink-0">
+                      <span className="w-7 h-7 rounded-full bg-brand-soft text-brand text-xs font-black flex items-center justify-center flex-shrink-0">
                         {qf.score}
                       </span>
                       <span className="text-[14px] font-bold text-ink truncate">Q{i + 1}: {qf.question.slice(0, 50)}{qf.question.length > 50 ? "…" : ""}</span>
@@ -679,10 +682,10 @@ export default function Interview() {
         )}
 
         <div className="flex gap-3 pt-2">
-          <Button variant="outline" className="flex-1 rounded-full h-12 font-bold border border-line text-ink" onClick={() => setLocation("/practice")}>
+          <Button variant="outline" className="flex-1 rounded-full h-12 font-bold border border-line text-brand" onClick={() => setLocation("/practice")}>
             <RefreshCw className="w-4 h-4 mr-2" /> Try Again
           </Button>
-          <Button className="flex-1 rounded-full h-12 font-bold bg-ink hover:bg-ink/90 text-paper">
+          <Button className="flex-1 rounded-full h-12 font-bold bg-brand hover:bg-brand/90 text-paper">
             <Share2 className="w-4 h-4 mr-2" /> Share
           </Button>
         </div>
@@ -697,7 +700,7 @@ export default function Interview() {
     : [session?.round || "Technical"];
 
   return (
-    <div className="flex flex-col h-[100dvh] bg-paper max-w-md mx-auto relative overflow-hidden">
+    <div className="flex flex-col h-[100dvh] bg-canvas max-w-md mx-auto relative overflow-hidden">
       {/* Header */}
       <div className="bg-paper p-4 sticky top-0 z-10 border-b border-line">
         <div className="flex items-center justify-between mb-2">
@@ -713,7 +716,7 @@ export default function Interview() {
               onClick={toggleCameraMode}
               className={cn(
                 "w-9 h-9 rounded-full flex items-center justify-center transition-all",
-                cameraMode ? "bg-ink text-paper" : "border border-line text-ink-muted"
+                cameraMode ? "bg-brand text-paper" : "border border-line text-ink-muted"
               )}
               aria-label="Toggle camera"
             >
@@ -723,7 +726,7 @@ export default function Interview() {
               onClick={toggleVoiceMode}
               className={cn(
                 "w-9 h-9 rounded-full flex items-center justify-center transition-all",
-                voiceMode ? "bg-ink text-paper" : "border border-line text-ink-muted"
+                voiceMode ? "bg-brand text-paper" : "border border-line text-ink-muted"
               )}
               aria-label="Toggle voice"
             >
@@ -732,12 +735,12 @@ export default function Interview() {
           </div>
         </div>
         <div className="h-1.5 w-full bg-line rounded-full overflow-hidden">
-          <motion.div className="h-full bg-ink rounded-full" initial={{ width: 0 }} animate={{ width: `${progressPercent}%` }} transition={{ duration: 0.5 }} />
+          <motion.div className="h-full bg-brand rounded-full" initial={{ width: 0 }} animate={{ width: `${progressPercent}%` }} transition={{ duration: 0.5 }} />
         </div>
         <div className="flex justify-center gap-1.5 mt-2">
           {Array.from({ length: maxQuestions }).map((_, i) => (
             <div key={i} className={cn("h-1.5 rounded-full transition-all duration-300",
-              i < questionCount ? "bg-ink w-5" : "bg-line w-3")} />
+              i < questionCount ? "bg-brand w-5" : "bg-line w-3")} />
           ))}
         </div>
       </div>
@@ -749,7 +752,7 @@ export default function Interview() {
             initial={{ opacity: 0, scale: 0.6, y: -10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.6 }}
-            className="fixed top-[88px] right-3 z-20 w-[92px] h-[120px] rounded-2xl overflow-hidden border border-line bg-ink max-w-[calc(44vw-0.75rem)]"
+            className="fixed top-[88px] right-3 z-20 w-[92px] h-[120px] rounded-2xl overflow-hidden border border-line bg-ink shadow-soft max-w-[calc(44vw-0.75rem)]"
           >
             <video
               ref={videoRef}
@@ -800,7 +803,7 @@ export default function Interview() {
               <div className={cn(
                 "max-w-[88%] px-5 py-4 text-[14px] font-medium whitespace-pre-wrap",
                 msg.sender === "user"
-                  ? "bg-ink text-paper rounded-3xl rounded-tr-none"
+                  ? "bg-brand text-paper rounded-3xl rounded-tr-none"
                   : "bg-line text-ink rounded-3xl rounded-tl-none"
               )}>
                 {msg.text}
@@ -818,16 +821,16 @@ export default function Interview() {
           )}
           {isSpeaking && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start">
-              <div className="bg-paper border border-line rounded-2xl px-4 py-2 flex items-center gap-2">
-                <Volume2 className="w-3.5 h-3.5 text-ink" />
+              <div className="bg-paper border border-line rounded-2xl px-4 py-2 flex items-center gap-2 shadow-soft">
+                <Volume2 className="w-3.5 h-3.5 text-brand" />
                 <div className="flex gap-0.5">
                   {[0, 0.15, 0.3, 0.15, 0].map((delay, i) => (
-                    <motion.div key={i} className="w-0.5 rounded-full bg-ink"
+                    <motion.div key={i} className="w-0.5 rounded-full bg-brand"
                       animate={{ height: ["4px", "14px", "4px"] }}
                       transition={{ duration: 0.6, repeat: Infinity, delay }} />
                   ))}
                 </div>
-                <span className="text-[12px] font-bold text-ink">Speaking…</span>
+                <span className="text-[12px] font-bold text-brand">Speaking…</span>
               </div>
             </motion.div>
           )}
@@ -852,12 +855,12 @@ export default function Interview() {
               whileTap={{ scale: 0.92 }}
               onClick={toggleRecording}
               disabled={isTranscribing || isTyping}
-              className="relative flex-1 h-14 rounded-full font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-60 bg-ink text-paper"
+              className="relative flex-1 h-14 rounded-full font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-60 bg-brand text-paper"
             >
               {isRecording && (
                 <motion.span
                   aria-hidden
-                  className="absolute inset-0 rounded-full border-2 border-line pointer-events-none"
+                  className="absolute inset-0 rounded-full border-2 border-paper/40 pointer-events-none"
                   animate={{ scale: [1, 1.06, 1], opacity: [0.9, 0.25, 0.9] }}
                   transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
                 />
@@ -878,7 +881,7 @@ export default function Interview() {
               placeholder="Type your answer… (Shift+Enter for new line)"
               disabled={isTyping}
               rows={3}
-              className="flex-1 min-h-[88px] max-h-[200px] rounded-2xl border-2 border-line focus-visible:border-ink focus-visible:ring-0 px-4 py-3 text-[15px] bg-paper text-ink placeholder:text-ink-muted resize-none leading-relaxed"
+              className="flex-1 min-h-[88px] max-h-[200px] rounded-2xl border-2 border-line focus-visible:border-brand focus-visible:ring-0 px-4 py-3 text-[15px] bg-paper text-ink placeholder:text-ink-muted resize-none leading-relaxed"
             />
           )}
           {!voiceMode && (
@@ -887,7 +890,7 @@ export default function Interview() {
                 type="submit"
                 size="icon"
                 disabled={isTyping || !inputValue.trim()}
-                className="h-14 w-14 rounded-2xl bg-ink hover:bg-ink/90 text-paper flex-shrink-0"
+                className="h-14 w-14 rounded-2xl bg-brand hover:bg-brand/90 text-paper flex-shrink-0"
               >
                 <Send className="w-5 h-5" />
               </Button>

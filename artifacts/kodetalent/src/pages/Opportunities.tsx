@@ -214,7 +214,7 @@ export default function Opportunities() {
 
     return items.map((o, i) => (
       <motion.div key={o.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i, 8) * 0.04 }}>
-        <div className="border border-line rounded-2xl bg-paper overflow-hidden">
+        <div className="bg-paper rounded-2xl shadow-soft overflow-hidden">
           <div className="p-4">
             <div className="flex items-start justify-between mb-2 gap-2">
               <div className="flex items-center gap-2 min-w-0">
@@ -228,7 +228,7 @@ export default function Opportunities() {
                 </div>
               </div>
               {o.pay && (
-                <span className="text-[11px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap border border-line text-ink">
+                <span className="text-[11px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap bg-brand-soft text-brand">
                   {o.pay}
                 </span>
               )}
@@ -238,7 +238,7 @@ export default function Opportunities() {
             </p>
             <div className="flex flex-wrap gap-1.5 mb-3">
               {(o.tags.length ? o.tags : skills).slice(0, 4).map(s => (
-                <span key={s} className="text-[11px] font-semibold px-2 py-0.5 rounded-full border border-line text-ink-muted">
+                <span key={s} className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-brand-soft text-brand">
                   {s}
                 </span>
               ))}
@@ -246,12 +246,12 @@ export default function Opportunities() {
             <div className="flex gap-2 mb-2">
               <Button
                 onClick={() => checkFit(o)}
-                className="flex-1 h-10 rounded-xl font-bold text-[13px] bg-ink text-paper hover:bg-ink"
+                className="flex-1 h-10 rounded-full font-bold text-[13px] bg-brand text-white hover:bg-brand/90"
               >
                 <Sparkles className="w-3.5 h-3.5 mr-1.5" /> Check fit
               </Button>
               <a href={o.url} target="_blank" rel="noopener noreferrer" className="flex-1">
-                <Button variant="outline" className="w-full h-10 rounded-xl font-bold text-[13px] border border-line text-ink bg-paper">
+                <Button variant="outline" className="w-full h-10 rounded-full font-bold text-[13px] border border-line text-brand bg-paper">
                   Apply <ExternalLink className="w-3 h-3 ml-1" />
                 </Button>
               </a>
@@ -259,7 +259,7 @@ export default function Opportunities() {
             <Button
               onClick={navigateToCourse}
               variant="ghost"
-              className="w-full h-8 rounded-lg font-bold text-[12px] text-ink"
+              className="w-full h-8 rounded-lg font-bold text-[12px] text-brand"
             >
               <Target className="w-3 h-3 mr-1" /> Prepare for this role
             </Button>
@@ -273,9 +273,9 @@ export default function Opportunities() {
 
 
   return (
-    <div className="min-h-screen bg-paper pb-28">
+    <div className="min-h-screen bg-canvas pb-28">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-paper px-4 pt-4 pb-2">
+      <div className="sticky top-0 z-10 bg-paper px-4 pt-4 pb-2 border-b border-line">
         <div className="flex items-center gap-2 mb-1">
           {(selectedDomain || selectedSubDomain) && (
             <button
@@ -309,7 +309,7 @@ export default function Opportunities() {
                 className={cn(
                   "flex-1 py-2 rounded-xl text-[13px] font-bold border transition-colors",
                   activeTab === tab.id
-                    ? "bg-ink text-paper border-ink"
+                    ? "bg-brand text-white border-brand"
                     : "bg-paper text-ink-muted border-line"
                 )}
               >
@@ -332,7 +332,7 @@ export default function Opportunities() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search skills or roles… e.g. React, Python, ML"
-                  className="w-full pl-10 pr-10 py-3 rounded-2xl bg-paper border border-line text-[14px] text-ink placeholder:text-ink-muted focus:outline-none focus:border-ink"
+                  className="w-full pl-10 pr-10 py-3 rounded-2xl bg-paper border border-line text-[14px] text-ink placeholder:text-ink-muted focus:outline-none focus:border-brand"
                   data-testid="input-opportunity-search"
                 />
                 {searchQuery && (
@@ -347,7 +347,7 @@ export default function Opportunities() {
               </div>
 
               {searchQuery.trim() && (
-                <div className="mt-2 bg-paper rounded-2xl border border-line overflow-hidden">
+                <div className="mt-2 bg-paper rounded-2xl shadow-soft overflow-hidden">
                   {searchResults.length === 0 ? (
                     <div className="px-4 py-6 text-center">
                       <p className="text-[14px] text-ink">No matches</p>
@@ -367,7 +367,7 @@ export default function Opportunities() {
                         )}
                         data-testid={`search-result-${sub.id}`}
                       >
-                        <div className="w-10 h-10 rounded-xl border border-line flex items-center justify-center text-xl shrink-0">
+                        <div className="w-10 h-10 rounded-xl bg-brand-soft flex items-center justify-center text-xl shrink-0">
                           {domain.emoji}
                         </div>
                         <div className="flex-1 min-w-0">
@@ -396,10 +396,10 @@ export default function Opportunities() {
             >
               <button
                 onClick={() => setLocation("/pipeline")}
-                className="w-full mb-4 flex items-center gap-3 px-4 py-3 rounded-2xl bg-paper border border-line text-left transition-colors"
+                className="w-full mb-4 flex items-center gap-3 px-4 py-3 rounded-2xl bg-paper shadow-soft text-left transition-colors"
                 data-testid="link-my-pipeline"
               >
-                <div className="w-10 h-10 rounded-xl border border-line flex items-center justify-center text-lg shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-brand-soft flex items-center justify-center text-lg shrink-0">
                   🎯
                 </div>
                 <div className="flex-1 min-w-0">
@@ -417,10 +417,10 @@ export default function Opportunities() {
                     transition={{ delay: i * 0.04 }}
                     whileTap={{ scale: 0.94 }}
                     onClick={() => setSelectedDomain(domain)}
-                    className="rounded-2xl p-3 flex flex-col items-center text-center gap-1.5 border border-line bg-paper transition-colors"
+                    className="rounded-2xl p-3 flex flex-col items-center text-center gap-1.5 bg-brand-soft transition-colors"
                   >
                     <span className="text-3xl">{domain.emoji}</span>
-                    <span className="text-[11px] font-bold leading-tight text-ink">
+                    <span className="text-[11px] font-bold leading-tight text-brand">
                       {domain.name}
                     </span>
                   </motion.button>
@@ -439,7 +439,7 @@ export default function Opportunities() {
               className="space-y-2"
             >
               {/* Domain banner */}
-              <div className="rounded-2xl border border-line p-4 mb-4 flex items-center gap-3">
+              <div className="rounded-2xl bg-paper shadow-soft p-4 mb-4 flex items-center gap-3">
                 <span className="text-4xl">{selectedDomain.emoji}</span>
                 <div>
                   <p className="text-[11px] font-bold text-ink-muted uppercase tracking-wider">Domain</p>
@@ -462,7 +462,7 @@ export default function Opportunities() {
                     // the Course page loads from cache in <1s.
                     prefetchCourse(sd.id, sd.name, selectedDomain.name, sd.skills);
                   }}
-                  className="w-full bg-paper border border-line rounded-2xl p-4 flex items-center justify-between text-left"
+                  className="w-full bg-paper shadow-soft rounded-2xl p-4 flex items-center justify-between text-left"
                 >
                   <div>
                     <p className="font-bold text-ink text-[15px]">{sd.name}</p>
@@ -511,7 +511,7 @@ export default function Opportunities() {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
-                className="rounded-2xl border border-line p-4 mt-2"
+                className="rounded-2xl bg-paper shadow-soft p-4 mt-2"
               >
                 <p className="text-[14px] font-bold text-ink mb-1">
                   Not ready to apply yet?
@@ -521,7 +521,7 @@ export default function Opportunities() {
                 </p>
                 <Button
                   onClick={navigateToCourse}
-                  className="w-full h-10 rounded-xl font-bold text-[13px] bg-ink text-paper hover:bg-ink"
+                  className="w-full h-10 rounded-full font-bold text-[13px] bg-brand text-white hover:bg-brand/90"
                 >
                   Start Practice Session →
                 </Button>
@@ -547,7 +547,7 @@ export default function Opportunities() {
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 30, stiffness: 280 }}
-              className="fixed bottom-0 left-0 right-0 z-[60] bg-paper rounded-t-3xl max-h-[85dvh] overflow-y-auto max-w-md mx-auto border-t border-line pb-[env(safe-area-inset-bottom)]"
+              className="fixed bottom-0 left-0 right-0 z-[60] bg-paper rounded-t-3xl shadow-soft max-h-[85dvh] overflow-y-auto max-w-md mx-auto border-t border-line pb-[env(safe-area-inset-bottom)]"
               data-testid="jd-gap-sheet"
             >
               <div className="sticky top-0 bg-paper rounded-t-3xl px-5 pt-3 pb-2 border-b border-line">
@@ -574,7 +574,7 @@ export default function Opportunities() {
                   <div className="flex flex-col items-center justify-center py-10 gap-2">
                     <AlertCircle className="w-7 h-7 text-danger" />
                     <p className="text-[14px] text-danger">{gapError}</p>
-                    <Button onClick={closeGap} variant="outline" className="mt-2 border border-line text-ink bg-paper rounded-xl">Close</Button>
+                    <Button onClick={closeGap} variant="outline" className="mt-2 border border-line text-brand bg-paper rounded-full">Close</Button>
                   </div>
                 )}
                 {gapData && !gapLoading && (() => {
@@ -589,7 +589,7 @@ export default function Opportunities() {
                           <svg width="110" height="110" className="-rotate-90">
                             <circle cx="55" cy="55" r={r} fill="none" className="stroke-line" strokeWidth="10" />
                             <motion.circle
-                              cx="55" cy="55" r={r} fill="none" className="stroke-ink" strokeWidth="10"
+                              cx="55" cy="55" r={r} fill="none" className="stroke-brand" strokeWidth="10"
                               strokeLinecap="round" strokeDasharray={c}
                               initial={{ strokeDashoffset: c }}
                               animate={{ strokeDashoffset: offset }}
@@ -602,7 +602,7 @@ export default function Opportunities() {
                           </div>
                         </div>
                         <div className="min-w-0">
-                          <p className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">{verdict}</p>
+                          <p className="text-[11px] font-bold uppercase tracking-wider text-brand">{verdict}</p>
                           <p className="text-[13px] text-ink mt-1 leading-snug">{gapData.summary}</p>
                         </div>
                       </div>
@@ -614,7 +614,7 @@ export default function Opportunities() {
                           </p>
                           <div className="flex flex-wrap gap-1.5">
                             {gapData.have.map(s => (
-                              <span key={s} className="text-[12px] font-semibold px-2.5 py-1 rounded-full border border-line text-ink">
+                              <span key={s} className="text-[12px] font-semibold px-2.5 py-1 rounded-full bg-brand-soft text-brand">
                                 {s}
                               </span>
                             ))}
@@ -629,7 +629,7 @@ export default function Opportunities() {
                           </p>
                           <div className="flex flex-wrap gap-1.5">
                             {gapData.missing.map(s => (
-                              <span key={s} className="text-[12px] font-semibold px-2.5 py-1 rounded-full border border-line text-ink-muted">
+                              <span key={s} className="text-[12px] font-semibold px-2.5 py-1 rounded-full bg-line/60 text-ink-muted">
                                 {s}
                               </span>
                             ))}
@@ -653,7 +653,7 @@ export default function Opportunities() {
                               >
                                 <div className="flex items-start justify-between gap-2 mb-1">
                                   <p className="text-[13px] font-semibold text-ink leading-tight">{p.title}</p>
-                                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border border-line text-ink-muted whitespace-nowrap">
+                                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-brand-soft text-brand whitespace-nowrap">
                                     {p.hours}h
                                   </span>
                                 </div>
@@ -666,7 +666,7 @@ export default function Opportunities() {
 
                       <Button
                         onClick={goLearnGap}
-                        className="w-full h-12 rounded-xl font-bold bg-ink text-paper text-[14px] hover:bg-ink"
+                        className="w-full h-12 rounded-full font-bold bg-brand text-white text-[14px] hover:bg-brand/90"
                         data-testid="button-learn-gap"
                       >
                         <Sparkles className="w-4 h-4 mr-1.5" /> Learn the gap →

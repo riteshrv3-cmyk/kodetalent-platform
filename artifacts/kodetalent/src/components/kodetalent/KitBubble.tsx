@@ -14,7 +14,7 @@ export function KitBubble() {
       type="button"
       onClick={() => setLocation("/chat")}
       aria-label="Chat with Kit"
-      className="fixed right-4 z-30 w-14 h-14 rounded-full bg-ink text-paper flex items-center justify-center shadow-lg active:scale-95 transition-transform"
+      className="fixed right-4 z-30 w-14 h-14 rounded-full bg-brand text-white flex items-center justify-center shadow-[0_10px_28px_rgba(74,85,199,0.35)] active:scale-95 transition-transform"
       style={{ bottom: "calc(5rem + env(safe-area-inset-bottom))" }}
     >
       <Cat className="w-6 h-6" strokeWidth={2} />

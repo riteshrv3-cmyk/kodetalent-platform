@@ -36,7 +36,7 @@ const STATUS_OPTIONS = [
 
 const VERDICT_STYLE: Record<string, { icon: typeof ShieldCheck; label: string; className: string }> = {
   safe: { icon: ShieldCheck, label: "Looks safe", className: "bg-done/10 text-done" },
-  risky: { icon: ShieldAlert, label: "Looks risky", className: "bg-[#F59E0B]/10 text-[#B45309]" },
+  risky: { icon: ShieldAlert, label: "Looks risky", className: "bg-brand-soft text-brand" },
   scam: { icon: AlertTriangle, label: "Likely a scam", className: "bg-danger/10 text-danger" },
 };
 
@@ -123,35 +123,40 @@ export default function Pipeline() {
   }
 
   return (
-    <div className="min-h-screen bg-paper pb-24 px-6 pt-8">
-      <h1 className="text-[26px] font-extrabold text-ink leading-[1.06] tracking-tight">Pipeline</h1>
-      <p className="text-[13px] text-ink-muted mt-1 mb-6">
-        Paste any job posting or placement drive — scam check, eligibility, and fit, in one shot.
-      </p>
+    <div className="min-h-screen bg-canvas pb-24">
+      <div className="bg-brand px-6 pt-8 pb-14">
+        <h1 className="text-[26px] font-extrabold text-white leading-[1.06] tracking-tight">Pipeline</h1>
+        <p className="text-[13px] text-white/70 mt-1">
+          Paste any job posting or placement drive — scam check, eligibility, and fit, in one shot.
+        </p>
+      </div>
 
-      <textarea
-        value={rawText}
-        onChange={(e) => setRawText(e.target.value)}
-        placeholder="Paste the job description or drive message here…"
-        rows={6}
-        className="w-full rounded-2xl border border-line bg-paper px-4 py-3 text-[14px] text-ink placeholder:text-ink-muted focus:outline-none focus:border-ink resize-none"
-      />
-      {error && <p className="text-[12px] text-danger mt-2">{error}</p>}
-      <button
-        onClick={analyze}
-        disabled={analyzing || rawText.trim().length < 5}
-        className="mt-3 w-full bg-ink text-paper text-[14px] font-bold rounded-xl py-3 disabled:opacity-40 flex items-center justify-center gap-2"
-      >
-        {analyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-        {analyzing ? "Analyzing…" : "Analyze"}
-      </button>
+      <div className="bg-paper rounded-t-3xl -mt-6 px-6 pt-6 pb-6 shadow-soft">
+        <textarea
+          value={rawText}
+          onChange={(e) => setRawText(e.target.value)}
+          placeholder="Paste the job description or drive message here…"
+          rows={6}
+          className="w-full rounded-2xl border border-line bg-paper px-4 py-3 text-[14px] text-ink placeholder:text-ink-muted focus:outline-none focus:border-brand resize-none"
+        />
+        {error && <p className="text-[12px] text-danger mt-2">{error}</p>}
+        <button
+          onClick={analyze}
+          disabled={analyzing || rawText.trim().length < 5}
+          className="mt-3 w-full bg-brand text-white text-[14px] font-bold rounded-full py-3.5 disabled:opacity-40 flex items-center justify-center gap-2"
+        >
+          {analyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+          {analyzing ? "Analyzing…" : "Analyze"}
+        </button>
 
-      <button onClick={() => setLocation("/drive-check")} className="mt-2 text-[12px] text-ink-muted underline">
-        Just want a quick scam check? Use Drive Check
-      </button>
+        <button onClick={() => setLocation("/drive-check")} className="mt-2 text-[12px] text-ink-muted underline">
+          Just want a quick scam check? Use Drive Check
+        </button>
+      </div>
 
+      <div className="px-6">
       {result && (
-        <div className="mt-8 border border-line rounded-2xl p-5">
+        <div className="mt-6 bg-paper rounded-2xl shadow-soft p-5">
           <div className="flex items-center justify-between mb-3">
             <p className="text-[15px] font-bold text-ink">
               {result.company ?? "Unknown company"}{result.role ? ` · ${result.role}` : ""}
@@ -216,7 +221,7 @@ export default function Pipeline() {
                     <button
                       onClick={() => addPrepToTomorrow(item)}
                       disabled={addedPrep.has(key)}
-                      className="shrink-0 text-[11px] font-bold text-ink disabled:text-ink-muted"
+                      className="shrink-0 text-[11px] font-bold text-brand disabled:text-ink-muted"
                     >
                       {addedPrep.has(key) ? "Added ✓" : "Add to tomorrow"}
                     </button>
@@ -229,10 +234,10 @@ export default function Pipeline() {
       )}
 
       {applications.length > 0 && (
-        <div className="mt-10">
+        <div className="mt-8">
           <p className="text-[11px] font-bold uppercase tracking-wider text-ink-muted mb-3">Tracked ({applications.length})</p>
           {applications.map((app) => (
-            <div key={app.id} className="py-3 border-t border-line first:border-t-0">
+            <div key={app.id} className="bg-paper rounded-2xl shadow-soft p-4 mb-3">
               <div className="flex items-center justify-between gap-2 mb-1.5">
                 <p className="text-[14px] font-semibold text-ink truncate">
                   {app.company ?? "Unknown"}{app.role ? ` · ${app.role}` : ""}
@@ -242,7 +247,7 @@ export default function Pipeline() {
               <select
                 value={app.status}
                 onChange={(e) => updateStatus(app.id, e.target.value)}
-                className="text-[12px] font-semibold text-ink bg-line/40 rounded-lg px-2 py-1 border-0 focus:outline-none"
+                className="text-[12px] font-semibold text-brand bg-brand-soft rounded-lg px-2 py-1 border-0 focus:outline-none"
               >
                 {STATUS_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -252,6 +257,7 @@ export default function Pipeline() {
           ))}
         </div>
       )}
+      </div>
     </div>
   );
 }

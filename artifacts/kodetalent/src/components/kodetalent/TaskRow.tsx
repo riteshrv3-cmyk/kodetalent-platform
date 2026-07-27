@@ -14,14 +14,13 @@ export interface TaskRowProps {
 }
 
 /**
- * The one shared list-item primitive for the monochrome ("W") design system.
- * Used on Home's Today list, and reused as-is on Prep/Jobs/Profile in later
- * Phase 4 steps. No cards, no shadows — a hairline divider is the only
- * separator, per design-system-phase3.md.
+ * The one shared list-item primitive for the "Canopy" (v2) design system.
+ * Used on Home's Today list, and reused as-is on Prep/Jobs/Profile. Each
+ * task is its own soft-shadow card, matching the kit's booking/message rows.
  */
 export function TaskRow({ label, sublabel, done, hot, ctaLabel, onToggle, onAction }: TaskRowProps) {
   return (
-    <div className="flex items-center gap-3 py-4 border-t border-line first:border-t-0">
+    <div className="flex items-center gap-3 bg-paper rounded-2xl shadow-soft p-4 mb-3">
       <button
         type="button"
         aria-label={done ? `Mark "${label}" as not done` : `Mark "${label}" as done`}
@@ -31,7 +30,7 @@ export function TaskRow({ label, sublabel, done, hot, ctaLabel, onToggle, onActi
         className={cn(
           "shrink-0 w-[26px] h-[26px] rounded-lg border-[2.5px] flex items-center justify-center transition-colors",
           done ? "bg-done border-done" : "border-line",
-          onToggle && !done && "active:border-ink",
+          onToggle && !done && "active:border-brand",
         )}
       >
         {done && <Check className="w-4 h-4 text-paper" strokeWidth={3} />}
@@ -48,7 +47,7 @@ export function TaskRow({ label, sublabel, done, hot, ctaLabel, onToggle, onActi
         <button
           type="button"
           onClick={onAction}
-          className="shrink-0 bg-ink text-paper text-[13px] font-bold rounded-xl px-4 py-2.5"
+          className="shrink-0 bg-brand text-white text-[13px] font-bold rounded-full px-4 py-2.5"
         >
           {ctaLabel}
         </button>

@@ -61,11 +61,11 @@ function InviteCard({ invite, onUpdate }: { invite: Invite; onUpdate: (id: numbe
       layout
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-paper rounded-2xl p-4 border border-line"
+      className="bg-paper rounded-2xl shadow-soft p-4"
     >
       {/* Header row */}
       <div className="flex items-start gap-3">
-        <div className="w-11 h-11 rounded-2xl border border-line flex items-center justify-center text-ink font-extrabold text-[16px] shrink-0">
+        <div className="w-11 h-11 rounded-2xl bg-brand-soft flex items-center justify-center text-brand font-extrabold text-[16px] shrink-0">
           {invite.recruiterCompany.charAt(0)}
         </div>
         <div className="flex-1 min-w-0">
@@ -81,12 +81,12 @@ function InviteCard({ invite, onUpdate }: { invite: Invite; onUpdate: (id: numbe
             </div>
             <div className="flex items-center gap-2 shrink-0">
               {!isPending && (
-                <span className="text-[10px] font-bold uppercase tracking-wider text-ink-muted border border-line px-2 py-0.5 rounded-full">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-ink-muted bg-line/60 px-2 py-0.5 rounded-full">
                   {invite.status}
                 </span>
               )}
               {isPending && (
-                <span className="text-[10px] font-bold uppercase tracking-wider text-ink-muted border border-line px-2 py-0.5 rounded-full">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-white bg-highlight px-2 py-0.5 rounded-full">
                   New
                 </span>
               )}
@@ -102,7 +102,7 @@ function InviteCard({ invite, onUpdate }: { invite: Invite; onUpdate: (id: numbe
 
       {/* Message */}
       {invite.message && (
-        <div className="mt-3 border border-line rounded-xl px-3.5 py-2.5">
+        <div className="mt-3 bg-canvas rounded-xl px-3.5 py-2.5">
           <p className="text-[12px] text-ink-muted leading-relaxed italic">"{invite.message}"</p>
         </div>
       )}
@@ -112,7 +112,7 @@ function InviteCard({ invite, onUpdate }: { invite: Invite; onUpdate: (id: numbe
         <motion.div
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: "auto" }}
-          className="mt-3 border border-line rounded-xl px-3.5 py-2.5 flex items-center gap-2"
+          className="mt-3 bg-done/10 rounded-xl px-3.5 py-2.5 flex items-center gap-2"
         >
           <CheckCircle className="w-4 h-4 text-done shrink-0" />
           <div>
@@ -126,7 +126,7 @@ function InviteCard({ invite, onUpdate }: { invite: Invite; onUpdate: (id: numbe
 
       {/* Declined state */}
       {invite.status === "declined" && (
-        <div className="mt-3 border border-line rounded-xl px-3.5 py-2.5 flex items-center gap-2">
+        <div className="mt-3 bg-canvas rounded-xl px-3.5 py-2.5 flex items-center gap-2">
           <XCircle className="w-4 h-4 text-ink-muted shrink-0" />
           <p className="text-[12px] text-ink-muted">You passed on this one</p>
         </div>
@@ -139,7 +139,7 @@ function InviteCard({ invite, onUpdate }: { invite: Invite; onUpdate: (id: numbe
             whileTap={{ scale: 0.97 }}
             onClick={() => respond("accepted")}
             disabled={!!loading}
-            className="flex-1 flex items-center justify-center gap-1.5 h-10 rounded-xl bg-ink text-paper font-bold text-[14px] disabled:opacity-60 transition-opacity"
+            className="flex-1 flex items-center justify-center gap-1.5 h-10 rounded-full bg-brand text-white font-bold text-[14px] disabled:opacity-60 transition-opacity"
           >
             {loading === "accepted" ? <Loader2 className="w-4 h-4 animate-spin" /> : <><CheckCircle className="w-4 h-4" /> Accept</>}
           </motion.button>
@@ -147,7 +147,7 @@ function InviteCard({ invite, onUpdate }: { invite: Invite; onUpdate: (id: numbe
             whileTap={{ scale: 0.97 }}
             onClick={() => respond("declined")}
             disabled={!!loading}
-            className="flex-1 flex items-center justify-center gap-1.5 h-10 rounded-xl border border-line text-ink font-bold text-[14px] disabled:opacity-60 transition-opacity"
+            className="flex-1 flex items-center justify-center gap-1.5 h-10 rounded-full bg-paper text-brand border border-line font-bold text-[14px] disabled:opacity-60 transition-opacity"
           >
             {loading === "declined" ? <Loader2 className="w-4 h-4 animate-spin" /> : <><XCircle className="w-4 h-4" /> Pass</>}
           </motion.button>
@@ -198,7 +198,7 @@ export default function Inbox() {
   ];
 
   return (
-    <div className="min-h-screen bg-paper pb-28">
+    <div className="min-h-screen bg-canvas pb-28">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-paper px-4 pt-5 pb-3">
         <div className="flex items-center justify-between mb-4">
@@ -209,7 +209,7 @@ export default function Inbox() {
                 <motion.span
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
-                  className="bg-ink text-paper text-[11px] font-bold px-2 py-0.5 rounded-full min-w-[22px] text-center"
+                  className="bg-highlight text-white text-[11px] font-bold px-2 py-0.5 rounded-full min-w-[22px] text-center"
                 >
                   {pendingCount}
                 </motion.span>
@@ -217,8 +217,8 @@ export default function Inbox() {
             </div>
             <p className="text-[12px] text-ink-muted mt-0.5">Companies interested in hiring you</p>
           </div>
-          <div className="w-10 h-10 rounded-2xl border border-line flex items-center justify-center shrink-0">
-            <Mail className="w-5 h-5 text-ink" />
+          <div className="w-10 h-10 rounded-2xl bg-brand-soft flex items-center justify-center shrink-0">
+            <Mail className="w-5 h-5 text-brand" />
           </div>
         </div>
 
@@ -230,7 +230,7 @@ export default function Inbox() {
               onClick={() => setActiveFilter(f.key)}
               className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[12px] font-bold whitespace-nowrap transition-colors ${
                 activeFilter === f.key
-                  ? "bg-ink text-paper border border-ink"
+                  ? "bg-brand text-white border border-brand"
                   : "bg-paper text-ink-muted border border-line"
               }`}
             >
@@ -247,7 +247,7 @@ export default function Inbox() {
         </div>
       </div>
 
-      <div className="px-4 pt-1 space-y-3">
+      <div className="px-4 pt-4 space-y-3">
         {loading ? (
           [...Array(3)].map((_, i) => (
             <div key={i} className="bg-line rounded-2xl p-4 h-32 animate-pulse" />
@@ -270,7 +270,7 @@ export default function Inbox() {
               <motion.button
                 whileTap={{ scale: 0.97 }}
                 onClick={() => setLocation("/profile")}
-                className="mt-5 flex items-center gap-2 bg-ink text-paper font-bold text-[14px] px-4 py-3 rounded-xl"
+                className="mt-5 flex items-center gap-2 bg-brand text-white font-bold text-[14px] px-4 py-3 rounded-full"
               >
                 Boost your profile <ChevronRight className="w-4 h-4" />
               </motion.button>

@@ -43,15 +43,15 @@ export function TopBar({ pendingCount, initials, onProfileClick }: TopBarProps) 
             <motion.button
               whileTap={{ scale: 0.92 }}
               className={`relative w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${
-                isInbox ? "bg-line" : "active:bg-line/60"
+                isInbox ? "bg-brand-soft" : "active:bg-brand-soft/60"
               }`}
             >
-              <Mail className="w-5 h-5 text-ink" />
+              <Mail className={`w-5 h-5 ${isInbox ? "text-brand" : "text-ink"}`} />
               {pendingCount > 0 && (
                 <motion.span
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
-                  className="absolute -top-1 -right-1 w-4 h-4 bg-ink text-paper text-[9px] font-black rounded-full flex items-center justify-center"
+                  className="absolute -top-1 -right-1 w-4 h-4 bg-highlight text-white text-[9px] font-black rounded-full flex items-center justify-center"
                 >
                   {pendingCount > 9 ? "9+" : pendingCount}
                 </motion.span>
@@ -62,7 +62,7 @@ export function TopBar({ pendingCount, initials, onProfileClick }: TopBarProps) 
           <motion.button
             whileTap={{ scale: 0.92 }}
             onClick={onProfileClick}
-            className="w-9 h-9 rounded-full border-2 border-line flex items-center justify-center text-ink font-bold text-[12px]"
+            className="w-9 h-9 rounded-full bg-brand-soft flex items-center justify-center text-brand font-bold text-[12px]"
           >
             {initials}
           </motion.button>

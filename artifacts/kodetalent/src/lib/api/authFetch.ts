@@ -22,6 +22,8 @@ export function setGuestToken(token: string | null): void {
   else localStorage.removeItem("guestToken");
 }
 
+let handledStaleSession = false;
+
 /**
  * Drop-in replacement for `fetch(BASE + path, init)` that prefixes BASE and attaches
  * `Authorization: Bearer <clerk token>` (if signed in) and `x-guest-token` (if not).
@@ -39,7 +41,26 @@ export async function apiFetch(path: string, init: RequestInit = {}): Promise<Re
     headers.set("x-guest-token", guestToken);
   }
 
-  return fetch(`${BASE}${path}`, { ...init, headers });
+  const res = await fetch(`${BASE}${path}`, { ...init, headers });
+
+  // The server returns 401 here only when it saw neither a Clerk session nor a
+  // guest token at all (a mismatched-but-present guest token is 403, handled
+  // elsewhere). If we didn't attach either, the local `studentId` points at a
+  // session with no way to authenticate — most often a guest row created
+  // before guestToken existed on this device. There's no recovering that
+  // session client-side, so reset local identity and let onboarding create a
+  // fresh one, instead of leaving every screen stuck on an error/skeleton.
+  if (res.status === 401 && !token && !guestToken && !handledStaleSession) {
+    handledStaleSession = true;
+    localStorage.removeItem("studentId");
+    localStorage.removeItem("studentName");
+    localStorage.removeItem("clerkUserId");
+    localStorage.removeItem("clerkEmail");
+    setGuestToken(null);
+    window.location.assign(`${BASE}/`);
+  }
+
+  return res;
 }
 
 /** apiFetch + json parsing + throw on non-2xx, for the common case. */

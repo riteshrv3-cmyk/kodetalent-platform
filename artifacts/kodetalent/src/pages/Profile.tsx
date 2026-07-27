@@ -109,9 +109,9 @@ function StrengthRing({ value }: { value: number }) {
   return (
     <div className="relative w-24 h-24 flex items-center justify-center">
       <svg width="96" height="96" className="-rotate-90">
-        <circle cx="48" cy="48" r={r} fill="none" stroke="#ececf0" strokeWidth="8" />
+        <circle cx="48" cy="48" r={r} fill="none" stroke="#ecedf3" strokeWidth="8" />
         <motion.circle
-          cx="48" cy="48" r={r} fill="none" stroke="#0f0f10" strokeWidth="8"
+          cx="48" cy="48" r={r} fill="none" stroke="#4a55c7" strokeWidth="8"
           strokeLinecap="round" strokeDasharray={c}
           initial={{ strokeDashoffset: c }}
           animate={{ strokeDashoffset: offset }}
@@ -119,7 +119,7 @@ function StrengthRing({ value }: { value: number }) {
         />
       </svg>
       <div className="absolute flex flex-col items-center">
-        <span className="text-xl font-extrabold" style={{ color: "#0f0f10" }}>{value}%</span>
+        <span className="text-xl font-extrabold text-ink">{value}%</span>
         <span className="text-[9px] font-bold text-ink-muted uppercase tracking-wider">Profile</span>
       </div>
     </div>
@@ -147,7 +147,7 @@ function MyResumesCard({ studentId, onNavigate }: { studentId: number; onNavigat
   }, [studentId]);
 
   return (
-    <div className="border border-line rounded-2xl bg-paper">
+    <div className="bg-paper rounded-2xl shadow-soft">
       <div className="p-5">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-[14px] font-bold text-ink flex items-center gap-2">
@@ -169,7 +169,7 @@ function MyResumesCard({ studentId, onNavigate }: { studentId: number; onNavigat
             <p className="text-[12px] text-ink-muted">AI-tailored to any JD · 3 templates</p>
             <button
               onClick={onNavigate}
-              className="w-full mt-1 bg-ink text-paper text-[13px] font-bold rounded-xl px-4 py-3"
+              className="w-full mt-1 bg-brand text-white text-[13px] font-bold rounded-full px-4 py-3"
             >
               Generate your first resume
             </button>
@@ -194,7 +194,7 @@ function MyResumesCard({ studentId, onNavigate }: { studentId: number; onNavigat
             {resumes.length > 0 && (
               <button
                 onClick={onNavigate}
-                className="w-full mt-3 bg-ink text-paper text-[13px] font-bold py-3 rounded-xl"
+                className="w-full mt-3 bg-brand text-white text-[13px] font-bold py-3 rounded-full"
               >
                 View all & download →
               </button>
@@ -413,7 +413,7 @@ export default function Profile() {
 
   if (loading || !profile) {
     return (
-      <div className="p-4 space-y-4 bg-paper min-h-screen">
+      <div className="p-4 space-y-4 bg-canvas min-h-screen">
         <div className="flex flex-col items-center py-8 gap-4">
           <Skeleton className="h-28 w-28 rounded-full" />
           <Skeleton className="h-6 w-40" />
@@ -446,31 +446,15 @@ export default function Profile() {
   const isGuest = profile.name === "Guest" || profile.email?.startsWith("guest_");
 
   return (
-    <div className="pb-28 max-w-md mx-auto min-h-screen bg-paper">
+    <div className="pb-28 max-w-md mx-auto min-h-screen bg-canvas">
 
-      {/* Guest banner */}
-      {isGuest && (
-        <div className="border border-line rounded-2xl mx-4 mt-4 px-4 py-3 flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-[14px] font-bold text-ink">Exploring as Guest</p>
-            <p className="text-[12px] text-ink-muted">Sign in to save your real profile</p>
-          </div>
-          <button
-            onClick={() => setLocation("/sign-up")}
-            className="shrink-0 bg-ink text-paper text-[13px] font-bold px-4 py-2.5 rounded-xl"
-          >
-            Sign In →
-          </button>
-        </div>
-      )}
-
-      {/* ── Header ── */}
-      <div className="relative bg-paper pt-8 pb-6 px-6">
+      {/* ── Canopy header ── */}
+      <div className="relative bg-brand pt-8 pb-10 px-6">
 
         {/* Edit profile button top-right */}
         <button
           onClick={() => setEditSection(isEditingBasic ? null : "basic")}
-          className="absolute top-6 right-6 flex items-center gap-1.5 border border-line rounded-xl px-3 py-1.5 text-[11px] font-bold text-ink"
+          className="absolute top-6 right-6 flex items-center gap-1.5 bg-white/15 rounded-full px-3 py-1.5 text-[11px] font-bold text-white"
         >
           {isEditingBasic ? <X className="w-3.5 h-3.5" /> : <Edit2 className="w-3.5 h-3.5" />}
           {isEditingBasic ? "Cancel" : "Edit Profile"}
@@ -482,11 +466,11 @@ export default function Profile() {
             <img
               src={profile.photoUrl}
               alt={profile.name}
-              className="w-20 h-20 rounded-full border-2 border-line object-cover"
+              className="w-20 h-20 rounded-full border-2 border-white/20 object-cover"
               onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
             />
           ) : (
-            <div className="w-20 h-20 rounded-full bg-paper border-2 border-line flex items-center justify-center text-[24px] font-extrabold text-ink">
+            <div className="w-20 h-20 rounded-2xl bg-white/15 flex items-center justify-center text-[24px] font-extrabold text-white">
               {initials}
             </div>
           )}
@@ -496,7 +480,7 @@ export default function Profile() {
             onClick={() => setEditSection("basic")}
             className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-paper border border-line flex items-center justify-center"
           >
-            <Camera className="w-3.5 h-3.5 text-ink-muted" />
+            <Camera className="w-3.5 h-3.5 text-brand" />
           </button>
         </div>
 
@@ -504,25 +488,45 @@ export default function Profile() {
         <div className="mt-3">
           <button
             onClick={toggleOpenToWork}
-            className="inline-flex items-center gap-1 border border-line rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-ink-muted"
+            className="inline-flex items-center gap-1.5 bg-white/15 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white"
           >
+            {profile.openToWork && <span className="w-1.5 h-1.5 rounded-full bg-done" />}
             {profile.openToWork ? "OPEN" : "CLOSED"}
           </button>
         </div>
 
-        <h1 className="text-[26px] font-extrabold text-ink leading-[1.06] tracking-tight mt-3">{profile.name}</h1>
-        {profile.college !== "Not set" && <p className="text-[12px] text-ink-muted mt-1">{profile.college}</p>}
+        <h1 className="text-[26px] font-extrabold text-white leading-[1.06] tracking-tight mt-3">{profile.name}</h1>
+        {profile.college !== "Not set" && <p className="text-[12px] text-white/70 mt-1">{profile.college}</p>}
         {profile.field !== "Not set" && (
-          <p className="text-[12px] text-ink-muted mt-0.5">
+          <p className="text-[12px] text-white/70 mt-0.5">
             {profile.field} · Year {profile.year}{profile.city && profile.city !== "Not set" ? ` · ${profile.city}` : ""}
           </p>
         )}
-        {profile.cgpa && <p className="text-[12px] text-ink-muted mt-0.5">CGPA {profile.cgpa}</p>}
+        {profile.cgpa && <p className="text-[12px] text-white/70 mt-0.5">CGPA {profile.cgpa}</p>}
 
         {profile.openToWork && (
-          <p className="mt-2 text-[12px] font-semibold text-ink">Open to Opportunities</p>
+          <p className="mt-2 text-[12px] font-semibold text-white/90">Open to Opportunities</p>
         )}
       </div>
+
+      {/* ── Sheet ── */}
+      <div className="bg-canvas -mt-4 rounded-t-3xl pt-4 space-y-4">
+
+        {/* Guest banner */}
+        {isGuest && (
+          <div className="bg-paper rounded-2xl shadow-soft mx-4 px-4 py-3 flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[14px] font-bold text-ink">Exploring as Guest</p>
+              <p className="text-[12px] text-ink-muted">Sign in to save your real profile</p>
+            </div>
+            <button
+              onClick={() => setLocation("/sign-up")}
+              className="shrink-0 bg-brand text-white text-[13px] font-bold px-4 py-2.5 rounded-full"
+            >
+              Sign In →
+            </button>
+          </div>
+        )}
 
       <div className="px-4 space-y-4">
 
@@ -534,7 +538,7 @@ export default function Profile() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
             >
-              <div className="border border-line rounded-2xl overflow-hidden bg-paper">
+              <div className="bg-paper rounded-2xl shadow-soft overflow-hidden">
                 <div className="px-5 py-3 flex items-center justify-between border-b border-line">
                   <span className="text-[14px] font-bold text-ink flex items-center gap-2">
                     <User className="w-4 h-4 text-ink" /> Edit Profile
@@ -616,7 +620,7 @@ export default function Profile() {
                           <button
                             key={y}
                             onClick={() => setBasicForm(f => ({ ...f, year: y }))}
-                            className={`w-9 h-9 rounded-xl text-[14px] font-bold transition-colors ${basicForm.year === y ? "bg-ink text-paper" : "border border-line text-ink-muted"}`}
+                            className={`w-9 h-9 rounded-xl text-[14px] font-bold transition-colors ${basicForm.year === y ? "bg-brand text-white" : "border border-line text-ink-muted"}`}
                           >
                             {y}
                           </button>
@@ -645,7 +649,7 @@ export default function Profile() {
                         <button
                           key={f}
                           onClick={() => setBasicForm(prev => ({ ...prev, field: f }))}
-                          className={`text-[11px] font-bold px-2.5 py-1 rounded-full transition-colors ${basicForm.field === f ? "bg-ink text-paper" : "border border-line text-ink-muted"}`}
+                          className={`text-[11px] font-bold px-2.5 py-1 rounded-full transition-colors ${basicForm.field === f ? "bg-brand text-white" : "border border-line text-ink-muted"}`}
                         >
                           {f}
                         </button>
@@ -662,7 +666,7 @@ export default function Profile() {
                   <Button
                     onClick={saveBasic}
                     disabled={saving || !basicForm.name.trim() || !basicForm.college.trim()}
-                    className="w-full bg-ink text-paper font-bold rounded-xl h-11"
+                    className="w-full bg-brand text-white font-bold rounded-full h-11"
                   >
                     {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Save className="w-4 h-4 mr-2" /> Save Changes</>}
                   </Button>
@@ -673,7 +677,7 @@ export default function Profile() {
         </AnimatePresence>
 
         {/* ── Profile Strength ── */}
-        <div className="border border-line rounded-2xl bg-paper">
+        <div className="bg-paper rounded-2xl shadow-soft">
           <div className="p-5">
             <div className="flex items-center gap-4">
               <StrengthRing value={profile.profileStrength} />
@@ -700,14 +704,14 @@ export default function Profile() {
             {(profile.githubUrl || profile.overallScore > 0) && (
               <div className={`grid gap-3 mt-4 pt-4 border-t border-line ${profile.githubUrl && profile.overallScore > 0 ? "grid-cols-2" : ""}`}>
                 {profile.githubUrl && (
-                  <div className="border border-line rounded-xl p-3 text-center">
-                    <p className="text-xl font-extrabold text-ink">{profile.commitmentScore}</p>
+                  <div className="bg-brand-soft rounded-xl p-3 text-center">
+                    <p className="text-xl font-extrabold text-brand">{profile.commitmentScore}</p>
                     <p className="text-[10px] font-bold text-ink-muted uppercase tracking-wider">Commitment</p>
                   </div>
                 )}
                 {profile.overallScore > 0 && (
-                  <div className="border border-line rounded-xl p-3 text-center">
-                    <p className="text-xl font-extrabold text-ink">{Math.round(profile.overallScore)}</p>
+                  <div className="bg-brand-soft rounded-xl p-3 text-center">
+                    <p className="text-xl font-extrabold text-brand">{Math.round(profile.overallScore)}</p>
                     <p className="text-[10px] font-bold text-ink-muted uppercase tracking-wider">AI Score</p>
                   </div>
                 )}
@@ -721,7 +725,7 @@ export default function Profile() {
         </div>
 
         {/* ── Links Section ── */}
-        <div className="border border-line rounded-2xl bg-paper">
+        <div className="bg-paper rounded-2xl shadow-soft">
           <div className="p-5">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-[14px] font-bold text-ink flex items-center gap-2"><Zap className="w-4 h-4 text-ink" /> Links</h3>
@@ -736,7 +740,7 @@ export default function Profile() {
                   <div className="space-y-2">
                     <div className="flex gap-2">
                       <Input placeholder="GitHub URL" value={linksForm.githubUrl} onChange={e => setLinksForm(f => ({ ...f, githubUrl: e.target.value }))} className="text-sm" />
-                      <Button size="sm" variant="outline" onClick={analyzeGitHub} disabled={!linksForm.githubUrl || analyzing === "github"} className="whitespace-nowrap text-xs border border-line text-ink">
+                      <Button size="sm" variant="outline" onClick={analyzeGitHub} disabled={!linksForm.githubUrl || analyzing === "github"} className="whitespace-nowrap text-xs rounded-full border border-line text-brand">
                         {analyzing === "github" ? <Loader2 className="w-3 h-3 animate-spin" /> : "Analyze"}
                       </Button>
                     </div>
@@ -748,7 +752,7 @@ export default function Profile() {
                   <div className="space-y-2">
                     <div className="flex gap-2">
                       <Input placeholder="LinkedIn URL" value={linksForm.linkedinUrl} onChange={e => setLinksForm(f => ({ ...f, linkedinUrl: e.target.value }))} className="text-sm" />
-                      <Button size="sm" variant="outline" onClick={() => setShowLinkedinForm(!showLinkedinForm)} disabled={!linksForm.linkedinUrl} className="whitespace-nowrap text-xs border border-line text-ink">
+                      <Button size="sm" variant="outline" onClick={() => setShowLinkedinForm(!showLinkedinForm)} disabled={!linksForm.linkedinUrl} className="whitespace-nowrap text-xs rounded-full border border-line text-brand">
                         {showLinkedinForm ? "Hide" : "Analyze"}
                       </Button>
                     </div>
@@ -761,7 +765,7 @@ export default function Profile() {
                           size="sm"
                           onClick={analyzeLinkedIn}
                           disabled={!linksForm.linkedinUrl || analyzing === "linkedin"}
-                          className="w-full bg-ink text-paper font-bold rounded-xl"
+                          className="w-full bg-brand text-white font-bold rounded-full"
                         >
                           {analyzing === "linkedin" ? <><Loader2 className="w-3 h-3 mr-2 animate-spin" /> Analyzing...</> : "Get AI Feedback on LinkedIn"}
                         </Button>
@@ -771,7 +775,7 @@ export default function Profile() {
 
                   <Input placeholder="Portfolio / Website URL" value={linksForm.portfolioUrl} onChange={e => setLinksForm(f => ({ ...f, portfolioUrl: e.target.value }))} className="text-sm" />
                   <Input placeholder="Phone Number" value={linksForm.phone} onChange={e => setLinksForm(f => ({ ...f, phone: e.target.value }))} className="text-sm" />
-                  <Button onClick={() => save({ ...linksForm }, "Links")} disabled={saving} className="w-full bg-ink text-paper font-bold rounded-xl">
+                  <Button onClick={() => save({ ...linksForm }, "Links")} disabled={saving} className="w-full bg-brand text-white font-bold rounded-full">
                     {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Check className="w-4 h-4 mr-2" /> Save Links</>}
                   </Button>
                 </motion.div>
@@ -810,12 +814,12 @@ export default function Profile() {
                   <Badge className="text-[10px] bg-paper border-line text-ink-muted font-bold uppercase tracking-wider">Verified</Badge>
                 </div>
                 <div className="grid grid-cols-2 gap-2 mb-3">
-                  <div className="border border-line rounded-xl p-2 text-center">
-                    <p className="font-extrabold text-ink">{profile.githubStats.publicRepos}</p>
+                  <div className="bg-brand-soft rounded-xl p-2 text-center">
+                    <p className="font-extrabold text-brand">{profile.githubStats.publicRepos}</p>
                     <p className="text-[10px] text-ink-muted">Repos</p>
                   </div>
-                  <div className="border border-line rounded-xl p-2 text-center">
-                    <p className="font-extrabold text-ink">{profile.githubStats.followers}</p>
+                  <div className="bg-brand-soft rounded-xl p-2 text-center">
+                    <p className="font-extrabold text-brand">{profile.githubStats.followers}</p>
                     <p className="text-[10px] text-ink-muted">Followers</p>
                   </div>
                 </div>
@@ -861,7 +865,7 @@ export default function Profile() {
         </div>
 
         {/* ── About / Bio ── */}
-        <div className="border border-line rounded-2xl bg-paper">
+        <div className="bg-paper rounded-2xl shadow-soft">
           <div className="p-5">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-[14px] font-bold text-ink">About</h3>
@@ -877,14 +881,14 @@ export default function Profile() {
                   placeholder="Write 2-3 lines about yourself. What makes you stand out? What are you passionate about building?"
                   className="h-28 text-sm"
                 />
-                <Button onClick={() => save({ bio: bioForm }, "About")} disabled={saving} className="w-full bg-ink text-paper font-bold rounded-xl">
+                <Button onClick={() => save({ bio: bioForm }, "About")} disabled={saving} className="w-full bg-brand text-white font-bold rounded-full">
                   {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Check className="w-4 h-4 mr-2" /> Save</>}
                 </Button>
               </motion.div>
             ) : profile.bio ? (
               <p className="text-[14px] text-ink leading-relaxed">{profile.bio}</p>
             ) : (
-              <button onClick={() => setEditSection("bio")} className="w-full py-3 border border-line rounded-xl text-[13px] font-bold text-ink transition-colors">
+              <button onClick={() => setEditSection("bio")} className="w-full py-3 bg-brand text-white rounded-full text-[13px] font-bold transition-colors">
                 + Write a short bio (helps recruiters remember you)
               </button>
             )}
@@ -892,7 +896,7 @@ export default function Profile() {
         </div>
 
         {/* ── Projects ── */}
-        <div id="projects-section" className="border border-line rounded-2xl bg-paper scroll-mt-4">
+        <div id="projects-section" className="bg-paper rounded-2xl shadow-soft scroll-mt-4">
           <div className="p-5">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-[14px] font-bold text-ink flex items-center gap-2"><Code2 className="w-4 h-4 text-ink" /> Projects</h3>
@@ -929,7 +933,7 @@ export default function Profile() {
                   )}
                   <Input placeholder="GitHub URL (optional)" value={newProject.githubUrl || ""} onChange={e => setNewProject(p => ({ ...p, githubUrl: e.target.value }))} className="text-sm" />
                   <Input placeholder="Live URL (optional)" value={newProject.liveUrl || ""} onChange={e => setNewProject(p => ({ ...p, liveUrl: e.target.value }))} className="text-sm" />
-                  <Button onClick={addProject} disabled={saving || !newProject.title} className="w-full bg-ink text-paper font-bold rounded-xl text-sm">
+                  <Button onClick={addProject} disabled={saving || !newProject.title} className="w-full bg-brand text-white font-bold rounded-full text-sm">
                     {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Add Project"}
                   </Button>
                 </motion.div>
@@ -940,7 +944,7 @@ export default function Profile() {
               <div className="text-center">
                 <p className="text-[14px] text-ink">No projects yet</p>
                 <p className="text-[12px] text-ink-muted mt-0.5">Recruiters love seeing real work</p>
-                <button onClick={() => setShowAddProject(true)} className="w-full mt-3 bg-ink text-paper text-[13px] font-bold rounded-xl px-4 py-3">
+                <button onClick={() => setShowAddProject(true)} className="w-full mt-3 bg-brand text-white text-[13px] font-bold rounded-full px-4 py-3">
                   Add your first project
                 </button>
               </div>
@@ -970,7 +974,7 @@ export default function Profile() {
         </div>
 
         {/* ── Certifications ── */}
-        <div className="border border-line rounded-2xl bg-paper">
+        <div className="bg-paper rounded-2xl shadow-soft">
           <div className="p-5">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-[14px] font-bold text-ink flex items-center gap-2"><Award className="w-4 h-4 text-ink" /> Certifications</h3>
@@ -986,7 +990,7 @@ export default function Profile() {
                   <Input placeholder="Issuer (e.g. Google, AWS, Coursera)" value={newCert.issuer} onChange={e => setNewCert(c => ({ ...c, issuer: e.target.value }))} className="text-sm" />
                   <Input placeholder="Date (e.g. March 2024)" value={newCert.date || ""} onChange={e => setNewCert(c => ({ ...c, date: e.target.value }))} className="text-sm" />
                   <Input placeholder="Credential URL (optional)" value={newCert.credentialUrl || ""} onChange={e => setNewCert(c => ({ ...c, credentialUrl: e.target.value }))} className="text-sm" />
-                  <Button onClick={addCert} disabled={saving || !newCert.name} className="w-full bg-ink text-paper font-bold rounded-xl text-sm">
+                  <Button onClick={addCert} disabled={saving || !newCert.name} className="w-full bg-brand text-white font-bold rounded-full text-sm">
                     {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Add Certification"}
                   </Button>
                 </motion.div>
@@ -997,7 +1001,7 @@ export default function Profile() {
               <div className="text-center">
                 <p className="text-[14px] text-ink">No certifications yet</p>
                 <p className="text-[12px] text-ink-muted mt-0.5">AWS, Google, Coursera, etc.</p>
-                <button onClick={() => setShowAddCert(true)} className="w-full mt-3 bg-ink text-paper text-[13px] font-bold rounded-xl px-4 py-3">
+                <button onClick={() => setShowAddCert(true)} className="w-full mt-3 bg-brand text-white text-[13px] font-bold rounded-full px-4 py-3">
                   Add a certification
                 </button>
               </div>
@@ -1023,7 +1027,7 @@ export default function Profile() {
         </div>
 
         {/* ── Job Preferences ── */}
-        <div className="border border-line rounded-2xl bg-paper">
+        <div className="bg-paper rounded-2xl shadow-soft">
           <div className="p-5">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-[14px] font-bold text-ink flex items-center gap-2"><Briefcase className="w-4 h-4 text-ink" /> Job Preferences</h3>
@@ -1041,7 +1045,7 @@ export default function Profile() {
                       <button
                         key={mode}
                         onClick={() => setPrefsForm(f => ({ ...f, workMode: mode }))}
-                        className={`py-2 rounded-xl text-[13px] font-bold transition-colors ${prefsForm.workMode === mode ? "bg-ink text-paper" : "border border-line text-ink-muted"}`}
+                        className={`py-2 rounded-xl text-[13px] font-bold transition-colors ${prefsForm.workMode === mode ? "bg-brand text-white" : "border border-line text-ink-muted"}`}
                       >
                         {mode.charAt(0).toUpperCase() + mode.slice(1)}
                       </button>
@@ -1063,7 +1067,7 @@ export default function Profile() {
                     expectedSalary: prefsForm.expectedSalary,
                   }, "Preferences")}
                   disabled={saving}
-                  className="w-full bg-ink text-paper font-bold rounded-xl"
+                  className="w-full bg-brand text-white font-bold rounded-full"
                 >
                   {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Check className="w-4 h-4 mr-2" /> Save Preferences</>}
                 </Button>
@@ -1102,7 +1106,7 @@ export default function Profile() {
                   </div>
                 )}
                 {!profile.preferredLocations.length && !profile.expectedSalary && (
-                  <button onClick={() => setEditSection("prefs")} className="w-full mt-3 border border-line rounded-xl py-3 text-[13px] font-bold text-ink transition-colors">
+                  <button onClick={() => setEditSection("prefs")} className="w-full mt-3 bg-brand text-white rounded-full py-3 text-[13px] font-bold transition-colors">
                     + Add job preferences
                   </button>
                 )}
@@ -1113,7 +1117,7 @@ export default function Profile() {
 
         {/* ── Skills (only when populated by AI/quiz) ── */}
         {topSkills.length > 0 && (
-          <div className="border border-line rounded-2xl bg-paper">
+          <div className="bg-paper rounded-2xl shadow-soft">
             <div className="p-5">
               <h3 className="text-[14px] font-bold text-ink mb-4 flex items-center gap-2"><TrendingUp className="w-4 h-4 text-ink" /> Skills</h3>
               <div className="space-y-3">
@@ -1127,7 +1131,7 @@ export default function Profile() {
                       </div>
                       <div className="h-2 w-full bg-line rounded-full overflow-hidden">
                         <motion.div initial={{ width: 0 }} animate={{ width: `${s}%` }} transition={{ duration: 1, ease: "easeOut" }}
-                          className="h-full rounded-full bg-ink" />
+                          className="h-full rounded-full bg-brand" />
                       </div>
                     </div>
                   );
@@ -1144,12 +1148,13 @@ export default function Profile() {
         <div className="pb-4">
           <Button
             variant="outline"
-            className="w-full h-14 rounded-2xl font-bold border border-line text-ink text-sm bg-paper"
+            className="w-full h-14 rounded-full font-bold border border-line text-brand text-sm bg-paper"
             onClick={() => setLocation("/resume")}
           >
             <FileText className="w-4 h-4 mr-2" /> Resume
           </Button>
         </div>
+      </div>
       </div>
     </div>
   );

@@ -36,10 +36,10 @@ function StrengthArc({ value }: { value: number }) {
 
   return (
     <svg width="100" height="100" viewBox="0 0 100 100">
-      <circle cx="50" cy="50" r={r} fill="none" stroke="#ececf0" strokeWidth="8" strokeDasharray={`${circ * 0.75} ${circ}`} strokeDashoffset={circ * 0.125} strokeLinecap="round" transform="rotate(-135 50 50)" />
-      <circle cx="50" cy="50" r={r} fill="none" stroke="#0f0f10" strokeWidth="8" strokeDasharray={`${dash} ${gap + circ * 0.25}`} strokeDashoffset={circ * 0.125} strokeLinecap="round" transform="rotate(-135 50 50)" />
-      <text x="50" y="47" textAnchor="middle" className="fill-[#0f0f10]" fontSize="16" fontWeight="800">{value}</text>
-      <text x="50" y="62" textAnchor="middle" className="fill-[#9a9aa2]" fontSize="8">/ 100</text>
+      <circle cx="50" cy="50" r={r} fill="none" stroke="#ecedf3" strokeWidth="8" strokeDasharray={`${circ * 0.75} ${circ}`} strokeDashoffset={circ * 0.125} strokeLinecap="round" transform="rotate(-135 50 50)" />
+      <circle cx="50" cy="50" r={r} fill="none" stroke="#4a55c7" strokeWidth="8" strokeDasharray={`${dash} ${gap + circ * 0.25}`} strokeDashoffset={circ * 0.125} strokeLinecap="round" transform="rotate(-135 50 50)" />
+      <text x="50" y="47" textAnchor="middle" className="fill-[#1a1d2e]" fontSize="16" fontWeight="800">{value}</text>
+      <text x="50" y="62" textAnchor="middle" className="fill-[#9aa0ae]" fontSize="8">/ 100</text>
     </svg>
   );
 }
@@ -99,60 +99,59 @@ export function ProfileSidebar({ onClose }: { onClose: () => void }) {
         animate={{ x: 0 }}
         exit={{ x: "100%" }}
         transition={{ type: "spring", damping: 28, stiffness: 280 }}
-        className="fixed right-0 top-0 bottom-0 z-[51] w-[92%] max-w-sm bg-paper border-l border-line flex flex-col overflow-hidden"
-        style={{ backfaceVisibility: "hidden", willChange: "transform" }}
+        className="fixed right-0 top-0 bottom-0 z-[51] w-[92%] max-w-sm bg-canvas flex flex-col overflow-hidden"
       >
-        {/* Header */}
-        <div className="bg-paper border-b border-line px-5 pt-12 pb-6 relative">
+        {/* Canopy header */}
+        <div className="bg-brand px-5 pt-12 pb-8 relative">
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 w-8 h-8 rounded-full border border-line flex items-center justify-center"
+            className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/15 flex items-center justify-center"
           >
-            <X className="w-4 h-4 text-ink" />
+            <X className="w-4 h-4 text-white" />
           </button>
 
           <div className="flex items-center gap-4">
             <div className="relative">
-              <div className="w-16 h-16 rounded-2xl border-2 border-line flex items-center justify-center text-2xl font-extrabold text-ink">
+              <div className="w-16 h-16 rounded-2xl bg-white/15 flex items-center justify-center text-2xl font-extrabold text-white">
                 {initials}
               </div>
               {profile?.openToWork && (
-                <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-ink border-2 border-paper" />
+                <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-done border-2 border-brand" />
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <h2 className="text-[20px] font-extrabold text-ink leading-tight truncate">{profile?.name || "Loading..."}</h2>
-              <p className="text-[12px] text-ink-muted mt-0.5 truncate">{profile?.college}</p>
-              <p className="text-[11px] text-ink-muted">{profile?.field} · Year {profile?.year}</p>
+              <h2 className="text-[20px] font-extrabold text-white leading-tight truncate">{profile?.name || "Loading..."}</h2>
+              <p className="text-[12px] text-white/70 mt-0.5 truncate">{profile?.college}</p>
+              <p className="text-[11px] text-white/70">{profile?.field} · Year {profile?.year}</p>
             </div>
           </div>
 
           {profile?.openToWork && (
-            <div className="mt-3 inline-flex items-center gap-1.5 border border-line rounded-full px-3 py-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-ink-muted" />
-              <span className="text-[11px] font-bold text-ink-muted">Open to Opportunities</span>
+            <div className="mt-3 inline-flex items-center gap-1.5 bg-white/15 rounded-full px-3 py-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-done" />
+              <span className="text-[11px] font-bold text-white">Open to Opportunities</span>
             </div>
           )}
         </div>
 
         {/* Scrollable content */}
-        <div className="flex-1 overflow-y-auto bg-paper">
+        <div className="flex-1 overflow-y-auto bg-canvas -mt-4 rounded-t-3xl pt-2">
 
           {/* Score + Strength */}
           <div className="px-4 pt-4">
-            <div className="border border-line rounded-2xl p-4">
+            <div className="bg-paper rounded-2xl shadow-soft p-4">
               <div className="flex items-center justify-between">
                 <div className="flex-1">
                   <h3 className="text-[14px] font-extrabold text-ink mb-3">Profile Strength</h3>
                   <div className="grid grid-cols-2 gap-2">
-                    <div className="border border-line rounded-xl p-2.5 text-center">
-                      <p className="text-lg font-extrabold text-ink">{profile ? Math.round(profile.overallScore) : "—"}</p>
+                    <div className="bg-brand-soft rounded-xl p-2.5 text-center">
+                      <p className="text-lg font-extrabold text-brand">{profile ? Math.round(profile.overallScore) : "—"}</p>
                       <p className="text-[10px] text-ink-muted font-bold uppercase">AI Score</p>
                     </div>
-                    <div className="border border-line rounded-xl p-2.5 text-center">
+                    <div className="bg-brand-soft rounded-xl p-2.5 text-center">
                       {profile?.githubUrl ? (
                         <>
-                          <p className="text-lg font-extrabold text-ink">{profile?.commitmentScore ?? "—"}</p>
+                          <p className="text-lg font-extrabold text-brand">{profile?.commitmentScore ?? "—"}</p>
                           <p className="text-[10px] text-ink-muted font-bold uppercase">Commitment</p>
                         </>
                       ) : (
@@ -172,7 +171,7 @@ export function ProfileSidebar({ onClose }: { onClose: () => void }) {
           {/* Links */}
           {profile && (profile.githubUrl || profile.linkedinUrl || profile.portfolioUrl || profile.phone) && (
             <div className="px-4 pt-3">
-              <div className="border border-line rounded-2xl p-4 space-y-2.5">
+              <div className="bg-paper rounded-2xl shadow-soft p-4 space-y-2.5">
                 {[
                   { icon: Github, value: profile.githubUrl },
                   { icon: Linkedin, value: profile.linkedinUrl },
@@ -195,7 +194,7 @@ export function ProfileSidebar({ onClose }: { onClose: () => void }) {
           {/* Bio */}
           {profile?.bio && (
             <div className="px-4 pt-3">
-              <div className="border border-line rounded-2xl p-4">
+              <div className="bg-paper rounded-2xl shadow-soft p-4">
                 <h3 className="text-[14px] font-extrabold text-ink mb-2">About</h3>
                 <p className="text-[12px] text-ink-muted leading-relaxed">{profile.bio}</p>
               </div>
@@ -205,7 +204,7 @@ export function ProfileSidebar({ onClose }: { onClose: () => void }) {
           {/* Top skills */}
           {topSkills.length > 0 && (
             <div className="px-4 pt-3">
-              <div className="border border-line rounded-2xl p-4">
+              <div className="bg-paper rounded-2xl shadow-soft p-4">
                 <div className="flex items-center gap-2 mb-3">
                   <BarChart2 className="w-4 h-4 text-ink" />
                   <h3 className="text-[14px] font-extrabold text-ink">Top Skills</h3>
@@ -219,7 +218,7 @@ export function ProfileSidebar({ onClose }: { onClose: () => void }) {
                           initial={{ width: 0 }}
                           animate={{ width: `${val}%` }}
                           transition={{ duration: 0.6, ease: "easeOut" }}
-                          className="h-full rounded-full bg-ink"
+                          className="h-full rounded-full bg-brand"
                         />
                       </div>
                       <span className="text-[10px] font-extrabold text-ink w-6 text-right">{val}</span>
@@ -233,7 +232,7 @@ export function ProfileSidebar({ onClose }: { onClose: () => void }) {
           {/* Projects count + Certs count */}
           {profile && (
             <div className="px-4 pt-3">
-              <div className="border border-line rounded-2xl p-4">
+              <div className="bg-paper rounded-2xl shadow-soft p-4">
                 <div className="flex justify-around">
                   <div className="text-center">
                     <p className="text-2xl font-extrabold text-ink">{profile.projects?.length ?? 0}</p>
@@ -252,14 +251,14 @@ export function ProfileSidebar({ onClose }: { onClose: () => void }) {
           <div className="px-4 pt-4 pb-6">
             <button
               onClick={goToProfile}
-              className="w-full bg-ink text-paper font-bold py-3.5 rounded-2xl flex items-center justify-center gap-2 active:scale-95 transition-transform"
+              className="w-full bg-brand text-white font-bold py-3.5 rounded-full flex items-center justify-center gap-2 active:scale-95 transition-transform"
             >
               <Edit2 className="w-4 h-4" />
               Edit Full Profile
             </button>
             <button
               onClick={logout}
-              className="w-full mt-3 border border-line text-danger font-bold py-3.5 rounded-2xl flex items-center justify-center gap-2 active:scale-95 transition-transform"
+              className="w-full mt-3 bg-paper text-danger font-bold py-3.5 rounded-full flex items-center justify-center gap-2 active:scale-95 transition-transform"
             >
               <X className="w-4 h-4" />
               Log out

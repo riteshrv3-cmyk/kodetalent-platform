@@ -75,7 +75,7 @@ const VERDICT_SUB: Record<string, string> = {
 
 const outcomeBtnClass = (active: boolean) =>
   `text-[11px] font-bold px-2.5 py-2 rounded-xl border active:scale-95 transition-transform disabled:opacity-50 flex items-center justify-center gap-1.5 ${
-    active ? "bg-ink text-paper border-ink" : "border-line text-ink"
+    active ? "bg-brand text-white border-brand" : "border-line text-ink"
   }`;
 
 function GhostRateBadge({ stats }: { stats: CompanyStats }) {
@@ -84,7 +84,7 @@ function GhostRateBadge({ stats }: { stats: CompanyStats }) {
     (stats.called ?? 0) + (stats.ghosted ?? 0) + (stats.rejected ?? 0) + (stats.offer ?? 0);
   if (decided === 0) {
     return (
-      <div className="rounded-2xl p-3 border border-line flex items-center gap-2.5">
+      <div className="rounded-2xl p-3 bg-canvas flex items-center gap-2.5">
         <TrendingUp className="w-4 h-4 text-ink-muted shrink-0" />
         <p className="text-[12px] text-ink-muted leading-snug">
           {stats.applied ?? 0} KodeTalent users applied here. No outcomes reported yet.
@@ -97,7 +97,7 @@ function GhostRateBadge({ stats }: { stats: CompanyStats }) {
   const offerRate = stats.offerRate ?? 0;
 
   return (
-    <div className="rounded-2xl p-3.5 border border-line">
+    <div className="rounded-2xl p-3.5 bg-canvas">
       <div className="flex items-center justify-between mb-2">
         <p className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">
           Real outcomes from KodeTalent users
@@ -134,7 +134,7 @@ function VerdictCard({ row, studentName, college, kodeScore }: {
   const gates = Object.entries(row.eligibility ?? {});
 
   return (
-    <div className="bg-paper rounded-2xl overflow-hidden border border-line">
+    <div className="bg-paper rounded-2xl overflow-hidden shadow-soft">
       {/* Header strip */}
       <div className="px-5 pt-4 pb-4 border-b border-line">
         <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-ink-muted">
@@ -157,16 +157,16 @@ function VerdictCard({ row, studentName, college, kodeScore }: {
         {(row.company || row.role || row.ctc) && (
           <div className="flex flex-wrap gap-1.5">
             {row.company && (
-              <span className="text-[11px] font-bold bg-ink text-paper px-2.5 py-1 rounded-full">{row.company}</span>
+              <span className="text-[11px] font-bold bg-brand text-white px-2.5 py-1 rounded-full">{row.company}</span>
             )}
             {row.role && (
-              <span className="text-[11px] font-bold border border-line text-ink px-2.5 py-1 rounded-full">{row.role}</span>
+              <span className="text-[11px] font-bold bg-brand-soft text-brand px-2.5 py-1 rounded-full">{row.role}</span>
             )}
             {row.ctc && (
-              <span className="text-[11px] font-bold border border-line text-ink px-2.5 py-1 rounded-full">{row.ctc}</span>
+              <span className="text-[11px] font-bold bg-brand-soft text-brand px-2.5 py-1 rounded-full">{row.ctc}</span>
             )}
             {row.batch && (
-              <span className="text-[11px] font-bold border border-line text-ink-muted px-2.5 py-1 rounded-full">{row.batch}</span>
+              <span className="text-[11px] font-bold bg-canvas text-ink-muted px-2.5 py-1 rounded-full">{row.batch}</span>
             )}
           </div>
         )}
@@ -175,7 +175,7 @@ function VerdictCard({ row, studentName, college, kodeScore }: {
         <div>
           <div className="flex items-center justify-between mb-2">
             <p className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">Scam Score</p>
-            <span className="text-[11px] font-bold border border-line text-ink px-2 py-0.5 rounded-full">{row.scamScore}/100</span>
+            <span className="text-[11px] font-bold bg-brand-soft text-brand px-2 py-0.5 rounded-full">{row.scamScore}/100</span>
           </div>
           <div className="space-y-1.5">
             {row.scamReasons.map((r, i) => (
@@ -189,7 +189,7 @@ function VerdictCard({ row, studentName, college, kodeScore }: {
 
         {/* Eligibility */}
         {gates.length > 0 && (
-          <div className="rounded-2xl p-3.5 border border-line">
+          <div className="rounded-2xl p-3.5 bg-canvas">
             <div className="flex items-center justify-between mb-2.5">
               <p className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">Tu eligible hai?</p>
               <span className="text-[11px] font-bold text-ink">
@@ -214,7 +214,7 @@ function VerdictCard({ row, studentName, college, kodeScore }: {
 
         {/* TPO match badge */}
         {row.tpoMatch === "matched" ? (
-          <div className="rounded-2xl p-3.5 border border-line">
+          <div className="rounded-2xl p-3.5 bg-canvas">
             <div className="flex items-center gap-2 mb-1">
               <CheckCircle2 className="w-4 h-4 text-done shrink-0" />
               <p className="text-[11px] font-bold uppercase tracking-wider text-ink">
@@ -230,13 +230,13 @@ function VerdictCard({ row, studentName, college, kodeScore }: {
             {row.tpoMatchedDrive && (row.tpoMatchedDrive.role || row.tpoMatchedDrive.ctc || row.tpoMatchedDrive.driveDate) && (
               <div className="flex flex-wrap gap-1.5 mt-2">
                 {row.tpoMatchedDrive.role && (
-                  <span className="text-[11px] font-bold border border-line text-ink-muted px-2 py-0.5 rounded-full">{row.tpoMatchedDrive.role}</span>
+                  <span className="text-[11px] font-bold bg-paper text-ink-muted px-2 py-0.5 rounded-full">{row.tpoMatchedDrive.role}</span>
                 )}
                 {row.tpoMatchedDrive.ctc && (
-                  <span className="text-[11px] font-bold border border-line text-ink-muted px-2 py-0.5 rounded-full">{row.tpoMatchedDrive.ctc}</span>
+                  <span className="text-[11px] font-bold bg-paper text-ink-muted px-2 py-0.5 rounded-full">{row.tpoMatchedDrive.ctc}</span>
                 )}
                 {row.tpoMatchedDrive.driveDate && (
-                  <span className="text-[11px] font-bold border border-line text-ink-muted px-2 py-0.5 rounded-full">
+                  <span className="text-[11px] font-bold bg-paper text-ink-muted px-2 py-0.5 rounded-full">
                     {new Date(row.tpoMatchedDrive.driveDate).toLocaleDateString()}
                   </span>
                 )}
@@ -244,7 +244,7 @@ function VerdictCard({ row, studentName, college, kodeScore }: {
             )}
           </div>
         ) : row.tpoMatch === "not_matched" ? (
-          <div className="rounded-2xl p-3 border border-line flex items-start gap-2">
+          <div className="rounded-2xl p-3 bg-canvas flex items-start gap-2">
             <AlertTriangle className="w-4 h-4 text-ink-muted mt-0.5 shrink-0" />
             <p className="text-[12px] text-ink-muted leading-snug">
               Your TPO has <span className="font-bold text-ink">NOT</span> shared this drive. Verify the source before applying.
@@ -259,7 +259,7 @@ function VerdictCard({ row, studentName, college, kodeScore }: {
 
       {/* Footer watermark */}
       <div className="px-5 py-2.5 flex items-center justify-between border-t border-line">
-        <span className="text-[10px] font-bold text-ink tracking-wider uppercase">Kodetalent · Drive Check</span>
+        <span className="text-[10px] font-bold text-brand tracking-wider uppercase">Kodetalent · Drive Check</span>
         <span className="text-[10px] text-ink-muted">Paste any drive · 60s verdict</span>
       </div>
     </div>
@@ -519,22 +519,27 @@ export default function DriveCheck() {
   };
 
   return (
-    <div className="min-h-screen bg-paper pb-24 px-6 pt-8">
-      {/* Header */}
-      <button
-        onClick={() => setLocation("/home")}
-        className="flex items-center gap-1 text-[12px] font-bold text-ink-muted mb-4"
-      >
-        <ArrowLeft className="w-3.5 h-3.5" /> Home
-      </button>
-      <h1 className="text-[26px] font-extrabold text-ink leading-[1.06] tracking-tight">Drive Check</h1>
-      <p className="text-[13px] text-ink-muted mt-1 mb-6">
-        Paste any placement drive from Telegram / WhatsApp / Insta. Tu instantly dekhega: scam hai ya nahi, aur tu eligible bhi hai ya nahi.
-      </p>
+    <div className="min-h-screen bg-canvas pb-24">
+      {/* Canopy header */}
+      <div className="bg-brand px-6 pt-8 pb-14">
+        <div className="max-w-md mx-auto">
+          <button
+            onClick={() => setLocation("/home")}
+            className="flex items-center gap-1 text-[12px] font-bold text-white/70 mb-4"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" /> Home
+          </button>
+          <h1 className="text-[26px] font-extrabold text-white leading-[1.06] tracking-tight">Drive Check</h1>
+          <p className="text-[13px] text-white/70 mt-1">
+            Paste any placement drive from Telegram / WhatsApp / Insta. Tu instantly dekhega: scam hai ya nahi, aur tu eligible bhi hai ya nahi.
+          </p>
+        </div>
+      </div>
 
+      <div className="px-4 -mt-6 max-w-md mx-auto">
       {/* Pending pings — drives student applied to 7+ days ago */}
       {pendingPings.length > 0 && (
-        <div className="mb-6 border border-line rounded-2xl p-4">
+        <div className="mb-4 bg-paper rounded-2xl shadow-soft p-4">
           <p className="text-[11px] font-bold uppercase tracking-wider text-ink-muted mb-2">
             Quick check — kya hua in drives ka?
           </p>
@@ -588,44 +593,46 @@ export default function DriveCheck() {
       )}
 
       {/* Paste box */}
-      <textarea
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        placeholder={"Paste drive message yahan...\n\nExample:\n\"Sprinklr off campus drive\nBatch: 2025, 2026\nSalary: 8-11 LPA\nNote: Tier 1 / Tier 2 colleges only\nApply: https://...\""}
-        rows={6}
-        disabled={loading}
-        className="w-full resize-none rounded-2xl border border-line bg-paper px-4 py-3 text-[14px] text-ink placeholder:text-ink-muted focus:outline-none focus:border-ink transition-colors disabled:opacity-60"
-      />
-      <div className="flex gap-2 mt-3">
-        <button
-          onClick={pasteFromClipboard}
+      <div className="bg-paper rounded-2xl shadow-soft p-5">
+        <textarea
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder={"Paste drive message yahan...\n\nExample:\n\"Sprinklr off campus drive\nBatch: 2025, 2026\nSalary: 8-11 LPA\nNote: Tier 1 / Tier 2 colleges only\nApply: https://...\""}
+          rows={6}
           disabled={loading}
-          className="flex items-center gap-1.5 border border-line text-ink font-bold text-[12px] px-3 py-3 rounded-xl active:scale-95 transition-transform disabled:opacity-40"
-        >
-          <Clipboard className="w-3.5 h-3.5" /> Paste
-        </button>
-        <motion.button
-          whileTap={{ scale: 0.96 }}
-          onClick={checkDrive}
-          disabled={!text.trim() || loading}
-          className="flex-1 bg-ink text-paper font-bold text-[14px] py-3 rounded-xl disabled:opacity-40 flex items-center justify-center gap-2"
-        >
-          {loading ? (
-            <>
-              <div className="w-4 h-4 border-2 border-paper border-t-transparent rounded-full animate-spin" />
-              Checking...
-            </>
-          ) : (
-            <>
-              <ShieldCheck className="w-4 h-4" />
-              Check Drive
-            </>
-          )}
-        </motion.button>
+          className="w-full resize-none rounded-2xl border border-line bg-paper px-4 py-3 text-[14px] text-ink placeholder:text-ink-muted focus:outline-none focus:border-brand transition-colors disabled:opacity-60"
+        />
+        <div className="flex gap-2 mt-3">
+          <button
+            onClick={pasteFromClipboard}
+            disabled={loading}
+            className="flex items-center gap-1.5 border border-line text-brand font-bold text-[12px] px-3 py-3 rounded-xl active:scale-95 transition-transform disabled:opacity-40"
+          >
+            <Clipboard className="w-3.5 h-3.5" /> Paste
+          </button>
+          <motion.button
+            whileTap={{ scale: 0.96 }}
+            onClick={checkDrive}
+            disabled={!text.trim() || loading}
+            className="flex-1 bg-brand text-white font-bold text-[14px] py-3 rounded-full disabled:opacity-40 flex items-center justify-center gap-2"
+          >
+            {loading ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                Checking...
+              </>
+            ) : (
+              <>
+                <ShieldCheck className="w-4 h-4" />
+                Check Drive
+              </>
+            )}
+          </motion.button>
+        </div>
+        <p className="text-[12px] text-ink-muted text-center mt-2.5">
+          We tell you: 1) Scam ya nahi · 2) Tu eligible bhi hai ya nahi
+        </p>
       </div>
-      <p className="text-[12px] text-ink-muted text-center mt-2.5">
-        We tell you: 1) Scam ya nahi · 2) Tu eligible bhi hai ya nahi
-      </p>
 
       {/* Verdict */}
       <div id="verdict-anchor" />
@@ -648,7 +655,7 @@ export default function DriveCheck() {
             </div>
             {/* Outcome actions — only for non-scam verdicts */}
             {verdict.scamVerdict !== "scam" && (
-              <div className="mt-3 border border-line rounded-2xl p-3.5">
+              <div className="mt-3 bg-paper rounded-2xl shadow-soft p-3.5">
                 {verdict.outcome === "pending" && (
                   <>
                     <p className="text-[11px] font-bold uppercase tracking-wider text-ink-muted mb-2">
@@ -657,7 +664,7 @@ export default function DriveCheck() {
                     <button
                       onClick={() => markApplied(verdict)}
                       disabled={actionLoading}
-                      className="w-full bg-ink text-paper font-bold text-[14px] py-3 rounded-xl active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
+                      className="w-full bg-brand text-white font-bold text-[14px] py-3 rounded-full active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
                     >
                       <CheckCircle2 className="w-4 h-4" /> Maine apply kiya
                       {verdict.applyLink && <span className="text-[11px] opacity-70">+ open link</span>}
@@ -718,7 +725,7 @@ export default function DriveCheck() {
 
             {/* Warn the group — one tap; only for scam verdicts */}
             {verdict.scamVerdict === "scam" && (
-              <div className="mt-3 border border-line rounded-2xl p-3.5">
+              <div className="mt-3 bg-paper rounded-2xl shadow-soft p-3.5">
                 <div className="flex items-start gap-2 mb-2.5">
                   <Megaphone className="w-4 h-4 text-danger mt-0.5 shrink-0" />
                   <div>
@@ -734,7 +741,7 @@ export default function DriveCheck() {
                   <button
                     onClick={() => warnTheGroup("whatsapp")}
                     data-testid="button-warn-whatsapp"
-                    className="bg-ink text-paper font-bold text-[12px] py-2.5 rounded-xl flex items-center justify-center gap-1.5 active:scale-95 transition-transform"
+                    className="bg-brand text-white font-bold text-[12px] py-2.5 rounded-xl flex items-center justify-center gap-1.5 active:scale-95 transition-transform"
                   >
                     <Megaphone className="w-3.5 h-3.5" />
                     WhatsApp group
@@ -742,7 +749,7 @@ export default function DriveCheck() {
                   <button
                     onClick={() => warnTheGroup("telegram")}
                     data-testid="button-warn-telegram"
-                    className="border border-line text-ink font-bold text-[12px] py-2.5 rounded-xl flex items-center justify-center gap-1.5 active:scale-95 transition-transform"
+                    className="border border-line text-brand font-bold text-[12px] py-2.5 rounded-xl flex items-center justify-center gap-1.5 active:scale-95 transition-transform"
                   >
                     <Megaphone className="w-3.5 h-3.5" />
                     Telegram group
@@ -758,7 +765,7 @@ export default function DriveCheck() {
             <button
               onClick={downloadCard}
               data-testid="button-download-card"
-              className="w-full mt-3 bg-ink text-paper font-bold text-[14px] py-3 rounded-xl flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+              className="w-full mt-3 bg-brand text-white font-bold text-[14px] py-3 rounded-full flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
             >
               <Download className="w-4 h-4" />
               {verdict.scamVerdict === "scam" ? "Just download PNG" : "Share verdict to drive group"}
@@ -769,7 +776,7 @@ export default function DriveCheck() {
 
       {/* Recent checks */}
       {recent.length > 0 && (
-        <div className="mt-10">
+        <div className="mt-10 bg-paper rounded-2xl shadow-soft p-4">
           <h3 className="text-[11px] font-bold uppercase tracking-wider text-ink-muted mb-2">Recent checks</h3>
           <div>
             {recent.slice(0, 5).map((r) => {
@@ -795,6 +802,7 @@ export default function DriveCheck() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

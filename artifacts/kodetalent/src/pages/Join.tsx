@@ -42,8 +42,8 @@ export default function Join({ code }: { code: string }) {
 
   if (loading) {
     return (
-      <div className="min-h-[100dvh] bg-paper flex flex-col items-center justify-center p-6">
-        <div className="w-10 h-10 rounded-full border-2 border-ink border-t-transparent animate-spin mb-4" />
+      <div className="min-h-[100dvh] bg-canvas flex flex-col items-center justify-center p-6">
+        <div className="w-10 h-10 rounded-full border-2 border-brand border-t-transparent animate-spin mb-4" />
         <p className="text-[13px] font-bold text-ink-muted">Verifying your invite…</p>
       </div>
     );
@@ -51,13 +51,13 @@ export default function Join({ code }: { code: string }) {
 
   if (error || !college) {
     return (
-      <div className="min-h-[100dvh] bg-paper flex flex-col items-center justify-center p-6 text-center">
-        <div className="w-20 h-20 rounded-3xl border border-line flex items-center justify-center mb-5">
-          <AlertCircle className="w-10 h-10 text-ink" />
+      <div className="min-h-[100dvh] bg-canvas flex flex-col items-center justify-center p-6 text-center">
+        <div className="w-20 h-20 rounded-3xl bg-paper shadow-soft flex items-center justify-center mb-5">
+          <AlertCircle className="w-10 h-10 text-danger" />
         </div>
         <h1 className="text-[28px] font-extrabold text-ink mb-2">Invite link invalid</h1>
         <p className="text-[13px] text-danger mb-6 max-w-xs">{error}</p>
-        <Button onClick={() => nav("/")} className="bg-ink text-paper hover:bg-ink font-bold rounded-xl px-4 py-3">
+        <Button onClick={() => nav("/")} className="bg-brand text-white hover:bg-brand/90 font-bold rounded-full px-4 py-3">
           Continue without invite
         </Button>
       </div>
@@ -65,26 +65,26 @@ export default function Join({ code }: { code: string }) {
   }
 
   return (
-    <div className="min-h-[100dvh] bg-paper flex flex-col items-center justify-between p-6 text-center max-w-md mx-auto">
+    <div className="min-h-[100dvh] bg-canvas flex flex-col items-center justify-between p-6 text-center max-w-md mx-auto">
       <div className="flex-1 flex flex-col items-center justify-center w-full">
         <motion.div
           initial={{ scale: 0.6, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ type: "spring", stiffness: 180, damping: 18 }}
-          className="w-24 h-24 rounded-[26px] border-2 border-line flex items-center justify-center mb-6"
+          className="w-24 h-24 rounded-[26px] bg-paper shadow-soft flex items-center justify-center mb-6"
         >
           {college.logoUrl ? (
             <img src={college.logoUrl} alt={college.name} className="w-16 h-16 rounded-2xl object-cover" />
           ) : (
-            <GraduationCap className="w-12 h-12 text-ink" />
+            <GraduationCap className="w-12 h-12 text-brand" />
           )}
         </motion.div>
 
         <motion.div
           initial={{ y: 12, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.15 }}
-          className="border border-line rounded-full px-4 py-1.5 mb-4 inline-flex items-center"
+          className="bg-brand-soft rounded-full px-4 py-1.5 mb-4 inline-flex items-center"
         >
-          <span className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">Official college invite</span>
+          <span className="text-[11px] font-bold uppercase tracking-wider text-brand">Official college invite</span>
         </motion.div>
 
         <motion.h1
@@ -112,7 +112,7 @@ export default function Join({ code }: { code: string }) {
         {college.signupCount > 0 && (
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.4 }}
-            className="border border-line rounded-2xl px-4 py-2.5 mb-6"
+            className="bg-paper rounded-2xl shadow-soft px-4 py-2.5 mb-6"
           >
             <p className="text-[12px] font-bold text-ink-muted">
               {college.signupCount} {college.signupCount === 1 ? "student" : "students"} from your college already joined
@@ -129,7 +129,7 @@ export default function Join({ code }: { code: string }) {
             { e: "🎯", l: "Live job-fit check" },
             { e: "📚", l: "Personal roadmap" },
           ].map(it => (
-            <div key={it.l} className="border border-line bg-paper rounded-2xl p-3">
+            <div key={it.l} className="bg-paper rounded-2xl shadow-soft p-3">
               <div className="text-2xl mb-1">{it.e}</div>
               <div className="text-[10px] font-bold text-ink-muted leading-tight">{it.l}</div>
             </div>
@@ -144,7 +144,7 @@ export default function Join({ code }: { code: string }) {
         <Button
           data-testid="join-start"
           onClick={startOnboarding}
-          className="w-full h-14 rounded-2xl bg-ink text-paper hover:bg-ink font-bold text-base"
+          className="w-full h-14 rounded-full bg-brand text-white hover:bg-brand/90 font-bold text-base"
         >
           Join {college.name.split(" ").slice(0, 3).join(" ")} →
         </Button>

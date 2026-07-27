@@ -87,19 +87,19 @@ export default function Onboarding() {
 
   if (screen === "first-mock") {
     return (
-      <div className="min-h-[100dvh] bg-paper flex flex-col items-center justify-center px-6 text-center">
-        <p className="text-[13px] font-semibold uppercase tracking-wider text-ink-muted mb-3">You're in</p>
-        <h1 className="text-[28px] font-extrabold text-ink leading-[1.1] mb-3">Your first mock interview is free.</h1>
-        <p className="text-[14px] text-ink-muted mb-8 max-w-xs">
+      <div className="min-h-[100dvh] bg-brand flex flex-col items-center justify-center px-6 text-center">
+        <p className="text-[13px] font-semibold uppercase tracking-wider text-white/70 mb-3">You're in</p>
+        <h1 className="text-[28px] font-extrabold text-white leading-[1.1] mb-3">Your first mock interview is free.</h1>
+        <p className="text-[14px] text-white/70 mb-8 max-w-xs">
           15 minutes with an AI interviewer. No sign-in needed to try it.
         </p>
         <button
           onClick={() => setLocation("/practice?start=1")}
-          className="w-full max-w-xs bg-ink text-paper text-[15px] font-bold rounded-2xl py-4"
+          className="w-full max-w-xs bg-white text-brand text-[15px] font-bold rounded-full py-4"
         >
           Start my first mock
         </button>
-        <button onClick={() => setLocation("/home")} className="mt-4 text-[13px] text-ink-muted underline">
+        <button onClick={() => setLocation("/home")} className="mt-4 text-[13px] text-white/70 underline">
           Skip for now
         </button>
       </div>
@@ -107,58 +107,62 @@ export default function Onboarding() {
   }
 
   return (
-    <div className="min-h-[100dvh] bg-paper flex flex-col px-6 pt-16 pb-10 max-w-md mx-auto">
-      <h1 className="text-[26px] font-extrabold text-ink leading-[1.1] mb-1">What's your goal?</h1>
-      <p className="text-[13px] text-ink-muted mb-8">This shapes everything the app suggests for you.</p>
-
-      <label className="text-[12px] font-semibold text-ink-muted uppercase tracking-wider mb-2">Your name</label>
-      <input
-        autoFocus
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        placeholder="First name"
-        className="w-full rounded-2xl border border-line bg-paper px-4 py-3 text-[15px] text-ink placeholder:text-ink-muted focus:outline-none focus:border-ink mb-6"
-      />
-
-      <label className="text-[12px] font-semibold text-ink-muted uppercase tracking-wider mb-2">Target role</label>
-      <div className="grid grid-cols-2 gap-2 mb-6">
-        {ROLES.map((role) => (
-          <button
-            key={role}
-            onClick={() => setTargetRole(role)}
-            className={`h-12 rounded-xl border-2 font-semibold text-[14px] transition-colors ${
-              targetRole === role ? "bg-ink text-paper border-ink" : "bg-paper text-ink border-line"
-            }`}
-          >
-            {role}
-          </button>
-        ))}
+    <div className="min-h-[100dvh] bg-canvas">
+      <div className="bg-brand px-6 pt-16 pb-10">
+        <h1 className="text-[26px] font-extrabold text-white leading-[1.1] mb-1">What's your goal?</h1>
+        <p className="text-[13px] text-white/70">This shapes everything the app suggests for you.</p>
       </div>
 
-      <label className="text-[12px] font-semibold text-ink-muted uppercase tracking-wider mb-2">Target batch</label>
-      <div className="grid grid-cols-4 gap-2 mb-8">
-        {BATCHES.map((batch) => (
-          <button
-            key={batch}
-            onClick={() => setTargetBatch(batch)}
-            className={`h-12 rounded-xl border-2 font-semibold text-[14px] transition-colors ${
-              targetBatch === batch ? "bg-ink text-paper border-ink" : "bg-paper text-ink border-line"
-            }`}
-          >
-            {batch}
-          </button>
-        ))}
+      <div className="bg-paper rounded-t-3xl -mt-6 px-6 pt-6 pb-10 max-w-md mx-auto shadow-soft">
+        <label className="text-[12px] font-semibold text-ink-muted uppercase tracking-wider mb-2 block">Your name</label>
+        <input
+          autoFocus
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="First name"
+          className="w-full rounded-2xl border border-line bg-paper px-4 py-3 text-[15px] text-ink placeholder:text-ink-muted focus:outline-none focus:border-brand mb-6"
+        />
+
+        <label className="text-[12px] font-semibold text-ink-muted uppercase tracking-wider mb-2 block">Target role</label>
+        <div className="grid grid-cols-2 gap-2 mb-6">
+          {ROLES.map((role) => (
+            <button
+              key={role}
+              onClick={() => setTargetRole(role)}
+              className={`h-12 rounded-xl border-2 font-semibold text-[14px] transition-colors ${
+                targetRole === role ? "bg-brand text-white border-brand" : "bg-paper text-ink border-line"
+              }`}
+            >
+              {role}
+            </button>
+          ))}
+        </div>
+
+        <label className="text-[12px] font-semibold text-ink-muted uppercase tracking-wider mb-2 block">Target batch</label>
+        <div className="grid grid-cols-4 gap-2 mb-8">
+          {BATCHES.map((batch) => (
+            <button
+              key={batch}
+              onClick={() => setTargetBatch(batch)}
+              className={`h-12 rounded-xl border-2 font-semibold text-[14px] transition-colors ${
+                targetBatch === batch ? "bg-brand text-white border-brand" : "bg-paper text-ink border-line"
+              }`}
+            >
+              {batch}
+            </button>
+          ))}
+        </div>
+
+        {error && <p className="text-[12px] text-danger mb-4">{error}</p>}
+
+        <button
+          onClick={submitGoal}
+          disabled={submitting}
+          className="w-full bg-brand text-white text-[15px] font-bold rounded-full py-4 disabled:opacity-40"
+        >
+          {submitting ? "Setting up…" : "Continue"}
+        </button>
       </div>
-
-      {error && <p className="text-[12px] text-danger mb-4">{error}</p>}
-
-      <button
-        onClick={submitGoal}
-        disabled={submitting}
-        className="w-full bg-ink text-paper text-[15px] font-bold rounded-2xl py-4 disabled:opacity-40"
-      >
-        {submitting ? "Setting up…" : "Continue"}
-      </button>
     </div>
   );
 }

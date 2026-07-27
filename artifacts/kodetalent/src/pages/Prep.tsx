@@ -83,70 +83,74 @@ export default function Prep() {
   };
 
   return (
-    <div className="p-4 pb-28 max-w-md mx-auto space-y-4 min-h-screen bg-paper">
-      <div className="pt-2 mb-2 flex items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-extrabold flex items-center text-ink">
-            <Target className="mr-2" /> Practice
-          </h1>
-          <p className="text-sm text-ink-muted mt-1">
-            Get ready for your real placement interviews.
-          </p>
+    <div className="pb-28 min-h-screen bg-canvas">
+      <div className="bg-brand px-4 pt-6 pb-10">
+        <div className="max-w-md mx-auto flex items-start justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-extrabold flex items-center text-white">
+              <Target className="mr-2" /> Practice
+            </h1>
+            <p className="text-sm text-white/70 mt-1">
+              Get ready for your real placement interviews.
+            </p>
+          </div>
+          <button
+            onClick={() => setLocation("/practice/history")}
+            className="mt-1 px-3 py-1.5 rounded-full bg-white/15 text-[11px] font-bold text-white uppercase tracking-wider whitespace-nowrap"
+            data-testid="link-interview-history"
+          >
+            History
+          </button>
         </div>
-        <button
-          onClick={() => setLocation("/practice/history")}
-          className="mt-1 px-3 py-1.5 rounded-full border border-line text-[11px] font-bold text-ink uppercase tracking-wider whitespace-nowrap"
-          data-testid="link-interview-history"
-        >
-          History
-        </button>
       </div>
 
-      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-        <Card
-          className="border border-line shadow-none rounded-2xl bg-paper cursor-pointer group"
-          onClick={() => setInterviewDrawerOpen(true)}
-        >
-          <CardContent className="p-5">
-            <div className="flex justify-between items-center mb-3">
-              <div className="text-[10px] font-bold text-ink-muted uppercase tracking-wider">
-                AI · Personalised
+      <div className="p-4 -mt-6 max-w-md mx-auto space-y-4">
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+          <Card
+            className="border-0 shadow-soft rounded-2xl bg-paper cursor-pointer group"
+            onClick={() => setInterviewDrawerOpen(true)}
+          >
+            <CardContent className="p-5">
+              <div className="flex justify-between items-center mb-3">
+                <div className="text-[10px] font-bold text-ink-muted uppercase tracking-wider">
+                  AI · Personalised
+                </div>
+                <div className="w-8 h-8 rounded-full bg-brand-soft flex items-center justify-center text-brand group-hover:bg-brand group-hover:text-white transition-colors">
+                  <ChevronRight className="w-5 h-5" />
+                </div>
               </div>
-              <div className="w-8 h-8 rounded-full border border-line flex items-center justify-center group-hover:bg-ink group-hover:text-paper transition-colors">
-                <ChevronRight className="w-5 h-5" />
-              </div>
-            </div>
-            <h3 className="text-xl font-bold text-ink flex items-center mb-1">
-              <MessageSquare className="w-5 h-5 mr-2" />
-              Mock Interview
-            </h3>
-            <p className="text-sm text-ink-muted">AI interviewer · Live feedback · Score report</p>
-          </CardContent>
-        </Card>
-      </motion.div>
+              <h3 className="text-xl font-bold text-ink flex items-center mb-1">
+                <MessageSquare className="w-5 h-5 mr-2 text-brand" />
+                Mock Interview
+              </h3>
+              <p className="text-sm text-ink-muted">AI interviewer · Live feedback · Score report</p>
+            </CardContent>
+          </Card>
+        </motion.div>
 
-      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
-        <Card
-          className="border border-line shadow-none rounded-2xl bg-paper cursor-pointer group"
-          onClick={() => setTestDrawerOpen(true)}
-        >
-          <CardContent className="p-5">
-            <div className="flex justify-between items-center mb-3">
-              <div className="text-[10px] font-bold text-ink-muted uppercase tracking-wider">
-                20-min timed MCQ
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+          <Card
+            className="border-0 shadow-soft rounded-2xl bg-paper cursor-pointer group"
+            onClick={() => setTestDrawerOpen(true)}
+          >
+            <CardContent className="p-5">
+              <div className="flex justify-between items-center mb-3">
+                <div className="text-[10px] font-bold text-ink-muted uppercase tracking-wider">
+                  20-min timed MCQ
+                </div>
+                <div className="w-8 h-8 rounded-full bg-brand-soft flex items-center justify-center text-brand group-hover:bg-brand group-hover:text-white transition-colors">
+                  <ChevronRight className="w-5 h-5" />
+                </div>
               </div>
-              <div className="w-8 h-8 rounded-full border border-line flex items-center justify-center group-hover:bg-ink group-hover:text-paper transition-colors">
-                <ChevronRight className="w-5 h-5" />
-              </div>
-            </div>
-            <h3 className="text-xl font-bold text-ink flex items-center mb-1">
-              <Briefcase className="w-5 h-5 mr-2" />
-              Mock Test
-            </h3>
-            <p className="text-sm text-ink-muted">Aptitude and reasoning — just like campus drives.</p>
-          </CardContent>
-        </Card>
-      </motion.div>
+              <h3 className="text-xl font-bold text-ink flex items-center mb-1">
+                <Briefcase className="w-5 h-5 mr-2 text-brand" />
+                Mock Test
+              </h3>
+              <p className="text-sm text-ink-muted">Aptitude and reasoning — just like campus drives.</p>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </div>
 
       <AnimatePresence>
         {(interviewDrawerOpen || testDrawerOpen) && (
@@ -191,7 +195,7 @@ export default function Prep() {
                         value={company}
                         onChange={(e) => setCompany(e.target.value)}
                         placeholder="e.g. Google, TCS, Infosys..."
-                        className="rounded-xl border-2 border-line focus-visible:border-ink focus-visible:ring-0 h-11 text-ink font-medium"
+                        className="rounded-xl border-2 border-line focus-visible:border-brand focus-visible:ring-0 h-11 text-ink font-medium"
                       />
                       <p className="text-xs text-ink-muted mt-1 ml-1">Leave blank for a general interview</p>
                     </div>
@@ -205,10 +209,10 @@ export default function Prep() {
                             onClick={() => setInterviewType(type)}
                             className={cn(
                               "rounded-2xl border-2 p-3 text-left transition-all",
-                              interviewType === type ? "border-ink bg-line/40" : "border-line bg-paper"
+                              interviewType === type ? "border-brand bg-brand-soft" : "border-line bg-paper"
                             )}
                           >
-                            <Icon className="w-5 h-5 mb-1.5 text-ink" />
+                            <Icon className={cn("w-5 h-5 mb-1.5", interviewType === type ? "text-brand" : "text-ink")} />
                             <div className="text-[12px] font-bold text-ink leading-tight">{label}</div>
                             <div className="text-[10px] text-ink-muted mt-0.5 leading-tight">{desc}</div>
                           </button>
@@ -227,7 +231,7 @@ export default function Prep() {
                             onClick={() => setDifficulty(d)}
                             className={cn(
                               "flex-1 py-2.5 text-sm font-bold transition-colors",
-                              difficulty === d ? "bg-ink text-paper" : "bg-paper text-ink-muted"
+                              difficulty === d ? "bg-brand text-white" : "bg-paper text-ink-muted"
                             )}
                           >
                             {d === "Challenging" ? "🔥 " : ""}{d}
@@ -243,11 +247,11 @@ export default function Prep() {
                       onClick={() => setVoiceMode(!voiceMode)}
                       className={cn(
                         "w-full flex items-center justify-between px-4 py-3 rounded-2xl border-2 transition-all",
-                        voiceMode ? "border-ink bg-line/40" : "border-line bg-paper"
+                        voiceMode ? "border-brand bg-brand-soft" : "border-line bg-paper"
                       )}
                     >
                       <div className="flex items-center gap-3">
-                        <div className={cn("w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0", voiceMode ? "bg-ink text-paper" : "bg-line/60 text-ink-muted")}>
+                        <div className={cn("w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0", voiceMode ? "bg-brand text-white" : "bg-line/60 text-ink-muted")}>
                           <Mic className="w-4 h-4" />
                         </div>
                         <div className="text-left">
@@ -255,7 +259,7 @@ export default function Prep() {
                           <div className="text-[11px] text-ink-muted">AI reads questions · speak your answers</div>
                         </div>
                       </div>
-                      <div className={cn("w-11 h-6 rounded-full transition-colors relative flex-shrink-0", voiceMode ? "bg-ink" : "bg-line")}>
+                      <div className={cn("w-11 h-6 rounded-full transition-colors relative flex-shrink-0", voiceMode ? "bg-brand" : "bg-line")}>
                         <motion.div
                           className="absolute top-0.5 w-5 h-5 bg-paper rounded-full shadow"
                           animate={{ x: voiceMode ? 20 : 2 }}
@@ -268,11 +272,11 @@ export default function Prep() {
                       onClick={() => setCameraMode(!cameraMode)}
                       className={cn(
                         "w-full flex items-center justify-between px-4 py-3 rounded-2xl border-2 transition-all",
-                        cameraMode ? "border-ink bg-line/40" : "border-line bg-paper"
+                        cameraMode ? "border-brand bg-brand-soft" : "border-line bg-paper"
                       )}
                     >
                       <div className="flex items-center gap-3">
-                        <div className={cn("w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0", cameraMode ? "bg-ink text-paper" : "bg-line/60 text-ink-muted")}>
+                        <div className={cn("w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0", cameraMode ? "bg-brand text-white" : "bg-line/60 text-ink-muted")}>
                           <Camera className="w-4 h-4" />
                         </div>
                         <div className="text-left">
@@ -280,7 +284,7 @@ export default function Prep() {
                           <div className="text-[11px] text-ink-muted">See yourself · feels like the real thing</div>
                         </div>
                       </div>
-                      <div className={cn("w-11 h-6 rounded-full transition-colors relative flex-shrink-0", cameraMode ? "bg-ink" : "bg-line")}>
+                      <div className={cn("w-11 h-6 rounded-full transition-colors relative flex-shrink-0", cameraMode ? "bg-brand" : "bg-line")}>
                         <motion.div
                           className="absolute top-0.5 w-5 h-5 bg-paper rounded-full shadow"
                           animate={{ x: cameraMode ? 20 : 2 }}
@@ -305,7 +309,7 @@ export default function Prep() {
                     <Button
                       onClick={handleStartInterview}
                       disabled={createInterview.isPending}
-                      className="w-full bg-ink hover:bg-ink/90 text-paper font-bold h-14 rounded-full text-lg"
+                      className="w-full bg-brand hover:bg-brand/90 text-white font-bold h-14 rounded-full text-lg"
                     >
                       {createInterview.isPending ? "Setting up..." : voiceMode ? "🎤 Start Voice Interview →" : "Start Interview →"}
                     </Button>
@@ -316,7 +320,7 @@ export default function Prep() {
                     <Button
                       onClick={handleStartTest}
                       disabled={createTest.isPending}
-                      className="w-full bg-ink hover:bg-ink/90 text-paper font-bold h-14 rounded-full text-lg"
+                      className="w-full bg-brand hover:bg-brand/90 text-white font-bold h-14 rounded-full text-lg"
                     >
                       {createTest.isPending ? "Generating questions..." : "Start Test →"}
                     </Button>

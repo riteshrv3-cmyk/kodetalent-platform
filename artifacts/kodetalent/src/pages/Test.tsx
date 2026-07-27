@@ -77,7 +77,7 @@ export default function Test() {
   };
 
   if (isLoading || !session) {
-    return <div className="p-6 space-y-6 max-w-md mx-auto mt-10 min-h-screen bg-paper">
+    return <div className="p-6 space-y-6 max-w-md mx-auto mt-10 min-h-screen bg-canvas">
       <Skeleton className="h-4 w-full" />
       <Skeleton className="h-40 w-full rounded-2xl" />
       <div className="space-y-4">
@@ -88,22 +88,22 @@ export default function Test() {
 
   if (testResult) {
     return (
-      <div className="p-4 pb-24 max-w-md mx-auto space-y-6 min-h-screen bg-paper">
+      <div className="p-4 pb-24 max-w-md mx-auto space-y-6 min-h-screen bg-canvas">
         <div className="text-center space-y-2 mt-10 mb-10">
           <h1 className="text-[26px] font-extrabold text-ink leading-[1.06] tracking-tight">Test Complete</h1>
           <p className="text-[12px] text-ink-muted">{session.testType}</p>
           <div className="mt-8 flex justify-center">
-            <div className="relative w-48 h-48 rounded-full border-[12px] border-line flex flex-col items-center justify-center bg-paper">
+            <div className="relative w-48 h-48 rounded-full border-[12px] border-line flex flex-col items-center justify-center bg-paper shadow-soft">
               <span className="text-6xl font-extrabold text-ink">{testResult.score}</span>
               <span className="text-xl font-bold text-ink-muted">/{testResult.total}</span>
               <svg className="absolute inset-0 w-full h-full transform -rotate-90 pointer-events-none" style={{ left: '-12px', top: '-12px', width: 'calc(100% + 24px)', height: 'calc(100% + 24px)' }}>
-                <circle cx="50%" cy="50%" r="calc(50% - 6px)" fill="transparent" stroke="#0f0f10" strokeWidth="12" strokeDasharray={`${(testResult.score/testResult.total) * 283} 300`} strokeLinecap="round" />
+                <circle cx="50%" cy="50%" r="calc(50% - 6px)" fill="transparent" stroke="#4a55c7" strokeWidth="12" strokeDasharray={`${(testResult.score/testResult.total) * 283} 300`} strokeLinecap="round" />
               </svg>
             </div>
           </div>
         </div>
 
-        <div className="border border-line rounded-2xl">
+        <div className="bg-paper rounded-2xl shadow-soft">
           <div className="p-5 space-y-5">
             <h3 className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">Breakdown</h3>
             {testResult.sectionBreakdown?.map((section: any, i: number) => (
@@ -113,7 +113,7 @@ export default function Test() {
                   <span className="font-bold text-ink">{section.correct}/{section.total}</span>
                 </div>
                 <div className="h-2.5 w-full bg-line rounded-full overflow-hidden">
-                  <motion.div initial={{ width: 0 }} animate={{ width: `${(section.correct / section.total) * 100}%` }} className="h-full bg-ink" transition={{ duration: 1 }} />
+                  <motion.div initial={{ width: 0 }} animate={{ width: `${(section.correct / section.total) * 100}%` }} className="h-full bg-brand" transition={{ duration: 1 }} />
                 </div>
               </div>
             ))}
@@ -122,7 +122,7 @@ export default function Test() {
 
         <div className="flex gap-4 pt-4">
           <motion.div whileTap={{ scale: 0.97 }} className="flex-1">
-            <Button className="w-full h-14 rounded-xl font-bold bg-ink text-paper text-[16px] hover:bg-ink" onClick={() => setLocation("/home")}>
+            <Button className="w-full h-14 rounded-full font-bold bg-brand text-white text-[16px] hover:bg-brand/90" onClick={() => setLocation("/home")}>
               Done
             </Button>
           </motion.div>
@@ -138,27 +138,27 @@ export default function Test() {
   const selectedAnswer = answers[currentQuestionIdx];
 
   return (
-    <div className="flex flex-col h-[100dvh] bg-paper max-w-md mx-auto relative overflow-hidden">
-      <div className="bg-paper p-4 sticky top-0 z-10">
+    <div className="flex flex-col h-[100dvh] bg-canvas max-w-md mx-auto relative overflow-hidden">
+      <div className="bg-brand p-4 pb-6 sticky top-0 z-10">
         <div className="flex justify-between items-center mb-4">
-          <div className="border border-line text-ink-muted px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider">
+          <div className="bg-white/20 text-white px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider">
             Q {currentQuestionIdx + 1} / {session.total}
           </div>
-          <div className="text-ink flex items-center text-[14px] font-bold">
+          <div className="text-white flex items-center text-[14px] font-bold">
             <Clock className="w-4 h-4 mr-2" />
             {mins}:{secs < 10 ? '0' : ''}{secs}
           </div>
         </div>
-        <div className="h-1.5 w-full bg-line rounded-full overflow-hidden">
-          <motion.div className="h-full bg-ink" initial={{ width: 0 }} animate={{ width: `${((currentQuestionIdx) / session.total) * 100}%` }} transition={{ duration: 0.3 }} />
+        <div className="h-1.5 w-full bg-white/20 rounded-full overflow-hidden">
+          <motion.div className="h-full bg-white" initial={{ width: 0 }} animate={{ width: `${((currentQuestionIdx) / session.total) * 100}%` }} transition={{ duration: 0.3 }} />
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 flex flex-col">
         <div className="mb-6">
-          <div className="border border-line rounded-2xl bg-paper mb-6">
+          <div className="rounded-2xl bg-paper shadow-soft mb-6">
             <div className="p-6">
-              <span className="inline-block px-3 py-1 border border-line text-ink-muted text-[10px] font-bold rounded-md mb-4 uppercase tracking-wider">
+              <span className="inline-block px-3 py-1 bg-brand-soft text-brand text-[10px] font-bold rounded-md mb-4 uppercase tracking-wider">
                 {question.topic}
               </span>
               <h2 className="text-xl font-extrabold text-ink leading-relaxed">{question.question}</h2>
@@ -174,13 +174,13 @@ export default function Test() {
                     onClick={() => handleOptionSelect(idx)}
                     className={`w-full text-left p-5 rounded-2xl border transition-colors ${
                       isSelected
-                        ? "border-ink bg-line text-ink"
+                        ? "border-brand bg-brand-soft text-ink"
                         : "border-line bg-paper text-ink"
                     }`}
                   >
                     <div className="flex items-center">
                       <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center mr-4 shrink-0 transition-colors ${
-                        isSelected ? "border-ink bg-ink" : "border-line"
+                        isSelected ? "border-brand bg-brand" : "border-line"
                       }`}>
                         {isSelected && <div className="w-2.5 h-2.5 bg-paper rounded-full" />}
                       </div>
@@ -194,10 +194,10 @@ export default function Test() {
         </div>
       </div>
 
-      <div className="p-4 bg-paper pb-safe pt-2">
+      <div className="p-4 bg-canvas pb-safe pt-2">
         <motion.div whileTap={{ scale: 0.97 }}>
           <Button
-            className={`w-full font-bold h-14 text-[16px] rounded-xl bg-ink text-paper hover:bg-ink ${selectedAnswer === undefined ? 'opacity-50' : ''}`}
+            className={`w-full font-bold h-14 text-[16px] rounded-full bg-brand text-white hover:bg-brand/90 ${selectedAnswer === undefined ? 'opacity-50' : ''}`}
             onClick={handleNext}
             disabled={selectedAnswer === undefined || isSubmitting}
           >

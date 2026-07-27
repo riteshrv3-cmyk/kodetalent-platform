@@ -57,11 +57,11 @@ export function AppLayout({ children }: { children: ReactNode }) {
   }, []);
 
   if (isFullscreenRoute) {
-    return <div className="min-h-[100dvh] bg-paper" style={{ overflowX: "clip" }}>{children}</div>;
+    return <div className="min-h-[100dvh] bg-canvas" style={{ overflowX: "clip" }}>{children}</div>;
   }
 
   return (
-    <div className="min-h-[100dvh] bg-paper" style={{ isolation: "isolate", overflowX: "clip" }}>
+    <div className="min-h-[100dvh] bg-canvas" style={{ isolation: "isolate", overflowX: "clip" }}>
       <TopBar
         pendingCount={pendingCount}
         initials={initials}

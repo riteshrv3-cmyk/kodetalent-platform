@@ -54,19 +54,19 @@ const TEMPLATES = [
     id: "classic",
     label: "Classic",
     desc: "Clean ATS-friendly layout",
-    badge: "border border-line text-ink",
+    badge: "bg-brand-soft text-brand",
   },
   {
     id: "tech",
     label: "Tech-Focused",
     desc: "Highlights your stack & GitHub",
-    badge: "border border-line text-ink",
+    badge: "bg-brand-soft text-brand",
   },
   {
     id: "minimal",
     label: "Minimal",
     desc: "Ultra-clean typography",
-    badge: "border border-line text-ink",
+    badge: "bg-brand-soft text-brand",
   },
 ];
 
@@ -210,7 +210,7 @@ function TargetRecommendations({
               initial={{ opacity: 0, x: 12 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: i * 0.05 }}
-              className="shrink-0 w-44 bg-paper rounded-2xl border border-line overflow-hidden"
+              className="shrink-0 w-44 bg-paper rounded-2xl shadow-soft overflow-hidden"
             >
               <div className="p-3 space-y-2.5">
                 {/* Logo + Tier label */}
@@ -245,7 +245,7 @@ function TargetRecommendations({
                   </div>
                   <div className="h-1.5 bg-line rounded-full overflow-hidden">
                     <div
-                      className="h-full rounded-full bg-ink"
+                      className="h-full rounded-full bg-brand"
                       style={{ width: `${rec.matchPct}%` }}
                     />
                   </div>
@@ -255,7 +255,7 @@ function TargetRecommendations({
                 {/* CTA */}
                 <button
                   onClick={() => onGenerate(rec.company, rec.role)}
-                  className="w-full h-8 rounded-xl bg-ink text-paper font-bold text-[11px] flex items-center justify-center gap-1 active:scale-95 transition-transform"
+                  className="w-full h-8 rounded-full bg-brand text-white font-bold text-[11px] flex items-center justify-center gap-1 active:scale-95 transition-transform"
                 >
                   <Zap className="w-3 h-3" />
                   Generate Resume
@@ -923,7 +923,7 @@ function EditResumeSheet({
               value={summary}
               onChange={e => setSummary(e.target.value)}
               rows={4}
-              className="rounded-xl border border-line focus:border-ink text-ink text-sm resize-none"
+              className="rounded-xl border border-line focus:border-brand text-ink text-sm resize-none"
             />
           </div>
 
@@ -933,7 +933,7 @@ function EditResumeSheet({
               <label className="text-[11px] font-bold text-ink-muted uppercase tracking-wider">Skill Sections</label>
               <button
                 onClick={addSkillSection}
-                className="flex items-center gap-1 text-[11px] font-bold text-ink"
+                className="flex items-center gap-1 text-[11px] font-bold text-brand"
               >
                 <PlusCircle className="w-3.5 h-3.5" /> Add
               </button>
@@ -945,13 +945,13 @@ function EditResumeSheet({
                     value={s.category}
                     onChange={e => updateSkillCategory(i, e.target.value)}
                     placeholder="Category (e.g. Languages)"
-                    className="rounded-lg border border-line focus:border-ink text-ink text-sm h-8"
+                    className="rounded-lg border border-line focus:border-brand text-ink text-sm h-8"
                   />
                   <Input
                     value={s.items}
                     onChange={e => updateSkillItems(i, e.target.value)}
                     placeholder="Items (comma-separated)"
-                    className="rounded-lg border border-line focus:border-ink text-ink text-sm h-8"
+                    className="rounded-lg border border-line focus:border-brand text-ink text-sm h-8"
                   />
                 </div>
                 <button
@@ -974,13 +974,13 @@ function EditResumeSheet({
                     value={p.title}
                     onChange={e => updateProjectTitle(pi, e.target.value)}
                     placeholder="Project title"
-                    className="rounded-lg border border-line focus:border-ink text-ink text-sm h-8 flex-1"
+                    className="rounded-lg border border-line focus:border-brand text-ink text-sm h-8 flex-1"
                   />
                   <Input
                     value={p.tech}
                     onChange={e => updateProjectTech(pi, e.target.value)}
                     placeholder="Tech stack"
-                    className="rounded-lg border border-line focus:border-ink text-ink text-sm h-8 flex-1"
+                    className="rounded-lg border border-line focus:border-brand text-ink text-sm h-8 flex-1"
                   />
                 </div>
                 <div className="space-y-1.5">
@@ -991,7 +991,7 @@ function EditResumeSheet({
                         value={b}
                         onChange={e => updateProjectBullet(pi, bi, e.target.value)}
                         rows={2}
-                        className="flex-1 rounded-lg border border-line focus:border-ink text-ink text-xs resize-none"
+                        className="flex-1 rounded-lg border border-line focus:border-brand text-ink text-xs resize-none"
                       />
                       <button onClick={() => removeProjectBullet(pi, bi)} className="text-danger shrink-0">
                         <MinusCircle className="w-4 h-4" />
@@ -1000,7 +1000,7 @@ function EditResumeSheet({
                   ))}
                   <button
                     onClick={() => addProjectBullet(pi)}
-                    className="flex items-center gap-1 text-[11px] font-bold text-ink mt-1"
+                    className="flex items-center gap-1 text-[11px] font-bold text-brand mt-1"
                   >
                     <PlusCircle className="w-3 h-3" /> Add bullet
                   </button>
@@ -1015,7 +1015,7 @@ function EditResumeSheet({
               <label className="text-[11px] font-bold text-ink-muted uppercase tracking-wider">Achievements</label>
               <button
                 onClick={addAchievement}
-                className="flex items-center gap-1 text-[11px] font-bold text-ink"
+                className="flex items-center gap-1 text-[11px] font-bold text-brand"
               >
                 <PlusCircle className="w-3.5 h-3.5" /> Add
               </button>
@@ -1026,7 +1026,7 @@ function EditResumeSheet({
                   value={a}
                   onChange={e => updateAchievement(i, e.target.value)}
                   placeholder="Achievement"
-                  className="flex-1 rounded-lg border border-line focus:border-ink text-ink text-sm h-8"
+                  className="flex-1 rounded-lg border border-line focus:border-brand text-ink text-sm h-8"
                 />
                 <button onClick={() => removeAchievement(i)} className="text-danger shrink-0">
                   <MinusCircle className="w-4 h-4" />
@@ -1040,7 +1040,7 @@ function EditResumeSheet({
           <Button
             onClick={handleSave}
             disabled={saving}
-            className="w-full h-12 rounded-xl bg-ink text-paper hover:bg-ink font-bold text-[15px]"
+            className="w-full h-12 rounded-full bg-brand text-white hover:bg-brand/90 font-bold text-[15px]"
           >
             {saving ? (
               <>
@@ -1084,7 +1084,7 @@ function ResumeCard({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -8 }}
-      className="bg-paper rounded-2xl p-4 border border-line"
+      className="bg-paper rounded-2xl shadow-soft p-4"
     >
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="min-w-0 flex-1">
@@ -1119,14 +1119,14 @@ function ResumeCard({
         <Button
           onClick={onEdit}
           variant="outline"
-          className="flex-1 h-9 rounded-xl font-bold text-xs border border-line text-ink"
+          className="flex-1 h-9 rounded-full font-bold text-xs border border-line text-brand"
         >
           <Pencil className="w-3.5 h-3.5 mr-1.5" />
           Edit
         </Button>
         <Button
           onClick={onDownload}
-          className="flex-1 h-9 rounded-xl bg-ink text-paper hover:bg-ink font-bold text-xs"
+          className="flex-1 h-9 rounded-full bg-brand text-white hover:bg-brand/90 font-bold text-xs"
         >
           <Download className="w-3.5 h-3.5 mr-1.5" />
           Download PDF
@@ -1205,7 +1205,7 @@ function GenerateSheet({
 
         <div className="flex items-center justify-between">
           <h2 className="text-[17px] font-extrabold text-ink flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-ink" />
+            <Sparkles className="w-4 h-4 text-brand" />
             Generate New Resume
           </h2>
           <button onClick={onClose} className="w-8 h-8 rounded-full border border-line flex items-center justify-center">
@@ -1222,7 +1222,7 @@ function GenerateSheet({
                 onClick={() => setTemplateId(t.id)}
                 className={`rounded-xl p-3 text-left border transition-colors ${
                   templateId === t.id
-                    ? "border-ink bg-line"
+                    ? "border-brand bg-brand-soft"
                     : "border-line bg-paper"
                 }`}
               >
@@ -1242,7 +1242,7 @@ function GenerateSheet({
             value={companyName}
             onChange={e => setCompanyName(e.target.value)}
             placeholder="e.g. Google, Flipkart, Razorpay"
-            className="rounded-xl border border-line focus:border-ink text-ink"
+            className="rounded-xl border border-line focus:border-brand text-ink"
           />
         </div>
 
@@ -1256,7 +1256,7 @@ function GenerateSheet({
             onChange={e => setJdText(e.target.value)}
             placeholder="Paste job description here for an ATS-optimized, targeted resume..."
             rows={4}
-            className="rounded-xl border border-line focus:border-ink text-ink text-sm resize-none"
+            className="rounded-xl border border-line focus:border-brand text-ink text-sm resize-none"
           />
         </div>
 
@@ -1269,14 +1269,14 @@ function GenerateSheet({
             value={resumeName}
             onChange={e => setResumeName(e.target.value)}
             placeholder="e.g. Google SWE Resume, FAANG Attempt 1"
-            className="rounded-xl border border-line focus:border-ink text-ink"
+            className="rounded-xl border border-line focus:border-brand text-ink"
           />
         </div>
 
         <Button
           onClick={generate}
           disabled={generating}
-          className="w-full h-12 rounded-xl bg-ink text-paper hover:bg-ink font-bold text-[15px]"
+          className="w-full h-12 rounded-full bg-brand text-white hover:bg-brand/90 font-bold text-[15px]"
         >
           {generating ? (
             <>
@@ -1361,7 +1361,7 @@ export default function Resume() {
 
   if (loading) {
     return (
-      <div className="p-4 pb-28 max-w-md mx-auto space-y-4 min-h-screen bg-paper">
+      <div className="p-4 pb-28 max-w-md mx-auto space-y-4 min-h-screen bg-canvas">
         <Skeleton className="h-8 w-32 rounded-xl" />
         <Skeleton className="h-32 w-full rounded-2xl" />
         <Skeleton className="h-32 w-full rounded-2xl" />
@@ -1371,7 +1371,7 @@ export default function Resume() {
 
   return (
     <>
-      <div className="p-4 pb-28 max-w-md mx-auto space-y-5 min-h-screen bg-paper">
+      <div className="p-4 pb-28 max-w-md mx-auto space-y-5 min-h-screen bg-canvas">
         <Button
           variant="ghost"
           onClick={() => setLocation("/profile")}
@@ -1392,7 +1392,7 @@ export default function Resume() {
           <motion.div whileTap={{ scale: 0.96 }}>
             <Button
               onClick={() => setGenerateFor({ company: "", role: "" })}
-              className="rounded-xl bg-ink text-paper hover:bg-ink font-bold px-4 h-10"
+              className="rounded-full bg-brand text-white hover:bg-brand/90 font-bold px-4 h-10"
             >
               <Plus className="w-4 h-4 mr-1.5" />
               New
@@ -1420,7 +1420,7 @@ export default function Resume() {
             </p>
             <Button
               onClick={() => setGenerateFor({ company: "", role: "" })}
-              className="rounded-xl bg-ink text-paper hover:bg-ink font-bold px-4 h-11"
+              className="rounded-full bg-brand text-white hover:bg-brand/90 font-bold px-4 h-11"
             >
               <Sparkles className="w-4 h-4 mr-2" />
               Generate First Resume
@@ -1445,14 +1445,14 @@ export default function Resume() {
           </div>
         )}
 
-        <div className="border border-line rounded-2xl p-4">
+        <div className="bg-paper rounded-2xl shadow-soft p-4">
           <p className="text-[14px] font-bold text-ink mb-1">Pro tip</p>
           <p className="text-[12px] text-ink-muted leading-relaxed">
             Complete your Profile with real projects and certifications — the AI will use them to generate a much stronger, targeted resume for each company.
           </p>
           <button
             onClick={() => setLocation("/profile")}
-            className="mt-3 flex items-center gap-1 text-[12px] font-bold text-ink"
+            className="mt-3 flex items-center gap-1 text-[12px] font-bold text-brand"
           >
             Update my profile <ChevronRight className="w-3.5 h-3.5" />
           </button>

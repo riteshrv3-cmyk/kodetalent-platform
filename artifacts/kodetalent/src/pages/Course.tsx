@@ -406,7 +406,7 @@ export default function Course() {
         {/* Progress bar */}
         <div className="w-full bg-line rounded-full h-2 mb-3 overflow-hidden">
           <motion.div
-            className="h-full rounded-full bg-ink"
+            className="h-full rounded-full bg-brand"
             initial={{ width: "4%" }}
             animate={{ width: `${progressPct}%` }}
             transition={{ duration: 0.5, ease: "easeOut" }}
@@ -455,7 +455,7 @@ export default function Course() {
               </p>
               {!step.done && (
                 <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ duration: 1.2, repeat: Infinity }}
-                  className="ml-auto w-1.5 h-1.5 rounded-full bg-ink" />
+                  className="ml-auto w-1.5 h-1.5 rounded-full bg-brand" />
               )}
             </motion.div>
           ))}
@@ -469,7 +469,7 @@ export default function Course() {
       <div className="min-h-screen bg-paper flex flex-col items-center justify-center px-6 pb-28">
         <h2 className="text-lg font-extrabold text-ink mb-2">Something went wrong</h2>
         <p className="text-sm text-ink-muted text-center mb-6">{error}</p>
-        <Button onClick={() => { setDataReady(false); setAnimReady(false); setMsgIndex(0); hasFetched.current = false; }} className="bg-ink hover:bg-ink/90 text-paper font-bold rounded-xl px-6">
+        <Button onClick={() => { setDataReady(false); setAnimReady(false); setMsgIndex(0); hasFetched.current = false; }} className="bg-brand hover:bg-brand/90 text-paper font-bold rounded-xl px-6">
           Try again
         </Button>
       </div>
@@ -512,7 +512,7 @@ export default function Course() {
             return (
               <button key={tab.id} onClick={() => setActiveTab(tab.id)}
                 className={cn("flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-[12px] font-extrabold transition-colors",
-                  active ? "bg-ink text-paper" : "text-ink-muted border border-line")}>
+                  active ? "bg-brand text-paper" : "text-ink-muted border border-line")}>
                 <Icon className="w-3.5 h-3.5" />{tab.label}
               </button>
             );
@@ -530,13 +530,13 @@ export default function Course() {
             <motion.div key="roadmap" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
 
               {/* Hero progress banner */}
-              <div className="rounded-2xl border border-line bg-paper p-4 mb-4">
+              <div className="rounded-2xl bg-paper shadow-soft p-4 mb-4">
                 <div className="flex items-center gap-4">
                   {/* Circular progress ring */}
                   <div className="relative flex-shrink-0 w-16 h-16">
                     <svg className="w-16 h-16 -rotate-90" viewBox="0 0 64 64">
                       <circle cx="32" cy="32" r="26" fill="none" className="stroke-line" strokeWidth="6" />
-                      <circle cx="32" cy="32" r="26" fill="none" className="stroke-ink transition-all duration-700" strokeWidth="6"
+                      <circle cx="32" cy="32" r="26" fill="none" className="stroke-brand transition-all duration-700" strokeWidth="6"
                         strokeDasharray={`${2 * Math.PI * 26}`}
                         strokeDashoffset={`${2 * Math.PI * 26 * (1 - overallPct / 100)}`}
                         strokeLinecap="round" />
@@ -564,7 +564,7 @@ export default function Course() {
                   setLocation(`/profile?${params.toString()}`);
                 }}
                 data-testid="cta-build-project"
-                className="w-full mb-4 rounded-2xl p-4 text-left bg-paper border border-line hover:bg-line/40 transition-colors flex items-center gap-3 group"
+                className="w-full mb-4 rounded-2xl p-4 text-left bg-paper shadow-soft hover:shadow-md transition-shadow flex items-center gap-3 group"
               >
                 <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 border border-line text-lg">
                   🚀
@@ -621,7 +621,7 @@ export default function Course() {
                               {/* Progress bar */}
                               <div className="flex items-center gap-2 mt-2">
                                 <div className="flex-1 h-1.5 bg-line rounded-full overflow-hidden">
-                                  <div className="h-full rounded-full bg-ink transition-all duration-500" style={{ width: `${modPct}%` }} />
+                                  <div className="h-full rounded-full bg-brand transition-all duration-500" style={{ width: `${modPct}%` }} />
                                 </div>
                                 <span className="text-[10px] font-bold text-ink-muted whitespace-nowrap">
                                   {modCompleted}/{lessons.length} · <Clock className="w-2.5 h-2.5 inline" /> {mod.duration}
@@ -694,7 +694,7 @@ export default function Course() {
                                             transition={{ duration: 0.2 }}
                                             className="overflow-hidden"
                                           >
-                                            <div className="ml-11 mb-3 rounded-2xl overflow-hidden border border-line bg-paper">
+                                            <div className="ml-11 mb-3 rounded-2xl overflow-hidden bg-paper shadow-soft">
                                               {/* Description */}
                                               <div className="p-4 pb-3">
                                                 <p className="text-xs text-ink font-bold leading-relaxed mb-3">
@@ -709,7 +709,7 @@ export default function Course() {
                                                     </p>
                                                     {lesson.keyPoints.map((pt, i) => (
                                                       <div key={i} className="flex items-start gap-2">
-                                                        <div className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 bg-ink" />
+                                                        <div className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 bg-brand" />
                                                         <p className="text-[12px] text-ink font-bold leading-snug">{pt}</p>
                                                       </div>
                                                     ))}
@@ -753,7 +753,7 @@ export default function Course() {
                                                             }
                                                           }}
                                                           disabled={videoLoading === lesson.id}
-                                                          className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl font-bold text-[12px] bg-ink text-paper disabled:opacity-70"
+                                                          className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl font-bold text-[12px] bg-brand text-paper disabled:opacity-70"
                                                         >
                                                           {videoLoading === lesson.id
                                                             ? <><Loader2 className="w-4 h-4 animate-spin" /> Loading…</>
@@ -797,7 +797,7 @@ export default function Course() {
                                                               else window.location.href = a.fallback;
                                                             }
                                                           }}
-                                                          className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl font-bold text-[12px] bg-ink text-paper"
+                                                          className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl font-bold text-[12px] bg-brand text-paper"
                                                         >
                                                           <ExternalLink className="w-4 h-4" />
                                                           {a.label}
@@ -847,7 +847,7 @@ export default function Course() {
                                                           </p>
                                                           <button
                                                             onClick={() => toggleLesson(lesson.id)}
-                                                            className="flex items-center gap-1 text-[11px] font-extrabold px-3 py-1.5 rounded-lg bg-ink text-paper flex-shrink-0"
+                                                            className="flex items-center gap-1 text-[11px] font-extrabold px-3 py-1.5 rounded-lg bg-brand text-paper flex-shrink-0"
                                                           >
                                                             <CheckCircle2 className="w-3.5 h-3.5" /> Done
                                                           </button>
@@ -876,7 +876,7 @@ export default function Course() {
 
               {/* Bottom CTA */}
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
-                className="mt-4 rounded-2xl border border-line bg-paper p-4">
+                className="mt-4 rounded-2xl bg-paper shadow-soft p-4">
                 <p className="text-sm font-extrabold mb-1 text-ink">
                   {overallPct === 100 ? "Course complete! Now test yourself." : "Learning tip"}
                 </p>
@@ -886,10 +886,10 @@ export default function Course() {
                     : "After each lesson, review flashcards and take the quiz to lock in what you learned."}
                 </p>
                 <div className="flex gap-2">
-                  <Button onClick={() => setActiveTab("flashcards")} className="flex-1 h-10 rounded-xl bg-ink hover:bg-ink/90 text-paper font-bold text-[13px]">
+                  <Button onClick={() => setActiveTab("flashcards")} className="flex-1 h-10 rounded-xl bg-brand hover:bg-brand/90 text-paper font-bold text-[13px]">
                     <CreditCard className="w-4 h-4 mr-1.5" /> Flashcards
                   </Button>
-                  <Button onClick={() => setActiveTab("quiz")} variant="outline" className="flex-1 h-10 rounded-xl font-bold text-[13px] border border-line text-ink bg-paper hover:bg-line/40">
+                  <Button onClick={() => setActiveTab("quiz")} variant="outline" className="flex-1 h-10 rounded-xl font-bold text-[13px] border border-line text-brand bg-paper hover:bg-brand-soft">
                     <HelpCircle className="w-4 h-4 mr-1.5" /> Quiz
                   </Button>
                 </div>
@@ -909,7 +909,7 @@ export default function Course() {
                   { label: "Accuracy", value: `${accuracy}%` },
                   { label: "Streak", value: `🔥 ${streak}` },
                 ].map(s => (
-                  <div key={s.label} className="flex-1 rounded-xl border border-line bg-paper p-3 text-center">
+                  <div key={s.label} className="flex-1 rounded-xl bg-paper shadow-soft p-3 text-center">
                     <p className="text-[11px] text-ink-muted font-bold">{s.label}</p>
                     <p className="text-lg font-extrabold text-ink">{s.value}</p>
                   </div>
@@ -928,14 +928,14 @@ export default function Course() {
               </div>
               {queue.length > 0 && (
                 <div className="h-1.5 bg-line rounded-full mb-4 overflow-hidden">
-                  <div className="h-full rounded-full bg-ink transition-all duration-500"
+                  <div className="h-full rounded-full bg-brand transition-all duration-500"
                     style={{ width: `${(queueIndex / queue.length) * 100}%` }} />
                 </div>
               )}
 
               {cardsLeft === 0 ? (
                 <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
-                  className="rounded-2xl border border-line bg-paper p-8 text-center">
+                  className="rounded-2xl bg-paper shadow-soft p-8 text-center">
                   {/* Milestone moments are the one place personality is allowed —
                       see the Phase 3 call to keep rare celebrations despite the
                       monochrome palette. */}
@@ -947,7 +947,7 @@ export default function Course() {
                       ? `You reviewed ${sessionStats.reviewed} cards with ${accuracy}% accuracy.`
                       : "No cards due right now. Come back tomorrow!"}
                   </p>
-                  <Button onClick={() => setActiveTab("quiz")} className="w-full h-11 rounded-xl font-bold bg-ink hover:bg-ink/90 text-paper">
+                  <Button onClick={() => setActiveTab("quiz")} className="w-full h-11 rounded-xl font-bold bg-brand hover:bg-brand/90 text-paper">
                     Try the Quiz <ChevronRight className="w-4 h-4 ml-1" />
                   </Button>
                 </motion.div>
@@ -961,7 +961,7 @@ export default function Course() {
                         <motion.div animate={{ rotateY: isFlipped ? 180 : 0 }} transition={{ duration: 0.45, ease: "easeInOut" }}
                           style={{ transformStyle: "preserve-3d", width: "100%", height: "100%" }}>
                           {/* Front */}
-                          <div className="absolute inset-0 border border-line bg-paper rounded-2xl flex flex-col items-center justify-center p-6 text-center"
+                          <div className="absolute inset-0 bg-paper shadow-soft rounded-2xl flex flex-col items-center justify-center p-6 text-center"
                             style={{ backfaceVisibility: "hidden" }}>
                             {progress[currentCard.id] && (
                               <div className="absolute top-3 right-3">
@@ -985,7 +985,7 @@ export default function Course() {
                             <p className="text-[11px] text-ink-muted mt-4">Tap to reveal answer</p>
                           </div>
                           {/* Back */}
-                          <div className="absolute inset-0 rounded-2xl border border-line bg-paper flex flex-col items-center justify-center p-6 text-center"
+                          <div className="absolute inset-0 rounded-2xl bg-paper shadow-soft flex flex-col items-center justify-center p-6 text-center"
                             style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}>
                             <p className="text-[10px] font-bold uppercase tracking-widest mb-3 text-ink-muted">Answer</p>
                             <p className="text-[14px] font-bold text-ink leading-relaxed">{currentCard.back}</p>
@@ -1026,7 +1026,7 @@ export default function Course() {
             <motion.div key="quiz" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
               {quizComplete ? (
                 <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
-                  <div className="rounded-2xl border border-line bg-paper p-6 text-center mb-4">
+                  <div className="rounded-2xl bg-paper shadow-soft p-6 text-center mb-4">
                     <Trophy className="w-12 h-12 mx-auto mb-3 text-ink" />
                     <h2 className="text-2xl font-extrabold text-ink mb-1">{quizScore} / {courseData.quizQuestions.length}</h2>
                     <p className="text-sm text-ink-muted mb-4">
@@ -1035,10 +1035,10 @@ export default function Course() {
                         : "Keep studying — try the flashcards first."}
                     </p>
                     <div className="flex gap-2">
-                      <Button onClick={resetQuiz} variant="outline" className="flex-1 h-10 rounded-xl font-bold border border-line text-ink bg-paper hover:bg-line/40">
+                      <Button onClick={resetQuiz} variant="outline" className="flex-1 h-10 rounded-xl font-bold border border-line text-brand bg-paper hover:bg-brand-soft">
                         <RotateCcw className="w-4 h-4 mr-1.5" /> Retry
                       </Button>
-                      <Button onClick={() => setActiveTab("flashcards")} className="flex-1 h-10 rounded-xl font-bold bg-ink hover:bg-ink/90 text-paper">
+                      <Button onClick={() => setActiveTab("flashcards")} className="flex-1 h-10 rounded-xl font-bold bg-brand hover:bg-brand/90 text-paper">
                         Study Cards
                       </Button>
                     </div>
@@ -1064,9 +1064,9 @@ export default function Course() {
                       </span>
                     </div>
                     <div className="h-1.5 bg-line rounded-full mb-4 overflow-hidden">
-                      <div className="h-full rounded-full bg-ink transition-all duration-500" style={{ width: `${(quizIndex / courseData.quizQuestions.length) * 100}%` }} />
+                      <div className="h-full rounded-full bg-brand transition-all duration-500" style={{ width: `${(quizIndex / courseData.quizQuestions.length) * 100}%` }} />
                     </div>
-                    <div className="border border-line bg-paper rounded-2xl mb-4 p-5">
+                    <div className="bg-paper shadow-soft rounded-2xl mb-4 p-5">
                       <p className="text-base font-extrabold text-ink leading-snug">{currentQ.question}</p>
                     </div>
                     <div className="space-y-2 mb-4">
@@ -1077,9 +1077,9 @@ export default function Course() {
                         let optBg = "bg-paper", optBorder = "border-line";
                         let mark: "correct" | "incorrect" | null = null;
                         if (showExplanation) {
-                          if (isCorrect) { optBg = "bg-line"; optBorder = "border-ink"; mark = "correct"; }
-                          else if (chosen) { optBg = "bg-line"; optBorder = "border-ink"; mark = "incorrect"; }
-                        } else if (chosen) { optBg = "bg-line"; optBorder = "border-ink"; }
+                          if (isCorrect) { optBg = "bg-done/10"; optBorder = "border-done"; mark = "correct"; }
+                          else if (chosen) { optBg = "bg-danger/10"; optBorder = "border-danger"; mark = "incorrect"; }
+                        } else if (chosen) { optBg = "bg-brand-soft"; optBorder = "border-brand"; }
                         return (
                           <button key={opt} onClick={() => selectAnswer(opt)} disabled={!!selectedAnswer}
                             className={cn("w-full flex items-center gap-2 text-left p-3.5 rounded-xl border font-bold text-sm text-ink transition-colors", optBg, optBorder)}>
@@ -1092,7 +1092,7 @@ export default function Course() {
                     </div>
                     <AnimatePresence>
                       {showExplanation && (
-                        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl border border-line bg-paper p-4 mb-4">
+                        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl bg-paper shadow-soft p-4 mb-4">
                           <div className="flex items-center gap-2 mb-1">
                             {selectedAnswer === currentQ.answer ? <CheckCircle2 className="w-4 h-4 text-done" /> : <XCircle className="w-4 h-4 text-danger" />}
                             <p className="text-[12px] font-extrabold text-ink">
@@ -1104,7 +1104,7 @@ export default function Course() {
                       )}
                     </AnimatePresence>
                     {showExplanation && (
-                      <Button onClick={nextQuestion} className="w-full h-11 rounded-xl font-bold bg-ink hover:bg-ink/90 text-paper text-[14px]">
+                      <Button onClick={nextQuestion} className="w-full h-11 rounded-xl font-bold bg-brand hover:bg-brand/90 text-paper text-[14px]">
                         {quizIndex + 1 < courseData.quizQuestions.length ? "Next Question →" : "See Results"}
                       </Button>
                     )}

@@ -65,7 +65,7 @@ export default function InterviewHistory() {
   }, [items]);
 
   return (
-    <div className="min-h-screen bg-paper pb-28">
+    <div className="min-h-screen bg-canvas pb-28">
       <div className="sticky top-0 z-10 bg-paper px-4 pt-4 pb-3">
         <div className="flex items-center gap-3">
           <button
@@ -81,9 +81,9 @@ export default function InterviewHistory() {
         </div>
       </div>
 
-      <div className="px-4 space-y-6">
+      <div className="px-4 pt-4 space-y-6">
         {error && (
-          <div className="border border-line rounded-2xl p-4">
+          <div className="bg-paper rounded-2xl shadow-soft p-4">
             <p className="text-[14px] font-bold text-danger">Couldn't load history</p>
             <p className="text-[12px] text-ink-muted mt-1">{error}</p>
           </div>
@@ -91,7 +91,7 @@ export default function InterviewHistory() {
 
         {!error && items === null && (
           <div className="flex justify-center py-12">
-            <div className="w-6 h-6 rounded-full border-2 border-ink border-t-transparent animate-spin" />
+            <div className="w-6 h-6 rounded-full border-2 border-brand border-t-transparent animate-spin" />
           </div>
         )}
 
@@ -101,7 +101,7 @@ export default function InterviewHistory() {
             <p className="text-[12px] text-ink-muted mt-1 mb-5">Finish your first mock interview to start tracking your progress.</p>
             <Button
               onClick={() => setLocation("/practice")}
-              className="rounded-xl bg-ink text-paper font-bold px-4 py-3 hover:bg-ink"
+              className="rounded-full bg-brand text-white font-bold px-4 py-3 hover:bg-brand/90"
             >
               Start Mock Interview
             </Button>
@@ -111,7 +111,7 @@ export default function InterviewHistory() {
         {items && items.length > 0 && stats && (
           <>
             {/* Stat row */}
-            <div className="grid grid-cols-3 divide-x divide-line border-y border-line">
+            <div className="grid grid-cols-3 divide-x divide-line bg-paper rounded-2xl shadow-soft">
               <div className="px-3 py-4 text-center">
                 <div className="text-[26px] font-extrabold text-ink leading-none">{stats.avg}</div>
                 <div className="text-[11px] font-bold uppercase tracking-wider text-ink-muted mt-1.5">Average</div>
@@ -127,7 +127,7 @@ export default function InterviewHistory() {
             </div>
 
             {/* Chart */}
-            <div className="border border-line rounded-2xl overflow-hidden">
+            <div className="bg-paper rounded-2xl shadow-soft overflow-hidden">
               <div className="p-4">
                 <div className="flex items-center justify-between mb-3">
                   <div>
@@ -170,10 +170,10 @@ export default function InterviewHistory() {
                       <Line
                         type="monotone"
                         dataKey="score"
-                        stroke="#0f0f10"
+                        stroke="#4a55c7"
                         strokeWidth={2}
-                        dot={{ r: 3, fill: "#ffffff", stroke: "#0f0f10", strokeWidth: 2 }}
-                        activeDot={{ r: 5, fill: "#0f0f10", stroke: "#ffffff", strokeWidth: 2 }}
+                        dot={{ r: 3, fill: "#ffffff", stroke: "#4a55c7", strokeWidth: 2 }}
+                        activeDot={{ r: 5, fill: "#4a55c7", stroke: "#ffffff", strokeWidth: 2 }}
                       />
                     </LineChart>
                   </ResponsiveContainer>
@@ -196,7 +196,7 @@ export default function InterviewHistory() {
                     className="w-full py-4 border-t border-line flex items-center justify-between text-left"
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-12 h-12 rounded-xl border border-line flex items-center justify-center flex-shrink-0 text-ink font-extrabold text-[16px]">
+                      <div className="w-12 h-12 rounded-xl bg-brand-soft flex items-center justify-center flex-shrink-0 text-brand font-extrabold text-[16px]">
                         {it.overallScore}
                       </div>
                       <div className="min-w-0">
