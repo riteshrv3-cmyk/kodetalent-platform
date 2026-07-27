@@ -1,6 +1,7 @@
-import { db, studentsTable, interviewSessionsTable, applicationsTable, dailyTasksTable } from "@workspace/db";
+import { db, studentsTable, interviewSessionsTable, applicationsTable, dailyTasksTable, studentActivityLogTable } from "@workspace/db";
 import { eq, and, desc, gte } from "drizzle-orm";
 import { GENERIC_SKILLS } from "./dailyTasks";
+import { getNoticings } from "./noticings";
 
 export interface StudentContext {
   goal: { role: string | null; batch: number | null; dreamCompany: string | null };
@@ -68,6 +69,14 @@ export async function contextPack(studentId: number): Promise<ContextPack | null
 
   const lastCourse = student.lastCourse as { subDomainName: string; completed: number; total: number } | null;
 
+  const recentEvents = await db
+    .select({ description: studentActivityLogTable.description, createdAt: studentActivityLogTable.createdAt })
+    .from(studentActivityLogTable)
+    .where(eq(studentActivityLogTable.studentId, studentId))
+    .orderBy(desc(studentActivityLogTable.createdAt))
+    .limit(8);
+  const topNoticings = await getNoticings(studentId, 3);
+
   const data: StudentContext = {
     goal: { role: student.targetRole, batch: student.targetBatch, dreamCompany: student.dreamCompany },
     scores: { baseline: student.baselineScore, latest, trend },
@@ -94,6 +103,9 @@ export async function contextPack(studentId: number): Promise<ContextPack | null
 - Active course: ${data.progress.activeCourse ?? "none"}${data.progress.pct !== null ? ` (${data.progress.pct}% complete)` : ""}
 - Pipeline: ${data.pipeline.applications.length ? data.pipeline.applications.map((a) => `${a.company ?? "?"} (${a.status})`).join(", ") : "no applications tracked yet"}
 - Last 7 days: ${data.recentDays.map((d) => `${d.date}: ${d.tasksDone}/${d.tasksTotal}`).join("; ") || "no activity logged"}
+RECENT OBSERVATIONS (Kit's own noticings — use to sound like you remember this student, don't just repeat verbatim):
+- Recent activity: ${recentEvents.length ? recentEvents.map((e) => `${e.description} (${e.createdAt.toISOString().slice(0, 10)})`).join("; ") : "no recent activity logged"}
+- Kit noticed: ${topNoticings.length ? topNoticings.map((n) => n.text).join(" | ") : "nothing specific right now"}
 <<<STUDENT_CONTEXT_END>>>`;
 
   return { data, text };

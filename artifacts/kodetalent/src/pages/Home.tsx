@@ -39,7 +39,7 @@ export default function Home() {
     };
   }, [setLocation]);
 
-  const { tasks, toggleManual, streakCount } = useTodayTasks({ studentId });
+  const { tasks, toggleManual, streakCount, noticing } = useTodayTasks({ studentId });
 
   const firstName = profile?.name?.split(" ")[0] ?? "there";
   const hour = new Date().getHours();
@@ -77,6 +77,27 @@ export default function Home() {
       </div>
 
       <div className="bg-canvas rounded-t-3xl -mt-6 px-6 pt-6 lg:max-w-2xl lg:mx-auto">
+        {noticing && (
+          <div className="bg-brand-soft rounded-2xl p-4 mb-4">
+            <button
+              type="button"
+              onClick={() => setLocation(noticing.href)}
+              className="w-full flex items-start gap-3 text-left"
+            >
+              <div className="w-8 h-8 rounded-full bg-brand text-white flex items-center justify-center shrink-0">
+                <Cat className="w-4 h-4" strokeWidth={2} />
+              </div>
+              <p className="text-[13px] font-medium text-ink leading-snug pt-1">{noticing.text}</p>
+            </button>
+            <button
+              type="button"
+              onClick={() => setLocation("/notebook")}
+              className="text-[11px] font-bold text-brand mt-2 ml-11"
+            >
+              See everything Kit has noticed →
+            </button>
+          </div>
+        )}
         {tasks.map((task) => (
           <TaskRow
             key={task.id}

@@ -7,6 +7,7 @@ import { rlAiHeavy } from "../middlewares/rateLimit";
 import { contextPack } from "../lib/contextPack";
 import { extractJson } from "../lib/extractJson";
 import { requireStudent } from "../middlewares/studentAuth";
+import { logEvent } from "../lib/events";
 
 const router = Router();
 
@@ -223,6 +224,8 @@ Rules:
         content: fullContent,
       })
       .returning();
+
+    logEvent(id, "resume_generated", name, { templateId });
 
     return res.status(201).json(saved);
   } catch (err) {

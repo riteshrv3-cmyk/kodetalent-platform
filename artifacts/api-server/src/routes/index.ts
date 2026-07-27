@@ -24,6 +24,7 @@ import collegesRouter from "./colleges";
 import activityLogRouter from "./activityLog";
 import dailyTasksRouter from "./dailyTasks";
 import pipelineRouter from "./pipeline";
+import notebookRouter from "./notebook";
 
 const router: IRouter = Router();
 
@@ -52,5 +53,6 @@ router.use(collegesRouter);
 router.use(activityLogRouter);
 router.use(dailyTasksRouter);
 router.use(pipelineRouter);
+router.use(notebookRouter);
 
 export default router;

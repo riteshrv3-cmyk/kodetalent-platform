@@ -7,6 +7,7 @@ import { rlAiHeavy, rlAiMedium } from "../middlewares/rateLimit";
 import { requireStudent } from "../middlewares/studentAuth";
 import { contextPack } from "../lib/contextPack";
 import { extractJson } from "../lib/extractJson";
+import { logEvent } from "../lib/events";
 
 const router = Router();
 
@@ -88,6 +89,12 @@ router.patch("/students/:id/profile", requireStudent({ allowGuest: true }), asyn
     }
     if (Object.keys(updates).length === 0) {
       return res.status(400).json({ error: "No valid fields to update" });
+    }
+    if (updates.targetRole !== undefined || updates.targetBatch !== undefined) {
+      logEvent(id, "goal_changed", `Goal updated: ${updates.targetRole ?? "role unchanged"}${updates.targetBatch ? `, batch ${updates.targetBatch}` : ""}`, {
+        targetRole: updates.targetRole,
+        targetBatch: updates.targetBatch,
+      });
     }
     await db.update(studentsTable).set(updates).where(eq(studentsTable.id, id));
     const [updated] = await db.select().from(studentsTable).where(eq(studentsTable.id, id)).limit(1);

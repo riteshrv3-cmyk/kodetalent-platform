@@ -8,6 +8,7 @@ import { contextPack } from "../lib/contextPack";
 import { extractJson } from "../lib/extractJson";
 import { cacheGetOrSet } from "../lib/aiCache";
 import { clamp, normalizeBranch, computeEligibilityGates } from "../lib/driveAnalysis";
+import { logEvent } from "../lib/events";
 
 const router = Router();
 
@@ -145,6 +146,12 @@ Return EXACTLY this JSON shape:
       })
       .returning();
 
+    logEvent(id, "application_added", `${parsed.company ?? "Unknown company"}${parsed.role ? ` · ${parsed.role}` : ""}`, {
+      company: parsed.company,
+      role: parsed.role,
+      fitScore: parsed.fitScore,
+    });
+
     return res.status(201).json(saved);
   } catch (err) {
     req.log.error({ err }, "Pipeline analysis failed");
@@ -180,12 +187,24 @@ router.patch("/students/:id/applications/:appId", requireStudent({ allowGuest: t
     return res.status(400).json({ error: `status must be one of: ${[...VALID_STATUSES].join(", ")}` });
   }
   try {
+    const [existing] = await db
+      .select({ status: applicationsTable.status, company: applicationsTable.company })
+      .from(applicationsTable)
+      .where(and(eq(applicationsTable.id, appId), eq(applicationsTable.studentId, id)))
+      .limit(1);
+    if (!existing) return res.status(404).json({ error: "Not found" });
     const [updated] = await db
       .update(applicationsTable)
       .set({ status, statusUpdatedAt: new Date() })
       .where(and(eq(applicationsTable.id, appId), eq(applicationsTable.studentId, id)))
       .returning();
     if (!updated) return res.status(404).json({ error: "Not found" });
+    if (existing.status !== status) {
+      logEvent(id, "application_status_changed", `${existing.company ?? "Application"}: ${existing.status} → ${status}`, {
+        from: existing.status,
+        to: status,
+      });
+    }
     return res.json(updated);
   } catch (err) {
     req.log.error({ err }, "Failed to update application status");

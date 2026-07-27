@@ -1,4 +1,4 @@
-import { pgTable, serial, integer, text, timestamp, index } from "drizzle-orm/pg-core";
+import { pgTable, serial, integer, text, timestamp, index, jsonb } from "drizzle-orm/pg-core";
 import { studentsTable } from "./students";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
@@ -9,6 +9,7 @@ export const studentActivityLogTable = pgTable("student_activity_log", {
   action: text("action").notNull(),
   description: text("description").notNull(),
   xpAmount: integer("xp_amount").notNull().default(0),
+  payload: jsonb("payload"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 }, t => ({
   studentIdx: index("sal_student_idx").on(t.studentId),

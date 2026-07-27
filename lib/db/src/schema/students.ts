@@ -59,6 +59,7 @@ export const studentsTable = pgTable("students", {
   targetBatch: integer("target_batch"),        // placement/grad year, e.g. 2027
   baselineScore: integer("baseline_score"),    // first completed mock's score; set once
   lastCourse: jsonb("last_course"),            // { subDomainId, subDomainName, completed, total, updatedAt }
+  noticingHistory: jsonb("noticing_history"),  // { [ruleType]: lastShownDate, lastGapFramedDate }
 
   createdAt: timestamp("created_at").notNull().defaultNow(),
 }, t => ({

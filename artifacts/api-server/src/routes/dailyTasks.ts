@@ -2,7 +2,9 @@ import { Router } from "express";
 import { db, studentsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { requireStudent } from "../middlewares/studentAuth";
-import { getTodayTasks, completeTask, addFollowupTask, autoCompleteTaskKind, formatDailyTask } from "../lib/dailyTasks";
+import { getTodayTasks, completeTask, addFollowupTask, autoCompleteTaskKind, formatDailyTask, istToday } from "../lib/dailyTasks";
+import { logEvent } from "../lib/events";
+import { getTopNoticing } from "../lib/noticings";
 
 const router = Router();
 
@@ -11,8 +13,20 @@ router.get("/students/:id/today-tasks", requireStudent({ allowGuest: true }), as
   const id = Number(req.params.id);
   try {
     const { date, tasks } = await getTodayTasks(id);
-    const [student] = await db.select({ streakCount: studentsTable.streakCount }).from(studentsTable).where(eq(studentsTable.id, id)).limit(1);
-    return res.json({ date, tasks: tasks.map(formatDailyTask), streakCount: student?.streakCount ?? 0 });
+    const [student] = await db.select({ streakCount: studentsTable.streakCount, lastActiveDate: studentsTable.lastActiveDate }).from(studentsTable).where(eq(studentsTable.id, id)).limit(1);
+    // Compute the noticing BEFORE advancing lastActiveDate — comeback/streak_risk rules
+    // need to see whether the student was already active today or arriving after a gap.
+    const noticing = await getTopNoticing(id);
+    const today = istToday();
+    if (student && student.lastActiveDate !== today) {
+      await db.update(studentsTable).set({ lastActiveDate: today }).where(eq(studentsTable.id, id));
+    }
+    return res.json({
+      date,
+      tasks: tasks.map(formatDailyTask),
+      streakCount: student?.streakCount ?? 0,
+      noticing: noticing ? { text: noticing.text, href: noticing.href } : null,
+    });
   } catch (err) {
     req.log.error({ err }, "Failed to load today's tasks");
     return res.status(500).json({ error: "Failed to load today's tasks" });
@@ -27,6 +41,11 @@ router.post("/students/:id/tasks/:taskId/complete", requireStudent({ allowGuest:
   try {
     const result = await completeTask(id, taskId, true);
     if (!result) return res.status(404).json({ error: "Task not found" });
+    logEvent(id, "task_completed", result.task.label, { date: result.task.date });
+    const { tasks: todayTasks } = await getTodayTasks(id);
+    if (todayTasks.length > 0 && todayTasks.every((t) => t.done)) {
+      logEvent(id, "all_tasks_done", "Completed all tasks for the day", { date: result.task.date });
+    }
     return res.json({ task: formatDailyTask(result.task), streakCount: result.streakCount });
   } catch (err) {
     req.log.error({ err }, "Failed to complete task");
@@ -83,6 +102,10 @@ router.post("/students/:id/course-progress", requireStudent({ allowGuest: true }
       .where(eq(studentsTable.id, id));
     if (completed >= total && total > 0) {
       await autoCompleteTaskKind(id, "course");
+    }
+    const pct = Math.round((completed / total) * 100);
+    if ([25, 50, 75, 100].includes(pct)) {
+      logEvent(id, "course_progress", `${subDomainName}: ${pct}% complete`, { subDomainName, pct });
     }
     return res.json({ ok: true });
   } catch (err) {

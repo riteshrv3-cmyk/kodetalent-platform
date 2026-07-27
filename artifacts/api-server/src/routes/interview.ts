@@ -12,6 +12,7 @@ import { rlInterview } from "../middlewares/rateLimit";
 import { requireStudent, requireStudentViaResource } from "../middlewares/studentAuth";
 import { autoCompleteTaskKind } from "../lib/dailyTasks";
 import { contextPack } from "../lib/contextPack";
+import { logEvent } from "../lib/events";
 import { extractJson } from "../lib/extractJson";
 
 const router = Router();
@@ -265,6 +266,14 @@ Respond ONLY with a JSON object (no markdown, no explanation) with this exact st
       }
       await autoCompleteTaskKind(session.studentId, "first_mock");
       await autoCompleteTaskKind(session.studentId, "practice");
+      if (typeof evaluation.overallScore === "number") {
+        logEvent(session.studentId, "interview_completed", `Mock interview: ${evaluation.overallScore}/100`, {
+          overallScore: evaluation.overallScore,
+          communicationScore: evaluation.communicationScore,
+          technicalScore: evaluation.technicalScore,
+          confidenceScore: evaluation.confidenceScore,
+        });
+      }
     } catch (hookErr) {
       req.log.error({ err: hookErr }, "post-evaluate task hook failed (non-fatal)");
     }

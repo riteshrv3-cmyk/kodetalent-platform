@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { anthropic, AI_MODEL } from "@workspace/integrations-anthropic-ai";
 import { CreateTestSessionBody, SubmitTestBody } from "@workspace/api-zod";
 import { requireStudent, requireStudentViaResource } from "../middlewares/studentAuth";
+import { logEvent } from "../lib/events";
 
 const router = Router();
 
@@ -103,6 +104,8 @@ router.post("/test/sessions/:id/submit", requireStudentViaResource(sessionStuden
       answers: userAnswers,
       completed: true,
     }).where(eq(testSessionsTable.id, id));
+
+    logEvent(session.studentId, "test_completed", `Practice test: ${percentage}%`, { score, total: questions.length, percentage, weakTopics });
 
     return res.json({
       score,

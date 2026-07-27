@@ -27,6 +27,11 @@ interface UseTodayTasksInput {
   studentId: string | null;
 }
 
+export interface KitNoticing {
+  text: string;
+  href: string;
+}
+
 /**
  * Fetches the day's server-generated tasks (rules R1-R7 in lib/dailyTasks.ts on the
  * API server) and the honest, server-computed streak. Replaces the v1 localStorage
@@ -35,15 +40,17 @@ interface UseTodayTasksInput {
 export function useTodayTasks({ studentId }: UseTodayTasksInput) {
   const [tasks, setTasks] = useState<TodayTask[]>([]);
   const [streakCount, setStreakCount] = useState(0);
+  const [noticing, setNoticing] = useState<KitNoticing | null>(null);
 
   const load = useCallback(async () => {
     if (!studentId) return;
     try {
       const res = await apiFetch(`/api/students/${studentId}/today-tasks`);
       if (!res.ok) return;
-      const data: { tasks: ServerTask[]; streakCount: number } = await res.json();
+      const data: { tasks: ServerTask[]; streakCount: number; noticing: KitNoticing | null } = await res.json();
       setTasks(data.tasks);
       setStreakCount(data.streakCount);
+      setNoticing(data.noticing ?? null);
     } catch {
       // Keep whatever was last loaded; the Home screen tolerates a stale/empty list.
     }
@@ -77,5 +84,5 @@ export function useTodayTasks({ studentId }: UseTodayTasksInput) {
     [studentId, tasks],
   );
 
-  return { tasks, toggleManual, streakCount };
+  return { tasks, toggleManual, streakCount, noticing };
 }

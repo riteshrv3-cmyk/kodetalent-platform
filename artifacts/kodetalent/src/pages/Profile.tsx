@@ -676,6 +676,18 @@ export default function Profile() {
           )}
         </AnimatePresence>
 
+        {/* ── Kit's Notebook link ── */}
+        <button
+          onClick={() => setLocation("/notebook")}
+          className="w-full bg-brand-soft rounded-2xl p-4 flex items-center justify-between text-left"
+        >
+          <div>
+            <h3 className="text-[14px] font-bold text-brand">Kit's Notebook</h3>
+            <p className="text-[11px] text-ink-muted mt-0.5">Everything Kit has noticed about your journey</p>
+          </div>
+          <span className="text-brand text-[13px] font-bold">→</span>
+        </button>
+
         {/* ── Two-column section grid (desktop only; stacks on mobile) ── */}
         <div className="space-y-4 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-4 lg:items-start">
 
