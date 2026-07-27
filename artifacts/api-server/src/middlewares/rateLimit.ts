@@ -1,4 +1,6 @@
 import type { Request, Response, NextFunction, RequestHandler } from "express";
+import { getAuth } from "@clerk/express";
+import { createHash } from "node:crypto";
 
 interface Bucket {
   tokens: number;
@@ -21,11 +23,15 @@ setInterval(() => {
   }
 }, 10 * 60 * 1000).unref?.();
 
+// Keyed on the authenticated subject, never a client-supplied studentId (trivially evadable
+// by just sending a different id in the body/param).
 function defaultKeyer(req: Request): string {
-  const studentId =
-    (req.params && (req.params["id"] || req.params["studentId"] || req.params["sid"])) ||
-    (req.body && (req.body.studentId as string | number | undefined));
-  if (studentId) return `s:${studentId}`;
+  const { userId } = getAuth(req);
+  if (userId) return `u:${userId}`;
+
+  const guestToken = req.header("x-guest-token");
+  if (guestToken) return `g:${createHash("sha256").update(guestToken).digest("hex").slice(0, 16)}`;
+
   const fwd = req.headers["x-forwarded-for"];
   const ip = (Array.isArray(fwd) ? fwd[0] : fwd?.split(",")[0]?.trim()) || req.ip || "unknown";
   return `ip:${ip}`;

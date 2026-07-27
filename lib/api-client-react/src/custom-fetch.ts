@@ -17,6 +17,7 @@ const DEFAULT_JSON_ACCEPT = "application/json, application/problem+json";
 
 let _baseUrl: string | null = null;
 let _authTokenGetter: AuthTokenGetter | null = null;
+let _guestTokenGetter: (() => string | null) | null = null;
 
 /**
  * Set a base URL that is prepended to every relative request URL
@@ -42,6 +43,15 @@ export function setBaseUrl(url: string | null): void {
  */
 export function setAuthTokenGetter(getter: AuthTokenGetter | null): void {
   _authTokenGetter = getter;
+}
+
+/**
+ * Register a getter that supplies the anonymous guest session token (attached as
+ * `x-guest-token`). The server only consults it when there's no bearer token, so it's
+ * safe to keep registered across sign-in — it just stops being read.
+ */
+export function setGuestTokenGetter(getter: (() => string | null) | null): void {
+  _guestTokenGetter = getter;
 }
 
 function isRequest(input: RequestInfo | URL): input is Request {
@@ -355,6 +365,13 @@ export async function customFetch<T = unknown>(
     const token = await _authTokenGetter();
     if (token) {
       headers.set("authorization", `Bearer ${token}`);
+    }
+  }
+
+  if (_guestTokenGetter && !headers.has("x-guest-token")) {
+    const guestToken = _guestTokenGetter();
+    if (guestToken) {
+      headers.set("x-guest-token", guestToken);
     }
   }
 

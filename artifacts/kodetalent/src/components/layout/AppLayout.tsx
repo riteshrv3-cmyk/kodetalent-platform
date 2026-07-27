@@ -2,10 +2,16 @@ import { ReactNode, useEffect, useState } from "react";
 import { BottomNav } from "./BottomNav";
 import { TopBar } from "./TopBar";
 import { ProfileSidebar } from "./ProfileSidebar";
+import { KitBubble } from "@/components/kodetalent/KitBubble";
 import { AnimatePresence, motion } from "framer-motion";
 import { useLocation } from "wouter";
+import { apiFetch } from "@/lib/api/authFetch";
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+function initialsFromName(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  const ini = parts.map((p) => p[0]).join("").substring(0, 2).toUpperCase();
+  return ini || "?";
+}
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const [location] = useLocation();
@@ -13,13 +19,18 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const [pendingCount, setPendingCount] = useState(0);
   const [initials, setInitials] = useState("?");
 
-  const isFullscreenRoute = location.startsWith("/practice/interview/") || location === "/onboarding" || location === "/welcome";
+  const isFullscreenRoute = location.startsWith("/practice/interview/") || location === "/onboarding";
 
   useEffect(() => {
-    const name = localStorage.getItem("studentName") || "";
-    const parts = name.trim().split(/\s+/).filter(Boolean);
-    const ini = parts.map((p) => p[0]).join("").substring(0, 2).toUpperCase();
-    setInitials(ini || "?");
+    const id = localStorage.getItem("studentId");
+    if (!id) return;
+
+    apiFetch(`/api/students/${id}/full-profile`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((profile: { name?: string } | null) => {
+        if (profile?.name) setInitials(initialsFromName(profile.name));
+      })
+      .catch(() => null);
   }, []);
 
   useEffect(() => {
@@ -28,7 +39,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
     const fetchCount = async () => {
       try {
-        const res = await fetch(`${BASE}/api/students/${id}/invites`);
+        const res = await apiFetch(`/api/students/${id}/invites`);
         if (!res.ok) return;
         const data = await res.json() as Array<{ status: string; studentSeen: boolean }>;
         const count = Array.isArray(data)
@@ -46,18 +57,18 @@ export function AppLayout({ children }: { children: ReactNode }) {
   }, []);
 
   if (isFullscreenRoute) {
-    return <div className="min-h-[100dvh] bg-[#f8fafc]" style={{ overflowX: "clip" }}>{children}</div>;
+    return <div className="min-h-[100dvh] bg-paper" style={{ overflowX: "clip" }}>{children}</div>;
   }
 
   return (
-    <div className="min-h-[100dvh] bg-[#f8fafc]" style={{ isolation: "isolate", overflowX: "clip" }}>
+    <div className="min-h-[100dvh] bg-paper" style={{ isolation: "isolate", overflowX: "clip" }}>
       <TopBar
         pendingCount={pendingCount}
         initials={initials}
         onProfileClick={() => setSidebarOpen(true)}
       />
 
-      <main className="max-w-md mx-auto w-full pt-14 pb-16 min-h-[100dvh]">
+      <main className="max-w-md mx-auto w-full pt-14 pb-[calc(4rem+env(safe-area-inset-bottom))] min-h-[100dvh]">
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={location}
@@ -73,6 +84,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
         </AnimatePresence>
       </main>
 
+      <KitBubble />
       <BottomNav />
 
       <AnimatePresence>

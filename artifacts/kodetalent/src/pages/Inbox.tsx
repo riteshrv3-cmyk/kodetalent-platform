@@ -3,8 +3,7 @@ import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { Mail, Building2, Briefcase, Clock, CheckCircle, XCircle, ChevronRight, Inbox as InboxIcon, ExternalLink, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+import { apiFetch } from "@/lib/api/authFetch";
 
 interface Invite {
   id: number;
@@ -36,7 +35,7 @@ function InviteCard({ invite, onUpdate }: { invite: Invite; onUpdate: (id: numbe
   async function respond(status: "accepted" | "declined") {
     setLoading(status);
     try {
-      const r = await fetch(`${BASE}/api/recruiter-invites/${invite.id}`, {
+      const r = await apiFetch(`/api/recruiter-invites/${invite.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),
@@ -177,12 +176,12 @@ export default function Inbox() {
 
   useEffect(() => {
     if (!studentId) return;
-    fetch(`${BASE}/api/students/${studentId}/invites`)
+    apiFetch(`/api/students/${studentId}/invites`)
       .then(r => r.json())
       .then((data: Invite[]) => {
         setInvites(data);
         // Mark all as seen
-        fetch(`${BASE}/api/students/${studentId}/mark-invites-seen`, { method: "POST" });
+        apiFetch(`/api/students/${studentId}/mark-invites-seen`, { method: "POST" });
       })
       .catch(() => {})
       .finally(() => setLoading(false));

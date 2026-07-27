@@ -18,3 +18,5 @@ export * from "./aiCache";
 export * from "./colleges";
 export * from "./studentResumes";
 export * from "./studentActivityLog";
+export * from "./dailyTasks";
+export * from "./applications";

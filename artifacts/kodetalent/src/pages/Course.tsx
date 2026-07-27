@@ -10,6 +10,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { apiFetch } from "@/lib/api/authFetch";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -250,6 +251,24 @@ export default function Course() {
       }
     })();
   }, [setLocation]);
+
+  // ── Sync course progress to the server — feeds the Home checklist's R3 rule ──
+  useEffect(() => {
+    if (!courseData || !ctx) return;
+    const studentId = localStorage.getItem("studentId");
+    if (!studentId) return;
+    const total = courseData.modules.reduce((s, m) => s + (m.lessons?.length ?? 0), 0);
+    apiFetch(`/api/students/${studentId}/course-progress`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        subDomainId: ctx.subDomainId,
+        subDomainName: ctx.subDomainName,
+        completed: completedLessons.size,
+        total,
+      }),
+    }).catch(() => null);
+  }, [courseData, ctx, completedLessons]);
 
   // ── Build flashcard queue ──────────────────────────────────────────────────
   useEffect(() => {

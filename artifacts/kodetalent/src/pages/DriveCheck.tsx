@@ -4,8 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ShieldCheck, AlertTriangle, ShieldAlert, Sparkles, Download, ChevronRight, ArrowLeft, Clipboard, TrendingUp, CheckCircle2, XCircle, Award, Phone, Ghost, Megaphone } from "lucide-react";
 import { toPng, toBlob } from "html-to-image";
 import { useToast } from "@/hooks/use-toast";
-
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+import { apiFetch } from "@/lib/api/authFetch";
 
 interface Gate { open: boolean; label: string; }
 interface CompanyStats {
@@ -307,7 +306,7 @@ export default function DriveCheck() {
   const cardRef = useRef<HTMLDivElement>(null);
 
   const refreshPendingPings = (id: string) => {
-    fetch(`${BASE}/api/students/${id}/pending-pings`)
+    apiFetch(`/api/students/${id}/pending-pings`)
       .then((r) => r.json())
       .then((rows) => Array.isArray(rows) && setPendingPings(rows))
       .catch(() => {});
@@ -317,7 +316,7 @@ export default function DriveCheck() {
     const id = localStorage.getItem("studentId");
     if (!id) { setLocation("/"); return; }
     setStudentId(id);
-    fetch(`${BASE}/api/students/${id}/full-profile`)
+    apiFetch(`/api/students/${id}/full-profile`)
       .then((r) => r.json())
       .then((p) => {
         setStudentName(p.name?.split(" ")[0] ?? "there");
@@ -325,7 +324,7 @@ export default function DriveCheck() {
         setKodeScore(Math.round(p.overallScore ?? 0));
       })
       .catch(() => {});
-    fetch(`${BASE}/api/students/${id}/drive-checks`)
+    apiFetch(`/api/students/${id}/drive-checks`)
       .then((r) => r.json())
       .then((rows) => Array.isArray(rows) && setRecent(rows))
       .catch(() => {});
@@ -334,7 +333,7 @@ export default function DriveCheck() {
 
   const fetchCompanyStats = async (company: string): Promise<CompanyStats | null> => {
     try {
-      const r = await fetch(`${BASE}/api/drive-checks/company-stats?company=${encodeURIComponent(company)}`);
+      const r = await apiFetch(`/api/drive-checks/company-stats?company=${encodeURIComponent(company)}`);
       return await r.json();
     } catch {
       return null;
@@ -345,7 +344,7 @@ export default function DriveCheck() {
     if (!studentId || actionLoading) return;
     setActionLoading(true);
     try {
-      const res = await fetch(`${BASE}/api/students/${studentId}/drive-checks/${row.id}/applied`, { method: "POST" });
+      const res = await apiFetch(`/api/students/${studentId}/drive-checks/${row.id}/applied`, { method: "POST" });
       if (!res.ok) throw new Error("Failed");
       const updated = await res.json() as DriveCheckRow;
       const stats = row.company ? await fetchCompanyStats(row.company) : null;
@@ -365,7 +364,7 @@ export default function DriveCheck() {
     if (!studentId || actionLoading) return;
     setActionLoading(true);
     try {
-      const res = await fetch(`${BASE}/api/students/${studentId}/drive-checks/${row.id}/outcome`, {
+      const res = await apiFetch(`/api/students/${studentId}/drive-checks/${row.id}/outcome`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ outcome }),
@@ -394,7 +393,7 @@ export default function DriveCheck() {
     setLoading(true);
     setVerdict(null);
     try {
-      const res = await fetch(`${BASE}/api/students/${studentId}/drive-check`, {
+      const res = await apiFetch(`/api/students/${studentId}/drive-check`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ rawText: text }),
@@ -451,7 +450,7 @@ export default function DriveCheck() {
 
   const recordShare = async (r: DriveCheckRow) => {
     try {
-      const res = await fetch(`${BASE}/api/drive-checks/${r.id}/shared`, { method: "POST" });
+      const res = await apiFetch(`/api/drive-checks/${r.id}/shared`, { method: "POST" });
       if (!res.ok) return;
       const data = (await res.json()) as { id: number; sharedCount: number };
       setVerdict((cur) => (cur && cur.id === data.id ? { ...cur, sharedCount: data.sharedCount } : cur));

@@ -4,11 +4,19 @@ import { testSessionsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { anthropic, AI_MODEL } from "@workspace/integrations-anthropic-ai";
 import { CreateTestSessionBody, SubmitTestBody } from "@workspace/api-zod";
+import { requireStudent, requireStudentViaResource } from "../middlewares/studentAuth";
 
 const router = Router();
 
+async function sessionStudentId(req: Parameters<Parameters<typeof requireStudentViaResource>[0]>[0]): Promise<number | null> {
+  const id = Number(req.params.id);
+  if (isNaN(id)) return null;
+  const [session] = await db.select({ studentId: testSessionsTable.studentId }).from(testSessionsTable).where(eq(testSessionsTable.id, id)).limit(1);
+  return session?.studentId ?? null;
+}
+
 // POST /test/sessions
-router.post("/test/sessions", async (req, res) => {
+router.post("/test/sessions", requireStudent({ allowGuest: true }), async (req, res) => {
   const parsed = CreateTestSessionBody.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
   const { studentId, testType, difficulty } = parsed.data;
@@ -32,7 +40,7 @@ router.post("/test/sessions", async (req, res) => {
 });
 
 // GET /test/sessions/:id
-router.get("/test/sessions/:id", async (req, res) => {
+router.get("/test/sessions/:id", requireStudentViaResource(sessionStudentId, { allowGuest: true }), async (req, res) => {
   const id = Number(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
   try {
@@ -46,7 +54,7 @@ router.get("/test/sessions/:id", async (req, res) => {
 });
 
 // POST /test/sessions/:id/submit
-router.post("/test/sessions/:id/submit", async (req, res) => {
+router.post("/test/sessions/:id/submit", requireStudentViaResource(sessionStudentId, { allowGuest: true }), async (req, res) => {
   const id = Number(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
   const parsed = SubmitTestBody.safeParse(req.body);

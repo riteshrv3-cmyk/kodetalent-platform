@@ -6,6 +6,7 @@ import { LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianG
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { apiFetch } from "@/lib/api/authFetch";
 
 interface HistoryItem {
   id: number;
@@ -44,7 +45,7 @@ export default function InterviewHistory() {
   useEffect(() => {
     const sid = localStorage.getItem("studentId");
     if (!sid) { setLocation("/onboarding"); return; }
-    fetch(`/api/interview/students/${sid}/sessions`)
+    apiFetch(`/api/interview/students/${sid}/sessions`)
       .then(r => r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`)))
       .then(d => setItems(d.items as HistoryItem[]))
       .catch(e => setError(e.message));

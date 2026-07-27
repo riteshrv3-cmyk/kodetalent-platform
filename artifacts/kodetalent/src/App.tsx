@@ -15,6 +15,7 @@ import {
   useLocation,
 } from "wouter";
 import { QueryClientProvider } from "@tanstack/react-query";
+import { setBaseUrl } from "@workspace/api-client-react";
 import { queryClient } from "@/lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -22,6 +23,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import NotFound from "@/pages/not-found";
 import Join from "@/pages/Join";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { AuthBridge } from "@/components/AuthBridge";
+import { apiFetch, setGuestToken } from "@/lib/api/authFetch";
 import RoleSelect from "@/pages/RoleSelect";
 
 const Home = lazy(() => import("@/pages/Home"));
@@ -33,15 +36,14 @@ const Test = lazy(() => import("@/pages/Test"));
 const Opportunities = lazy(() => import("@/pages/Opportunities"));
 const Course = lazy(() => import("@/pages/Course"));
 const Profile = lazy(() => import("@/pages/Profile"));
-const Leaderboard = lazy(() => import("@/pages/Leaderboard"));
 const Resume = lazy(() => import("@/pages/Resume"));
 const Inbox = lazy(() => import("@/pages/Inbox"));
 const DriveCheck = lazy(() => import("@/pages/DriveCheck"));
+const Pipeline = lazy(() => import("@/pages/Pipeline"));
 const RecruiterPortalShortcut = lazy(
   () => import("@/pages/RecruiterPortalShortcut"),
 );
 const Onboarding = lazy(() => import("@/pages/Onboarding"));
-const Welcome = lazy(() => import("@/pages/Welcome"));
 
 const clerkPubKey = publishableKeyFromHost(
   window.location.hostname,
@@ -49,6 +51,7 @@ const clerkPubKey = publishableKeyFromHost(
 );
 const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
+setBaseUrl(basePath);
 
 function stripBase(path: string): string {
   return basePath && path.startsWith(basePath)
@@ -129,26 +132,37 @@ function RoleSelectRedirect() {
 
   useEffect(() => {
     if (!isLoaded || !isSignedIn || !user) return;
-    const clerkId = user.id;
-    const savedClerkId = localStorage.getItem("clerkUserId");
+    let alive = true;
+
     const studentId = localStorage.getItem("studentId");
-    // If different Clerk user signed in, treat as new user
-    const isSameUser = savedClerkId === clerkId;
-    if (studentId && isSameUser) {
-      const welcomeSeen = localStorage.getItem("welcomeSeen");
-      setLocation(welcomeSeen ? "/home" : "/welcome");
-    } else {
-      // Different account — clear old data
-      localStorage.removeItem("studentId");
-      localStorage.removeItem("studentName");
-      localStorage.removeItem("studentCollege");
-      localStorage.removeItem("welcomeSeen");
-      localStorage.setItem("clerkUserId", clerkId);
-      if (user?.primaryEmailAddress?.emailAddress) {
-        localStorage.setItem("clerkEmail", user.primaryEmailAddress.emailAddress);
-      }
-      setLocation("/onboarding");
-    }
+    const guestToken = localStorage.getItem("guestToken");
+
+    apiFetch("/api/auth/claim", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        studentId: studentId ? Number(studentId) : undefined,
+        guestToken: guestToken ?? undefined,
+      }),
+    })
+      .then((r) => r.json())
+      .then((data: { student: { id: number }; claimed: boolean; created: boolean }) => {
+        if (!alive) return;
+        localStorage.setItem("studentId", String(data.student.id));
+        localStorage.setItem("clerkUserId", user.id);
+        if (user.primaryEmailAddress?.emailAddress) {
+          localStorage.setItem("clerkEmail", user.primaryEmailAddress.emailAddress);
+        }
+        setGuestToken(null); // claimed rows never carry a guest token again
+        setLocation(data.created ? "/onboarding" : "/home");
+      })
+      .catch(() => {
+        if (alive) setLocation("/onboarding");
+      });
+
+    return () => {
+      alive = false;
+    };
   }, [isLoaded, isSignedIn, user, setLocation]);
 
   if (!isLoaded) {
@@ -201,7 +215,6 @@ function Router() {
           <Suspense fallback={<PageSkeleton />}>
             <Switch>
               <Route path="/home" component={Home} />
-              <Route path="/dashboard" component={Home} />
               <Route path="/chat" component={AIChat} />
               <Route path="/practice" component={Prep} />
               <Route path="/practice/history" component={InterviewHistory} />
@@ -210,12 +223,11 @@ function Router() {
               <Route path="/opportunities" component={Opportunities} />
               <Route path="/opportunities/course" component={Course} />
               <Route path="/profile" component={Profile} />
-              <Route path="/leaderboard" component={Leaderboard} />
               <Route path="/resume" component={Resume} />
               <Route path="/inbox" component={Inbox} />
               <Route path="/onboarding" component={Onboarding} />
-              <Route path="/welcome" component={Welcome} />
               <Route path="/drive-check" component={DriveCheck} />
+              <Route path="/pipeline" component={Pipeline} />
               <Route path="/recruiter" component={RecruiterPortalShortcut} />
               <Route component={NotFound} />
             </Switch>
@@ -276,6 +288,7 @@ function ClerkProviderWithRoutes() {
     >
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
+          <AuthBridge />
           <ClerkQueryClientCacheInvalidator />
           <Router />
           <Toaster />

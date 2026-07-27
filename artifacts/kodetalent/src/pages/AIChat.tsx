@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { Send, RefreshCw, CheckCircle, Zap, Mic, MicOff, Volume2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { apiFetch } from "@/lib/api/authFetch";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 const UPDATE_MARKER = "___PROFILE_UPDATE___";
@@ -514,7 +515,7 @@ export default function AIChat() {
     setKitMood("thinking");
 
     try {
-      const res = await fetch(`${BASE}/api/students/${studentId}/chat`, {
+      const res = await apiFetch(`/api/students/${studentId}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: text.trim() }),

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { interviewSessionsTable } from "@workspace/db";
+import { interviewSessionsTable, studentsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { anthropic, AI_MODEL, textToSpeech, transcribeAudio } from "@workspace/integrations-anthropic-ai";
 import {
@@ -9,10 +9,21 @@ import {
   SubmitInterviewFeedbackBody,
 } from "@workspace/api-zod";
 import { rlInterview } from "../middlewares/rateLimit";
+import { requireStudent, requireStudentViaResource } from "../middlewares/studentAuth";
+import { autoCompleteTaskKind } from "../lib/dailyTasks";
+import { contextPack } from "../lib/contextPack";
+import { extractJson } from "../lib/extractJson";
 
 const router = Router();
 
-// POST /interview/tts — speak the interviewer's question (returns mp3 audio).
+async function sessionStudentId(req: Parameters<Parameters<typeof requireStudentViaResource>[0]>[0]): Promise<number | null> {
+  const id = Number(req.params.id);
+  if (isNaN(id)) return null;
+  const [session] = await db.select({ studentId: interviewSessionsTable.studentId }).from(interviewSessionsTable).where(eq(interviewSessionsTable.id, id)).limit(1);
+  return session?.studentId ?? null;
+}
+
+// tts/transcribe carry no session/student id (they're stateless AI passthroughs) — rate-limited only.
 router.post("/interview/tts", rlInterview, async (req, res) => {
   const { text } = (req.body ?? {}) as { text?: string };
   if (!text?.trim()) return res.status(400).json({ error: "text is required" });
@@ -48,14 +59,14 @@ router.post("/interview/transcribe", rlInterview, async (req, res) => {
 });
 
 // POST /interview/sessions
-router.post("/interview/sessions", rlInterview, async (req, res) => {
+router.post("/interview/sessions", requireStudent({ allowGuest: true }), rlInterview, async (req, res) => {
   const parsed = CreateInterviewSessionBody.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
   const { studentId, company, round } = parsed.data;
 
   try {
     const [interviewType, difficulty] = round.includes("|") ? round.split("|") : [round, "Standard"];
-    const firstQuestion = await generateQuestion(company, interviewType, difficulty, 1, [], []);
+    const firstQuestion = await generateQuestion(studentId, company, interviewType, difficulty, 1, [], []);
     const [session] = await db.insert(interviewSessionsTable).values({
       studentId,
       company,
@@ -73,7 +84,7 @@ router.post("/interview/sessions", rlInterview, async (req, res) => {
 });
 
 // PATCH /interview/sessions/:id/feedback
-router.patch("/interview/sessions/:id/feedback", async (req, res) => {
+router.patch("/interview/sessions/:id/feedback", requireStudentViaResource(sessionStudentId, { allowGuest: true }), async (req, res) => {
   const id = Number(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
   const parsed = SubmitInterviewFeedbackBody.safeParse(req.body);
@@ -92,7 +103,7 @@ router.patch("/interview/sessions/:id/feedback", async (req, res) => {
 });
 
 // GET /interview/sessions/:id
-router.get("/interview/sessions/:id", async (req, res) => {
+router.get("/interview/sessions/:id", requireStudentViaResource(sessionStudentId, { allowGuest: true }), async (req, res) => {
   const id = Number(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
   try {
@@ -108,7 +119,7 @@ router.get("/interview/sessions/:id", async (req, res) => {
 });
 
 // POST /interview/sessions/:id/question
-router.post("/interview/sessions/:id/question", async (req, res) => {
+router.post("/interview/sessions/:id/question", requireStudentViaResource(sessionStudentId, { allowGuest: true }), async (req, res) => {
   const id = Number(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
   const parsed = GetNextInterviewQuestionBody.safeParse(req.body);
@@ -131,7 +142,7 @@ router.post("/interview/sessions/:id/question", async (req, res) => {
     }
 
     const [interviewType, difficulty] = session.round.includes("|") ? session.round.split("|") : [session.round, "Standard"];
-    const nextQuestion = await generateQuestion(session.company, interviewType, difficulty, questionNumber, questions, answers);
+    const nextQuestion = await generateQuestion(session.studentId, session.company, interviewType, difficulty, questionNumber, questions, answers);
     questions.push(nextQuestion);
 
     await db.update(interviewSessionsTable).set({ questions, answers }).where(eq(interviewSessionsTable.id, id));
@@ -143,7 +154,7 @@ router.post("/interview/sessions/:id/question", async (req, res) => {
 });
 
 // GET /interview/students/:studentId/sessions — history for a student
-router.get("/interview/students/:studentId/sessions", async (req, res) => {
+router.get("/interview/students/:studentId/sessions", requireStudent({ allowGuest: true, param: "studentId" }), async (req, res) => {
   const studentId = Number(req.params.studentId);
   if (isNaN(studentId)) return res.status(400).json({ error: "Invalid studentId" });
   try {
@@ -193,7 +204,7 @@ router.get("/interview/students/:studentId/sessions", async (req, res) => {
 });
 
 // POST /interview/sessions/:id/evaluate
-router.post("/interview/sessions/:id/evaluate", async (req, res) => {
+router.post("/interview/sessions/:id/evaluate", requireStudentViaResource(sessionStudentId, { allowGuest: true }), async (req, res) => {
   const id = Number(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
   try {
@@ -203,8 +214,11 @@ router.post("/interview/sessions/:id/evaluate", async (req, res) => {
     const questions = session.questions as string[];
     const answers = session.answers as string[];
     const [interviewType] = session.round.includes("|") ? session.round.split("|") : [session.round];
+    const pack = await contextPack(session.studentId);
 
     const evaluationPrompt = `You are an expert campus placement interviewer. Evaluate this mock ${interviewType} interview for ${session.company}.
+
+${pack?.text ?? ""}
 
 Questions and Answers:
 ${questions.map((q, i) => `Q${i + 1}: ${q}\nA${i + 1}: ${answers[i] || "(no answer)"}`).join("\n\n")}
@@ -236,13 +250,24 @@ Respond ONLY with a JSON object (no markdown, no explanation) with this exact st
 
     const content = message.content[0];
     const text = content.type === "text" ? content.text : "{}";
-    const evaluation = JSON.parse(text.replace(/```json\n?|\n?```/g, "").trim());
+    const evaluation = extractJson<Record<string, any>>(text);
 
     await db.update(interviewSessionsTable).set({
       overallScore: evaluation.overallScore,
       evaluation,
       completed: true,
     }).where(eq(interviewSessionsTable.id, id));
+
+    try {
+      const [student] = await db.select({ baselineScore: studentsTable.baselineScore }).from(studentsTable).where(eq(studentsTable.id, session.studentId)).limit(1);
+      if (student && student.baselineScore === null && typeof evaluation.overallScore === "number") {
+        await db.update(studentsTable).set({ baselineScore: evaluation.overallScore }).where(eq(studentsTable.id, session.studentId));
+      }
+      await autoCompleteTaskKind(session.studentId, "first_mock");
+      await autoCompleteTaskKind(session.studentId, "practice");
+    } catch (hookErr) {
+      req.log.error({ err: hookErr }, "post-evaluate task hook failed (non-fatal)");
+    }
 
     return res.json(evaluation);
   } catch (err) {
@@ -252,6 +277,7 @@ Respond ONLY with a JSON object (no markdown, no explanation) with this exact st
 });
 
 async function generateQuestion(
+  studentId: number,
   company: string,
   interviewType: string,
   difficulty: string,
@@ -262,6 +288,7 @@ async function generateQuestion(
   const isFirst = questionNumber === 1;
   const lastQ = previousQuestions[previousQuestions.length - 1] || "";
   const lastA = previousAnswers[previousAnswers.length - 1] || "";
+  const pack = await contextPack(studentId);
 
   const difficultyInstruction = difficulty === "Challenging"
     ? "Be demanding. Push back on vague answers. Probe with sharp follow-ups. Simulate a high-pressure placement interview."
@@ -282,8 +309,10 @@ async function generateQuestion(
 ${difficultyInstruction}
 ${typeInstruction}
 
+${pack?.text ?? ""}
+
 Briefly introduce yourself as the interviewer at ${company} (1 short sentence), then ask Question 1 of 5.
-Be specific and realistic. Return ONLY the intro + question. No extra commentary.`;
+Be specific and realistic. If the student's weakest skill (above) is relevant to ${interviewType}, lean the question toward it. Return ONLY the intro + question. No extra commentary.`;
   } else {
     prompt = `You are a senior interviewer at ${company} conducting a ${interviewType} campus placement interview.
 

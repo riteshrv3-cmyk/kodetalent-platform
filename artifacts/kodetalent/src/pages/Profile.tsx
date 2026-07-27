@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Github, Linkedin, Globe, Phone, Edit2, Check, X, Plus, Trash2,
-  Briefcase, Award, MapPin, DollarSign, Share2, FileText,
+  Briefcase, Award, MapPin, DollarSign, FileText,
   Loader2, ExternalLink, Star,
   Code2, Building2, TrendingUp, Zap, ChevronRight, Sparkles,
   Camera, User, BookOpen, Save, LogIn,
@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import confetti from "canvas-confetti";
+import { apiFetch } from "@/lib/api/authFetch";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -85,16 +86,14 @@ interface FullProfile {
   isPro: boolean;
 }
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
-
 async function fetchProfile(id: number): Promise<FullProfile> {
-  const r = await fetch(`${BASE}/api/students/${id}/full-profile`);
+  const r = await apiFetch(`/api/students/${id}/full-profile`);
   if (!r.ok) throw new Error("Failed to load profile");
   return r.json();
 }
 
 async function patchProfile(id: number, data: Record<string, unknown>) {
-  const r = await fetch(`${BASE}/api/students/${id}/profile`, {
+  const r = await apiFetch(`/api/students/${id}/profile`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
@@ -140,15 +139,14 @@ const TEMPLATE_BADGES: Record<string, { label: string; badge: string }> = {
 function MyResumesCard({ studentId, onNavigate }: { studentId: number; onNavigate: () => void }) {
   const [resumes, setResumes] = useState<{ id: number; name: string; templateId: string; createdAt: string }[]>([]);
   const [loading, setLoading] = useState(true);
-  const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 
   useEffect(() => {
-    fetch(`${base}/api/students/${studentId}/resumes`)
+    apiFetch(`/api/students/${studentId}/resumes`)
       .then(r => r.ok ? r.json() : [])
       .then(data => setResumes(Array.isArray(data) ? data.slice(0, 3) : []))
       .catch(() => setResumes([]))
       .finally(() => setLoading(false));
-  }, [studentId, base]);
+  }, [studentId]);
 
   return (
     <Card className="border-0 shadow-[0_4px_24px_rgba(79,70,229,0.06)] rounded-2xl bg-white">
@@ -234,7 +232,6 @@ export default function Profile() {
   const [editSection, setEditSection] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [analyzing, setAnalyzing] = useState<"github" | "linkedin" | null>(null);
-  const [showWrappedPrompt, setShowWrappedPrompt] = useState(false);
 
   // ── Edit buffers ──────────────────────────────────────────────────────────
   const [basicForm, setBasicForm] = useState({
@@ -285,8 +282,13 @@ export default function Profile() {
       const p = await fetchProfile(id);
       setProfile(p);
       setBasicForm({
-        name: p.name, college: p.college, city: p.city,
-        year: p.year, field: p.field, cgpa: p.cgpa || "", photoUrl: p.photoUrl || "",
+        name: p.name,
+        college: p.college === "Not set" ? "" : p.college,
+        city: p.city === "Not set" ? "" : p.city,
+        year: p.year,
+        field: p.field === "Not set" ? "" : p.field,
+        cgpa: p.cgpa || "",
+        photoUrl: p.photoUrl || "",
       });
       setPhotoPreview(p.photoUrl || "");
       setLinksForm({ githubUrl: p.githubUrl || "", linkedinUrl: p.linkedinUrl || "", portfolioUrl: p.portfolioUrl || "", phone: p.phone || "" });
@@ -342,7 +344,7 @@ export default function Profile() {
     if (!studentId || !linksForm.githubUrl) return;
     setAnalyzing("github");
     try {
-      const r = await fetch(`${BASE}/api/students/${studentId}/analyze-github`, {
+      const r = await apiFetch(`/api/students/${studentId}/analyze-github`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ githubUrl: linksForm.githubUrl }),
@@ -362,7 +364,7 @@ export default function Profile() {
     if (!studentId || !linksForm.linkedinUrl) return;
     setAnalyzing("linkedin");
     try {
-      const r = await fetch(`${BASE}/api/students/${studentId}/analyze-linkedin`, {
+      const r = await apiFetch(`/api/students/${studentId}/analyze-linkedin`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -510,8 +512,12 @@ export default function Profile() {
         </div>
 
         <h1 className="text-2xl font-black mt-4 drop-shadow">{profile.name}</h1>
-        <p className="text-white/80 font-bold text-sm mt-1">{profile.college}</p>
-        <p className="text-white/60 text-xs mt-0.5">{profile.field} · Year {profile.year}{profile.city ? ` · ${profile.city}` : ""}</p>
+        {profile.college !== "Not set" && <p className="text-white/80 font-bold text-sm mt-1">{profile.college}</p>}
+        {profile.field !== "Not set" && (
+          <p className="text-white/60 text-xs mt-0.5">
+            {profile.field} · Year {profile.year}{profile.city && profile.city !== "Not set" ? ` · ${profile.city}` : ""}
+          </p>
+        )}
         {profile.cgpa && <p className="text-white/60 text-xs mt-0.5">CGPA {profile.cgpa}</p>}
 
         {profile.openToWork && (
@@ -1131,68 +1137,17 @@ export default function Profile() {
         {/* ── My Resumes ── */}
         <MyResumesCard studentId={studentId!} onNavigate={() => setLocation("/resume")} />
 
-        {/* ── Career Wrapped + Resume ── */}
-        <div className="grid grid-cols-2 gap-3 pb-4">
-          <Button
-            className="h-14 rounded-2xl text-white font-bold text-sm border-0 shadow-[0_8px_24px_rgba(124,58,237,0.25)]"
-            style={{ background: "linear-gradient(135deg, #4f46e5, #ec4899)" }}
-            onClick={() => setShowWrappedPrompt(true)}
-          >
-            ✨ Wrapped
-          </Button>
+        {/* ── Resume ── */}
+        <div className="pb-4">
           <Button
             variant="outline"
-            className="h-14 rounded-2xl font-bold border-2 border-[#4f46e5] text-[#4f46e5] text-sm bg-white"
+            className="w-full h-14 rounded-2xl font-bold border-2 border-[#4f46e5] text-[#4f46e5] text-sm bg-white"
             onClick={() => setLocation("/resume")}
           >
             <FileText className="w-4 h-4 mr-2" /> Resume
           </Button>
         </div>
       </div>
-
-      {/* ── Wrapped modal ── */}
-      <AnimatePresence>
-        {showWrappedPrompt && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
-            onClick={() => setShowWrappedPrompt(false)}>
-            <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }}
-              className="w-full max-w-sm rounded-3xl overflow-hidden p-8 text-center text-white relative"
-              style={{ background: "linear-gradient(135deg, #4f46e5, #ec4899)" }}
-              onClick={e => e.stopPropagation()}>
-              <button onClick={() => setShowWrappedPrompt(false)} className="absolute top-4 right-4 bg-white/20 rounded-full p-1.5">
-                <X className="w-4 h-4 text-white" />
-              </button>
-              <p className="text-xs uppercase tracking-widest text-white/70 mb-2">Your</p>
-              <h2 className="text-4xl font-black mb-2">{new Date().toLocaleString("en", { month: "long" })} Wrapped</h2>
-              <p className="text-white/80 text-sm mb-6">{profile.college}</p>
-              <div className="grid grid-cols-2 gap-3 mb-6">
-                <div className="bg-white/15 rounded-2xl p-4">
-                  <p className="text-3xl font-black">⭐ {profile.xp}</p>
-                  <p className="text-xs text-white/70 mt-1">Points Earned</p>
-                </div>
-                <div className="bg-white/15 rounded-2xl p-4">
-                  <p className="text-3xl font-black">🔥 {profile.streakCount}</p>
-                  <p className="text-xs text-white/70 mt-1">Day Streak</p>
-                </div>
-                <div className="bg-white/15 rounded-2xl p-4">
-                  <p className="text-3xl font-black">{profile.profileStrength}%</p>
-                  <p className="text-xs text-white/70 mt-1">Profile</p>
-                </div>
-                {profile.githubUrl && (
-                  <div className="bg-white/15 rounded-2xl p-4">
-                    <p className="text-3xl font-black">{profile.commitmentScore}</p>
-                    <p className="text-xs text-white/70 mt-1">Commitment</p>
-                  </div>
-                )}
-              </div>
-              <Button className="w-full bg-[#25D366] hover:bg-[#25D366]/90 text-white font-bold h-12 rounded-full">
-                <Share2 className="w-4 h-4 mr-2" /> Share on WhatsApp
-              </Button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }

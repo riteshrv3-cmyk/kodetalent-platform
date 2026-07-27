@@ -11,10 +11,10 @@ import { cn } from "@/lib/utils";
 type InterviewType = "Technical" | "Behavioral" | "Mixed";
 type Difficulty = "Standard" | "Challenging";
 
-const INTERVIEW_TYPES: { type: InterviewType; icon: React.ElementType; label: string; desc: string; color: string }[] = [
-  { type: "Technical", icon: Cpu, label: "Technical", desc: "DSA, system design, CS fundamentals", color: "#4f46e5" },
-  { type: "Behavioral", icon: Users, label: "Behavioral", desc: "STAR-method, leadership, teamwork", color: "#0ea5e9" },
-  { type: "Mixed", icon: Shuffle, label: "Mixed", desc: "Both technical + HR questions", color: "#10b981" },
+const INTERVIEW_TYPES: { type: InterviewType; icon: React.ElementType; label: string; desc: string }[] = [
+  { type: "Technical", icon: Cpu, label: "Technical", desc: "DSA, system design, CS fundamentals" },
+  { type: "Behavioral", icon: Users, label: "Behavioral", desc: "STAR-method, leadership, teamwork" },
+  { type: "Mixed", icon: Shuffle, label: "Mixed", desc: "Both technical + HR questions" },
 ];
 
 export default function Prep() {
@@ -27,8 +27,9 @@ export default function Prep() {
   const [company, setCompany] = useState("");
   const [interviewType, setInterviewType] = useState<InterviewType>("Technical");
   const [difficulty, setDifficulty] = useState<Difficulty>("Standard");
-  const [voiceMode, setVoiceMode] = useState(false);
-  const [cameraMode, setCameraMode] = useState(false);
+  // Default new users into voice+camera; respect an explicit "false" from a prior session.
+  const [voiceMode, setVoiceMode] = useState(() => localStorage.getItem("voiceMode") !== "false");
+  const [cameraMode, setCameraMode] = useState(() => localStorage.getItem("cameraMode") !== "false");
 
   const createInterview = useCreateInterviewSession();
   const createTest = useCreateTestSession();
@@ -41,6 +42,12 @@ export default function Prep() {
       setStudentId(parseInt(id, 10));
     }
   }, [setLocation]);
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("start") === "1") {
+      setInterviewDrawerOpen(true);
+    }
+  }, []);
 
   const handleStartInterview = async () => {
     if (!studentId) return;
@@ -76,67 +83,67 @@ export default function Prep() {
   };
 
   return (
-    <div className="p-4 pb-28 max-w-md mx-auto space-y-4 min-h-screen bg-[#f8fafc]">
+    <div className="p-4 pb-28 max-w-md mx-auto space-y-4 min-h-screen bg-paper">
       <div className="pt-2 mb-2 flex items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold flex items-center text-[#0f172a]">
-            <Target className="mr-2 text-primary" /> Practice
+          <h1 className="text-2xl font-extrabold flex items-center text-ink">
+            <Target className="mr-2" /> Practice
           </h1>
-          <p className="text-sm font-medium text-[#64748b] mt-1">
+          <p className="text-sm text-ink-muted mt-1">
             Get ready for your real placement interviews.
           </p>
         </div>
         <button
           onClick={() => setLocation("/practice/history")}
-          className="mt-1 px-3 py-1.5 rounded-full bg-white border border-[#e2e8f0] text-[11px] font-extrabold text-[#0f172a] uppercase tracking-wider shadow-sm whitespace-nowrap"
+          className="mt-1 px-3 py-1.5 rounded-full border border-line text-[11px] font-bold text-ink uppercase tracking-wider whitespace-nowrap"
           data-testid="link-interview-history"
         >
           History
         </button>
       </div>
 
-      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} whileHover={{ y: -2 }}>
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
         <Card
-          className="border-0 border-t-4 border-t-primary shadow-[0_4px_24px_rgba(124,58,237,0.10)] rounded-2xl bg-white cursor-pointer group"
+          className="border border-line shadow-none rounded-2xl bg-paper cursor-pointer group"
           onClick={() => setInterviewDrawerOpen(true)}
         >
           <CardContent className="p-5">
             <div className="flex justify-between items-center mb-3">
-              <div className="bg-[#e0e7ff] text-primary text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">
+              <div className="text-[10px] font-bold text-ink-muted uppercase tracking-wider">
                 AI · Personalised
               </div>
-              <div className="w-8 h-8 rounded-full bg-[#f8fafc] text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors">
+              <div className="w-8 h-8 rounded-full border border-line flex items-center justify-center group-hover:bg-ink group-hover:text-paper transition-colors">
                 <ChevronRight className="w-5 h-5" />
               </div>
             </div>
-            <h3 className="text-xl font-bold text-[#0f172a] flex items-center mb-1">
-              <MessageSquare className="w-5 h-5 mr-2 text-primary" />
+            <h3 className="text-xl font-bold text-ink flex items-center mb-1">
+              <MessageSquare className="w-5 h-5 mr-2" />
               Mock Interview
             </h3>
-            <p className="text-sm font-medium text-[#64748b]">AI interviewer · Live feedback · Score report</p>
+            <p className="text-sm text-ink-muted">AI interviewer · Live feedback · Score report</p>
           </CardContent>
         </Card>
       </motion.div>
 
-      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} whileHover={{ y: -2 }}>
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
         <Card
-          className="border-0 border-t-4 border-t-[#0ea5e9] shadow-[0_4px_24px_rgba(124,58,237,0.10)] rounded-2xl bg-white cursor-pointer group"
+          className="border border-line shadow-none rounded-2xl bg-paper cursor-pointer group"
           onClick={() => setTestDrawerOpen(true)}
         >
           <CardContent className="p-5">
             <div className="flex justify-between items-center mb-3">
-              <div className="bg-[#0ea5e9]/10 text-[#0ea5e9] text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">
+              <div className="text-[10px] font-bold text-ink-muted uppercase tracking-wider">
                 20-min timed MCQ
               </div>
-              <div className="w-8 h-8 rounded-full bg-[#f8fafc] text-[#0ea5e9] flex items-center justify-center group-hover:bg-[#0ea5e9] group-hover:text-white transition-colors">
+              <div className="w-8 h-8 rounded-full border border-line flex items-center justify-center group-hover:bg-ink group-hover:text-paper transition-colors">
                 <ChevronRight className="w-5 h-5" />
               </div>
             </div>
-            <h3 className="text-xl font-bold text-[#0f172a] flex items-center mb-1">
-              <Briefcase className="w-5 h-5 mr-2 text-[#0ea5e9]" />
+            <h3 className="text-xl font-bold text-ink flex items-center mb-1">
+              <Briefcase className="w-5 h-5 mr-2" />
               Mock Test
             </h3>
-            <p className="text-sm font-medium text-[#64748b]">Aptitude and reasoning — just like campus drives.</p>
+            <p className="text-sm text-ink-muted">Aptitude and reasoning — just like campus drives.</p>
           </CardContent>
         </Card>
       </motion.div>
@@ -148,7 +155,7 @@ export default function Prep() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-[#0f172a]/40 backdrop-blur-sm z-[60]"
+              className="fixed inset-0 bg-ink/40 backdrop-blur-sm z-[60]"
               onClick={closeDrawers}
             />
             <motion.div
@@ -156,68 +163,66 @@ export default function Prep() {
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl z-[60] shadow-[0_-10px_40px_rgba(124,58,237,0.15)] max-w-md mx-auto overflow-y-auto max-h-[90vh] pb-[env(safe-area-inset-bottom)]"
+              className="fixed bottom-0 left-0 right-0 bg-paper rounded-t-3xl z-[60] shadow-[0_-10px_40px_rgba(0,0,0,0.12)] max-w-md mx-auto overflow-y-auto max-h-[90vh] pb-[env(safe-area-inset-bottom)]"
             >
               <div className="p-6 pb-8">
-                <div className="w-12 h-1.5 bg-[#e0e7ff] rounded-full mx-auto mb-5" />
-                <button className="absolute top-6 right-6 text-[#64748b] bg-[#f8fafc] rounded-full p-1" onClick={closeDrawers}>
+                <div className="w-12 h-1.5 bg-line rounded-full mx-auto mb-5" />
+                <button className="absolute top-6 right-6 text-ink-muted rounded-full p-1" onClick={closeDrawers}>
                   <X className="w-5 h-5" />
                 </button>
 
                 {interviewDrawerOpen && (
                   <div className="space-y-5">
                     <div>
-                      <h2 className="text-2xl font-bold text-[#0f172a] mb-1">Set Up Interview</h2>
-                      <p className="text-[#64748b] text-sm font-medium">Configure your practice session</p>
+                      <h2 className="text-2xl font-bold text-ink mb-1">Set Up Interview</h2>
+                      <p className="text-ink-muted text-sm">Configure your practice session</p>
                     </div>
 
                     <div>
-                      <label className="text-xs font-extrabold text-[#64748b] uppercase tracking-wider mb-2 block">
+                      <label className="text-xs font-bold text-ink-muted uppercase tracking-wider mb-2 block">
                         <Building2 className="w-3 h-3 inline mr-1" /> Target Company
                       </label>
                       <Input
                         value={company}
                         onChange={(e) => setCompany(e.target.value)}
                         placeholder="e.g. Google, TCS, Infosys..."
-                        className="rounded-xl border-2 border-[#e0e7ff] focus-visible:ring-primary focus-visible:border-primary h-11 text-[#0f172a] font-medium"
+                        className="rounded-xl border-2 border-line focus-visible:border-ink focus-visible:ring-0 h-11 text-ink font-medium"
                       />
-                      <p className="text-xs text-[#64748b] mt-1 ml-1">Leave blank for a general interview</p>
+                      <p className="text-xs text-ink-muted mt-1 ml-1">Leave blank for a general interview</p>
                     </div>
 
                     <div>
-                      <label className="text-xs font-extrabold text-[#64748b] uppercase tracking-wider mb-2 block">Interview Type</label>
+                      <label className="text-xs font-bold text-ink-muted uppercase tracking-wider mb-2 block">Interview Type</label>
                       <div className="grid grid-cols-3 gap-2">
-                        {INTERVIEW_TYPES.map(({ type, icon: Icon, label, desc, color }) => (
+                        {INTERVIEW_TYPES.map(({ type, icon: Icon, label, desc }) => (
                           <button
                             key={type}
                             onClick={() => setInterviewType(type)}
                             className={cn(
                               "rounded-2xl border-2 p-3 text-left transition-all",
-                              interviewType === type
-                                ? "border-primary bg-[#f8fafc] shadow-[0_0_0_3px_rgba(124,58,237,0.15)]"
-                                : "border-[#e5e7eb] bg-white hover:border-[#e0e7ff]"
+                              interviewType === type ? "border-ink bg-line/40" : "border-line bg-paper"
                             )}
                           >
-                            <Icon className="w-5 h-5 mb-1.5" style={{ color: interviewType === type ? color : "#94a3b8" }} />
-                            <div className="text-[12px] font-bold text-[#0f172a] leading-tight">{label}</div>
-                            <div className="text-[10px] text-[#64748b] mt-0.5 leading-tight">{desc}</div>
+                            <Icon className="w-5 h-5 mb-1.5 text-ink" />
+                            <div className="text-[12px] font-bold text-ink leading-tight">{label}</div>
+                            <div className="text-[10px] text-ink-muted mt-0.5 leading-tight">{desc}</div>
                           </button>
                         ))}
                       </div>
                     </div>
 
                     <div>
-                      <label className="text-xs font-extrabold text-[#64748b] uppercase tracking-wider mb-2 block">
+                      <label className="text-xs font-bold text-ink-muted uppercase tracking-wider mb-2 block">
                         <Flame className="w-3 h-3 inline mr-1" /> Difficulty
                       </label>
-                      <div className="flex rounded-xl border-2 border-[#e0e7ff] overflow-hidden">
+                      <div className="flex rounded-xl border-2 border-line overflow-hidden">
                         {(["Standard", "Challenging"] as Difficulty[]).map((d) => (
                           <button
                             key={d}
                             onClick={() => setDifficulty(d)}
                             className={cn(
                               "flex-1 py-2.5 text-sm font-bold transition-colors",
-                              difficulty === d ? "bg-primary text-white" : "bg-white text-[#64748b] hover:bg-[#f8fafc]"
+                              difficulty === d ? "bg-ink text-paper" : "bg-paper text-ink-muted"
                             )}
                           >
                             {d === "Challenging" ? "🔥 " : ""}{d}
@@ -225,7 +230,7 @@ export default function Prep() {
                         ))}
                       </div>
                       {difficulty === "Challenging" && (
-                        <p className="text-xs text-[#f97316] font-bold mt-1 ml-1">Aggressive follow-ups, high pressure mode</p>
+                        <p className="text-xs text-ink-muted font-bold mt-1 ml-1">Aggressive follow-ups, high pressure mode</p>
                       )}
                     </div>
 
@@ -233,23 +238,21 @@ export default function Prep() {
                       onClick={() => setVoiceMode(!voiceMode)}
                       className={cn(
                         "w-full flex items-center justify-between px-4 py-3 rounded-2xl border-2 transition-all",
-                        voiceMode
-                          ? "border-primary bg-[#f8fafc] shadow-[0_0_0_3px_rgba(124,58,237,0.12)]"
-                          : "border-[#e5e7eb] bg-white hover:border-[#e0e7ff]"
+                        voiceMode ? "border-ink bg-line/40" : "border-line bg-paper"
                       )}
                     >
                       <div className="flex items-center gap-3">
-                        <div className={cn("w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0", voiceMode ? "bg-primary text-white" : "bg-[#f3f4f6] text-[#64748b]")}>
+                        <div className={cn("w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0", voiceMode ? "bg-ink text-paper" : "bg-line/60 text-ink-muted")}>
                           <Mic className="w-4 h-4" />
                         </div>
                         <div className="text-left">
-                          <div className="text-sm font-bold text-[#0f172a]">Voice Mode</div>
-                          <div className="text-[11px] text-[#64748b]">AI reads questions · speak your answers</div>
+                          <div className="text-sm font-bold text-ink">Voice Mode</div>
+                          <div className="text-[11px] text-ink-muted">AI reads questions · speak your answers</div>
                         </div>
                       </div>
-                      <div className={cn("w-11 h-6 rounded-full transition-colors relative flex-shrink-0", voiceMode ? "bg-primary" : "bg-[#d1d5db]")}>
+                      <div className={cn("w-11 h-6 rounded-full transition-colors relative flex-shrink-0", voiceMode ? "bg-ink" : "bg-line")}>
                         <motion.div
-                          className="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow"
+                          className="absolute top-0.5 w-5 h-5 bg-paper rounded-full shadow"
                           animate={{ x: voiceMode ? 20 : 2 }}
                           transition={{ type: "spring", stiffness: 300, damping: 25 }}
                         />
@@ -260,23 +263,21 @@ export default function Prep() {
                       onClick={() => setCameraMode(!cameraMode)}
                       className={cn(
                         "w-full flex items-center justify-between px-4 py-3 rounded-2xl border-2 transition-all",
-                        cameraMode
-                          ? "border-[#ec4899] bg-[#fdf2f8] shadow-[0_0_0_3px_rgba(236,72,153,0.12)]"
-                          : "border-[#e5e7eb] bg-white hover:border-[#fce7f3]"
+                        cameraMode ? "border-ink bg-line/40" : "border-line bg-paper"
                       )}
                     >
                       <div className="flex items-center gap-3">
-                        <div className={cn("w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0", cameraMode ? "bg-[#ec4899] text-white" : "bg-[#f3f4f6] text-[#64748b]")}>
+                        <div className={cn("w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0", cameraMode ? "bg-ink text-paper" : "bg-line/60 text-ink-muted")}>
                           <Camera className="w-4 h-4" />
                         </div>
                         <div className="text-left">
-                          <div className="text-sm font-bold text-[#0f172a]">Camera Mode</div>
-                          <div className="text-[11px] text-[#64748b]">See yourself · feels like the real thing</div>
+                          <div className="text-sm font-bold text-ink">Camera Mode</div>
+                          <div className="text-[11px] text-ink-muted">See yourself · feels like the real thing</div>
                         </div>
                       </div>
-                      <div className={cn("w-11 h-6 rounded-full transition-colors relative flex-shrink-0", cameraMode ? "bg-[#ec4899]" : "bg-[#d1d5db]")}>
+                      <div className={cn("w-11 h-6 rounded-full transition-colors relative flex-shrink-0", cameraMode ? "bg-ink" : "bg-line")}>
                         <motion.div
-                          className="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow"
+                          className="absolute top-0.5 w-5 h-5 bg-paper rounded-full shadow"
                           animate={{ x: cameraMode ? 20 : 2 }}
                           transition={{ type: "spring", stiffness: 300, damping: 25 }}
                         />
@@ -287,7 +288,7 @@ export default function Prep() {
                       <Button
                         onClick={handleStartInterview}
                         disabled={createInterview.isPending}
-                        className="w-full bg-primary hover:bg-[#3730a3] text-white font-bold h-14 rounded-full text-lg shadow-[0_8px_16px_rgba(124,58,237,0.2)]"
+                        className="w-full bg-ink hover:bg-ink/90 text-paper font-bold h-14 rounded-full text-lg"
                       >
                         {createInterview.isPending ? "Setting up..." : voiceMode ? "🎤 Start Voice Interview →" : "Start Interview →"}
                       </Button>
@@ -297,13 +298,13 @@ export default function Prep() {
 
                 {testDrawerOpen && (
                   <div className="space-y-4">
-                    <h2 className="text-2xl font-bold text-[#0f172a] mb-2">Start Mock Test</h2>
-                    <p className="text-[#64748b] font-medium text-[15px]">A 20-minute timed aptitude test — just like your campus placement rounds. You can't pause once it starts.</p>
+                    <h2 className="text-2xl font-bold text-ink mb-2">Start Mock Test</h2>
+                    <p className="text-ink-muted text-[15px]">A 20-minute timed aptitude test — just like your campus placement rounds. You can't pause once it starts.</p>
                     <motion.div whileTap={{ scale: 0.97 }}>
                       <Button
                         onClick={handleStartTest}
                         disabled={createTest.isPending}
-                        className="w-full bg-[#0ea5e9] hover:bg-[#0891b2] text-white font-bold h-14 rounded-full text-lg shadow-[0_8px_16px_rgba(6,182,212,0.2)]"
+                        className="w-full bg-ink hover:bg-ink/90 text-paper font-bold h-14 rounded-full text-lg"
                       >
                         {createTest.isPending ? "Generating questions..." : "Start Test →"}
                       </Button>

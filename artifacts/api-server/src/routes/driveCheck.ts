@@ -1,9 +1,13 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { studentsTable, driveChecksTable, tpoDrivesTable } from "@workspace/db";
-import { eq, desc, and, sql, ilike, lte, isNotNull, gte } from "drizzle-orm";
+import { eq, desc, and, sql, lte, isNotNull } from "drizzle-orm";
 import { anthropic, AI_MODEL } from "@workspace/integrations-anthropic-ai";
 import { rlDriveCheck } from "../middlewares/rateLimit";
+import { requireStudent } from "../middlewares/studentAuth";
+import { contextPack } from "../lib/contextPack";
+import { extractJson } from "../lib/extractJson";
+import { clamp, normalizeBranch, computeEligibilityGates, computeTpoMatch, getCompanyStats } from "../lib/driveAnalysis";
 
 const router = Router();
 
@@ -21,29 +25,7 @@ interface ParsedDrive {
   confidence: number;
 }
 
-function clamp(n: number, lo: number, hi: number): number {
-  return Math.max(lo, Math.min(hi, n));
-}
-
-function parseFirstNumber(s: string | null | undefined): number | null {
-  if (!s) return null;
-  const m = s.toString().match(/(\d+(?:\.\d+)?)/);
-  return m ? parseFloat(m[1]) : null;
-}
-
-function normalizeBranch(b: string): string {
-  const x = b.toLowerCase().trim();
-  if (x.includes("comp") || x === "cse" || x === "cs" || x === "it" || x.includes("software")) return "cse";
-  if (x.includes("electronic") || x === "ece" || x === "etc" || x === "ete") return "ece";
-  if (x.includes("electric") || x === "eee" || x === "ee") return "eee";
-  if (x.includes("mech")) return "mech";
-  if (x.includes("civil")) return "civil";
-  if (x.includes("chem")) return "chem";
-  if (x === "all" || x.includes("any") || x.includes("circuit")) return "all";
-  return x;
-}
-
-router.post("/students/:id/drive-check", rlDriveCheck, async (req, res) => {
+router.post("/students/:id/drive-check", requireStudent({ allowGuest: true }), rlDriveCheck, async (req, res) => {
   const id = Number(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
   const { rawText } = req.body as { rawText: string };
@@ -55,7 +37,11 @@ router.post("/students/:id/drive-check", rlDriveCheck, async (req, res) => {
     const [student] = await db.select().from(studentsTable).where(eq(studentsTable.id, id)).limit(1);
     if (!student) return res.status(404).json({ error: "Student not found" });
 
+    const pack = await contextPack(id);
+
     const prompt = `You analyze placement drive messages forwarded by Indian engineering students on Telegram/WhatsApp. Many are scams. Return ONLY valid JSON, nothing else.
+
+${pack?.text ?? ""}
 
 PASTED MESSAGE:
 """
@@ -116,14 +102,7 @@ Return EXACTLY this JSON shape:
     const raw = response.content[0];
     if (raw.type !== "text") throw new Error("AI returned no text");
 
-    let parsed: ParsedDrive;
-    try {
-      parsed = JSON.parse(raw.text);
-    } catch {
-      const m = raw.text.match(/\{[\s\S]*\}/);
-      if (!m) throw new Error("AI returned no JSON");
-      parsed = JSON.parse(m[0]);
-    }
+    const parsed = extractJson<ParsedDrive>(raw.text);
 
     // Sanity guards
     parsed.scamScore = clamp(Math.round(parsed.scamScore ?? 50), 0, 100);
@@ -134,49 +113,8 @@ Return EXACTLY this JSON shape:
       ? parsed.branches.map(normalizeBranch).filter(Boolean)
       : [];
 
-    // ─── Eligibility computation ───────────────────────────────────────────
-    const studentCgpa = parseFirstNumber(student.cgpa);
-    const studentBranch = normalizeBranch(student.field);
-    const studentBatch = (student.year ? 2026 + (4 - student.year) : null);
-
-    const gates: Record<string, { open: boolean; label: string }> = {};
-
-    // CGPA gate
-    if (parsed.cgpaCutoff != null && studentCgpa != null) {
-      gates.cgpa = {
-        open: studentCgpa >= parsed.cgpaCutoff,
-        label: `CGPA ${studentCgpa} / Cutoff ${parsed.cgpaCutoff}`,
-      };
-    } else if (parsed.cgpaCutoff != null && studentCgpa == null) {
-      gates.cgpa = { open: false, label: `CGPA cutoff ${parsed.cgpaCutoff} (yours not set)` };
-    }
-
-    // Branch gate
-    if (parsed.branches.length > 0) {
-      const allowAll = parsed.branches.includes("all");
-      const open = allowAll || parsed.branches.includes(studentBranch);
-      gates.branch = {
-        open,
-        label: allowAll
-          ? `All branches allowed`
-          : `Allowed: ${parsed.branches.join(", ").toUpperCase()} / Yours: ${studentBranch.toUpperCase()}`,
-      };
-    }
-
-    // Batch gate
-    if (parsed.batch && studentBatch) {
-      const yearMatch = parsed.batch.match(/\d{4}/g) ?? [];
-      const allowed = yearMatch.map((y) => parseInt(y));
-      const open = allowed.length === 0 || allowed.includes(studentBatch);
-      gates.batch = {
-        open,
-        label: `Batch ${parsed.batch} / Yours: ${studentBatch}`,
-      };
-    }
-
-    const gateValues = Object.values(gates);
-    const gatesOpen = gateValues.filter((g) => g.open).length;
-    const gatesTotal = gateValues.length;
+    // ─── Eligibility computation (deterministic, never trust the LLM) ─────
+    const { gates, gatesOpen, gatesTotal } = computeEligibilityGates(student, parsed);
 
     // KodeScore fit (heuristic — % of users below this student's overall score)
     const kodeScoreFit = clamp(Math.round(student.overallScore || 0), 0, 100);
@@ -225,170 +163,6 @@ Return EXACTLY this JSON shape:
   }
 });
 
-// ─── TPO drive matcher ──────────────────────────────────────────────────────
-// Looks up TPO-posted drives for the student's college and fuzzy-matches by
-// company name + (optional) role. Returns "matched" / "not_matched" / "unknown".
-function normalizeText(s: string | null | undefined): string {
-  if (!s) return "";
-  return s
-    .toLowerCase()
-    .replace(/\b(pvt|private|ltd|limited|inc|llc|llp|technologies|technology|tech|solutions|systems|services|india|global|corp|corporation|co)\b/g, " ")
-    .replace(/[^a-z0-9]+/g, " ")
-    .trim();
-}
-
-function tokenSetSimilarity(a: string, b: string): number {
-  const at = new Set(a.split(/\s+/).filter(t => t.length >= 2));
-  const bt = new Set(b.split(/\s+/).filter(t => t.length >= 2));
-  if (at.size === 0 || bt.size === 0) return 0;
-  let inter = 0;
-  for (const t of at) if (bt.has(t)) inter++;
-  const union = new Set([...at, ...bt]).size;
-  return inter / union;
-}
-
-// Common Indian-recruiting company aliases. Maps every form to a canonical
-// key so "TCS", "Tata Consultancy Services" and "Tata Consultancy" all match.
-const COMPANY_ALIASES: Record<string, string> = {
-  "tcs": "tata consultancy",
-  "tata consultancy": "tata consultancy",
-  "tata consultancy services": "tata consultancy",
-  "infy": "infosys",
-  "infosys": "infosys",
-  "wipro": "wipro",
-  "hcl": "hcl",
-  "hcltech": "hcl",
-  "ibm": "ibm",
-  "google": "google",
-  "alphabet": "google",
-  "meta": "meta",
-  "facebook": "meta",
-  "amazon": "amazon",
-  "aws": "amazon",
-  "microsoft": "microsoft",
-  "msft": "microsoft",
-  "ms": "microsoft",
-  "accenture": "accenture",
-  "cognizant": "cognizant",
-  "ctsh": "cognizant",
-  "cts": "cognizant",
-  "capgemini": "capgemini",
-  "deloitte": "deloitte",
-  "jpmc": "jpmorgan chase",
-  "jp morgan": "jpmorgan chase",
-  "jpmorgan": "jpmorgan chase",
-  "jpmorgan chase": "jpmorgan chase",
-};
-
-function canonicalCompany(s: string): string {
-  return COMPANY_ALIASES[s] ?? s;
-}
-
-function companyMatch(a: string, b: string): boolean {
-  if (!a || !b) return false;
-  const ca = canonicalCompany(a);
-  const cb = canonicalCompany(b);
-  if (ca === cb) return true;
-  // Substring containment after normalization handles "google" vs "google india".
-  if (ca.length >= 3 && cb.includes(ca)) return true;
-  if (cb.length >= 3 && ca.includes(cb)) return true;
-  return tokenSetSimilarity(a, b) >= 0.7;
-}
-
-async function computeTpoMatch(
-  college: string | null | undefined,
-  company: string | null | undefined,
-  role: string | null | undefined,
-): Promise<{ status: "matched" | "not_matched" | "unknown"; driveId: number | null }> {
-  if (!college || !company) return { status: "unknown", driveId: null };
-
-  const sixtyDaysAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000);
-  const tpoPosts = await db
-    .select()
-    .from(tpoDrivesTable)
-    .where(
-      and(
-        eq(tpoDrivesTable.college, college),
-        eq(tpoDrivesTable.status, "active"),
-        gte(tpoDrivesTable.createdAt, sixtyDaysAgo),
-      ),
-    )
-    .orderBy(desc(tpoDrivesTable.createdAt))
-    .limit(200);
-
-  // If the TPO has posted nothing recently, we genuinely don't know.
-  if (tpoPosts.length === 0) return { status: "unknown", driveId: null };
-
-  const targetCompany = normalizeText(company);
-  const targetRole = normalizeText(role);
-
-  // Strong company match required: token-set similarity >= 0.7.
-  // When BOTH the pasted message and the TPO post specify a role, role
-  // similarity must also be >= 0.4 — otherwise we'd over-verify a different
-  // role at the same company. If either side has no role, company-only is OK.
-  let best: { id: number; score: number } | null = null;
-  for (const post of tpoPosts) {
-    const postCompany = normalizeText(post.company);
-    if (!companyMatch(targetCompany, postCompany)) continue;
-
-    if (targetRole && post.role) {
-      const roleScore = tokenSetSimilarity(targetRole, normalizeText(post.role));
-      if (roleScore < 0.4) continue;
-    }
-
-    // Score for picking the "best" candidate when multiple match — exact
-    // canonical hits win; otherwise fall back to token-set similarity.
-    const score =
-      canonicalCompany(targetCompany) === canonicalCompany(postCompany)
-        ? 1
-        : Math.max(tokenSetSimilarity(targetCompany, postCompany), 0.7);
-    if (!best || score > best.score) best = { id: post.id, score };
-  }
-
-  if (best) return { status: "matched", driveId: best.id };
-  return { status: "not_matched", driveId: null };
-}
-
-// ─── Ghost-rate aggregator ──────────────────────────────────────────────────
-// Returns: { total, applied, called, ghosted, rejected, offer, ghostRate, callRate, offerRate }
-// Only considers rows where outcome is set (i.e. student actually applied + reported back)
-async function getCompanyStats(company: string) {
-  const c = company.trim();
-  if (!c) return null;
-
-  const rows = await db
-    .select({ outcome: driveChecksTable.outcome })
-    .from(driveChecksTable)
-    .where(
-      and(
-        ilike(driveChecksTable.company, c),
-        sql`${driveChecksTable.outcome} <> 'pending'`,
-      ),
-    );
-
-  const total = rows.length;
-  const applied = rows.filter((r) => r.outcome === "applied").length;
-  const called = rows.filter((r) => r.outcome === "called").length;
-  const ghosted = rows.filter((r) => r.outcome === "ghosted").length;
-  const rejected = rows.filter((r) => r.outcome === "rejected").length;
-  const offer = rows.filter((r) => r.outcome === "offer").length;
-
-  // Decided = anyone who got a definitive outcome (not "applied" pending state)
-  const decided = called + ghosted + rejected + offer;
-
-  return {
-    total,
-    applied,
-    called,
-    ghosted,
-    rejected,
-    offer,
-    ghostRate: decided > 0 ? Math.round((ghosted / decided) * 100) : null,
-    callRate: decided > 0 ? Math.round(((called + offer) / decided) * 100) : null,
-    offerRate: decided > 0 ? Math.round((offer / decided) * 100) : null,
-  };
-}
-
 router.get("/drive-checks/company-stats", async (req, res) => {
   const company = (req.query.company as string | undefined)?.trim();
   if (!company) return res.status(400).json({ error: "company required" });
@@ -402,7 +176,7 @@ router.get("/drive-checks/company-stats", async (req, res) => {
 });
 
 // Mark a drive check as "applied" — schedules a 7-day status ping
-router.post("/students/:sid/drive-checks/:id/applied", async (req, res) => {
+router.post("/students/:sid/drive-checks/:id/applied", requireStudent({ allowGuest: true, param: "sid" }), async (req, res) => {
   const sid = Number(req.params.sid);
   const id = Number(req.params.id);
   if (isNaN(sid) || isNaN(id)) return res.status(400).json({ error: "Invalid id" });
@@ -425,7 +199,7 @@ router.post("/students/:sid/drive-checks/:id/applied", async (req, res) => {
 // Set the outcome (called / ghosted / rejected / offer / skipped)
 const VALID_OUTCOMES = new Set(["called", "ghosted", "rejected", "offer", "skipped"]);
 
-router.post("/students/:sid/drive-checks/:id/outcome", async (req, res) => {
+router.post("/students/:sid/drive-checks/:id/outcome", requireStudent({ allowGuest: true, param: "sid" }), async (req, res) => {
   const sid = Number(req.params.sid);
   const id = Number(req.params.id);
   const { outcome } = req.body as { outcome?: string };
@@ -448,7 +222,7 @@ router.post("/students/:sid/drive-checks/:id/outcome", async (req, res) => {
 });
 
 // Drives where the student said "applied" and 7 days have passed — ping them
-router.get("/students/:id/pending-pings", async (req, res) => {
+router.get("/students/:id/pending-pings", requireStudent({ allowGuest: true }), async (req, res) => {
   const id = Number(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
   try {
@@ -473,7 +247,7 @@ router.get("/students/:id/pending-pings", async (req, res) => {
   }
 });
 
-router.get("/students/:id/drive-checks", async (req, res) => {
+router.get("/students/:id/drive-checks", requireStudent({ allowGuest: true }), async (req, res) => {
   const id = Number(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
   try {

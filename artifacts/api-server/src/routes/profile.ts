@@ -4,6 +4,9 @@ import { studentsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { anthropic, AI_MODEL } from "@workspace/integrations-anthropic-ai";
 import { rlAiHeavy, rlAiMedium } from "../middlewares/rateLimit";
+import { requireStudent } from "../middlewares/studentAuth";
+import { contextPack } from "../lib/contextPack";
+import { extractJson } from "../lib/extractJson";
 
 const router = Router();
 
@@ -38,7 +41,7 @@ function computeCommitmentScore(s: typeof studentsTable.$inferSelect): number {
 
 // ─── GET /students/:id/full-profile ──────────────────────────────────────────
 
-router.get("/students/:id/full-profile", async (req, res) => {
+router.get("/students/:id/full-profile", requireStudent({ allowGuest: true }), async (req, res) => {
   const id = Number(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
   try {
@@ -72,9 +75,10 @@ const ALLOWED_FIELDS = [
   "cgpa", "targetPackage", "dreamCompany",
   "projects", "certifications",
   "openToWork", "workMode", "preferredLocations", "expectedSalary",
+  "targetRole", "targetBatch",
 ] as const;
 
-router.patch("/students/:id/profile", async (req, res) => {
+router.patch("/students/:id/profile", requireStudent({ allowGuest: true }), async (req, res) => {
   const id = Number(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
   try {
@@ -108,7 +112,7 @@ router.patch("/students/:id/profile", async (req, res) => {
 
 // ─── POST /students/:id/analyze-github ───────────────────────────────────────
 
-router.post("/students/:id/analyze-github", rlAiHeavy, async (req, res) => {
+router.post("/students/:id/analyze-github", requireStudent(), rlAiHeavy, async (req, res) => {
   const id = Number(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
   const { githubUrl } = req.body as { githubUrl: string };
@@ -182,7 +186,7 @@ router.post("/students/:id/analyze-github", rlAiHeavy, async (req, res) => {
 
 // ─── POST /students/:id/analyze-linkedin ─────────────────────────────────────
 
-router.post("/students/:id/analyze-linkedin", rlAiHeavy, async (req, res) => {
+router.post("/students/:id/analyze-linkedin", requireStudent(), rlAiHeavy, async (req, res) => {
   const id = Number(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
   const { linkedinUrl, headline, summary, skills: linkedinSkills, experience } = req.body as {
@@ -195,7 +199,10 @@ router.post("/students/:id/analyze-linkedin", rlAiHeavy, async (req, res) => {
   if (!linkedinUrl) return res.status(400).json({ error: "linkedinUrl required" });
 
   try {
+    const pack = await contextPack(id);
     const prompt = `You are a career advisor analyzing a student's LinkedIn profile for Indian tech recruiters.
+
+${pack?.text ?? ""}
 
 LinkedIn URL: ${linkedinUrl}
 ${headline ? `Headline: ${headline}` : ""}
@@ -224,10 +231,9 @@ Return ONLY valid JSON with this structure:
 
     let parsed: Record<string, unknown>;
     try {
-      parsed = JSON.parse(raw.text);
+      parsed = extractJson<Record<string, unknown>>(raw.text);
     } catch {
-      const m = raw.text.match(/\{[\s\S]*\}/);
-      parsed = m ? JSON.parse(m[0]) : { strengthScore: 50, profileTier: "average", highlights: [], improvements: [], recruitersWillNotice: "" };
+      parsed = { strengthScore: 50, profileTier: "average", highlights: [], improvements: [], recruitersWillNotice: "" };
     }
 
     const linkedinData = { ...parsed, linkedinUrl };
@@ -248,7 +254,7 @@ Return ONLY valid JSON with this structure:
 
 // ─── POST /students/:id/chat ─────────────────────────────────────────────────
 
-router.post("/students/:id/chat", rlAiMedium, async (req, res) => {
+router.post("/students/:id/chat", requireStudent(), rlAiMedium, async (req, res) => {
   const id = Number(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
   const { message } = req.body as { message: string };
@@ -258,6 +264,7 @@ router.post("/students/:id/chat", rlAiMedium, async (req, res) => {
     const [student] = await db.select().from(studentsTable).where(eq(studentsTable.id, id)).limit(1);
     if (!student) return res.status(404).json({ error: "Student not found" });
 
+    const pack = await contextPack(id);
     const profileCtx = `
 Name: ${student.name}
 College: ${student.college} (${student.city})
@@ -284,6 +291,8 @@ Open to Work: ${student.openToWork ? "Yes" : "No"}`.trim();
 
 CURRENT STUDENT PROFILE:
 ${profileCtx}
+
+${pack?.text ?? ""}
 
 YOUR PERSONALITY:
 - Warm, witty, and genuinely helpful — like a brilliant friend who happens to be a career expert

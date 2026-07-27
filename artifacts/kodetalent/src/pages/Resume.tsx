@@ -13,8 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import jsPDF from "jspdf";
-
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+import { apiFetch } from "@/lib/api/authFetch";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -173,7 +172,7 @@ function TargetRecommendations({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`${BASE}/api/students/${studentId}/full-profile`)
+    apiFetch(`/api/students/${studentId}/full-profile`)
       .then(r => r.ok ? r.json() : null)
       .then((profile: { skillSections?: { items: string }[] } | null) => {
         const skills = (profile?.skillSections ?? [])
@@ -896,7 +895,7 @@ function EditResumeSheet({
   const handleSave = async () => {
     setSaving(true);
     try {
-      const r = await fetch(`${BASE}/api/students/${studentId}/resumes/${resume.id}`, {
+      const r = await apiFetch(`/api/students/${studentId}/resumes/${resume.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -1196,7 +1195,7 @@ function GenerateSheet({
   const generate = async () => {
     setGenerating(true);
     try {
-      const r = await fetch(`${BASE}/api/students/${studentId}/resumes`, {
+      const r = await apiFetch(`/api/students/${studentId}/resumes`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ templateId, jdText, companyName, resumeName }),
@@ -1350,7 +1349,7 @@ export default function Resume() {
 
   const fetchResumes = useCallback(async (id: number) => {
     try {
-      const r = await fetch(`${BASE}/api/students/${id}/resumes`);
+      const r = await apiFetch(`/api/students/${id}/resumes`);
       if (r.ok) {
         const data = await r.json() as SavedResume[];
         setResumes(data);
@@ -1376,7 +1375,7 @@ export default function Resume() {
     if (!studentId) return;
     setDeletingId(resumeId);
     try {
-      const r = await fetch(`${BASE}/api/students/${studentId}/resumes/${resumeId}`, {
+      const r = await apiFetch(`/api/students/${studentId}/resumes/${resumeId}`, {
         method: "DELETE",
       });
       if (!r.ok) throw new Error("Failed to delete");

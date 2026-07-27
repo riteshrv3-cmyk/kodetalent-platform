@@ -1,4 +1,6 @@
 import { Router } from "express";
+import { randomUUID } from "node:crypto";
+import { getAuth } from "@clerk/express";
 import { db } from "@workspace/db";
 import { studentsTable, questsTable, studentQuestsTable, studentActivityLogTable } from "@workspace/db";
 import { eq, desc, sql } from "drizzle-orm";
@@ -6,25 +8,30 @@ import {
   CreateStudentBody,
   UpdateStudentBody,
 } from "@workspace/api-zod";
+import { requireStudent } from "../middlewares/studentAuth";
 
 const router = Router();
 
-// POST /students — create student
+// POST /students — create a guest student row (or, if signed in, a claimed one directly).
+// Client-supplied email is ignored: anonymous rows get a server-generated placeholder so
+// a guessed/known email can never collide with (and take over) an existing account.
 router.post("/students", async (req, res) => {
   const parsed = CreateStudentBody.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ error: parsed.error.message });
   }
-  const { name, email, college, city, year, field, githubUrl, cgpa, targetPackage, dreamCompany } = parsed.data;
+  const { name, college, city, year, field, githubUrl, cgpa, targetPackage, dreamCompany } = parsed.data;
   try {
-    const existing = await db.select().from(studentsTable).where(eq(studentsTable.email, email)).limit(1);
-    if (existing.length > 0) {
-      return res.status(201).json(formatStudent(existing[0]));
-    }
+    const { userId } = getAuth(req);
     const defaultSkills = getDefaultSkills(field as string);
+    const guestToken = userId ? null : randomUUID();
+    const email = userId
+      ? null // filled in by /auth/claim from the Clerk profile; placeholder here would never be read
+      : `guest_${randomUUID()}@guest.kodetalent.internal`;
+
     const [student] = await db.insert(studentsTable).values({
       name,
-      email,
+      email: email ?? `guest_${randomUUID()}@guest.kodetalent.internal`,
       college,
       city,
       year,
@@ -33,6 +40,8 @@ router.post("/students", async (req, res) => {
       cgpa: cgpa ?? null,
       targetPackage: targetPackage ?? null,
       dreamCompany: dreamCompany ?? null,
+      clerkUserId: userId ?? null,
+      guestToken,
       overallScore: 0,
       xp: 0,
       level: 1,
@@ -41,7 +50,7 @@ router.post("/students", async (req, res) => {
       skills: defaultSkills,
       isPro: false,
     }).returning();
-    return res.status(201).json(formatStudent(student));
+    return res.status(201).json({ ...formatStudent(student), guestToken: guestToken ?? undefined });
   } catch (err) {
     req.log.error({ err }, "Failed to create student");
     return res.status(500).json({ error: "Failed to create student" });
@@ -49,7 +58,7 @@ router.post("/students", async (req, res) => {
 });
 
 // GET /students/:id
-router.get("/students/:id", async (req, res) => {
+router.get("/students/:id", requireStudent({ allowGuest: true }), async (req, res) => {
   const id = Number(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
   try {
@@ -63,7 +72,7 @@ router.get("/students/:id", async (req, res) => {
 });
 
 // PATCH /students/:id
-router.patch("/students/:id", async (req, res) => {
+router.patch("/students/:id", requireStudent({ allowGuest: true }), async (req, res) => {
   const id = Number(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
   const parsed = UpdateStudentBody.safeParse(req.body);
@@ -91,7 +100,7 @@ router.patch("/students/:id", async (req, res) => {
 });
 
 // POST /students/:id/checkin — daily check-in (+50 XP, +1 streak)
-router.post("/students/:id/checkin", async (req, res) => {
+router.post("/students/:id/checkin", requireStudent({ allowGuest: true }), async (req, res) => {
   const id = Number(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
   try {
@@ -126,21 +135,8 @@ router.post("/students/:id/checkin", async (req, res) => {
   }
 });
 
-// GET /students/by-email/:email
-router.get("/students/by-email/:email", async (req, res) => {
-  const email = req.params.email;
-  try {
-    const [student] = await db.select().from(studentsTable).where(eq(studentsTable.email, email)).limit(1);
-    if (!student) return res.status(404).json({ error: "Student not found" });
-    return res.json(formatStudent(student));
-  } catch (err) {
-    req.log.error({ err }, "Failed to get student by email");
-    return res.status(500).json({ error: "Failed to get student by email" });
-  }
-});
-
 // GET /students/:id/dashboard
-router.get("/students/:id/dashboard", async (req, res) => {
+router.get("/students/:id/dashboard", requireStudent({ allowGuest: true }), async (req, res) => {
   const id = Number(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
   try {
@@ -214,7 +210,7 @@ router.get("/students/:id/dashboard", async (req, res) => {
 });
 
 // GET /students/:id/wrapped
-router.get("/students/:id/wrapped", async (req, res) => {
+router.get("/students/:id/wrapped", requireStudent({ allowGuest: true }), async (req, res) => {
   const id = Number(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
   try {
@@ -249,7 +245,7 @@ router.get("/students/:id/wrapped", async (req, res) => {
   }
 });
 
-function formatStudent(s: typeof studentsTable.$inferSelect) {
+export function formatStudent(s: typeof studentsTable.$inferSelect) {
   return {
     id: s.id,
     name: s.name,
@@ -269,6 +265,9 @@ function formatStudent(s: typeof studentsTable.$inferSelect) {
     lastActiveDate: s.lastActiveDate ?? null,
     skills: (s.skills as Record<string, number>) || {},
     isPro: s.isPro,
+    targetRole: s.targetRole ?? null,
+    targetBatch: s.targetBatch ?? null,
+    baselineScore: s.baselineScore ?? null,
     createdAt: s.createdAt.toISOString(),
   };
 }

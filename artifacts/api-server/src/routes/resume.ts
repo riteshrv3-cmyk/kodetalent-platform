@@ -4,6 +4,9 @@ import { studentsTable, studentResumesTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import { anthropic, AI_MODEL } from "@workspace/integrations-anthropic-ai";
 import { rlAiHeavy } from "../middlewares/rateLimit";
+import { contextPack } from "../lib/contextPack";
+import { extractJson } from "../lib/extractJson";
+import { requireStudent } from "../middlewares/studentAuth";
 
 const router = Router();
 
@@ -28,7 +31,7 @@ function getGradYear(year: number) {
 
 // ─── GET /students/:id/resumes ────────────────────────────────────────────────
 
-router.get("/students/:id/resumes", async (req, res) => {
+router.get("/students/:id/resumes", requireStudent({ allowGuest: true }), async (req, res) => {
   const id = Number(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
   try {
@@ -46,7 +49,7 @@ router.get("/students/:id/resumes", async (req, res) => {
 
 // ─── POST /students/:id/resumes ───────────────────────────────────────────────
 
-router.post("/students/:id/resumes", rlAiHeavy, async (req, res) => {
+router.post("/students/:id/resumes", requireStudent({ allowGuest: true }), rlAiHeavy, async (req, res) => {
   const id = Number(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
 
@@ -122,6 +125,8 @@ Student Profile:
       ? `\nJob Description / Target Role:\n${jdText}\nCompany: ${companyName || "not specified"}\n`
       : "";
 
+    const pack = await contextPack(id);
+
     const systemPrompt = `You are an expert ATS-optimized resume writer for Indian engineering students. 
 Generate a structured resume JSON based ONLY on the student's actual profile data provided. 
 DO NOT invent or fabricate any projects, skills, or experience that are not mentioned in the profile.
@@ -132,6 +137,8 @@ Tailor the content to the job description if one is provided.
 Always respond with valid JSON only — no markdown, no explanation.`;
 
     const userPrompt = `${profileCtx}${jdSection}
+
+${pack?.text ?? ""}
 
 Generate a resume JSON with this exact structure:
 {
@@ -171,19 +178,19 @@ Rules:
     });
 
     const rawText = response.content[0]?.type === "text" ? response.content[0].text : "";
-    const jsonMatch = rawText.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      req.log.error({ rawText }, "AI did not return valid JSON");
-      return res.status(500).json({ error: "Failed to generate resume content" });
-    }
-
-    const generatedContent = JSON.parse(jsonMatch[0]) as {
+    let generatedContent: {
       summary: string;
       skillSections: { category: string; items: string }[];
       projects: { title: string; tech: string; bullets: string[] }[];
       certifications: { name: string; issuer: string; date?: string }[];
       achievements: string[];
     };
+    try {
+      generatedContent = extractJson(rawText);
+    } catch {
+      req.log.error({ rawText }, "AI did not return valid JSON");
+      return res.status(500).json({ error: "Failed to generate resume content" });
+    }
 
     const fullContent = {
       name: student.name,
@@ -226,7 +233,7 @@ Rules:
 
 // ─── PATCH /students/:id/resumes/:resumeId ────────────────────────────────────
 
-router.patch("/students/:id/resumes/:resumeId", async (req, res) => {
+router.patch("/students/:id/resumes/:resumeId", requireStudent({ allowGuest: true }), async (req, res) => {
   const id = Number(req.params.id);
   const resumeId = Number(req.params.resumeId);
   if (isNaN(id) || isNaN(resumeId)) return res.status(400).json({ error: "Invalid id" });
@@ -338,7 +345,7 @@ router.patch("/students/:id/resumes/:resumeId", async (req, res) => {
 
 // ─── DELETE /students/:id/resumes/:resumeId ───────────────────────────────────
 
-router.delete("/students/:id/resumes/:resumeId", async (req, res) => {
+router.delete("/students/:id/resumes/:resumeId", requireStudent({ allowGuest: true }), async (req, res) => {
   const id = Number(req.params.id);
   const resumeId = Number(req.params.resumeId);
   if (isNaN(id) || isNaN(resumeId)) return res.status(400).json({ error: "Invalid id" });

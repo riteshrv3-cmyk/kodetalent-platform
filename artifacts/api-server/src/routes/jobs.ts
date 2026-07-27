@@ -3,6 +3,8 @@ import { db } from "@workspace/db";
 import { jobsTable, matchesTable, studentsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { anthropic, AI_MODEL } from "@workspace/integrations-anthropic-ai";
+import { contextPack } from "../lib/contextPack";
+import { requireStudent } from "../middlewares/studentAuth";
 
 const router = Router();
 
@@ -18,7 +20,7 @@ router.get("/jobs", async (req, res) => {
 });
 
 // GET /students/:id/job-matches
-router.get("/students/:id/job-matches", async (req, res) => {
+router.get("/students/:id/job-matches", requireStudent({ allowGuest: true }), async (req, res) => {
   const studentId = Number(req.params.id);
   if (isNaN(studentId)) return res.status(400).json({ error: "Invalid id" });
   try {
@@ -50,7 +52,7 @@ router.get("/students/:id/job-matches", async (req, res) => {
 });
 
 // POST /students/:id/job-matches
-router.post("/students/:id/job-matches", async (req, res) => {
+router.post("/students/:id/job-matches", requireStudent({ allowGuest: true }), async (req, res) => {
   const studentId = Number(req.params.id);
   if (isNaN(studentId)) return res.status(400).json({ error: "Invalid id" });
   return await generateAndReturnMatches(req, res, studentId);
@@ -66,6 +68,7 @@ async function generateAndReturnMatches(req: any, res: any, studentId: number) {
 
     const skills = (student.skills as Record<string, number>) || {};
     const skillsText = Object.entries(skills).map(([k, v]) => `${k}: ${v}/100`).join(", ");
+    const pack = await contextPack(studentId);
 
     const prompt = `You are a career counselor. Match this student with jobs and rate compatibility.
 
@@ -74,6 +77,8 @@ Student:
 - Year: ${student.year}
 - Skills: ${skillsText}
 - Overall Score: ${student.overallScore}/100
+
+${pack?.text ?? ""}
 
 Jobs available:
 ${jobs.map(j => `ID ${j.id}: ${j.companyName} - ${j.role} (requires: ${(j.requiredSkills as string[]).join(", ")})`).join("\n")}

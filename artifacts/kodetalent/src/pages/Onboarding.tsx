@@ -1,530 +1,164 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useLocation } from "wouter";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  ArrowRight, ArrowLeft, Check, Sparkles, GraduationCap, Code2,
-  Building2, Github, Trophy, Target, User, Mail, Loader2,
-} from "lucide-react";
-import { useCreateStudent } from "@workspace/api-client-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { apiFetch, setGuestToken } from "@/lib/api/authFetch";
 
-type FormData = {
-  name: string;
-  email: string;
-  year: string;
-  field: string;
-  collegeFull: string;
-  cgpa: string;
-  githubUrl: string;
-  dreamCompany: string;
-  targetPackage: string;
-};
+type Screen = "goal" | "first-mock";
 
-const initialData: FormData = {
-  name: "", email: "", year: "", field: "", collegeFull: "",
-  cgpa: "", githubUrl: "", dreamCompany: "", targetPackage: "",
-};
-
-type Step = {
-  key: keyof FormData;
-  icon: typeof User;
-  emoji: string;
-  title: string;
-  subtitle: string;
-  type: "text" | "email" | "chips";
-  placeholder?: string;
-  options?: string[];
-  optional?: boolean;
-  showIf?: (d: FormData) => boolean;
-};
-
-const STEPS: Step[] = [
-  {
-    key: "name", icon: User, emoji: "👋",
-    title: "What should we call you?",
-    subtitle: "First name works. No formal vibes here.",
-    type: "text", placeholder: "e.g. Aarav", optional: true,
-  },
-  {
-    key: "email", icon: Mail, emoji: "📬",
-    title: "Drop your email",
-    subtitle: "So you can come back to your progress anytime",
-    type: "email", placeholder: "you@college.edu", optional: true,
-  },
-  {
-    key: "year", icon: GraduationCap, emoji: "🎓",
-    title: "Which year are you in?",
-    subtitle: "Tap the one that fits — no judgement",
-    type: "chips", options: ["1st Year", "2nd Year", "3rd Year", "4th Year"],
-    optional: true,
-  },
-  {
-    key: "field", icon: Code2, emoji: "💻",
-    title: "What's your jam?",
-    subtitle: "Pick the one that excites you most. Change it anytime.",
-    type: "chips",
-    options: ["Web Dev", "AI/ML", "App Dev", "Cybersecurity", "Data"],
-    optional: true,
-  },
-  {
-    key: "collegeFull", icon: Building2, emoji: "🏫",
-    title: "Where you studying?",
-    subtitle: "College + city, like PICT Pune or VIT Vellore",
-    type: "text", placeholder: "College name + City", optional: true,
-  },
-  {
-    key: "cgpa", icon: Trophy, emoji: "📊",
-    title: "Current CGPA?",
-    subtitle: "Out of 10. Be honest, recruiters check 😉",
-    type: "text", placeholder: "e.g. 8.4", optional: true,
-  },
-  {
-    key: "githubUrl", icon: Github, emoji: "🐙",
-    title: "GitHub profile?",
-    subtitle: "Paste the URL — our AI will analyse your repos",
-    type: "text", placeholder: "github.com/username",
-    optional: true,
-    showIf: d => d.year === "3rd Year" || d.year === "4th Year",
-  },
-  {
-    key: "dreamCompany", icon: Sparkles, emoji: "✨",
-    title: "Dream company?",
-    subtitle: "We'll secretly bias your roadmap towards them 🤫",
-    type: "text", placeholder: "e.g. Google, Razorpay, OpenAI",
-    optional: true,
-  },
-  {
-    key: "targetPackage", icon: Target, emoji: "🎯",
-    title: "Goal package?",
-    subtitle: "Dream big — we love an ambitious answer",
-    type: "chips",
-    options: ["<6 LPA", "6–10 LPA", "10–20 LPA", "20+ LPA"],
-    optional: true,
-  },
-];
-
-// Hype line above each question — keeps energy up
-const HYPE_LINES = [
-  "Let's gooo 🚀",
-  "Nice. Two down.",
-  "Tell us your vibe ⚡",
-  "Ooh, this is the fun part",
-  "Halfway there, legend 🔥",
-  "You're crushing it ✨",
-  "Almost done — keep going",
-  "Last few questions",
-  "Final one. Make it count 💫",
-];
-
-const FIELD_TONE: Record<string, string> = {
-  "Web Dev": "from-[#4f46e5] to-[#7c3aed]",
-  "AI/ML": "from-[#ec4899] to-[#f59e0b]",
-  "App Dev": "from-[#10b981] to-[#0ea5e9]",
-  "Cybersecurity": "from-[#0f172a] to-[#4f46e5]",
-  "Data": "from-[#0ea5e9] to-[#10b981]",
-};
+const ROLES = ["SDE", "Data/ML", "App Dev", "Cybersecurity", "Not sure"];
+const BATCHES = [2025, 2026, 2027, 2028];
 
 export default function Onboarding() {
   const [, setLocation] = useLocation();
-  const inviteCode = typeof window !== "undefined" ? sessionStorage.getItem("inviteCode") : null;
-  const inviteCollegeName = typeof window !== "undefined" ? sessionStorage.getItem("inviteCollegeName") : null;
-  const inviteCollegeCity = typeof window !== "undefined" ? sessionStorage.getItem("inviteCollegeCity") : null;
-  const clerkEmail = typeof window !== "undefined" ? localStorage.getItem("clerkEmail") : null;
-  const [data, setData] = useState<FormData>(() => ({
-    ...initialData,
-    email: clerkEmail ?? "",
-    collegeFull: inviteCollegeName ? `${inviteCollegeName}${inviteCollegeCity ? " " + inviteCollegeCity : ""}`.trim() : "",
-  }));
-  const [stepIdx, setStepIdx] = useState(-1); // -1 = welcome screen
+  const [screen, setScreen] = useState<Screen>("goal");
+  const [name, setName] = useState("");
+  const [targetRole, setTargetRole] = useState<string | null>(null);
+  const [targetBatch, setTargetBatch] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function skipToHome() {
-    setSubmitting(true);
-    try {
-      const student = await createStudent.mutateAsync({
-        data: {
-          name: "Guest",
-          email: `guest_${Date.now()}@example.com`,
-          college: "Exploring",
-          city: "India",
-          year: 1,
-          field: "Web Dev",
-        },
-      });
-      localStorage.setItem("studentId", student.id.toString());
-      localStorage.setItem("studentCollege", "Exploring");
-      const clerkId = localStorage.getItem("clerkUserId");
-      if (clerkId) localStorage.setItem(`studentId_${clerkId}`, student.id.toString());
-      setLocation("/home");
-    } catch (e) {
-      setError("Something went wrong. Try again.");
-      setSubmitting(false);
-    }
-  }
-  const createStudent = useCreateStudent();
-
-  const visibleSteps = useMemo(
-    () => STEPS.filter(s => !s.showIf || s.showIf(data)).filter(s => !(inviteCode && s.key === "collegeFull")),
-    [data, inviteCode]
-  );
-
-  const step = stepIdx >= 0 ? visibleSteps[stepIdx] : null;
-  const value = step ? data[step.key] : "";
-  const progress = step ? Math.round(((stepIdx + 1) / visibleSteps.length) * 100) : 0;
-  const isLast = stepIdx === visibleSteps.length - 1;
-  const canContinue = step ? (step.optional || value.trim().length > 0) : true;
-
-  function setVal(v: string) {
-    if (!step) return;
-    setData(d => ({ ...d, [step.key]: v }));
-  }
-
-  function next() {
-    if (!step || !canContinue) return;
-    if (isLast) { void submit(); return; }
-    setStepIdx(i => i + 1);
-  }
-
-  function back() {
-    if (stepIdx > 0) setStepIdx(i => i - 1);
-    else if (stepIdx === 0) setStepIdx(-1);
-  }
-
-  async function skipOnboarding() {
+  async function submitGoal() {
     setSubmitting(true);
     setError(null);
     try {
-      const student = await createStudent.mutateAsync({
-        data: {
-          name: "Student",
-          email: "student@example.com",
-          college: "College",
-          city: "Unknown",
-          year: 1,
-          field: "Web Dev",
-        },
-      });
-      localStorage.setItem("studentId", student.id.toString());
-      localStorage.setItem("studentCollege", student.college || "College");
-      // Mark this studentId as belonging to current Clerk user
-      const clerkId = localStorage.getItem("clerkUserId");
-      if (clerkId) {
-        localStorage.setItem(`studentId_${clerkId}`, student.id.toString());
-      }
-      setTimeout(() => setLocation("/home"), 1400);
-    } catch (e) {
-      console.error(e);
-      setSubmitting(false);
-    }
-  }
+      // Signed-in users land here already claimed (via /auth/claim in App.tsx) with a
+      // real row — this screen only fills in the goal, never creates a second student.
+      const existingId = localStorage.getItem("studentId");
+      let studentId: number;
 
-  async function submit() {
-    setSubmitting(true);
-    setError(null);
-    try {
-      const yearMap: Record<string, number> = {
-        "1st Year": 1, "2nd Year": 2, "3rd Year": 3, "4th Year": 4,
-      };
-      const parts = data.collegeFull.trim().split(/\s+/);
-      const city = parts.length > 1 ? parts.pop()! : "Unknown";
-      const college = parts.join(" ") || data.collegeFull || "College";
-
-      const student = await createStudent.mutateAsync({
-        data: {
-          name: data.name.trim() || "Student",
-          email: data.email.trim() || "student@example.com",
-          college,
-          city,
-          year: yearMap[data.year] || 1,
-          field: data.field || "Web Dev",
-          githubUrl: data.githubUrl.trim() || undefined,
-          cgpa: data.cgpa.trim() || undefined,
-          dreamCompany: data.dreamCompany.trim() || undefined,
-          targetPackage: data.targetPackage || undefined,
-        },
-      });
-      localStorage.setItem("studentId", student.id.toString());
-      localStorage.setItem("studentCollege", student.college || college);
-      // Mark this studentId as belonging to current Clerk user
-      const clerkId = localStorage.getItem("clerkUserId");
-      if (clerkId) {
-        localStorage.setItem(`studentId_${clerkId}`, student.id.toString());
-      }
-      if (inviteCode) {
-        try {
-          await fetch(`/api/invite/${encodeURIComponent(inviteCode)}/claim`, {
-            method: "POST",
+      if (existingId) {
+        studentId = Number(existingId);
+        if (name.trim()) {
+          await apiFetch(`/api/students/${studentId}/profile`, {
+            method: "PATCH",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ studentId: student.id }),
-          });
-        } catch (e) { console.warn("invite claim failed", e); }
+            body: JSON.stringify({ name: name.trim() }),
+          }).catch(() => null);
+        }
+      } else {
+        const createRes = await apiFetch("/api/students", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: name.trim() || "Student",
+            email: "", // ignored server-side for anonymous creates; CreateStudentBody just requires the field to be present
+            college: "Not set",
+            city: "Not set",
+            year: 1,
+            field: "Not set",
+          }),
+        });
+        if (!createRes.ok) throw new Error("Failed to create profile");
+        const student = await createRes.json();
+        studentId = student.id;
+        localStorage.setItem("studentId", String(studentId));
+        if (student.guestToken) setGuestToken(student.guestToken);
+      }
+
+      const inviteCode = sessionStorage.getItem("inviteCode");
+      if (inviteCode) {
+        await apiFetch(`/api/invite/${encodeURIComponent(inviteCode)}/claim`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ studentId }),
+        }).catch(() => null);
         sessionStorage.removeItem("inviteCode");
         sessionStorage.removeItem("inviteCollegeName");
         sessionStorage.removeItem("inviteCollegeCity");
       }
-      setTimeout(() => setLocation("/home"), 1400);
-    } catch (e) {
-      console.error(e);
-      setError("Something went wrong. Tap continue to retry.");
+
+      if (targetRole || targetBatch) {
+        await apiFetch(`/api/students/${studentId}/profile`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...(targetRole ? { targetRole } : {}),
+            ...(targetBatch ? { targetBatch } : {}),
+          }),
+        }).catch(() => null);
+      }
+
+      setScreen("first-mock");
+    } catch {
+      setError("Something went wrong. Try again.");
+    } finally {
       setSubmitting(false);
     }
   }
 
-  // ── Submitting screen ────────────────────────────────────────
-  if (submitting) {
+  if (screen === "first-mock") {
     return (
-      <div className="min-h-[100dvh] bg-gradient-to-br from-[#4f46e5] via-[#7c3aed] to-[#ec4899] flex flex-col items-center justify-center p-6 text-center">
-        <motion.div
-          initial={{ scale: 0.6, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          className="w-24 h-24 rounded-3xl bg-white/15 backdrop-blur-sm flex items-center justify-center mb-6 shadow-2xl"
+      <div className="min-h-[100dvh] bg-paper flex flex-col items-center justify-center px-6 text-center">
+        <p className="text-[13px] font-semibold uppercase tracking-wider text-ink-muted mb-3">You're in</p>
+        <h1 className="text-[28px] font-extrabold text-ink leading-[1.1] mb-3">Your first mock interview is free.</h1>
+        <p className="text-[14px] text-ink-muted mb-8 max-w-xs">
+          15 minutes with an AI interviewer. No sign-in needed to try it.
+        </p>
+        <button
+          onClick={() => setLocation("/practice?start=1")}
+          className="w-full max-w-xs bg-ink text-paper text-[15px] font-bold rounded-2xl py-4"
         >
-          <Sparkles className="w-12 h-12 text-white" />
-        </motion.div>
-        <h2 className="text-2xl font-black text-white mb-2">Building your career profile…</h2>
-        <p className="text-white/80 text-sm mb-8">Setting up your AI companion</p>
-        <div className="w-full max-w-xs h-1.5 bg-white/20 rounded-full overflow-hidden">
-          <motion.div
-            className="h-full bg-white rounded-full"
-            initial={{ width: "0%" }}
-            animate={{ width: "100%" }}
-            transition={{ duration: 1.4, ease: "easeOut" }}
-          />
-        </div>
+          Start my first mock
+        </button>
+        <button onClick={() => setLocation("/home")} className="mt-4 text-[13px] text-ink-muted underline">
+          Skip for now
+        </button>
       </div>
     );
   }
-
-  // ── Welcome screen ───────────────────────────────────────────
-  if (stepIdx === -1) {
-    return (
-      <div className="min-h-[100dvh] bg-gradient-to-br from-[#4f46e5] via-[#7c3aed] to-[#ec4899] flex flex-col items-center justify-between p-6 text-center text-white">
-        <div className="flex-1 flex flex-col items-center justify-center max-w-md">
-          <motion.div
-            initial={{ scale: 0.5, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: "spring", stiffness: 180, damping: 18 }}
-            className="w-28 h-28 rounded-[28px] bg-white/15 backdrop-blur-md flex items-center justify-center text-5xl mb-8 shadow-2xl"
-          >
-            ⭐
-          </motion.div>
-          <motion.h1
-            initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.15 }}
-            className="text-4xl font-black mb-3 leading-tight"
-          >
-            Your AI Career<br />Companion
-          </motion.h1>
-          <motion.p
-            initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.25 }}
-            className="text-white/85 text-base mb-10 max-w-xs"
-          >
-            We'll set you up in under a minute. 9 quick questions, then you're in.
-          </motion.p>
-          <motion.div
-            initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.35 }}
-            className="grid grid-cols-3 gap-3 w-full max-w-sm mb-2"
-          >
-            {[
-              { e: "🎯", l: "Personalised roadmap" },
-              { e: "🚀", l: "Real opportunities" },
-              { e: "🤝", l: "Recruiter network" },
-            ].map(it => (
-              <div key={it.l} className="bg-white/10 backdrop-blur-sm rounded-2xl p-3">
-                <div className="text-2xl mb-1">{it.e}</div>
-                <div className="text-[10px] font-bold text-white/90 leading-tight">{it.l}</div>
-              </div>
-            ))}
-          </motion.div>
-        </div>
-        <motion.div
-          initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.5 }}
-          className="w-full max-w-md pb-safe"
-        >
-          <Button
-            data-testid="onboarding-start"
-            onClick={() => setStepIdx(0)}
-            className="w-full h-14 rounded-2xl bg-white text-[#4f46e5] hover:bg-white/95 font-extrabold text-base shadow-2xl"
-          >
-            Get Started <ArrowRight className="ml-2 w-5 h-5" />
-          </Button>
-          <button
-            onClick={() => void skipOnboarding()}
-            className="w-full mt-3 text-sm font-bold text-white/70 hover:text-white transition"
-          >
-            Skip for now
-          </button>
-          <p className="text-[11px] text-white/60 mt-3">Free forever · No credit card</p>
-        </motion.div>
-      </div>
-    );
-  }
-
-  // ── Question screen ──────────────────────────────────────────
-  if (!step) return null;
-  const Icon = step.icon;
-  const tone = FIELD_TONE[data.field] || "from-[#4f46e5] to-[#7c3aed]";
 
   return (
-    <div className="min-h-[100dvh] bg-[#f8fafc] flex flex-col max-w-md mx-auto">
-      {/* Progress header */}
-      <div className="sticky top-0 z-10 bg-[#f8fafc] px-4 pt-4 pb-3">
-        <div className="flex items-center gap-3 mb-3">
+    <div className="min-h-[100dvh] bg-paper flex flex-col px-6 pt-16 pb-10 max-w-md mx-auto">
+      <h1 className="text-[26px] font-extrabold text-ink leading-[1.1] mb-1">What's your goal?</h1>
+      <p className="text-[13px] text-ink-muted mb-8">This shapes everything the app suggests for you.</p>
+
+      <label className="text-[12px] font-semibold text-ink-muted uppercase tracking-wider mb-2">Your name</label>
+      <input
+        autoFocus
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        placeholder="First name"
+        className="w-full rounded-2xl border border-line bg-paper px-4 py-3 text-[15px] text-ink placeholder:text-ink-muted focus:outline-none focus:border-ink mb-6"
+      />
+
+      <label className="text-[12px] font-semibold text-ink-muted uppercase tracking-wider mb-2">Target role</label>
+      <div className="grid grid-cols-2 gap-2 mb-6">
+        {ROLES.map((role) => (
           <button
-            onClick={back}
-            data-testid="onboarding-back"
-            className="w-9 h-9 rounded-full bg-white shadow-sm flex items-center justify-center flex-shrink-0 hover:bg-[#f1f5f9] transition"
+            key={role}
+            onClick={() => setTargetRole(role)}
+            className={`h-12 rounded-xl border-2 font-semibold text-[14px] transition-colors ${
+              targetRole === role ? "bg-ink text-paper border-ink" : "bg-paper text-ink border-line"
+            }`}
           >
-            <ArrowLeft className="w-4 h-4 text-[#0f172a]" />
+            {role}
           </button>
-          <div className="flex-1 h-1.5 bg-[#e2e8f0] rounded-full overflow-hidden">
-            <motion.div
-              className={`h-full bg-gradient-to-r ${tone} rounded-full`}
-              initial={false}
-              animate={{ width: `${progress}%` }}
-              transition={{ duration: 0.4, ease: "easeOut" }}
-            />
-          </div>
-          <span className="text-xs font-extrabold text-[#64748b] tabular-nums">
-            {stepIdx + 1}/{visibleSteps.length}
-          </span>
-        </div>
+        ))}
       </div>
 
-      {/* Question card */}
-      <div className="flex-1 px-5 pt-4 pb-32 overflow-y-auto">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={step.key}
-            initial={{ opacity: 0, x: 24 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -24 }}
-            transition={{ duration: 0.25, ease: "easeOut" }}
+      <label className="text-[12px] font-semibold text-ink-muted uppercase tracking-wider mb-2">Target batch</label>
+      <div className="grid grid-cols-4 gap-2 mb-8">
+        {BATCHES.map((batch) => (
+          <button
+            key={batch}
+            onClick={() => setTargetBatch(batch)}
+            className={`h-12 rounded-xl border-2 font-semibold text-[14px] transition-colors ${
+              targetBatch === batch ? "bg-ink text-paper border-ink" : "bg-paper text-ink border-line"
+            }`}
           >
-            <motion.div
-              initial={{ scale: 0.6, rotate: -10, opacity: 0 }}
-              animate={{ scale: 1, rotate: 0, opacity: 1 }}
-              transition={{ type: "spring", stiffness: 240, damping: 14 }}
-              className={`relative inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br ${tone} text-white mb-4 shadow-xl`}
-            >
-              <Icon className="w-8 h-8" />
-              <motion.div
-                className="absolute -top-2 -right-2 text-2xl"
-                animate={{ y: [0, -4, 0], rotate: [0, 8, -8, 0] }}
-                transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
-              >
-                {step.emoji}
-              </motion.div>
-            </motion.div>
-            <motion.p
-              initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className={`inline-block text-[11px] font-extrabold uppercase tracking-wider mb-2 px-2.5 py-1 rounded-full bg-gradient-to-r ${tone} text-white`}
-            >
-              {HYPE_LINES[stepIdx] || "Keep going ✨"}
-            </motion.p>
-            <h1 className="text-[28px] font-black text-[#0f172a] leading-[1.15] mb-2">
-              {step.title}
-            </h1>
-            <p className="text-[15px] text-[#64748b] mb-6">{step.subtitle}</p>
-
-            {step.type === "chips" ? (
-              <div className="grid grid-cols-2 gap-3">
-                {step.options!.map(opt => {
-                  const selected = value === opt;
-                  return (
-                    <motion.button
-                      key={opt}
-                      data-testid={`onboarding-chip-${opt}`}
-                      whileTap={{ scale: 0.97 }}
-                      onClick={() => {
-                        setVal(opt);
-                        setTimeout(() => {
-                          if (isLast) submit();
-                          else setStepIdx(i => i + 1);
-                        }, 220);
-                      }}
-                      className={`relative h-16 rounded-2xl border-2 font-bold text-[15px] transition-all ${
-                        selected
-                          ? `bg-gradient-to-br ${tone} text-white border-transparent shadow-lg`
-                          : "bg-white border-[#e2e8f0] text-[#0f172a] hover:border-[#4f46e5]/40"
-                      }`}
-                    >
-                      {opt}
-                      {selected && (
-                        <motion.span
-                          initial={{ scale: 0 }} animate={{ scale: 1 }}
-                          className="absolute top-2 right-2 w-5 h-5 rounded-full bg-white/25 flex items-center justify-center"
-                        >
-                          <Check className="w-3 h-3 text-white" />
-                        </motion.span>
-                      )}
-                    </motion.button>
-                  );
-                })}
-              </div>
-            ) : (
-              <Input
-                autoFocus
-                type={step.type === "email" ? "email" : "text"}
-                inputMode={step.type === "email" ? "email" : undefined}
-                placeholder={step.placeholder}
-                value={value}
-                onChange={e => setVal(e.target.value)}
-                onKeyDown={e => { if (e.key === "Enter" && canContinue) next(); }}
-                className="h-14 rounded-2xl bg-white border-2 border-[#e2e8f0] focus-visible:border-[#4f46e5] focus-visible:ring-0 text-[16px] px-5 font-medium text-[#0f172a]"
-                data-testid={`onboarding-input-${step.key}`}
-              />
-            )}
-
-            {step.optional && (
-              <button
-                onClick={() => { setVal(""); next(); }}
-                data-testid="onboarding-skip"
-                className="mt-5 inline-flex items-center gap-1.5 text-[13px] font-bold text-[#94a3b8] hover:text-[#4f46e5] transition px-3 py-1.5 rounded-full hover:bg-[#eef2ff]"
-              >
-                Skip — I'll add it later
-              </button>
-            )}
-
-            {error && (
-              <p className="mt-4 text-sm font-bold text-[#ef4444]">{error}</p>
-            )}
-          </motion.div>
-        </AnimatePresence>
+            {batch}
+          </button>
+        ))}
       </div>
 
-      {/* Continue bar (hidden for chip steps which auto-advance) */}
-      {step.type !== "chips" && (
-        <div className="fixed bottom-0 left-0 right-0 p-4 pb-safe bg-gradient-to-t from-[#f8fafc] via-[#f8fafc] to-transparent z-20">
-          <div className="max-w-md mx-auto space-y-2.5">
-            <Button
-              onClick={next}
-              disabled={!canContinue}
-              data-testid="onboarding-continue"
-              className={`w-full h-14 rounded-2xl font-extrabold text-base text-white shadow-lg disabled:opacity-40 disabled:shadow-none bg-gradient-to-r ${tone}`}
-            >
-              {isLast ? (
-                <>{submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Finish <Sparkles className="ml-2 w-5 h-5" /></>}</>
-              ) : (
-                <>Continue <ArrowRight className="ml-2 w-5 h-5" /></>
-              )}
-            </Button>
-            <button
-              onClick={skipToHome}
-              disabled={submitting}
-              className="w-full h-11 rounded-2xl text-[13px] font-bold text-[#94a3b8] hover:text-[#4f46e5] hover:bg-[#eef2ff] transition-colors border border-dashed border-[#e2e8f0]"
-            >
-              {submitting ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : "Skip for now — explore the app first"}
-            </button>
-          </div>
-        </div>
-      )}
+      {error && <p className="text-[12px] text-danger mb-4">{error}</p>}
+
+      <button
+        onClick={submitGoal}
+        disabled={submitting}
+        className="w-full bg-ink text-paper text-[15px] font-bold rounded-2xl py-4 disabled:opacity-40"
+      >
+        {submitting ? "Setting up…" : "Continue"}
+      </button>
     </div>
   );
 }

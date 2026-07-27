@@ -47,6 +47,19 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
   --radius-2xl: calc(var(--radius) + 8px);
+
+  /* ── Monochrome system (Phase 3 design system, variant W) ──────────
+     New screens (Home "Today" checklist, and anything rebuilt in
+     Phase 4) use ONLY these tokens. Existing screens keep the
+     colorful tokens above until they're migrated. Do not repoint
+     --color-primary/--color-background here — that would silently
+     recolor unmigrated screens mid-rollout. */
+  --color-ink: #0f0f10;
+  --color-ink-muted: #9a9aa2;
+  --color-paper: #ffffff;
+  --color-line: #ececf0;
+  --color-done: #22c55e;
+  --color-danger: #dc2626;
 }
 
 :root {
@@ -143,4 +156,8 @@
   p {
     @apply font-medium text-[#64748b];
   }
+}
+
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
 }

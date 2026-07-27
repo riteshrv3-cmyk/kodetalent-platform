@@ -1,8 +1,6 @@
 import { Link, useLocation } from "wouter";
-import { Mail, UserCircle2, ChevronLeft } from "lucide-react";
+import { Mail, ChevronLeft } from "lucide-react";
 import { motion } from "framer-motion";
-
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 interface TopBarProps {
   pendingCount: number;
@@ -13,7 +11,7 @@ interface TopBarProps {
 export function TopBar({ pendingCount, initials, onProfileClick }: TopBarProps) {
   const [location, setLocation] = useLocation();
   const isInbox = location === "/inbox";
-  const showBack = location !== "/home" && location !== "/dashboard" && location !== "/onboarding";
+  const showBack = location !== "/home" && location !== "/onboarding";
 
   const goBack = () => {
     if (window.history.length > 1) {
@@ -24,23 +22,20 @@ export function TopBar({ pendingCount, initials, onProfileClick }: TopBarProps) 
   };
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-40 bg-white/90 backdrop-blur-md border-b border-[#e0e7ff]/60 shadow-sm" style={{ transform: "translateZ(0)", backfaceVisibility: "hidden", willChange: "transform" }}>
+    <div className="fixed top-0 left-0 right-0 z-40 bg-paper/90 backdrop-blur-md border-b border-line" style={{ transform: "translateZ(0)", backfaceVisibility: "hidden", willChange: "transform" }}>
       <div className="max-w-md mx-auto px-4 h-14 flex items-center justify-between">
         <div className="flex items-center gap-2">
           {showBack && (
             <motion.button
               whileTap={{ scale: 0.92 }}
               onClick={goBack}
-              className="w-8 h-8 rounded-xl bg-[#f8fafc] hover:bg-[#e0e7ff] flex items-center justify-center transition-colors"
+              className="w-8 h-8 rounded-xl flex items-center justify-center active:bg-line/60 transition-colors"
               aria-label="Go back"
             >
-              <ChevronLeft className="w-5 h-5 text-[#64748b]" />
+              <ChevronLeft className="w-5 h-5 text-ink" />
             </motion.button>
           )}
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#4f46e5] to-[#6366f1] flex items-center justify-center">
-            <span className="text-white font-black text-sm">KT</span>
-          </div>
-          <span className="font-black text-[#0f172a] text-lg tracking-tight">KodeTalent</span>
+          <span className="font-extrabold text-ink text-lg tracking-tight">KodeTalent</span>
         </div>
 
         <div className="flex items-center gap-3">
@@ -48,15 +43,15 @@ export function TopBar({ pendingCount, initials, onProfileClick }: TopBarProps) 
             <motion.button
               whileTap={{ scale: 0.92 }}
               className={`relative w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${
-                isInbox ? "bg-[#e0e7ff]" : "bg-[#f8fafc] hover:bg-[#e0e7ff]"
+                isInbox ? "bg-line" : "active:bg-line/60"
               }`}
             >
-              <Mail className={`w-5 h-5 ${isInbox ? "text-[#4f46e5]" : "text-[#64748b]"}`} />
+              <Mail className="w-5 h-5 text-ink" />
               {pendingCount > 0 && (
                 <motion.span
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
-                  className="absolute -top-1 -right-1 w-4 h-4 bg-[#4f46e5] text-white text-[9px] font-black rounded-full flex items-center justify-center"
+                  className="absolute -top-1 -right-1 w-4 h-4 bg-ink text-paper text-[9px] font-black rounded-full flex items-center justify-center"
                 >
                   {pendingCount > 9 ? "9+" : pendingCount}
                 </motion.span>
@@ -67,9 +62,9 @@ export function TopBar({ pendingCount, initials, onProfileClick }: TopBarProps) 
           <motion.button
             whileTap={{ scale: 0.92 }}
             onClick={onProfileClick}
-            className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#4f46e5] to-[#6366f1] flex items-center justify-center text-white shadow-sm shadow-[#4f46e5]/30"
+            className="w-9 h-9 rounded-full border-2 border-line flex items-center justify-center text-ink font-bold text-[12px]"
           >
-            <UserCircle2 className="w-5 h-5" />
+            {initials}
           </motion.button>
         </div>
       </div>

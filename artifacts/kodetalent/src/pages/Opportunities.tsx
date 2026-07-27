@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { DOMAINS, type Domain, type SubDomain } from "@/data/domains";
 import { useCoursePreloader, prefetchCourse } from "@/hooks/useCoursePreloader";
+import { apiFetch } from "@/lib/api/authFetch";
 
 type OpportunityType = "jobs" | "internship" | "freelancing";
 
@@ -71,7 +72,7 @@ export default function Opportunities() {
     setGapError(null);
     setGapLoading(true);
     try {
-      const r = await fetch(`/api/ai/jd-gap`, {
+      const r = await apiFetch(`/api/ai/jd-gap`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -408,25 +409,40 @@ export default function Opportunities() {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
-              className="grid grid-cols-3 gap-3"
             >
-              {DOMAINS.map((domain, i) => (
-                <motion.button
-                  key={domain.id}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: i * 0.04 }}
-                  whileTap={{ scale: 0.94 }}
-                  onClick={() => setSelectedDomain(domain)}
-                  className="rounded-2xl p-3 flex flex-col items-center text-center gap-1.5 shadow-[0_2px_12px_rgba(0,0,0,0.06)] border-2 border-transparent hover:border-current transition-all"
-                  style={{ background: domain.bg }}
-                >
-                  <span className="text-3xl">{domain.emoji}</span>
-                  <span className="text-[11px] font-extrabold leading-tight" style={{ color: domain.color }}>
-                    {domain.name}
-                  </span>
-                </motion.button>
-              ))}
+              <button
+                onClick={() => setLocation("/pipeline")}
+                className="w-full mb-4 flex items-center gap-3 px-4 py-3 rounded-2xl bg-white border border-[#e2e8f0] shadow-sm text-left active:bg-[#f8fafc] transition-colors"
+                data-testid="link-my-pipeline"
+              >
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0 bg-[#eef2ff]">
+                  🎯
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-extrabold text-[#0f172a] text-sm">My Pipeline</p>
+                  <p className="text-[11px] font-bold text-[#64748b]">Paste any job or drive — scam check, eligibility, fit & prep</p>
+                </div>
+                <ChevronRight className="w-4 h-4 text-[#cbd5e1] shrink-0" />
+              </button>
+              <div className="grid grid-cols-3 gap-3">
+                {DOMAINS.map((domain, i) => (
+                  <motion.button
+                    key={domain.id}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: i * 0.04 }}
+                    whileTap={{ scale: 0.94 }}
+                    onClick={() => setSelectedDomain(domain)}
+                    className="rounded-2xl p-3 flex flex-col items-center text-center gap-1.5 shadow-[0_2px_12px_rgba(0,0,0,0.06)] border-2 border-transparent hover:border-current transition-all"
+                    style={{ background: domain.bg }}
+                  >
+                    <span className="text-3xl">{domain.emoji}</span>
+                    <span className="text-[11px] font-extrabold leading-tight" style={{ color: domain.color }}>
+                      {domain.name}
+                    </span>
+                  </motion.button>
+                ))}
+              </div>
             </motion.div>
           )}
 

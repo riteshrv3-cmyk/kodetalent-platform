@@ -34,8 +34,14 @@ function requireAdmin(req: Request, res: Response, next: NextFunction): void {
   next();
 }
 
+// Gate every /admin/* route in this file — several below were previously missing this
+// individually. Scoped to the "/admin" prefix: this router is mounted at the app root
+// alongside every other feature router, so an unscoped router.use(requireAdmin) here
+// would intercept ALL requests reaching later-mounted routers, not just admin ones.
+router.use("/admin", requireAdmin);
+
 // List pending TPO accounts (admin-only).
-router.get("/admin/tpo-accounts", requireAdmin, async (_req, res): Promise<void> => {
+router.get("/admin/tpo-accounts", async (_req, res): Promise<void> => {
   const rows = await db
     .select({
       id: tpoAccountsTable.id, email: tpoAccountsTable.email, name: tpoAccountsTable.name,
@@ -49,7 +55,7 @@ router.get("/admin/tpo-accounts", requireAdmin, async (_req, res): Promise<void>
 });
 
 // Approve a TPO account (admin-only).
-router.post("/admin/tpo-accounts/:id/verify", requireAdmin, async (req, res): Promise<void> => {
+router.post("/admin/tpo-accounts/:id/verify", async (req, res): Promise<void> => {
   const id = parseInt(String(req.params.id ?? ""), 10);
   if (!Number.isFinite(id)) { res.status(400).json({ error: "Invalid id" }); return; }
   const [updated] = await db

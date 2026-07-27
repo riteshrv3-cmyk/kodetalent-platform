@@ -1,5 +1,6 @@
 import { Router, type IRouter } from "express";
 import healthRouter from "./health";
+import authRouter from "./auth";
 import studentsRouter from "./students";
 import questsRouter from "./quests";
 import interviewRouter from "./interview";
@@ -21,10 +22,13 @@ import recruiterRouter from "./recruiter";
 import adminRouter from "./admin";
 import collegesRouter from "./colleges";
 import activityLogRouter from "./activityLog";
+import dailyTasksRouter from "./dailyTasks";
+import pipelineRouter from "./pipeline";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
+router.use(authRouter);
 router.use(studentsRouter);
 router.use(profileRouter);
 router.use(questsRouter);
@@ -46,5 +50,7 @@ router.use(recruiterRouter);
 router.use(adminRouter);
 router.use(collegesRouter);
 router.use(activityLogRouter);
+router.use(dailyTasksRouter);
+router.use(pipelineRouter);
 
 export default router;

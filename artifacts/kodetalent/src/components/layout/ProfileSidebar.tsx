@@ -1,10 +1,9 @@
 import { motion } from "framer-motion";
-import { X, User, Github, Linkedin, Globe, Phone, Flame, Star, TrendingUp, BarChart2, Edit2, ExternalLink } from "lucide-react";
+import { X, Github, Linkedin, Globe, Phone, BarChart2, Edit2, ExternalLink } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
-import { Badge } from "@/components/ui/badge";
-
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+import { useClerk } from "@clerk/react";
+import { apiFetch, setGuestToken } from "@/lib/api/authFetch";
 
 interface StudentProfile {
   id: number;
@@ -48,12 +47,13 @@ function StrengthArc({ value }: { value: number }) {
 
 export function ProfileSidebar({ onClose }: { onClose: () => void }) {
   const [, setLocation] = useLocation();
+  const { signOut } = useClerk();
   const [profile, setProfile] = useState<StudentProfile | null>(null);
 
   useEffect(() => {
     const id = localStorage.getItem("studentId");
     if (!id) return;
-    fetch(`${BASE}/api/students/${id}/full-profile`)
+    apiFetch(`/api/students/${id}/full-profile`)
       .then((r) => r.json())
       .then((d) => setProfile(d))
       .catch(() => null);
@@ -64,10 +64,13 @@ export function ProfileSidebar({ onClose }: { onClose: () => void }) {
     setLocation("/profile");
   };
 
-  const logout = () => {
+  const logout = async () => {
+    await signOut();
     localStorage.removeItem("studentId");
     localStorage.removeItem("studentName");
     localStorage.removeItem("clerkUserId");
+    localStorage.removeItem("clerkEmail");
+    setGuestToken(null);
     onClose();
     setLocation("/");
   };
@@ -163,37 +166,6 @@ export function ProfileSidebar({ onClose }: { onClose: () => void }) {
                   </div>
                 </div>
                 <StrengthArc value={profile?.profileStrength ?? 0} />
-              </div>
-            </div>
-          </div>
-
-          {/* Stats row */}
-          <div className="px-4 pt-3">
-            <div className="bg-white rounded-2xl p-4 shadow-sm">
-              <div className="flex justify-around">
-                <div className="text-center">
-                  <div className="flex items-center justify-center gap-1 mb-1">
-                    <Flame className="w-4 h-4 text-[#f97316]" />
-                    <span className="font-black text-[#0f172a] text-base">{profile?.streakCount ?? 0}</span>
-                  </div>
-                  <p className="text-[10px] text-[#64748b] font-bold uppercase">Day Streak</p>
-                </div>
-                <div className="w-px bg-[#f8fafc]" />
-                <div className="text-center">
-                  <div className="flex items-center justify-center gap-1 mb-1">
-                    <Star className="w-4 h-4 text-[#f59e0b]" />
-                    <span className="font-black text-[#0f172a] text-base">{profile ? (profile.xp / 1000).toFixed(1) + "k" : "—"}</span>
-                  </div>
-                  <p className="text-[10px] text-[#64748b] font-bold uppercase">XP Earned</p>
-                </div>
-                <div className="w-px bg-[#f8fafc]" />
-                <div className="text-center">
-                  <div className="flex items-center justify-center gap-1 mb-1">
-                    <TrendingUp className="w-4 h-4 text-[#10b981]" />
-                    <span className="font-black text-[#0f172a] text-base">Lv {profile?.level ?? 1}</span>
-                  </div>
-                  <p className="text-[10px] text-[#64748b] font-bold uppercase">Level</p>
-                </div>
               </div>
             </div>
           </div>

@@ -1,4 +1,4 @@
-import { pgTable, serial, text, integer, boolean, jsonb, timestamp, index } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, integer, boolean, jsonb, timestamp, index, uniqueIndex } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -49,9 +49,21 @@ export const studentsTable = pgTable("students", {
   skills: jsonb("skills").notNull().default({}),
   isPro: boolean("is_pro").notNull().default(false),
   collegeId: integer("college_id"),
+
+  // ─── Auth / identity ──────────────────────────────────────────────────────
+  clerkUserId: text("clerk_user_id"), // null = unclaimed guest row; uniqueness enforced by students_clerk_user_id_idx below
+  guestToken: text("guest_token"),             // random secret for anonymous sessions; nulled on claim
+
+  // ─── Agent core (goal + baseline + course signal) ─────────────────────────
+  targetRole: text("target_role"),             // goal picker, e.g. "SDE", "Data/ML"
+  targetBatch: integer("target_batch"),        // placement/grad year, e.g. 2027
+  baselineScore: integer("baseline_score"),    // first completed mock's score; set once
+  lastCourse: jsonb("last_course"),            // { subDomainId, subDomainName, completed, total, updatedAt }
+
   createdAt: timestamp("created_at").notNull().defaultNow(),
 }, t => ({
   collegeIdIdx: index("students_college_id_idx").on(t.collegeId),
+  clerkUserIdIdx: uniqueIndex("students_clerk_user_id_idx").on(t.clerkUserId),
   collegeIdx: index("students_college_idx").on(t.college),
   openToWorkIdx: index("students_open_to_work_idx").on(t.openToWork),
   yearIdx: index("students_year_idx").on(t.year),

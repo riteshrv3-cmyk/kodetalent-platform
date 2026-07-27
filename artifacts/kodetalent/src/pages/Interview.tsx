@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { apiFetch } from "@/lib/api/authFetch";
 
 type Message = { id: string; sender: "bot" | "user"; text: string };
 
@@ -76,6 +77,7 @@ export default function Interview() {
   const [questionCount, setQuestionCount] = useState(0);
   const [evalData, setEvalData] = useState<EvalData | null>(null);
   const [expandedFeedback, setExpandedFeedback] = useState<number | null>(null);
+  const [addedToTomorrow, setAddedToTomorrow] = useState(false);
   const maxQuestions = 5;
 
   // Confidence micro-survey
@@ -328,6 +330,25 @@ export default function Interview() {
       console.error(e);
     } finally {
       setIsTyping(false);
+    }
+  };
+
+  const addWeakPointToTomorrow = async () => {
+    const studentId = localStorage.getItem("studentId");
+    if (!studentId || !evalData) return;
+    try {
+      const res = await apiFetch(`/api/students/${studentId}/tasks`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          label: `Work on: ${evalData.weakPoint}`,
+          sublabel: "From yesterday's mock interview",
+          href: "/practice",
+        }),
+      });
+      if (res.ok) setAddedToTomorrow(true);
+    } catch {
+      // Non-critical — the student can always start practice manually.
     }
   };
 
@@ -590,7 +611,14 @@ export default function Interview() {
             <Card className="border-0 border-l-4 border-l-[#f97316] shadow-sm rounded-2xl bg-white">
               <CardContent className="p-4">
                 <p className="text-[11px] font-extrabold text-[#f97316] uppercase tracking-wider mb-1">⚡ Work on this</p>
-                <p className="text-sm font-medium text-[#0f172a]">{evalData.weakPoint}</p>
+                <p className="text-sm font-medium text-[#0f172a] mb-2">{evalData.weakPoint}</p>
+                <button
+                  onClick={addWeakPointToTomorrow}
+                  disabled={addedToTomorrow}
+                  className="text-xs font-bold text-[#f97316] disabled:text-[#94a3b8] disabled:cursor-default"
+                >
+                  {addedToTomorrow ? "Added to tomorrow's checklist ✓" : "Add to tomorrow's checklist"}
+                </button>
               </CardContent>
             </Card>
           </div>
