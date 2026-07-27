@@ -1,13 +1,11 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, RefreshCw, CheckCircle, Zap, Mic, MicOff, Volume2 } from "lucide-react";
+import { Send, RefreshCw, CheckCircle, Zap, Mic, Volume2, Cat } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiFetch } from "@/lib/api/authFetch";
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 const UPDATE_MARKER = "___PROFILE_UPDATE___";
-const KIT_AVATAR = `${BASE}/kit-cat.jpg`;
 const MAX_HISTORY = 30;
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -106,7 +104,7 @@ function dayLabel(ts: number): string {
 
 // ── Confetti particles ────────────────────────────────────────────────────────
 
-const CONFETTI_COLORS = ["#4f46e5", "#f97316", "#10b981", "#f59e0b", "#ec4899", "#06b6d4"];
+const CONFETTI_COLORS = ["#0f0f10", "#9a9aa2", "#ececf0"];
 
 function Confetti() {
   const particles = Array.from({ length: 18 }, (_, i) => ({
@@ -139,22 +137,15 @@ function Confetti() {
   );
 }
 
-// ── Kit avatar with mood ring ─────────────────────────────────────────────────
+// ── Kit avatar ────────────────────────────────────────────────────────────────
 
-const MOOD_RING: Record<KitMood, string> = {
-  normal: "border-[#4f46e5]",
-  thinking: "border-amber-400",
-  happy: "border-emerald-400",
-  error: "border-red-400",
-};
-
-function KitAvatar({ size = 28, mood = "normal" }: { size?: number; mood?: KitMood }) {
+function KitAvatar() {
   return (
     <div
-      style={{ width: size, height: size }}
-      className={`rounded-full overflow-hidden border-2 shadow-sm shrink-0 transition-colors duration-500 ${MOOD_RING[mood]}`}
+      aria-label="Kit"
+      className="w-8 h-8 rounded-full border-2 border-line flex items-center justify-center shrink-0"
     >
-      <img src={KIT_AVATAR} alt="Kit" className="w-full h-full object-cover" />
+      <Cat className="w-4 h-4 text-ink" strokeWidth={2} />
     </div>
   );
 }
@@ -164,9 +155,9 @@ function KitAvatar({ size = 28, mood = "normal" }: { size?: number; mood?: KitMo
 function DateSep({ label }: { label: string }) {
   return (
     <div className="flex items-center gap-2 py-1">
-      <div className="flex-1 h-px bg-slate-200" />
-      <span className="text-[10px] font-semibold text-slate-400 px-2">{label}</span>
-      <div className="flex-1 h-px bg-slate-200" />
+      <div className="flex-1 h-px bg-line" />
+      <span className="text-[10px] font-semibold text-ink-muted px-2">{label}</span>
+      <div className="flex-1 h-px bg-line" />
     </div>
   );
 }
@@ -174,10 +165,9 @@ function DateSep({ label }: { label: string }) {
 // ── AI Bubble ─────────────────────────────────────────────────────────────────
 
 function AIBubble({
-  msg, mood, onReact, onSuggestion, streaming,
+  msg, onReact, onSuggestion, streaming,
 }: {
   msg: Message;
-  mood: KitMood;
   onReact: (id: string, emoji: string) => void;
   onSuggestion: (text: string) => void;
   streaming: boolean;
@@ -195,35 +185,34 @@ function AIBubble({
       transition={{ type: "spring", stiffness: 400, damping: 30 }}
       className="flex items-end gap-2 max-w-[86%]"
     >
-      <KitAvatar size={28} mood={msg.streaming ? "thinking" : mood} />
+      <KitAvatar />
 
       <div className="flex flex-col gap-1.5 min-w-0">
         {/* Bubble */}
         <div className="relative group">
-          <div className="bg-white rounded-2xl rounded-bl-md px-4 py-3 shadow-sm border border-slate-100">
+          <div className="bg-line text-ink rounded-2xl rounded-bl-md px-4 py-3">
             {msg.streaming && !displayText ? (
               <div className="flex items-center gap-2 py-0.5">
-                <span className="text-[12px] text-slate-400 italic">Kit is on it</span>
+                <span className="text-[12px] text-ink-muted italic">Kit is on it</span>
                 <div className="flex gap-0.5">
                   {[0, 1, 2].map((i) => (
                     <motion.div
                       key={i}
                       animate={{ y: [0, -4, 0] }}
                       transition={{ duration: 0.6, delay: i * 0.15, repeat: Infinity }}
-                      className="w-1.5 h-1.5 rounded-full bg-amber-400"
+                      className="w-1.5 h-1.5 rounded-full bg-ink-muted"
                     />
                   ))}
                 </div>
-                <span className="text-[14px]">🐾</span>
               </div>
             ) : (
-              <p className="text-[13px] text-slate-800 leading-relaxed whitespace-pre-wrap break-words">
+              <p className="text-[13px] text-ink leading-relaxed whitespace-pre-wrap break-words">
                 {displayText}
                 {msg.streaming && (
                   <motion.span
                     animate={{ opacity: [1, 0] }}
                     transition={{ duration: 0.5, repeat: Infinity }}
-                    className="inline-block w-0.5 h-3.5 bg-[#4f46e5] ml-0.5 rounded-sm align-middle"
+                    className="inline-block w-0.5 h-3.5 bg-ink ml-0.5 rounded-sm align-middle"
                   />
                 )}
               </p>
@@ -234,7 +223,7 @@ function AIBubble({
           {!msg.streaming && (
             <button
               onClick={() => setShowPicker((p) => !p)}
-              className="absolute -bottom-2 -right-1 w-5 h-5 rounded-full bg-white border border-slate-200 shadow-sm flex items-center justify-center text-[10px] opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
+              className="absolute -bottom-2 -right-1 w-5 h-5 rounded-full bg-paper border border-line text-ink flex items-center justify-center text-[10px] opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
             >
               {msg.reaction ?? "+"}
             </button>
@@ -248,7 +237,7 @@ function AIBubble({
               initial={{ opacity: 0, scale: 0.85, y: -4 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.85 }}
-              className="flex gap-1 bg-white rounded-2xl px-2 py-1.5 shadow-lg border border-slate-100 self-start"
+              className="flex gap-1 bg-paper rounded-2xl px-2 py-1.5 border border-line self-start"
             >
               {REACTIONS.map((emoji) => (
                 <button key={emoji} onClick={() => { onReact(msg.id, emoji); setShowPicker(false); }}
@@ -267,10 +256,10 @@ function AIBubble({
 
         {msg.profileUpdated && (
           <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border border-emerald-100 rounded-xl self-start"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-paper border border-line rounded-xl self-start"
           >
-            <CheckCircle className="w-3 h-3 text-emerald-500" />
-            <span className="text-[10px] font-black text-emerald-600">Profile updated! purrfect 😎</span>
+            <CheckCircle className="w-3 h-3 text-done" />
+            <span className="text-[10px] font-black text-ink">Profile updated! purrfect 😎</span>
           </motion.div>
         )}
 
@@ -280,13 +269,13 @@ function AIBubble({
           >
             {msg.suggestions.map((s) => (
               <button key={s} onClick={() => !streaming && onSuggestion(s)} disabled={streaming}
-                className="text-[11px] font-semibold bg-[#eef2ff] text-[#4f46e5] px-3 py-1 rounded-full border border-[#e0e7ff] active:scale-95 transition-transform disabled:opacity-40 whitespace-nowrap"
+                className="text-[12px] font-semibold border border-line text-ink px-3 py-1.5 rounded-full active:scale-95 transition-transform disabled:opacity-40 whitespace-nowrap"
               >{s}</button>
             ))}
           </motion.div>
         )}
 
-        <span className="text-[9px] text-slate-400 ml-0.5">{fmtTime(msg.ts)}</span>
+        <span className="text-[9px] text-ink-muted ml-0.5">{fmtTime(msg.ts)}</span>
       </div>
     </motion.div>
   );
@@ -302,14 +291,14 @@ function UserBubble({ msg }: { msg: Message }) {
       transition={{ type: "spring", stiffness: 400, damping: 30 }}
       className="flex items-end gap-2 max-w-[82%] ml-auto flex-row-reverse"
     >
-      <div className="w-7 h-7 rounded-full bg-[#4f46e5] flex items-center justify-center text-white text-[10px] font-black shrink-0 mb-1 shadow-sm">
+      <div className="w-8 h-8 rounded-full border-2 border-line flex items-center justify-center text-ink text-[10px] font-black shrink-0 mb-1">
         me
       </div>
       <div className="flex flex-col items-end gap-1">
-        <div className="bg-gradient-to-br from-[#4f46e5] to-[#6366f1] rounded-2xl rounded-br-md px-4 py-3 shadow-md shadow-[#4f46e5]/20">
-          <p className="text-[13px] text-white leading-relaxed">{msg.text}</p>
+        <div className="bg-ink rounded-2xl rounded-br-md px-4 py-3">
+          <p className="text-[13px] text-paper leading-relaxed">{msg.text}</p>
         </div>
-        <span className="text-[9px] text-slate-400 mr-0.5">{fmtTime(msg.ts)}</span>
+        <span className="text-[9px] text-ink-muted mr-0.5">{fmtTime(msg.ts)}</span>
       </div>
     </motion.div>
   );
@@ -323,19 +312,19 @@ function ResumeBanner({ onContinue, onFresh }: { onContinue: () => void; onFresh
       initial={{ opacity: 0, y: -12 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -12 }}
-      className="mx-4 mt-3 bg-white border border-[#e0e7ff] rounded-2xl px-4 py-3 shadow-sm flex items-center gap-3"
+      className="mx-4 mt-3 bg-paper border border-line rounded-2xl px-4 py-3 flex items-center gap-3"
     >
-      <KitAvatar size={32} mood="happy" />
+      <KitAvatar />
       <div className="flex-1 min-w-0">
-        <p className="text-[12px] font-black text-slate-800">Continue where we left off? 🐾</p>
-        <p className="text-[10px] text-slate-500">Kit remembers your last chat</p>
+        <p className="text-[12px] font-black text-ink">Continue where we left off? 🐾</p>
+        <p className="text-[10px] text-ink-muted">Kit remembers your last chat</p>
       </div>
       <div className="flex gap-2 shrink-0">
         <button onClick={onContinue}
-          className="text-[11px] font-bold bg-[#4f46e5] text-white px-3 py-1.5 rounded-xl active:scale-95 transition-transform"
+          className="text-[11px] font-bold bg-ink text-paper px-3 py-1.5 rounded-xl active:scale-95 transition-transform"
         >Yes!</button>
         <button onClick={onFresh}
-          className="text-[11px] font-bold bg-slate-100 text-slate-600 px-3 py-1.5 rounded-xl active:scale-95 transition-transform"
+          className="text-[11px] font-bold border border-line text-ink px-3 py-1.5 rounded-xl active:scale-95 transition-transform"
         >Fresh start</button>
       </div>
     </motion.div>
@@ -351,7 +340,7 @@ function WelcomeChips({ onSelect, disabled }: { onSelect: (s: string) => void; d
     >
       {GLOBAL_CHIPS.slice(0, 6).map(({ emoji, label }) => (
         <button key={label} onClick={() => onSelect(label)} disabled={disabled}
-          className="flex items-center gap-1.5 text-[11px] font-bold bg-white text-slate-700 border border-slate-200 px-3 py-2 rounded-2xl shadow-sm active:scale-95 transition-transform disabled:opacity-40"
+          className="flex items-center gap-1.5 text-[12px] font-semibold border border-line text-ink px-3 py-1.5 rounded-full active:scale-95 transition-transform disabled:opacity-40"
         >
           <span className="text-base leading-none">{emoji}</span>{label}
         </button>
@@ -359,9 +348,9 @@ function WelcomeChips({ onSelect, disabled }: { onSelect: (s: string) => void; d
       <button
         onClick={() => { const p = GLOBAL_CHIPS[Math.floor(Math.random() * GLOBAL_CHIPS.length)]; onSelect(p.label); }}
         disabled={disabled}
-        className="flex items-center gap-1.5 text-[11px] font-bold bg-[#fff7ed] text-[#f97316] border border-[#fed7aa] px-3 py-2 rounded-2xl shadow-sm active:scale-95 transition-transform disabled:opacity-40"
+        className="flex items-center gap-1.5 text-[12px] font-semibold border border-line text-ink px-3 py-1.5 rounded-full active:scale-95 transition-transform disabled:opacity-40"
       >
-        <Zap className="w-3.5 h-3.5" />Surprise me!
+        <Zap className="w-3.5 h-3.5 text-ink" />Surprise me!
       </button>
     </motion.div>
   );
@@ -377,7 +366,7 @@ function ListeningWave() {
           key={i}
           animate={{ scaleY: [0.4, 1.4, 0.4] }}
           transition={{ duration: 0.6, delay: i * 0.1, repeat: Infinity }}
-          className="w-[3px] rounded-full bg-red-400 origin-center"
+          className="w-[3px] rounded-full bg-paper origin-center"
           style={{ height: 16 }}
         />
       ))}
@@ -598,40 +587,30 @@ export default function AIChat() {
   const showWelcomeChips = messages.length === 1 && messages[0].id === "welcome";
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-7rem)]" style={{ background: "radial-gradient(ellipse at top, #eef2ff 0%, #f8fafc 60%)" }}>
+    <div className="flex flex-col h-[calc(100dvh-7rem)] bg-paper">
 
       {/* Confetti */}
       <AnimatePresence>{showConfetti && <Confetti key="confetti" />}</AnimatePresence>
 
       {/* ── Header ── */}
-      <div className="bg-white/80 backdrop-blur border-b border-slate-100 px-4 py-2.5 flex items-center gap-3 shadow-sm">
-        <div className="relative shrink-0">
-          <div className={`w-10 h-10 rounded-full overflow-hidden border-2 shadow-md transition-colors duration-500 ${MOOD_RING[kitMood]}`}>
-            <img src={KIT_AVATAR} alt="Kit" className="w-full h-full object-cover" />
-          </div>
-          <motion.span
-            animate={{ scale: [1, 1.3, 1] }}
-            transition={{ duration: 2, repeat: Infinity }}
-            className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-white"
-          />
-        </div>
+      <div className="bg-paper border-b border-line px-4 py-2.5 flex items-center gap-3">
+        <KitAvatar />
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
-            <p className="font-black text-[#0f172a] text-sm">Kit</p>
-            <span className="text-[11px]">😎</span>
-            <span className="text-[9px] font-bold text-[#4f46e5] bg-[#eef2ff] px-1.5 py-0.5 rounded-full">AI</span>
+            <p className="font-black text-ink text-sm">Kit</p>
+            <span className="text-[9px] font-bold text-ink-muted border border-line px-1.5 py-0.5 rounded-full">AI</span>
           </div>
-          <p className="text-[10px] text-emerald-500 font-semibold">
-            {kitMood === "thinking" ? "🐾 Kit is thinking..." : "purrfessional career coach • online"}
+          <p className="text-[10px] text-ink-muted font-semibold">
+            {kitMood === "thinking" ? "Kit is thinking..." : "purrfessional career coach • online"}
           </p>
         </div>
 
         <button onClick={resetChat}
-          className="w-8 h-8 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center active:scale-90 transition-transform"
+          className="w-8 h-8 rounded-xl border border-line flex items-center justify-center active:scale-90 transition-transform"
           title="New chat"
         >
-          <RefreshCw className="w-3.5 h-3.5 text-slate-500" />
+          <RefreshCw className="w-3.5 h-3.5 text-ink-muted" />
         </button>
       </div>
 
@@ -663,7 +642,6 @@ export default function AIChat() {
               <AIBubble
                 key={item.msg.id}
                 msg={item.msg}
-                mood={kitMood}
                 onReact={handleReact}
                 onSuggestion={sendMessage}
                 streaming={streaming}
@@ -681,7 +659,7 @@ export default function AIChat() {
       </div>
 
       {/* ── Input bar ── */}
-      <div className="bg-white border-t border-slate-100 px-4 pt-3 pb-4">
+      <div className="bg-paper border-t border-line px-4 pt-3 pb-4">
         {/* Interim voice text preview */}
         <AnimatePresence>
           {interimText && (
@@ -689,7 +667,7 @@ export default function AIChat() {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
-              className="text-[11px] text-slate-400 italic mb-1.5 px-1"
+              className="text-[11px] text-ink-muted italic mb-1.5 px-1"
             >
               "{interimText}"
             </motion.p>
@@ -704,17 +682,17 @@ export default function AIChat() {
               onPointerUp={stopListening}
               onPointerLeave={stopListening}
               disabled={streaming}
-              className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 transition-all active:scale-90 disabled:opacity-40 ${
+              className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-all active:scale-90 disabled:opacity-40 ${
                 listening
-                  ? "bg-red-50 border border-red-200"
-                  : "bg-slate-50 border border-slate-200"
+                  ? "bg-ink text-paper"
+                  : "border border-line text-ink-muted"
               }`}
               title="Hold to speak"
             >
               {listening ? (
                 <ListeningWave />
               ) : (
-                <Mic className="w-4 h-4 text-slate-500" />
+                <Mic className="w-4 h-4 text-ink-muted" />
               )}
             </button>
           )}
@@ -732,10 +710,8 @@ export default function AIChat() {
               placeholder={listening ? "Listening... 🎤" : "Ask Kit anything... 🐾"}
               rows={1}
               disabled={streaming}
-              className={`w-full resize-none text-[13px] text-[#0f172a] placeholder:text-slate-400 rounded-2xl px-4 py-2.5 outline-none border transition-all max-h-[96px] disabled:opacity-60 ${
-                listening
-                  ? "bg-red-50 border-red-300 placeholder:text-red-300"
-                  : "bg-[#f8fafc] border-slate-200 focus:border-[#4f46e5] focus:ring-2 focus:ring-[#4f46e5]/10"
+              className={`w-full resize-none text-[13px] text-ink placeholder:text-ink-muted bg-paper rounded-2xl px-4 py-2.5 outline-none border transition-all max-h-[96px] disabled:opacity-60 ${
+                listening ? "border-ink" : "border-line focus:border-ink"
               }`}
             />
           </div>
@@ -744,17 +720,17 @@ export default function AIChat() {
             whileTap={{ scale: 0.85 }}
             onClick={() => sendMessage(input)}
             disabled={!input.trim() || streaming}
-            className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#4f46e5] to-[#6366f1] flex items-center justify-center shadow-md shadow-[#4f46e5]/30 disabled:opacity-35 shrink-0 transition-opacity"
+            className="w-10 h-10 rounded-full bg-ink text-paper flex items-center justify-center disabled:opacity-35 shrink-0 transition-opacity"
           >
             {streaming ? (
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              <div className="w-4 h-4 border-2 border-paper border-t-transparent rounded-full animate-spin" />
             ) : (
-              <Send className="w-4 h-4 text-white" />
+              <Send className="w-4 h-4 text-paper" />
             )}
           </motion.button>
         </div>
 
-        <p className="text-[9.5px] text-slate-400 text-center mt-2 font-medium flex items-center justify-center gap-1">
+        <p className="text-[9.5px] text-ink-muted text-center mt-2 font-medium flex items-center justify-center gap-1">
           {voiceSupported && <><Volume2 className="w-3 h-3" /> Hold mic to speak •</>}
           Kit can update your profile • add projects • career advice
         </p>

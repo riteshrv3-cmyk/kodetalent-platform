@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { ShieldCheck, AlertTriangle, ShieldAlert, Sparkles, Download, ChevronRight, ArrowLeft, Clipboard, TrendingUp, CheckCircle2, XCircle, Award, Phone, Ghost, Megaphone } from "lucide-react";
+import { ShieldCheck, AlertTriangle, ShieldAlert, Download, ChevronRight, ArrowLeft, Clipboard, TrendingUp, CheckCircle2, XCircle, Award, Phone, Ghost, Megaphone } from "lucide-react";
 import { toPng, toBlob } from "html-to-image";
 import { useToast } from "@/hooks/use-toast";
 import { apiFetch } from "@/lib/api/authFetch";
@@ -61,38 +61,22 @@ interface DriveCheckRow {
   } | null;
 }
 
-const VERDICT_META: Record<string, { emoji: string; bg: string; ring: string; chip: string; text: string; label: string; sub: string; Icon: typeof ShieldCheck }> = {
-  safe: {
-    emoji: "🟢",
-    bg: "from-[#10b981] to-[#059669]",
-    ring: "ring-[#10b981]/30",
-    chip: "bg-[#d1fae5] text-[#065f46]",
-    text: "text-[#065f46]",
-    label: "Safe — apply kar",
-    sub: "Legit signals match. Tu eligible bhi hai? Niche dekh.",
-    Icon: ShieldCheck,
-  },
-  risky: {
-    emoji: "🟡",
-    bg: "from-[#f59e0b] to-[#d97706]",
-    ring: "ring-[#f59e0b]/30",
-    chip: "bg-[#fef3c7] text-[#78350f]",
-    text: "text-[#78350f]",
-    label: "Risky — sambhal ke",
-    sub: "Kuch signals iffy hain. Apply karne se pehle source verify kar.",
-    Icon: AlertTriangle,
-  },
-  scam: {
-    emoji: "🚩",
-    bg: "from-[#ef4444] to-[#dc2626]",
-    ring: "ring-[#ef4444]/30",
-    chip: "bg-[#fee2e2] text-[#7f1d1d]",
-    text: "text-[#7f1d1d]",
-    label: "Scam vibes — mat bhar",
-    sub: "Lagta hai paisa nikalne wala scam hai. Group mein warn kar.",
-    Icon: ShieldAlert,
-  },
+const VERDICT_STYLE: Record<string, { icon: typeof ShieldCheck; label: string; className: string }> = {
+  safe: { icon: ShieldCheck, label: "Looks safe", className: "bg-done/10 text-done" },
+  risky: { icon: ShieldAlert, label: "Looks risky", className: "bg-[#F59E0B]/10 text-[#B45309]" },
+  scam: { icon: AlertTriangle, label: "Likely a scam", className: "bg-danger/10 text-danger" },
 };
+
+const VERDICT_SUB: Record<string, string> = {
+  safe: "Legit signals match. Tu eligible bhi hai? Niche dekh.",
+  risky: "Kuch signals iffy hain. Apply karne se pehle source verify kar.",
+  scam: "Lagta hai paisa nikalne wala scam hai. Group mein warn kar.",
+};
+
+const outcomeBtnClass = (active: boolean) =>
+  `text-[11px] font-bold px-2.5 py-2 rounded-xl border active:scale-95 transition-transform disabled:opacity-50 flex items-center justify-center gap-1.5 ${
+    active ? "bg-ink text-paper border-ink" : "border-line text-ink"
+  }`;
 
 function GhostRateBadge({ stats }: { stats: CompanyStats }) {
   if (!stats || stats.total === 0) return null;
@@ -100,9 +84,9 @@ function GhostRateBadge({ stats }: { stats: CompanyStats }) {
     (stats.called ?? 0) + (stats.ghosted ?? 0) + (stats.rejected ?? 0) + (stats.offer ?? 0);
   if (decided === 0) {
     return (
-      <div className="bg-[#f8fafc] rounded-2xl p-3 border border-[#e0e7ff] flex items-center gap-2.5">
-        <TrendingUp className="w-4 h-4 text-[#94a3b8] shrink-0" />
-        <p className="text-[11px] text-[#64748b] leading-snug">
+      <div className="rounded-2xl p-3 border border-line flex items-center gap-2.5">
+        <TrendingUp className="w-4 h-4 text-ink-muted shrink-0" />
+        <p className="text-[12px] text-ink-muted leading-snug">
           {stats.applied ?? 0} KodeTalent users applied here. No outcomes reported yet.
         </p>
       </div>
@@ -111,33 +95,27 @@ function GhostRateBadge({ stats }: { stats: CompanyStats }) {
   const ghostRate = stats.ghostRate ?? 0;
   const callRate = stats.callRate ?? 0;
   const offerRate = stats.offerRate ?? 0;
-  const tone =
-    ghostRate >= 70
-      ? { bg: "from-[#ef4444]/15 to-[#dc2626]/5", border: "border-[#ef4444]/30", text: "text-[#7f1d1d]", emoji: "👻" }
-      : ghostRate >= 40
-      ? { bg: "from-[#f59e0b]/15 to-[#d97706]/5", border: "border-[#f59e0b]/30", text: "text-[#78350f]", emoji: "⚠️" }
-      : { bg: "from-[#10b981]/15 to-[#059669]/5", border: "border-[#10b981]/30", text: "text-[#065f46]", emoji: "📞" };
 
   return (
-    <div className={`bg-gradient-to-br ${tone.bg} rounded-2xl p-3.5 border ${tone.border}`}>
+    <div className="rounded-2xl p-3.5 border border-line">
       <div className="flex items-center justify-between mb-2">
-        <p className={`text-[10px] font-black uppercase tracking-wider ${tone.text}`}>
-          {tone.emoji} Real outcomes from KodeTalent users
+        <p className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">
+          Real outcomes from KodeTalent users
         </p>
-        <span className="text-[9px] font-bold text-[#64748b]">n={decided}</span>
+        <span className="text-[11px] font-bold text-ink-muted">n={decided}</span>
       </div>
       <div className="grid grid-cols-3 gap-2">
         <div className="text-center">
-          <p className={`text-lg font-black ${tone.text}`}>{ghostRate}%</p>
-          <p className="text-[9px] font-bold text-[#64748b] uppercase">Ghosted</p>
+          <p className="text-[18px] font-extrabold text-ink">{ghostRate}%</p>
+          <p className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">Ghosted</p>
         </div>
         <div className="text-center">
-          <p className="text-lg font-black text-[#0f172a]">{callRate}%</p>
-          <p className="text-[9px] font-bold text-[#64748b] uppercase">Got Call</p>
+          <p className="text-[18px] font-extrabold text-ink">{callRate}%</p>
+          <p className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">Got Call</p>
         </div>
         <div className="text-center">
-          <p className="text-lg font-black text-[#10b981]">{offerRate}%</p>
-          <p className="text-[9px] font-bold text-[#64748b] uppercase">Offer</p>
+          <p className="text-[18px] font-extrabold text-ink">{offerRate}%</p>
+          <p className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">Offer</p>
         </div>
       </div>
     </div>
@@ -150,26 +128,25 @@ function VerdictCard({ row, studentName, college, kodeScore }: {
   college: string;
   kodeScore: number;
 }) {
-  const m = VERDICT_META[row.scamVerdict] ?? VERDICT_META.risky;
-  const Icon = m.Icon;
+  const v = VERDICT_STYLE[row.scamVerdict] ?? VERDICT_STYLE.risky;
+  const Icon = v.icon;
+  const sub = VERDICT_SUB[row.scamVerdict] ?? VERDICT_SUB.risky;
   const gates = Object.entries(row.eligibility ?? {});
 
   return (
-    <div className="bg-white rounded-3xl overflow-hidden shadow-xl border border-[#e0e7ff]">
+    <div className="bg-paper rounded-2xl overflow-hidden border border-line">
       {/* Header strip */}
-      <div className={`bg-gradient-to-br ${m.bg} px-5 py-4 text-white relative`}>
-        <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider opacity-90">
+      <div className="px-5 pt-4 pb-4 border-b border-line">
+        <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-ink-muted">
           <span>{studentName} · {college.split(",")[0].slice(0, 22)}</span>
           <span>KodeScore {kodeScore}</span>
         </div>
-        <div className="flex items-start gap-3 mt-2">
-          <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center shrink-0">
-            <Icon className="w-6 h-6 text-white" />
-          </div>
+        <div className={`mt-3 flex items-start gap-3 rounded-xl px-3.5 py-3 ${v.className}`}>
+          <Icon className="w-6 h-6 shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0">
-            <p className="text-[10px] font-bold opacity-80 uppercase tracking-wider">Verdict</p>
-            <h2 className="text-xl font-black leading-tight mt-0.5">{m.emoji} {m.label}</h2>
-            <p className="text-[11px] opacity-90 mt-0.5">{m.sub}</p>
+            <p className="text-[11px] font-bold uppercase tracking-wider opacity-80">Verdict</p>
+            <h2 className="text-[18px] font-extrabold leading-tight mt-0.5">{v.label}</h2>
+            <p className="text-[12px] mt-0.5 opacity-90 leading-snug">{sub}</p>
           </div>
         </div>
       </div>
@@ -180,16 +157,16 @@ function VerdictCard({ row, studentName, college, kodeScore }: {
         {(row.company || row.role || row.ctc) && (
           <div className="flex flex-wrap gap-1.5">
             {row.company && (
-              <span className="text-[11px] font-black bg-[#0f172a] text-white px-2.5 py-1 rounded-full">{row.company}</span>
+              <span className="text-[11px] font-bold bg-ink text-paper px-2.5 py-1 rounded-full">{row.company}</span>
             )}
             {row.role && (
-              <span className="text-[11px] font-bold bg-[#e0e7ff] text-[#3730a3] px-2.5 py-1 rounded-full">{row.role}</span>
+              <span className="text-[11px] font-bold border border-line text-ink px-2.5 py-1 rounded-full">{row.role}</span>
             )}
             {row.ctc && (
-              <span className="text-[11px] font-bold bg-[#fef3c7] text-[#78350f] px-2.5 py-1 rounded-full">💰 {row.ctc}</span>
+              <span className="text-[11px] font-bold border border-line text-ink px-2.5 py-1 rounded-full">{row.ctc}</span>
             )}
             {row.batch && (
-              <span className="text-[11px] font-bold bg-[#f8fafc] text-[#475569] px-2.5 py-1 rounded-full border border-[#e0e7ff]">🎓 {row.batch}</span>
+              <span className="text-[11px] font-bold border border-line text-ink-muted px-2.5 py-1 rounded-full">{row.batch}</span>
             )}
           </div>
         )}
@@ -197,13 +174,13 @@ function VerdictCard({ row, studentName, college, kodeScore }: {
         {/* Scam reasons */}
         <div>
           <div className="flex items-center justify-between mb-2">
-            <p className="text-[10px] font-black uppercase tracking-wider text-[#64748b]">Scam Score</p>
-            <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${m.chip}`}>{row.scamScore}/100</span>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">Scam Score</p>
+            <span className="text-[11px] font-bold border border-line text-ink px-2 py-0.5 rounded-full">{row.scamScore}/100</span>
           </div>
           <div className="space-y-1.5">
             {row.scamReasons.map((r, i) => (
-              <div key={i} className="flex items-start gap-2 text-[12px] text-[#0f172a]">
-                <span className="mt-1 w-1 h-1 rounded-full bg-[#94a3b8] shrink-0" />
+              <div key={i} className="flex items-start gap-2 text-[12px] text-ink-muted">
+                <span className="mt-1.5 w-1 h-1 rounded-full bg-ink-muted shrink-0" />
                 <span className="leading-snug">{r}</span>
               </div>
             ))}
@@ -212,18 +189,18 @@ function VerdictCard({ row, studentName, college, kodeScore }: {
 
         {/* Eligibility */}
         {gates.length > 0 && (
-          <div className="bg-[#f8fafc] rounded-2xl p-3.5 border border-[#e0e7ff]">
+          <div className="rounded-2xl p-3.5 border border-line">
             <div className="flex items-center justify-between mb-2.5">
-              <p className="text-[10px] font-black uppercase tracking-wider text-[#64748b]">Tu eligible hai?</p>
-              <span className="text-[11px] font-black text-[#0f172a]">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">Tu eligible hai?</p>
+              <span className="text-[11px] font-bold text-ink">
                 {row.gatesOpen}/{row.gatesTotal} gates open · KodeScore fit {row.kodeScoreFit}
               </span>
             </div>
             <div className="space-y-2">
               {gates.map(([key, g]) => (
                 <div key={key} className="flex items-center gap-2 text-[12px]">
-                  <span className="text-base">{g.open ? "✅" : "❌"}</span>
-                  <span className={`flex-1 ${g.open ? "text-[#0f172a]" : "text-[#64748b]"} font-medium`}>{g.label}</span>
+                  <span className={`w-2 h-2 rounded-full shrink-0 ${g.open ? "bg-done" : "bg-danger"}`} />
+                  <span className="flex-1 text-[12px] text-ink">{g.label}</span>
                 </div>
               ))}
             </div>
@@ -237,14 +214,14 @@ function VerdictCard({ row, studentName, college, kodeScore }: {
 
         {/* TPO match badge */}
         {row.tpoMatch === "matched" ? (
-          <div className="bg-gradient-to-br from-[#10b981]/15 to-[#059669]/5 rounded-2xl p-3.5 border border-[#10b981]/30">
+          <div className="rounded-2xl p-3.5 border border-line">
             <div className="flex items-center gap-2 mb-1">
-              <CheckCircle2 className="w-4 h-4 text-[#065f46]" />
-              <p className="text-[11px] font-black uppercase tracking-wider text-[#065f46]">
-                ✓ Verified by your TPO
+              <CheckCircle2 className="w-4 h-4 text-done shrink-0" />
+              <p className="text-[11px] font-bold uppercase tracking-wider text-ink">
+                Verified by your TPO
               </p>
             </div>
-            <p className="text-[12px] text-[#065f46] font-semibold leading-snug">
+            <p className="text-[12px] text-ink-muted leading-snug">
               {row.tpoMatchedDrive?.postedByName ?? "Your TPO"} officially shared this drive
               {row.tpoMatchedDrive?.createdAt
                 ? ` on ${new Date(row.tpoMatchedDrive.createdAt).toLocaleDateString(undefined, { day: "numeric", month: "short" })}`
@@ -253,38 +230,37 @@ function VerdictCard({ row, studentName, college, kodeScore }: {
             {row.tpoMatchedDrive && (row.tpoMatchedDrive.role || row.tpoMatchedDrive.ctc || row.tpoMatchedDrive.driveDate) && (
               <div className="flex flex-wrap gap-1.5 mt-2">
                 {row.tpoMatchedDrive.role && (
-                  <span className="text-[10px] font-bold bg-white/70 text-[#065f46] px-2 py-0.5 rounded-full">{row.tpoMatchedDrive.role}</span>
+                  <span className="text-[11px] font-bold border border-line text-ink-muted px-2 py-0.5 rounded-full">{row.tpoMatchedDrive.role}</span>
                 )}
                 {row.tpoMatchedDrive.ctc && (
-                  <span className="text-[10px] font-bold bg-white/70 text-[#065f46] px-2 py-0.5 rounded-full">💰 {row.tpoMatchedDrive.ctc}</span>
+                  <span className="text-[11px] font-bold border border-line text-ink-muted px-2 py-0.5 rounded-full">{row.tpoMatchedDrive.ctc}</span>
                 )}
                 {row.tpoMatchedDrive.driveDate && (
-                  <span className="text-[10px] font-bold bg-white/70 text-[#065f46] px-2 py-0.5 rounded-full">
-                    📅 {new Date(row.tpoMatchedDrive.driveDate).toLocaleDateString()}
+                  <span className="text-[11px] font-bold border border-line text-ink-muted px-2 py-0.5 rounded-full">
+                    {new Date(row.tpoMatchedDrive.driveDate).toLocaleDateString()}
                   </span>
                 )}
               </div>
             )}
           </div>
         ) : row.tpoMatch === "not_matched" ? (
-          <div className="bg-[#fef3c7] rounded-2xl p-3 border border-[#f59e0b]/30 flex items-start gap-2">
-            <AlertTriangle className="w-4 h-4 text-[#78350f] mt-0.5 shrink-0" />
-            <p className="text-[11px] text-[#78350f] leading-snug font-medium">
-              Your TPO has <span className="font-black">NOT</span> shared this drive. Verify the source before applying.
+          <div className="rounded-2xl p-3 border border-line flex items-start gap-2">
+            <AlertTriangle className="w-4 h-4 text-ink-muted mt-0.5 shrink-0" />
+            <p className="text-[12px] text-ink-muted leading-snug">
+              Your TPO has <span className="font-bold text-ink">NOT</span> shared this drive. Verify the source before applying.
             </p>
           </div>
         ) : (
-          <div className="flex items-center gap-2 text-[11px] text-[#64748b]">
-            <Sparkles className="w-3 h-3 text-[#4f46e5]" />
+          <div className="flex items-center gap-2 text-[12px] text-ink-muted">
             <span>Your TPO hasn't posted any drives recently — can't cross-check.</span>
           </div>
         )}
       </div>
 
       {/* Footer watermark */}
-      <div className="bg-[#f8fafc] px-5 py-2.5 flex items-center justify-between border-t border-[#e0e7ff]">
-        <span className="text-[10px] font-black text-[#4f46e5] tracking-wide">KODETALENT · DRIVE CHECK</span>
-        <span className="text-[9px] text-[#94a3b8]">Paste any drive · 60s verdict</span>
+      <div className="px-5 py-2.5 flex items-center justify-between border-t border-line">
+        <span className="text-[10px] font-bold text-ink tracking-wider uppercase">Kodetalent · Drive Check</span>
+        <span className="text-[10px] text-ink-muted">Paste any drive · 60s verdict</span>
       </div>
     </div>
   );
@@ -430,7 +406,11 @@ export default function DriveCheck() {
       const dataUrl = await toPng(cardRef.current, {
         cacheBust: true,
         pixelRatio: 2,
-        backgroundColor: "#f8fafc",
+        backgroundColor: "#ffffff",
+        // The Plus Jakarta Sans stylesheet is loaded cross-origin from Google
+        // Fonts, so html-to-image cannot read its cssRules and hangs trying.
+        // The card renders fine in the system fallback face.
+        skipFonts: true,
       });
       const link = document.createElement("a");
       link.download = `drive-check-${verdict?.company ?? "verdict"}.png`;
@@ -469,7 +449,8 @@ export default function DriveCheck() {
       const blob = await toBlob(cardRef.current, {
         cacheBust: true,
         pixelRatio: 2,
-        backgroundColor: "#f8fafc",
+        backgroundColor: "#ffffff",
+        skipFonts: true, // see downloadCard — cross-origin font CSS hangs the export
       });
       if (blob) {
         pngFile = new File([blob], `scam-warning-${verdict.company ?? "drive"}.png`, { type: "image/png" });
@@ -538,127 +519,113 @@ export default function DriveCheck() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] pb-8">
+    <div className="min-h-screen bg-paper pb-24 px-6 pt-8">
       {/* Header */}
-      <div className="bg-gradient-to-br from-[#0f172a] via-[#3730a3] to-[#4f46e5] px-5 pt-5 pb-6 text-white">
-        <button
-          onClick={() => setLocation("/home")}
-          className="flex items-center gap-1 text-white/70 text-xs font-bold mb-3"
-        >
-          <ArrowLeft className="w-3.5 h-3.5" /> Home
-        </button>
-        <div className="flex items-center gap-2 mb-1">
-          <div className="w-8 h-8 rounded-xl bg-white/15 backdrop-blur flex items-center justify-center">
-            <ShieldCheck className="w-4 h-4 text-white" />
-          </div>
-          <h1 className="text-xl font-black">Drive Check</h1>
-        </div>
-        <p className="text-white/70 text-[12px] leading-relaxed">
-          Paste any placement drive from Telegram / WhatsApp / Insta.
-          <br />Tu instantly dekhega: <strong className="text-white">scam hai ya nahi</strong>, aur <strong className="text-white">tu eligible bhi hai ya nahi</strong>.
-        </p>
-      </div>
+      <button
+        onClick={() => setLocation("/home")}
+        className="flex items-center gap-1 text-[12px] font-bold text-ink-muted mb-4"
+      >
+        <ArrowLeft className="w-3.5 h-3.5" /> Home
+      </button>
+      <h1 className="text-[26px] font-extrabold text-ink leading-[1.06] tracking-tight">Drive Check</h1>
+      <p className="text-[13px] text-ink-muted mt-1 mb-6">
+        Paste any placement drive from Telegram / WhatsApp / Insta. Tu instantly dekhega: scam hai ya nahi, aur tu eligible bhi hai ya nahi.
+      </p>
 
       {/* Pending pings — drives student applied to 7+ days ago */}
       {pendingPings.length > 0 && (
-        <div className="px-4 -mt-4 mb-2">
-          <div className="bg-gradient-to-br from-[#fef3c7] to-[#fde68a] rounded-2xl p-3.5 border border-[#f59e0b]/30 shadow-md">
-            <p className="text-[10px] font-black uppercase tracking-wider text-[#78350f] mb-2">
-              ⏰ Quick check — kya hua in drives ka?
-            </p>
-            <div className="space-y-2">
-              {pendingPings.slice(0, 3).map((p) => (
-                <div key={p.id} className="bg-white/80 rounded-xl p-2.5">
-                  <p className="text-[12px] font-black text-[#0f172a] truncate">
-                    {p.company ?? "Unknown"} {p.role ? `· ${p.role}` : ""}
-                  </p>
-                  <div className="flex flex-wrap gap-1.5 mt-2">
-                    <button
-                      onClick={() => setOutcome(p, "called")}
-                      disabled={actionLoading}
-                      className="text-[10px] font-bold bg-[#10b981] text-white px-2 py-1 rounded-lg active:scale-95 disabled:opacity-50"
-                    >
-                      📞 Got call
-                    </button>
-                    <button
-                      onClick={() => setOutcome(p, "offer")}
-                      disabled={actionLoading}
-                      className="text-[10px] font-bold bg-[#059669] text-white px-2 py-1 rounded-lg active:scale-95 disabled:opacity-50"
-                    >
-                      🎉 Got offer
-                    </button>
-                    <button
-                      onClick={() => setOutcome(p, "ghosted")}
-                      disabled={actionLoading}
-                      className="text-[10px] font-bold bg-[#475569] text-white px-2 py-1 rounded-lg active:scale-95 disabled:opacity-50"
-                    >
-                      👻 Ghosted
-                    </button>
-                    <button
-                      onClick={() => setOutcome(p, "rejected")}
-                      disabled={actionLoading}
-                      className="text-[10px] font-bold bg-[#94a3b8] text-white px-2 py-1 rounded-lg active:scale-95 disabled:opacity-50"
-                    >
-                      ❌ Rejected
-                    </button>
-                    <button
-                      onClick={() => setOutcome(p, "skipped")}
-                      disabled={actionLoading}
-                      className="text-[10px] font-bold bg-transparent text-[#78350f] px-2 py-1 rounded-lg active:scale-95 disabled:opacity-50"
-                    >
-                      Skip
-                    </button>
-                  </div>
+        <div className="mb-6 border border-line rounded-2xl p-4">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-ink-muted mb-2">
+            Quick check — kya hua in drives ka?
+          </p>
+          <div>
+            {pendingPings.slice(0, 3).map((p) => (
+              <div key={p.id} className="py-3 border-t border-line first:border-t-0">
+                <p className="text-[13px] font-semibold text-ink truncate">
+                  {p.company ?? "Unknown"} {p.role ? `· ${p.role}` : ""}
+                </p>
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  <button
+                    onClick={() => setOutcome(p, "called")}
+                    disabled={actionLoading}
+                    className={outcomeBtnClass(p.outcome === "called")}
+                  >
+                    <Phone className="w-3.5 h-3.5" /> Got call
+                  </button>
+                  <button
+                    onClick={() => setOutcome(p, "offer")}
+                    disabled={actionLoading}
+                    className={outcomeBtnClass(p.outcome === "offer")}
+                  >
+                    <Award className="w-3.5 h-3.5" /> Got offer
+                  </button>
+                  <button
+                    onClick={() => setOutcome(p, "ghosted")}
+                    disabled={actionLoading}
+                    className={outcomeBtnClass(p.outcome === "ghosted")}
+                  >
+                    <Ghost className="w-3.5 h-3.5" /> Ghosted
+                  </button>
+                  <button
+                    onClick={() => setOutcome(p, "rejected")}
+                    disabled={actionLoading}
+                    className={outcomeBtnClass(p.outcome === "rejected")}
+                  >
+                    <XCircle className="w-3.5 h-3.5" /> Rejected
+                  </button>
+                  <button
+                    onClick={() => setOutcome(p, "skipped")}
+                    disabled={actionLoading}
+                    className="text-[11px] font-bold px-2.5 py-2 rounded-xl text-ink-muted active:scale-95 transition-transform disabled:opacity-50"
+                  >
+                    Skip
+                  </button>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
         </div>
       )}
 
       {/* Paste box */}
-      <div className={pendingPings.length > 0 ? "px-4" : "px-4 -mt-4"}>
-        <div className="bg-white rounded-3xl p-4 shadow-xl border border-[#e0e7ff]">
-          <textarea
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            placeholder={"Paste drive message yahan...\n\nExample:\n\"Sprinklr off campus drive\nBatch: 2025, 2026\nSalary: 8-11 LPA\nNote: Tier 1 / Tier 2 colleges only\nApply: https://...\""}
-            rows={6}
-            disabled={loading}
-            className="w-full resize-none bg-[#f8fafc] text-[13px] text-[#0f172a] placeholder:text-[#94a3b8] rounded-2xl px-3.5 py-3 outline-none border border-[#e0e7ff] focus:border-[#4f46e5] transition-colors disabled:opacity-60"
-          />
-          <div className="flex gap-2 mt-3">
-            <button
-              onClick={pasteFromClipboard}
-              disabled={loading}
-              className="flex items-center gap-1.5 bg-[#f8fafc] border border-[#e0e7ff] text-[#475569] font-bold text-[11px] px-3 py-2 rounded-xl active:scale-95 transition-transform"
-            >
-              <Clipboard className="w-3.5 h-3.5" /> Paste
-            </button>
-            <motion.button
-              whileTap={{ scale: 0.96 }}
-              onClick={checkDrive}
-              disabled={!text.trim() || loading}
-              className="flex-1 bg-gradient-to-br from-[#4f46e5] to-[#3730a3] text-white font-black text-sm py-2.5 rounded-xl shadow-md shadow-[#4f46e5]/25 disabled:opacity-40 flex items-center justify-center gap-2"
-            >
-              {loading ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Checking...
-                </>
-              ) : (
-                <>
-                  <ShieldCheck className="w-4 h-4" />
-                  Check Drive
-                </>
-              )}
-            </motion.button>
-          </div>
-          <p className="text-[10px] text-[#94a3b8] text-center mt-2.5">
-            We tell you: 1) Scam ya nahi · 2) Tu eligible bhi hai ya nahi
-          </p>
-        </div>
+      <textarea
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder={"Paste drive message yahan...\n\nExample:\n\"Sprinklr off campus drive\nBatch: 2025, 2026\nSalary: 8-11 LPA\nNote: Tier 1 / Tier 2 colleges only\nApply: https://...\""}
+        rows={6}
+        disabled={loading}
+        className="w-full resize-none rounded-2xl border border-line bg-paper px-4 py-3 text-[14px] text-ink placeholder:text-ink-muted focus:outline-none focus:border-ink transition-colors disabled:opacity-60"
+      />
+      <div className="flex gap-2 mt-3">
+        <button
+          onClick={pasteFromClipboard}
+          disabled={loading}
+          className="flex items-center gap-1.5 border border-line text-ink font-bold text-[12px] px-3 py-3 rounded-xl active:scale-95 transition-transform disabled:opacity-40"
+        >
+          <Clipboard className="w-3.5 h-3.5" /> Paste
+        </button>
+        <motion.button
+          whileTap={{ scale: 0.96 }}
+          onClick={checkDrive}
+          disabled={!text.trim() || loading}
+          className="flex-1 bg-ink text-paper font-bold text-[14px] py-3 rounded-xl disabled:opacity-40 flex items-center justify-center gap-2"
+        >
+          {loading ? (
+            <>
+              <div className="w-4 h-4 border-2 border-paper border-t-transparent rounded-full animate-spin" />
+              Checking...
+            </>
+          ) : (
+            <>
+              <ShieldCheck className="w-4 h-4" />
+              Check Drive
+            </>
+          )}
+        </motion.button>
       </div>
+      <p className="text-[12px] text-ink-muted text-center mt-2.5">
+        We tell you: 1) Scam ya nahi · 2) Tu eligible bhi hai ya nahi
+      </p>
 
       {/* Verdict */}
       <div id="verdict-anchor" />
@@ -669,7 +636,7 @@ export default function DriveCheck() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            className="px-4 mt-5"
+            className="mt-6"
           >
             <div ref={cardRef}>
               <VerdictCard
@@ -681,56 +648,57 @@ export default function DriveCheck() {
             </div>
             {/* Outcome actions — only for non-scam verdicts */}
             {verdict.scamVerdict !== "scam" && (
-              <div className="mt-3 bg-white rounded-2xl p-3.5 border border-[#e0e7ff] shadow-sm">
+              <div className="mt-3 border border-line rounded-2xl p-3.5">
                 {verdict.outcome === "pending" && (
                   <>
-                    <p className="text-[11px] font-black uppercase tracking-wider text-[#64748b] mb-2">
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-ink-muted mb-2">
                       Apply karega is drive ko?
                     </p>
                     <button
                       onClick={() => markApplied(verdict)}
                       disabled={actionLoading}
-                      className="w-full bg-gradient-to-br from-[#4f46e5] to-[#3730a3] text-white font-black text-sm py-2.5 rounded-xl active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
+                      className="w-full bg-ink text-paper font-bold text-[14px] py-3 rounded-xl active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
                     >
                       <CheckCircle2 className="w-4 h-4" /> Maine apply kiya
-                      {verdict.applyLink && <span className="text-[10px] opacity-80">+ open link</span>}
+                      {verdict.applyLink && <span className="text-[11px] opacity-70">+ open link</span>}
                     </button>
-                    <p className="text-[10px] text-[#94a3b8] text-center mt-2">
+                    <p className="text-[12px] text-ink-muted text-center mt-2">
                       We'll ping you in 7 days to ask kya hua — your reply helps every other student.
                     </p>
                   </>
                 )}
                 {verdict.outcome === "applied" && (
                   <>
-                    <p className="text-[11px] font-black uppercase tracking-wider text-[#64748b] mb-2">
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-ink-muted mb-2">
                       Status update — kya hua?
                     </p>
                     <div className="grid grid-cols-2 gap-2">
+                      {/* Still in the "applied" state, so no outcome is selected yet. */}
                       <button
                         onClick={() => setOutcome(verdict, "called")}
                         disabled={actionLoading}
-                        className="text-[11px] font-bold bg-[#10b981] text-white px-2 py-2 rounded-xl active:scale-95 disabled:opacity-50 flex items-center justify-center gap-1"
+                        className={outcomeBtnClass(false)}
                       >
                         <Phone className="w-3.5 h-3.5" /> Got call
                       </button>
                       <button
                         onClick={() => setOutcome(verdict, "offer")}
                         disabled={actionLoading}
-                        className="text-[11px] font-bold bg-[#059669] text-white px-2 py-2 rounded-xl active:scale-95 disabled:opacity-50 flex items-center justify-center gap-1"
+                        className={outcomeBtnClass(false)}
                       >
                         <Award className="w-3.5 h-3.5" /> Got offer
                       </button>
                       <button
                         onClick={() => setOutcome(verdict, "ghosted")}
                         disabled={actionLoading}
-                        className="text-[11px] font-bold bg-[#475569] text-white px-2 py-2 rounded-xl active:scale-95 disabled:opacity-50 flex items-center justify-center gap-1"
+                        className={outcomeBtnClass(false)}
                       >
                         <Ghost className="w-3.5 h-3.5" /> Ghosted
                       </button>
                       <button
                         onClick={() => setOutcome(verdict, "rejected")}
                         disabled={actionLoading}
-                        className="text-[11px] font-bold bg-[#94a3b8] text-white px-2 py-2 rounded-xl active:scale-95 disabled:opacity-50 flex items-center justify-center gap-1"
+                        className={outcomeBtnClass(false)}
                       >
                         <XCircle className="w-3.5 h-3.5" /> Rejected
                       </button>
@@ -738,10 +706,10 @@ export default function DriveCheck() {
                   </>
                 )}
                 {["called", "ghosted", "rejected", "offer", "skipped"].includes(verdict.outcome) && (
-                  <div className="flex items-center gap-2 text-[12px] text-[#0f172a] font-bold">
-                    <CheckCircle2 className="w-4 h-4 text-[#10b981]" />
+                  <div className="flex items-center gap-2 text-[13px] text-ink font-semibold">
+                    <CheckCircle2 className="w-4 h-4 text-done shrink-0" />
                     <span>
-                      Outcome saved: <span className="capitalize">{verdict.outcome}</span> · Thanks for sharing 🙏
+                      Outcome saved: <span className="capitalize">{verdict.outcome}</span> · Thanks for sharing
                     </span>
                   </div>
                 )}
@@ -750,14 +718,14 @@ export default function DriveCheck() {
 
             {/* Warn the group — one tap; only for scam verdicts */}
             {verdict.scamVerdict === "scam" && (
-              <div className="mt-3 bg-gradient-to-br from-[#fef2f2] to-[#fee2e2] border border-[#fecaca] rounded-2xl p-3.5">
+              <div className="mt-3 border border-line rounded-2xl p-3.5">
                 <div className="flex items-start gap-2 mb-2.5">
-                  <Megaphone className="w-4 h-4 text-[#b91c1c] mt-0.5 shrink-0" />
+                  <Megaphone className="w-4 h-4 text-danger mt-0.5 shrink-0" />
                   <div>
-                    <p className="text-[12px] font-black text-[#7f1d1d] leading-tight">
+                    <p className="text-[13px] font-bold text-ink leading-tight">
                       Warn the group — one tap
                     </p>
-                    <p className="text-[10px] text-[#7f1d1d]/80 mt-0.5">
+                    <p className="text-[12px] text-ink-muted mt-0.5">
                       Prefilled message + verdict card. Saves friends from getting scammed.
                     </p>
                   </div>
@@ -766,7 +734,7 @@ export default function DriveCheck() {
                   <button
                     onClick={() => warnTheGroup("whatsapp")}
                     data-testid="button-warn-whatsapp"
-                    className="bg-[#25d366] text-white font-black text-[12px] py-2.5 rounded-xl flex items-center justify-center gap-1.5 active:scale-95 transition-transform shadow-sm"
+                    className="bg-ink text-paper font-bold text-[12px] py-2.5 rounded-xl flex items-center justify-center gap-1.5 active:scale-95 transition-transform"
                   >
                     <Megaphone className="w-3.5 h-3.5" />
                     WhatsApp group
@@ -774,15 +742,15 @@ export default function DriveCheck() {
                   <button
                     onClick={() => warnTheGroup("telegram")}
                     data-testid="button-warn-telegram"
-                    className="bg-[#229ed9] text-white font-black text-[12px] py-2.5 rounded-xl flex items-center justify-center gap-1.5 active:scale-95 transition-transform shadow-sm"
+                    className="border border-line text-ink font-bold text-[12px] py-2.5 rounded-xl flex items-center justify-center gap-1.5 active:scale-95 transition-transform"
                   >
                     <Megaphone className="w-3.5 h-3.5" />
                     Telegram group
                   </button>
                 </div>
                 {verdict.sharedCount > 0 && (
-                  <p className="text-[10px] text-[#7f1d1d]/70 text-center mt-2 font-bold">
-                    Shared {verdict.sharedCount} {verdict.sharedCount === 1 ? "time" : "times"} 🙌
+                  <p className="text-[12px] text-ink-muted text-center mt-2 font-bold">
+                    Shared {verdict.sharedCount} {verdict.sharedCount === 1 ? "time" : "times"}
                   </p>
                 )}
               </div>
@@ -790,7 +758,7 @@ export default function DriveCheck() {
             <button
               onClick={downloadCard}
               data-testid="button-download-card"
-              className="w-full mt-3 bg-[#0f172a] text-white font-black text-sm py-3 rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-transform shadow-md"
+              className="w-full mt-3 bg-ink text-paper font-bold text-[14px] py-3 rounded-xl flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
             >
               <Download className="w-4 h-4" />
               {verdict.scamVerdict === "scam" ? "Just download PNG" : "Share verdict to drive group"}
@@ -801,29 +769,26 @@ export default function DriveCheck() {
 
       {/* Recent checks */}
       {recent.length > 0 && (
-        <div className="px-4 mt-6">
-          <h3 className="text-[11px] font-black uppercase tracking-wider text-[#64748b] mb-2.5">Recent checks</h3>
-          <div className="space-y-2">
+        <div className="mt-10">
+          <h3 className="text-[11px] font-bold uppercase tracking-wider text-ink-muted mb-2">Recent checks</h3>
+          <div>
             {recent.slice(0, 5).map((r) => {
-              const m = VERDICT_META[r.scamVerdict] ?? VERDICT_META.risky;
+              const v = VERDICT_STYLE[r.scamVerdict] ?? VERDICT_STYLE.risky;
               return (
                 <button
                   key={r.id}
                   onClick={() => loadRecent(r)}
-                  className="w-full bg-white rounded-2xl px-3.5 py-3 flex items-center gap-3 shadow-sm border border-[#e0e7ff] active:scale-[0.98] transition-transform text-left"
+                  className="w-full py-3 border-t border-line first:border-t-0 flex items-center gap-3 text-left"
                 >
-                  <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${m.bg} flex items-center justify-center shrink-0`}>
-                    <span className="text-base">{m.emoji}</span>
-                  </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-black text-[#0f172a] text-[12px] truncate">
+                    <p className="text-[14px] font-semibold text-ink truncate">
                       {r.company ?? "Unknown company"} {r.role ? `· ${r.role}` : ""}
                     </p>
-                    <p className="text-[10px] text-[#64748b] mt-0.5">
-                      {m.label} · {r.gatesOpen}/{r.gatesTotal} gates open
+                    <p className="text-[12px] text-ink-muted mt-0.5">
+                      {v.label} · {r.gatesOpen}/{r.gatesTotal} gates open
                     </p>
                   </div>
-                  <ChevronRight className="w-4 h-4 text-[#94a3b8] shrink-0" />
+                  <ChevronRight className="w-4 h-4 text-ink-muted shrink-0" />
                 </button>
               );
             })}

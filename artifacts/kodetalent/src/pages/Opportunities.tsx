@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, ChevronRight, ExternalLink, Target, Loader2, Search, X, Sparkles, CheckCircle2, AlertCircle, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { DOMAINS, type Domain, type SubDomain } from "@/data/domains";
 import { useCoursePreloader, prefetchCourse } from "@/hooks/useCoursePreloader";
 import { apiFetch } from "@/lib/api/authFetch";
@@ -193,22 +192,12 @@ export default function Opportunities() {
   const renderLiveCards = () => {
     if (!selectedSubDomain || !selectedDomain) return null;
     const skills = selectedSubDomain.skills.slice(0, 3);
-    const accent = selectedDomain.color;
-    const accentBg = selectedDomain.bg;
-    const payColor =
-      activeTab === "jobs" ? "#10b981"
-      : activeTab === "internship" ? "#4f46e5"
-      : "#f97316";
-    const payBg =
-      activeTab === "jobs" ? "#ecfdf5"
-      : activeTab === "internship" ? "#eef2ff"
-      : "#fff7ed";
 
     if (liveQuery.isLoading) {
       return (
         <div className="flex flex-col items-center justify-center py-12 gap-2">
-          <Loader2 className="w-6 h-6 animate-spin" style={{ color: accent }} />
-          <p className="text-xs text-[#64748b] font-bold">Fetching live {activeTab}…</p>
+          <Loader2 className="w-6 h-6 animate-spin text-ink" />
+          <p className="text-[12px] text-ink-muted">Fetching live {activeTab}…</p>
         </div>
       );
     }
@@ -217,38 +206,39 @@ export default function Opportunities() {
     if (!items.length) {
       return (
         <div className="text-center py-10">
-          <p className="text-sm font-bold text-[#64748b]">No live results — try another specialisation.</p>
+          <p className="text-[14px] text-ink">No live results</p>
+          <p className="text-[12px] text-ink-muted mt-1">Try another specialisation.</p>
         </div>
       );
     }
 
     return items.map((o, i) => (
       <motion.div key={o.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i, 8) * 0.04 }}>
-        <Card className="border-0 shadow-[0_4px_16px_rgba(0,0,0,0.07)] rounded-2xl bg-white overflow-hidden">
-          <CardContent className="p-4">
+        <div className="border border-line rounded-2xl bg-paper overflow-hidden">
+          <div className="p-4">
             <div className="flex items-start justify-between mb-2 gap-2">
               <div className="flex items-center gap-2 min-w-0">
                 {o.logo
-                  ? <img src={o.logo} alt={o.company} className="w-9 h-9 rounded-lg object-cover bg-[#f1f5f9] flex-shrink-0" onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+                  ? <img src={o.logo} alt={o.company} className="w-9 h-9 rounded-lg object-cover border border-line flex-shrink-0" onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
                   : <span className="text-2xl flex-shrink-0">{emojiFor(o.source)}</span>
                 }
                 <div className="min-w-0">
-                  <p className="text-xs text-[#64748b] font-bold truncate">{o.company} · {o.source}</p>
-                  <p className="text-sm font-extrabold text-[#0f172a] leading-tight line-clamp-2">{o.title}</p>
+                  <p className="text-[11px] text-ink-muted truncate">{o.company} · {o.source}</p>
+                  <p className="text-[14px] font-bold text-ink leading-tight line-clamp-2">{o.title}</p>
                 </div>
               </div>
               {o.pay && (
-                <span className="text-[11px] font-extrabold px-2.5 py-1 rounded-full whitespace-nowrap" style={{ color: payColor, background: payBg }}>
+                <span className="text-[11px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap border border-line text-ink">
                   {o.pay}
                 </span>
               )}
             </div>
-            <p className="text-xs text-[#64748b] mb-3">
+            <p className="text-[12px] text-ink-muted mb-3">
               📍 {o.location}{o.postedAt ? ` · ${o.postedAt}` : ""}
             </p>
             <div className="flex flex-wrap gap-1.5 mb-3">
               {(o.tags.length ? o.tags : skills).slice(0, 4).map(s => (
-                <span key={s} className="text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ background: accentBg, color: accent }}>
+                <span key={s} className="text-[11px] font-semibold px-2 py-0.5 rounded-full border border-line text-ink-muted">
                   {s}
                 </span>
               ))}
@@ -256,13 +246,12 @@ export default function Opportunities() {
             <div className="flex gap-2 mb-2">
               <Button
                 onClick={() => checkFit(o)}
-                className="flex-1 h-10 rounded-xl font-bold text-[13px] text-white"
-                style={{ background: "linear-gradient(135deg,#8b5cf6,#ec4899)" }}
+                className="flex-1 h-10 rounded-xl font-bold text-[13px] bg-ink text-paper hover:bg-ink"
               >
                 <Sparkles className="w-3.5 h-3.5 mr-1.5" /> Check fit
               </Button>
               <a href={o.url} target="_blank" rel="noopener noreferrer" className="flex-1">
-                <Button variant="outline" className="w-full h-10 rounded-xl font-bold text-[13px] border-2" style={{ borderColor: accent, color: accent }}>
+                <Button variant="outline" className="w-full h-10 rounded-xl font-bold text-[13px] border border-line text-ink bg-paper">
                   Apply <ExternalLink className="w-3 h-3 ml-1" />
                 </Button>
               </a>
@@ -270,13 +259,12 @@ export default function Opportunities() {
             <Button
               onClick={navigateToCourse}
               variant="ghost"
-              className="w-full h-8 rounded-lg font-bold text-[12px]"
-              style={{ color: accent }}
+              className="w-full h-8 rounded-lg font-bold text-[12px] text-ink"
             >
               <Target className="w-3 h-3 mr-1" /> Prepare for this role
             </Button>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </motion.div>
     ));
   };
@@ -285,25 +273,25 @@ export default function Opportunities() {
 
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] pb-28">
+    <div className="min-h-screen bg-paper pb-28">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-[#f8fafc] px-4 pt-4 pb-2">
+      <div className="sticky top-0 z-10 bg-paper px-4 pt-4 pb-2">
         <div className="flex items-center gap-2 mb-1">
           {(selectedDomain || selectedSubDomain) && (
             <button
               onClick={goBack}
-              className="w-9 h-9 rounded-full bg-white shadow-sm flex items-center justify-center text-[#0f172a] flex-shrink-0"
+              className="w-9 h-9 rounded-full border border-line bg-paper flex items-center justify-center text-ink flex-shrink-0"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
           )}
           <div>
-            <h1 className="text-2xl font-extrabold text-[#0f172a]">
+            <h1 className="text-[26px] font-extrabold text-ink leading-[1.06] tracking-tight">
               {!selectedDomain && "Opportunities"}
               {selectedDomain && !selectedSubDomain && selectedDomain.name}
               {selectedSubDomain && selectedSubDomain.name}
             </h1>
-            <p className="text-xs font-bold text-[#64748b]">
+            <p className="text-[12px] text-ink-muted mt-1">
               {!selectedDomain && `Explore ${DOMAINS.length} tech domains · 100+ AI courses · Jobs · Internships`}
               {selectedDomain && !selectedSubDomain && "Select a specialisation to explore roles"}
               {selectedSubDomain && "Browse opportunities and get prepared"}
@@ -319,12 +307,11 @@ export default function Opportunities() {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={cn(
-                  "flex-1 py-2 rounded-xl text-[13px] font-extrabold transition-all",
+                  "flex-1 py-2 rounded-xl text-[13px] font-bold border transition-colors",
                   activeTab === tab.id
-                    ? "text-white shadow-sm"
-                    : "bg-white text-[#64748b]"
+                    ? "bg-ink text-paper border-ink"
+                    : "bg-paper text-ink-muted border-line"
                 )}
-                style={activeTab === tab.id ? { background: selectedDomain!.color } : {}}
               >
                 {tab.emoji} {tab.label}
               </button>
@@ -339,19 +326,19 @@ export default function Opportunities() {
           {!selectedDomain && (
             <motion.div key="search" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-4">
               <div className="relative">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#94a3b8]" />
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search skills or roles… e.g. React, Python, ML"
-                  className="w-full pl-10 pr-10 py-3 rounded-2xl bg-white border border-[#e2e8f0] text-sm font-bold text-[#0f172a] placeholder:text-[#94a3b8] placeholder:font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 shadow-sm"
+                  className="w-full pl-10 pr-10 py-3 rounded-2xl bg-paper border border-line text-[14px] text-ink placeholder:text-ink-muted focus:outline-none focus:border-ink"
                   data-testid="input-opportunity-search"
                 />
                 {searchQuery && (
                   <button
                     onClick={() => setSearchQuery("")}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-[#f1f5f9] flex items-center justify-center text-[#64748b]"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full border border-line bg-paper flex items-center justify-center text-ink-muted"
                     data-testid="button-clear-search"
                   >
                     <X className="w-3.5 h-3.5" />
@@ -360,11 +347,11 @@ export default function Opportunities() {
               </div>
 
               {searchQuery.trim() && (
-                <div className="mt-2 bg-white rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] overflow-hidden">
+                <div className="mt-2 bg-paper rounded-2xl border border-line overflow-hidden">
                   {searchResults.length === 0 ? (
                     <div className="px-4 py-6 text-center">
-                      <p className="text-sm font-bold text-[#0f172a]">No matches</p>
-                      <p className="text-xs text-[#64748b] mt-1">Try "React", "Data", "Cloud", or browse all domains below.</p>
+                      <p className="text-[14px] text-ink">No matches</p>
+                      <p className="text-[12px] text-ink-muted mt-1">Try "React", "Data", "Cloud", or browse all domains below.</p>
                     </div>
                   ) : (
                     searchResults.map(({ domain, sub, matchedSkill }, i) => (
@@ -375,27 +362,24 @@ export default function Opportunities() {
                         transition={{ delay: i * 0.03 }}
                         onClick={() => jumpToSubDomain(domain, sub)}
                         className={cn(
-                          "w-full px-4 py-3 flex items-center gap-3 text-left active:bg-[#f8fafc] transition-colors",
-                          i !== searchResults.length - 1 && "border-b border-[#f1f5f9]"
+                          "w-full px-4 py-3 flex items-center gap-3 text-left transition-colors",
+                          i !== searchResults.length - 1 && "border-b border-line"
                         )}
                         data-testid={`search-result-${sub.id}`}
                       >
-                        <div
-                          className="w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0"
-                          style={{ background: domain.bg }}
-                        >
+                        <div className="w-10 h-10 rounded-xl border border-line flex items-center justify-center text-xl shrink-0">
                           {domain.emoji}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-extrabold text-[#0f172a] text-sm truncate">{sub.name}</p>
-                          <p className="text-[11px] font-bold text-[#64748b] truncate">
-                            <span style={{ color: domain.color }}>{domain.name}</span>
+                          <p className="font-bold text-ink text-[14px] truncate">{sub.name}</p>
+                          <p className="text-[11px] text-ink-muted truncate">
+                            <span>{domain.name}</span>
                             {matchedSkill && (
-                              <span className="text-[#94a3b8]"> · {matchedSkill}</span>
+                              <span> · {matchedSkill}</span>
                             )}
                           </p>
                         </div>
-                        <ChevronRight className="w-4 h-4 text-[#cbd5e1] shrink-0" />
+                        <ChevronRight className="w-4 h-4 text-ink-muted shrink-0" />
                       </motion.button>
                     ))
                   )}
@@ -412,17 +396,17 @@ export default function Opportunities() {
             >
               <button
                 onClick={() => setLocation("/pipeline")}
-                className="w-full mb-4 flex items-center gap-3 px-4 py-3 rounded-2xl bg-white border border-[#e2e8f0] shadow-sm text-left active:bg-[#f8fafc] transition-colors"
+                className="w-full mb-4 flex items-center gap-3 px-4 py-3 rounded-2xl bg-paper border border-line text-left transition-colors"
                 data-testid="link-my-pipeline"
               >
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0 bg-[#eef2ff]">
+                <div className="w-10 h-10 rounded-xl border border-line flex items-center justify-center text-lg shrink-0">
                   🎯
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-extrabold text-[#0f172a] text-sm">My Pipeline</p>
-                  <p className="text-[11px] font-bold text-[#64748b]">Paste any job or drive — scam check, eligibility, fit & prep</p>
+                  <p className="font-bold text-ink text-[14px]">My Pipeline</p>
+                  <p className="text-[11px] text-ink-muted">Paste any job or drive — scam check, eligibility, fit & prep</p>
                 </div>
-                <ChevronRight className="w-4 h-4 text-[#cbd5e1] shrink-0" />
+                <ChevronRight className="w-4 h-4 text-ink-muted shrink-0" />
               </button>
               <div className="grid grid-cols-3 gap-3">
                 {DOMAINS.map((domain, i) => (
@@ -433,11 +417,10 @@ export default function Opportunities() {
                     transition={{ delay: i * 0.04 }}
                     whileTap={{ scale: 0.94 }}
                     onClick={() => setSelectedDomain(domain)}
-                    className="rounded-2xl p-3 flex flex-col items-center text-center gap-1.5 shadow-[0_2px_12px_rgba(0,0,0,0.06)] border-2 border-transparent hover:border-current transition-all"
-                    style={{ background: domain.bg }}
+                    className="rounded-2xl p-3 flex flex-col items-center text-center gap-1.5 border border-line bg-paper transition-colors"
                   >
                     <span className="text-3xl">{domain.emoji}</span>
-                    <span className="text-[11px] font-extrabold leading-tight" style={{ color: domain.color }}>
+                    <span className="text-[11px] font-bold leading-tight text-ink">
                       {domain.name}
                     </span>
                   </motion.button>
@@ -456,15 +439,12 @@ export default function Opportunities() {
               className="space-y-2"
             >
               {/* Domain banner */}
-              <div
-                className="rounded-2xl p-4 mb-4 flex items-center gap-3"
-                style={{ background: selectedDomain.bg }}
-              >
+              <div className="rounded-2xl border border-line p-4 mb-4 flex items-center gap-3">
                 <span className="text-4xl">{selectedDomain.emoji}</span>
                 <div>
-                  <p className="text-xs font-extrabold text-[#64748b] uppercase tracking-wider">Domain</p>
-                  <p className="text-lg font-extrabold" style={{ color: selectedDomain.color }}>{selectedDomain.name}</p>
-                  <p className="text-xs text-[#64748b]">{selectedDomain.subDomains.length} specialisations</p>
+                  <p className="text-[11px] font-bold text-ink-muted uppercase tracking-wider">Domain</p>
+                  <p className="text-[18px] font-extrabold text-ink">{selectedDomain.name}</p>
+                  <p className="text-[12px] text-ink-muted">{selectedDomain.subDomains.length} specialisations</p>
                 </div>
               </div>
 
@@ -482,23 +462,20 @@ export default function Opportunities() {
                     // the Course page loads from cache in <1s.
                     prefetchCourse(sd.id, sd.name, selectedDomain.name, sd.skills);
                   }}
-                  className="w-full bg-white rounded-2xl p-4 flex items-center justify-between shadow-[0_2px_12px_rgba(0,0,0,0.05)] text-left"
+                  className="w-full bg-paper border border-line rounded-2xl p-4 flex items-center justify-between text-left"
                 >
                   <div>
-                    <p className="font-extrabold text-[#0f172a] text-[15px]">{sd.name}</p>
+                    <p className="font-bold text-ink text-[15px]">{sd.name}</p>
                     <div className="flex gap-1.5 mt-1.5 flex-wrap">
                       {sd.skills.slice(0, 3).map(s => (
-                        <span key={s} className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: selectedDomain.bg, color: selectedDomain.color }}>
+                        <span key={s} className="text-[10px] font-semibold px-2 py-0.5 rounded-full border border-line text-ink-muted">
                           {s}
                         </span>
                       ))}
                     </div>
                   </div>
-                  <div
-                    className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ml-3"
-                    style={{ background: selectedDomain.bg }}
-                  >
-                    <ChevronRight className="w-4 h-4" style={{ color: selectedDomain.color }} />
+                  <div className="w-8 h-8 rounded-full border border-line flex items-center justify-center flex-shrink-0 ml-3">
+                    <ChevronRight className="w-4 h-4 text-ink" />
                   </div>
                 </motion.button>
               ))}
@@ -518,10 +495,10 @@ export default function Opportunities() {
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-2xl">{selectedDomain!.emoji}</span>
                 <div>
-                  <p className="text-xs font-extrabold" style={{ color: selectedDomain!.color }}>
+                  <p className="text-[12px] font-bold text-ink">
                     {selectedDomain!.name} › {selectedSubDomain.name}
                   </p>
-                  <p className="text-[11px] text-[#64748b] font-bold">
+                  <p className="text-[11px] text-ink-muted">
                     {activeTab === "jobs" ? "Full-time roles" : activeTab === "internship" ? "Internship openings" : "Freelance gigs"}
                   </p>
                 </div>
@@ -534,19 +511,17 @@ export default function Opportunities() {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
-                className="rounded-2xl p-4 mt-2"
-                style={{ background: selectedDomain!.bg }}
+                className="rounded-2xl border border-line p-4 mt-2"
               >
-                <p className="text-sm font-extrabold mb-1" style={{ color: selectedDomain!.color }}>
-                  🎯 Not ready to apply yet?
+                <p className="text-[14px] font-bold text-ink mb-1">
+                  Not ready to apply yet?
                 </p>
-                <p className="text-xs text-[#64748b] mb-3">
+                <p className="text-[12px] text-ink-muted mb-3">
                   Practice mock interviews tailored to {selectedSubDomain.name} roles and build your confidence first.
                 </p>
                 <Button
                   onClick={navigateToCourse}
-                  className="w-full h-10 rounded-xl font-bold text-[13px] text-white"
-                  style={{ background: selectedDomain!.color }}
+                  className="w-full h-10 rounded-xl font-bold text-[13px] bg-ink text-paper hover:bg-ink"
                 >
                   Start Practice Session →
                 </Button>
@@ -565,25 +540,25 @@ export default function Opportunities() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={closeGap}
-              className="fixed inset-0 bg-black/50 z-40"
+              className="fixed inset-0 bg-ink/40 z-40"
             />
             <motion.div
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 30, stiffness: 280 }}
-              className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl max-h-[85vh] overflow-y-auto max-w-md mx-auto shadow-[0_-8px_32px_rgba(0,0,0,0.2)]"
+              className="fixed bottom-0 left-0 right-0 z-50 bg-paper rounded-t-3xl max-h-[85vh] overflow-y-auto max-w-md mx-auto border-t border-line"
               data-testid="jd-gap-sheet"
             >
-              <div className="sticky top-0 bg-white rounded-t-3xl px-5 pt-3 pb-2 border-b border-[#f1f5f9]">
-                <div className="w-12 h-1 rounded-full bg-[#cbd5e1] mx-auto mb-3" />
+              <div className="sticky top-0 bg-paper rounded-t-3xl px-5 pt-3 pb-2 border-b border-line">
+                <div className="w-12 h-1 rounded-full bg-line mx-auto mb-3" />
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#8b5cf6]">AI Fit Check</p>
-                    <p className="text-base font-extrabold text-[#0f172a] line-clamp-2">{gapJobTitle}</p>
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">AI Fit Check</p>
+                    <p className="text-[16px] font-extrabold text-ink line-clamp-2">{gapJobTitle}</p>
                   </div>
-                  <button onClick={closeGap} className="w-8 h-8 rounded-full bg-[#f1f5f9] flex items-center justify-center flex-shrink-0">
-                    <X className="w-4 h-4 text-[#64748b]" />
+                  <button onClick={closeGap} className="w-8 h-8 rounded-full border border-line flex items-center justify-center flex-shrink-0">
+                    <X className="w-4 h-4 text-ink-muted" />
                   </button>
                 </div>
               </div>
@@ -591,21 +566,19 @@ export default function Opportunities() {
               <div className="px-5 py-4 pb-8">
                 {gapLoading && (
                   <div className="flex flex-col items-center justify-center py-12 gap-3">
-                    <Loader2 className="w-7 h-7 animate-spin text-[#8b5cf6]" />
-                    <p className="text-xs text-[#64748b] font-bold">Analysing your fit…</p>
+                    <Loader2 className="w-7 h-7 animate-spin text-ink" />
+                    <p className="text-[12px] text-ink-muted">Analysing your fit…</p>
                   </div>
                 )}
                 {gapError && !gapLoading && (
                   <div className="flex flex-col items-center justify-center py-10 gap-2">
-                    <AlertCircle className="w-7 h-7 text-[#ef4444]" />
-                    <p className="text-sm font-bold text-[#0f172a]">{gapError}</p>
-                    <Button onClick={closeGap} variant="outline" className="mt-2">Close</Button>
+                    <AlertCircle className="w-7 h-7 text-danger" />
+                    <p className="text-[14px] text-danger">{gapError}</p>
+                    <Button onClick={closeGap} variant="outline" className="mt-2 border border-line text-ink bg-paper rounded-xl">Close</Button>
                   </div>
                 )}
                 {gapData && !gapLoading && (() => {
                   const score = gapData.fitScore;
-                  const ringColor = score >= 70 ? "#10b981" : score >= 40 ? "#f97316" : "#ef4444";
-                  const ringBg = score >= 70 ? "#d1fae5" : score >= 40 ? "#ffedd5" : "#fee2e2";
                   const verdict = score >= 70 ? "Strong fit — apply now" : score >= 40 ? "Decent fit — close the gaps first" : "Stretch role — build skills first";
                   const r = 42, c = 2 * Math.PI * r;
                   const offset = c - (score / 100) * c;
@@ -614,9 +587,9 @@ export default function Opportunities() {
                       <div className="flex items-center gap-4 mb-4">
                         <div className="relative w-[110px] h-[110px] flex-shrink-0">
                           <svg width="110" height="110" className="-rotate-90">
-                            <circle cx="55" cy="55" r={r} fill="none" stroke={ringBg} strokeWidth="10" />
+                            <circle cx="55" cy="55" r={r} fill="none" className="stroke-line" strokeWidth="10" />
                             <motion.circle
-                              cx="55" cy="55" r={r} fill="none" stroke={ringColor} strokeWidth="10"
+                              cx="55" cy="55" r={r} fill="none" className="stroke-ink" strokeWidth="10"
                               strokeLinecap="round" strokeDasharray={c}
                               initial={{ strokeDashoffset: c }}
                               animate={{ strokeDashoffset: offset }}
@@ -624,25 +597,25 @@ export default function Opportunities() {
                             />
                           </svg>
                           <div className="absolute inset-0 flex flex-col items-center justify-center">
-                            <span className="text-2xl font-black" style={{ color: ringColor }}>{score}</span>
-                            <span className="text-[9px] font-extrabold text-[#64748b] uppercase">Fit</span>
+                            <span className="text-2xl font-extrabold text-ink">{score}</span>
+                            <span className="text-[9px] font-bold text-ink-muted uppercase tracking-wider">Fit</span>
                           </div>
                         </div>
                         <div className="min-w-0">
-                          <p className="text-[11px] font-extrabold uppercase tracking-wider" style={{ color: ringColor }}>{verdict}</p>
-                          <p className="text-[13px] font-bold text-[#0f172a] mt-1 leading-snug">{gapData.summary}</p>
+                          <p className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">{verdict}</p>
+                          <p className="text-[13px] text-ink mt-1 leading-snug">{gapData.summary}</p>
                         </div>
                       </div>
 
                       {gapData.have.length > 0 && (
                         <div className="mb-4">
-                          <p className="text-[11px] font-extrabold text-[#10b981] uppercase tracking-wider mb-2 flex items-center gap-1">
+                          <p className="text-[11px] font-bold text-ink-muted uppercase tracking-wider mb-2 flex items-center gap-1">
                             <CheckCircle2 className="w-3.5 h-3.5" /> What you bring
                           </p>
                           <div className="flex flex-wrap gap-1.5">
                             {gapData.have.map(s => (
-                              <span key={s} className="text-[12px] font-bold px-2.5 py-1 rounded-full bg-[#d1fae5] text-[#047857]">
-                                ✓ {s}
+                              <span key={s} className="text-[12px] font-semibold px-2.5 py-1 rounded-full border border-line text-ink">
+                                {s}
                               </span>
                             ))}
                           </div>
@@ -651,13 +624,13 @@ export default function Opportunities() {
 
                       {gapData.missing.length > 0 && (
                         <div className="mb-4">
-                          <p className="text-[11px] font-extrabold text-[#ef4444] uppercase tracking-wider mb-2 flex items-center gap-1">
+                          <p className="text-[11px] font-bold text-ink-muted uppercase tracking-wider mb-2 flex items-center gap-1">
                             <AlertCircle className="w-3.5 h-3.5" /> Gaps to close
                           </p>
                           <div className="flex flex-wrap gap-1.5">
                             {gapData.missing.map(s => (
-                              <span key={s} className="text-[12px] font-bold px-2.5 py-1 rounded-full bg-[#fee2e2] text-[#b91c1c]">
-                                ✗ {s}
+                              <span key={s} className="text-[12px] font-semibold px-2.5 py-1 rounded-full border border-line text-ink-muted">
+                                {s}
                               </span>
                             ))}
                           </div>
@@ -666,25 +639,25 @@ export default function Opportunities() {
 
                       {gapData.plan.length > 0 && (
                         <div className="mb-4">
-                          <p className="text-[11px] font-extrabold text-[#8b5cf6] uppercase tracking-wider mb-2 flex items-center gap-1">
+                          <p className="text-[11px] font-bold text-ink-muted uppercase tracking-wider mb-2 flex items-center gap-1">
                             <BookOpen className="w-3.5 h-3.5" /> Your action plan
                           </p>
-                          <div className="space-y-2">
+                          <div>
                             {gapData.plan.map((p, i) => (
                               <motion.div
                                 key={i}
                                 initial={{ opacity: 0, x: -8 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ delay: i * 0.08 }}
-                                className="bg-gradient-to-br from-[#faf5ff] to-[#fdf2f8] rounded-2xl p-3 border border-[#f3e8ff]"
+                                className="py-3 border-t border-line first:border-t-0"
                               >
                                 <div className="flex items-start justify-between gap-2 mb-1">
-                                  <p className="text-[13px] font-extrabold text-[#0f172a] leading-tight">{p.title}</p>
-                                  <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-[#8b5cf6] text-white whitespace-nowrap">
+                                  <p className="text-[13px] font-semibold text-ink leading-tight">{p.title}</p>
+                                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border border-line text-ink-muted whitespace-nowrap">
                                     {p.hours}h
                                   </span>
                                 </div>
-                                <p className="text-[12px] text-[#64748b] font-medium leading-snug">{p.action}</p>
+                                <p className="text-[12px] text-ink-muted leading-snug">{p.action}</p>
                               </motion.div>
                             ))}
                           </div>
@@ -693,8 +666,7 @@ export default function Opportunities() {
 
                       <Button
                         onClick={goLearnGap}
-                        className="w-full h-12 rounded-2xl font-extrabold text-white text-[14px] shadow-lg"
-                        style={{ background: "linear-gradient(135deg,#8b5cf6,#ec4899)" }}
+                        className="w-full h-12 rounded-xl font-bold bg-ink text-paper text-[14px] hover:bg-ink"
                         data-testid="button-learn-gap"
                       >
                         <Sparkles className="w-4 h-4 mr-1.5" /> Learn the gap →

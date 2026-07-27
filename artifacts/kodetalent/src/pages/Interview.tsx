@@ -35,7 +35,9 @@ function stripMarkdown(text: string) {
     .replace(/`([^`]+)`/g, "$1");
 }
 
-function ScoreRing({ score, max, label, color }: { score: number; max: number; label: string; color: string }) {
+// `color` is kept in the prop signature for compatibility but is ignored —
+// score colour is always ink, never a threshold-based colour.
+function ScoreRing({ score, max, label }: { score: number; max: number; label: string; color?: string }) {
   const pct = Math.round((score / max) * 100);
   const r = 28;
   const circ = 2 * Math.PI * r;
@@ -43,16 +45,16 @@ function ScoreRing({ score, max, label, color }: { score: number; max: number; l
     <div className="flex flex-col items-center gap-1">
       <div className="relative w-16 h-16">
         <svg className="w-16 h-16 -rotate-90" viewBox="0 0 64 64">
-          <circle cx="32" cy="32" r={r} fill="none" stroke="#e0e7ff" strokeWidth="6" />
-          <motion.circle cx="32" cy="32" r={r} fill="none" stroke={color} strokeWidth="6" strokeLinecap="round"
+          <circle cx="32" cy="32" r={r} fill="none" stroke="#ececf0" strokeWidth="6" />
+          <motion.circle cx="32" cy="32" r={r} fill="none" stroke="#0f0f10" strokeWidth="6" strokeLinecap="round"
             strokeDasharray={circ} initial={{ strokeDashoffset: circ }}
             animate={{ strokeDashoffset: circ - (pct / 100) * circ }} transition={{ duration: 1, delay: 0.3 }} />
         </svg>
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-base font-black text-[#0f172a]">{score}</span>
+          <span className="text-base font-black text-ink">{score}</span>
         </div>
       </div>
-      <span className="text-[10px] font-bold text-[#64748b] uppercase tracking-wide">{label}</span>
+      <span className="text-[10px] font-bold text-ink-muted uppercase tracking-wide">{label}</span>
     </div>
   );
 }
@@ -480,7 +482,7 @@ export default function Interview() {
 
   // ─── Loading ────────────────────────────────────────────────────────────────
   if (sessionLoading) {
-    return <div className="p-4 flex justify-center items-center h-screen bg-white font-bold text-primary">Loading...</div>;
+    return <div className="p-4 flex justify-center items-center h-screen bg-paper font-bold text-ink">Loading...</div>;
   }
 
   // ─── Results screen ──────────────────────────────────────────────────────────
@@ -489,35 +491,29 @@ export default function Interview() {
     const avg = times.length ? Math.round(times.reduce((a, b) => a + b, 0) / times.length) : 0;
     const fastest = times.length ? Math.min(...times) : 0;
     const slowest = times.length ? Math.max(...times) : 0;
-    const ratingColor = !evalData?.overallRating ? "#4f46e5"
-      : evalData.overallRating.includes("Strong") ? "#10b981"
-      : evalData.overallRating.includes("No") ? "#ef4444"
-      : evalData.overallRating.includes("Lean") ? "#f97316"
-      : "#4f46e5";
     const [interviewTypeLabel] = (session?.round || "Technical").includes("|")
       ? (session?.round || "Technical|Standard").split("|")
       : [session?.round || "Technical"];
 
     return (
-      <div className="p-4 pb-24 max-w-md mx-auto space-y-4 min-h-screen bg-[#f8fafc]">
-        <Button variant="ghost" onClick={() => setLocation("/practice")} className="mb-2 -ml-2 text-[#64748b] font-bold">
+      <div className="p-4 pb-24 max-w-md mx-auto space-y-4 min-h-screen bg-paper">
+        <Button variant="ghost" onClick={() => setLocation("/practice")} className="mb-2 -ml-2 text-ink-muted font-bold">
           <ArrowLeft className="w-5 h-5 mr-2" /> Back
         </Button>
         <div className="text-center space-y-1">
-          <h1 className="text-3xl font-extrabold text-[#0f172a]">Interview Complete</h1>
-          <p className="text-[#64748b] font-bold">{interviewTypeLabel} · {session?.company}</p>
+          <h1 className="text-[26px] font-extrabold text-ink leading-[1.06] tracking-tight">Interview Complete</h1>
+          <p className="text-[12px] text-ink-muted font-bold">{interviewTypeLabel} · {session?.company}</p>
         </div>
 
         {/* Main score card */}
-        <Card className="border-0 shadow-[0_4px_24px_rgba(124,58,237,0.12)] rounded-3xl bg-white overflow-hidden">
-          <div className="h-2 w-full" style={{ background: "linear-gradient(90deg,#4f46e5,#ec4899)" }} />
+        <Card className="border border-line shadow-none rounded-2xl bg-paper overflow-hidden">
           <CardContent className="p-6 text-center">
-            <div className="text-[80px] font-black leading-none mb-1" style={{ color: ratingColor }}>
+            <div className="text-[80px] font-black leading-none mb-1 text-ink">
               {evalData?.overallScore ?? 85}
             </div>
-            <p className="text-xs font-extrabold uppercase tracking-widest text-[#64748b] mb-3">Overall Score</p>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-ink-muted mb-3">Overall Score</p>
             {evalData?.overallRating && (
-              <span className="px-4 py-1.5 rounded-full text-sm font-bold text-white" style={{ background: ratingColor }}>
+              <span className="px-4 py-1.5 rounded-full text-sm font-bold bg-ink text-paper">
                 {evalData.overallRating}
               </span>
             )}
@@ -533,19 +529,22 @@ export default function Interview() {
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{ delay: 0.3 }}
             >
-              <Card className="border-0 border-l-4 border-l-primary shadow-sm rounded-2xl bg-white">
+              <Card className="border border-line shadow-none rounded-2xl bg-paper">
                 <CardContent className="p-4">
                   {!showRealInterviewQ ? (
                     <>
-                      <p className="text-sm font-bold text-[#0f172a] mb-1">How confident did you feel?</p>
-                      <p className="text-xs text-[#94a3b8] mb-3">This helps us personalise your practice.</p>
+                      <p className="text-[14px] font-bold text-ink mb-1">How confident did you feel?</p>
+                      <p className="text-[12px] text-ink-muted mb-3">This helps us personalise your practice.</p>
                       <div className="flex justify-around">
                         {CONFIDENCE_EMOJIS.map(({ emoji, label }, i) => (
                           <button
                             key={i}
                             onClick={() => handleConfidenceRating(i + 1)}
                             title={label}
-                            className="text-2xl w-11 h-11 rounded-full hover:bg-[#f8fafc] transition active:scale-90 flex items-center justify-center"
+                            className={cn(
+                              "text-2xl w-11 h-11 rounded-full border transition active:scale-90 flex items-center justify-center",
+                              pendingRating === i + 1 ? "border-ink" : "border-line"
+                            )}
                           >
                             {emoji}
                           </button>
@@ -554,17 +553,17 @@ export default function Interview() {
                     </>
                   ) : (
                     <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }}>
-                      <p className="text-sm font-bold text-[#0f172a] mb-3">Do you have a real interview coming up?</p>
+                      <p className="text-[14px] font-bold text-ink mb-3">Do you have a real interview coming up?</p>
                       <div className="flex gap-3">
                         <button
                           onClick={() => handleRealInterview("yes")}
-                          className="flex-1 py-2.5 rounded-xl bg-primary text-white font-bold text-sm hover:bg-[#3730a3] transition"
+                          className="flex-1 py-2.5 rounded-xl bg-ink text-paper font-bold text-sm transition"
                         >
                           Yes, soon!
                         </button>
                         <button
                           onClick={() => handleRealInterview("no")}
-                          className="flex-1 py-2.5 rounded-xl bg-[#f8fafc] text-[#64748b] font-bold text-sm hover:bg-[#e0e7ff] transition"
+                          className="flex-1 py-2.5 rounded-xl border border-line text-ink font-bold text-sm transition"
                         >
                           Not yet
                         </button>
@@ -577,9 +576,11 @@ export default function Interview() {
           )}
           {confidenceSent && (
             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
-              <Card className="border-0 shadow-sm rounded-2xl bg-white">
+              <Card className="border border-line shadow-none rounded-2xl bg-paper">
                 <CardContent className="p-4 text-center">
-                  <p className="text-sm font-bold text-[#10b981]">✓ Thanks for the feedback!</p>
+                  <p className="text-[14px] font-bold text-ink">
+                    <span className="text-done">✓</span> Thanks for the feedback!
+                  </p>
                 </CardContent>
               </Card>
             </motion.div>
@@ -588,13 +589,13 @@ export default function Interview() {
 
         {/* Category scores */}
         {evalData && (
-          <Card className="border-0 shadow-sm rounded-2xl bg-white">
+          <Card className="border border-line shadow-none rounded-2xl bg-paper">
             <CardContent className="p-5">
-              <p className="text-xs font-extrabold uppercase tracking-wider text-[#64748b] mb-4">Category Scores</p>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-ink-muted mb-4">Category Scores</p>
               <div className="flex justify-around">
-                <ScoreRing score={evalData.communicationScore} max={10} label="Comms" color="#4f46e5" />
-                <ScoreRing score={evalData.technicalScore} max={10} label="Technical" color="#0ea5e9" />
-                <ScoreRing score={evalData.confidenceScore} max={10} label="Confidence" color="#10b981" />
+                <ScoreRing score={evalData.communicationScore} max={10} label="Comms" />
+                <ScoreRing score={evalData.technicalScore} max={10} label="Technical" />
+                <ScoreRing score={evalData.confidenceScore} max={10} label="Confidence" />
               </div>
             </CardContent>
           </Card>
@@ -602,20 +603,20 @@ export default function Interview() {
 
         {evalData && (
           <div className="space-y-3">
-            <Card className="border-0 border-l-4 border-l-[#10b981] shadow-sm rounded-2xl bg-white">
+            <Card className="border-0 border-l-2 border-line shadow-none rounded-none bg-paper">
               <CardContent className="p-4">
-                <p className="text-[11px] font-extrabold text-[#10b981] uppercase tracking-wider mb-1">💪 Strength</p>
-                <p className="text-sm font-medium text-[#0f172a]">{evalData.strongPoint}</p>
+                <p className="text-[11px] font-bold text-ink-muted uppercase tracking-wider mb-1">Strength</p>
+                <p className="text-[14px] font-medium text-ink">{evalData.strongPoint}</p>
               </CardContent>
             </Card>
-            <Card className="border-0 border-l-4 border-l-[#f97316] shadow-sm rounded-2xl bg-white">
+            <Card className="border-0 border-l-2 border-line shadow-none rounded-none bg-paper">
               <CardContent className="p-4">
-                <p className="text-[11px] font-extrabold text-[#f97316] uppercase tracking-wider mb-1">⚡ Work on this</p>
-                <p className="text-sm font-medium text-[#0f172a] mb-2">{evalData.weakPoint}</p>
+                <p className="text-[11px] font-bold text-ink-muted uppercase tracking-wider mb-1">Work on this</p>
+                <p className="text-[14px] font-medium text-ink mb-2">{evalData.weakPoint}</p>
                 <button
                   onClick={addWeakPointToTomorrow}
                   disabled={addedToTomorrow}
-                  className="text-xs font-bold text-[#f97316] disabled:text-[#94a3b8] disabled:cursor-default"
+                  className="text-[12px] font-bold text-ink disabled:text-ink-muted disabled:cursor-default"
                 >
                   {addedToTomorrow ? "Added to tomorrow's checklist ✓" : "Add to tomorrow's checklist"}
                 </button>
@@ -625,15 +626,15 @@ export default function Interview() {
         )}
 
         {times.length > 0 && (
-          <Card className="border-0 shadow-sm rounded-2xl bg-white">
+          <Card className="border border-line shadow-none rounded-2xl bg-paper">
             <CardContent className="p-4">
-              <p className="text-[11px] font-extrabold text-[#64748b] uppercase tracking-wider mb-3">
+              <p className="text-[11px] font-bold text-ink-muted uppercase tracking-wider mb-3">
                 <Clock className="w-3 h-3 inline mr-1" /> Response Times
               </p>
               <div className="grid grid-cols-3 gap-2 text-center">
-                <div><div className="text-lg font-black text-[#0f172a]">{formatTime(avg)}</div><div className="text-[10px] font-bold text-[#64748b]">Average</div></div>
-                <div><div className="text-lg font-black text-[#10b981]">{formatTime(fastest)}</div><div className="text-[10px] font-bold text-[#64748b]">Fastest</div></div>
-                <div><div className="text-lg font-black text-[#f97316]">{formatTime(slowest)}</div><div className="text-[10px] font-bold text-[#64748b]">Slowest</div></div>
+                <div><div className="text-lg font-black text-ink">{formatTime(avg)}</div><div className="text-[10px] font-bold text-ink-muted">Average</div></div>
+                <div><div className="text-lg font-black text-ink">{formatTime(fastest)}</div><div className="text-[10px] font-bold text-ink-muted">Fastest</div></div>
+                <div><div className="text-lg font-black text-ink">{formatTime(slowest)}</div><div className="text-[10px] font-bold text-ink-muted">Slowest</div></div>
               </div>
             </CardContent>
           </Card>
@@ -641,48 +642,47 @@ export default function Interview() {
 
         {evalData?.questionFeedback && evalData.questionFeedback.length > 0 && (
           <div>
-            <p className="text-[11px] font-extrabold text-[#64748b] uppercase tracking-wider mb-2 px-1">Q&A Review</p>
-            <div className="space-y-2">
+            <p className="text-[11px] font-bold text-ink-muted uppercase tracking-wider mb-2 px-1">Q&A Review</p>
+            <div>
               {evalData.questionFeedback.map((qf, i) => (
-                <Card key={i} className="border-0 shadow-sm rounded-2xl bg-white overflow-hidden">
-                  <button className="w-full p-4 text-left flex justify-between items-center"
+                <div key={i} className="border-t border-line first:border-t-0">
+                  <button className="w-full py-4 text-left flex justify-between items-center gap-2"
                     onClick={() => setExpandedFeedback(expandedFeedback === i ? null : i)}>
-                    <div className="flex items-center gap-2 flex-1 min-w-0">
-                      <span className={cn("w-7 h-7 rounded-full text-white text-xs font-black flex items-center justify-center flex-shrink-0",
-                        qf.score >= 8 ? "bg-[#10b981]" : qf.score >= 5 ? "bg-[#f97316]" : "bg-[#ef4444]")}>
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <span className="w-7 h-7 rounded-full border border-line text-ink text-xs font-black flex items-center justify-center flex-shrink-0">
                         {qf.score}
                       </span>
-                      <span className="text-sm font-bold text-[#0f172a] truncate">Q{i + 1}: {qf.question.slice(0, 50)}{qf.question.length > 50 ? "…" : ""}</span>
+                      <span className="text-[14px] font-bold text-ink truncate">Q{i + 1}: {qf.question.slice(0, 50)}{qf.question.length > 50 ? "…" : ""}</span>
                     </div>
-                    {expandedFeedback === i ? <ChevronUp className="w-4 h-4 text-[#64748b] flex-shrink-0" /> : <ChevronDown className="w-4 h-4 text-[#64748b] flex-shrink-0" />}
+                    {expandedFeedback === i ? <ChevronUp className="w-4 h-4 text-ink-muted flex-shrink-0" /> : <ChevronDown className="w-4 h-4 text-ink-muted flex-shrink-0" />}
                   </button>
                   <AnimatePresence>
                     {expandedFeedback === i && (
                       <motion.div initial={{ height: 0 }} animate={{ height: "auto" }} exit={{ height: 0 }} className="overflow-hidden">
-                        <div className="px-4 pb-4 space-y-3 border-t border-[#f3f4f6] pt-3">
+                        <div className="pb-4 space-y-3 border-t border-line pt-3">
                           <div>
-                            <p className="text-[10px] font-extrabold text-[#64748b] uppercase tracking-wider mb-1">Your Answer</p>
-                            <p className="text-sm text-[#0f172a]">{qf.studentAnswer || "(no answer)"}</p>
+                            <p className="text-[11px] font-bold text-ink-muted uppercase tracking-wider mb-1">Your Answer</p>
+                            <p className="text-[14px] text-ink">{qf.studentAnswer || "(no answer)"}</p>
                           </div>
                           <div>
-                            <p className="text-[10px] font-extrabold text-primary uppercase tracking-wider mb-1">✨ Better Answer</p>
-                            <p className="text-sm text-[#0f172a] bg-[#f8fafc] rounded-xl p-3">{qf.betterAnswer}</p>
+                            <p className="text-[11px] font-bold text-ink-muted uppercase tracking-wider mb-1">Better Answer</p>
+                            <p className="text-[14px] text-ink border border-line rounded-xl p-3">{qf.betterAnswer}</p>
                           </div>
                         </div>
                       </motion.div>
                     )}
                   </AnimatePresence>
-                </Card>
+                </div>
               ))}
             </div>
           </div>
         )}
 
         <div className="flex gap-3 pt-2">
-          <Button variant="outline" className="flex-1 rounded-full h-12 font-bold border-primary text-primary" onClick={() => setLocation("/practice")}>
+          <Button variant="outline" className="flex-1 rounded-full h-12 font-bold border border-line text-ink" onClick={() => setLocation("/practice")}>
             <RefreshCw className="w-4 h-4 mr-2" /> Try Again
           </Button>
-          <Button className="flex-1 rounded-full h-12 font-bold bg-primary text-white shadow-[0_4px_16px_rgba(124,58,237,0.3)]">
+          <Button className="flex-1 rounded-full h-12 font-bold bg-ink hover:bg-ink/90 text-paper">
             <Share2 className="w-4 h-4 mr-2" /> Share
           </Button>
         </div>
@@ -697,23 +697,23 @@ export default function Interview() {
     : [session?.round || "Technical"];
 
   return (
-    <div className="flex flex-col h-[100dvh] bg-white max-w-md mx-auto relative overflow-hidden">
+    <div className="flex flex-col h-[100dvh] bg-paper max-w-md mx-auto relative overflow-hidden">
       {/* Header */}
-      <div className="bg-white p-4 sticky top-0 z-10 shadow-[0_4px_24px_rgba(124,58,237,0.05)]">
+      <div className="bg-paper p-4 sticky top-0 z-10 border-b border-line">
         <div className="flex items-center justify-between mb-2">
-          <Button variant="ghost" size="icon" className="-ml-2 text-[#0f172a]" onClick={() => setLocation("/practice")}>
+          <Button variant="ghost" size="icon" className="-ml-2 text-ink" onClick={() => setLocation("/practice")}>
             <ArrowLeft className="w-6 h-6" />
           </Button>
           <div className="text-center">
-            <h1 className="font-extrabold text-base text-[#0f172a]">{interviewType} Interview</h1>
-            <p className="text-[11px] text-[#64748b] font-medium">{session?.company} · Q{questionCount}/{maxQuestions}</p>
+            <h1 className="font-extrabold text-base text-ink">{interviewType} Interview</h1>
+            <p className="text-[11px] text-ink-muted font-medium">{session?.company} · Q{questionCount}/{maxQuestions}</p>
           </div>
           <div className="flex items-center gap-1.5">
             <button
               onClick={toggleCameraMode}
               className={cn(
                 "w-9 h-9 rounded-full flex items-center justify-center transition-all",
-                cameraMode ? "bg-[#ec4899] text-white shadow-[0_0_0_3px_rgba(236,72,153,0.2)]" : "bg-[#f8fafc] text-[#64748b]"
+                cameraMode ? "bg-ink text-paper" : "border border-line text-ink-muted"
               )}
               aria-label="Toggle camera"
             >
@@ -723,7 +723,7 @@ export default function Interview() {
               onClick={toggleVoiceMode}
               className={cn(
                 "w-9 h-9 rounded-full flex items-center justify-center transition-all",
-                voiceMode ? "bg-primary text-white shadow-[0_0_0_3px_rgba(124,58,237,0.2)]" : "bg-[#f8fafc] text-[#64748b]"
+                voiceMode ? "bg-ink text-paper" : "border border-line text-ink-muted"
               )}
               aria-label="Toggle voice"
             >
@@ -731,13 +731,13 @@ export default function Interview() {
             </button>
           </div>
         </div>
-        <div className="h-1.5 w-full bg-[#e0e7ff] rounded-full overflow-hidden">
-          <motion.div className="h-full bg-primary rounded-full" initial={{ width: 0 }} animate={{ width: `${progressPercent}%` }} transition={{ duration: 0.5 }} />
+        <div className="h-1.5 w-full bg-line rounded-full overflow-hidden">
+          <motion.div className="h-full bg-ink rounded-full" initial={{ width: 0 }} animate={{ width: `${progressPercent}%` }} transition={{ duration: 0.5 }} />
         </div>
         <div className="flex justify-center gap-1.5 mt-2">
           {Array.from({ length: maxQuestions }).map((_, i) => (
             <div key={i} className={cn("h-1.5 rounded-full transition-all duration-300",
-              i < questionCount ? "bg-primary w-5" : "bg-[#e0e7ff] w-3")} />
+              i < questionCount ? "bg-ink w-5" : "bg-line w-3")} />
           ))}
         </div>
       </div>
@@ -749,7 +749,7 @@ export default function Interview() {
             initial={{ opacity: 0, scale: 0.6, y: -10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.6 }}
-            className="fixed top-[88px] right-3 z-20 w-[92px] h-[120px] rounded-2xl overflow-hidden shadow-[0_8px_24px_rgba(0,0,0,0.25)] border-2 border-white bg-[#0f172a] max-w-[calc(44vw-0.75rem)]"
+            className="fixed top-[88px] right-3 z-20 w-[92px] h-[120px] rounded-2xl overflow-hidden border border-line bg-ink max-w-[calc(44vw-0.75rem)]"
           >
             <video
               ref={videoRef}
@@ -760,20 +760,20 @@ export default function Interview() {
               style={{ transform: "scaleX(-1)" }}
             />
             {!cameraError && (
-              <div className="absolute top-1.5 left-1.5 flex items-center gap-1 bg-black/40 backdrop-blur-sm rounded-full px-1.5 py-0.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#ef4444] animate-pulse" />
-                <span className="text-[8px] font-extrabold text-white tracking-wider">LIVE</span>
+              <div className="absolute top-1.5 left-1.5 flex items-center gap-1 bg-ink/50 backdrop-blur-sm rounded-full px-1.5 py-0.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-paper animate-pulse" />
+                <span className="text-[8px] font-bold text-paper tracking-wider">LIVE</span>
               </div>
             )}
             {cameraError && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-2 bg-[#0f172a]/95">
-                <CameraOff className="w-5 h-5 text-[#ef4444] mb-1" />
-                <span className="text-[9px] font-bold text-white leading-tight">{cameraError}</span>
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-2 bg-ink/95">
+                <CameraOff className="w-5 h-5 text-danger mb-1" />
+                <span className="text-[9px] font-bold text-paper leading-tight">{cameraError}</span>
               </div>
             )}
             <button
               onClick={toggleCameraMode}
-              className="absolute bottom-1.5 right-1.5 w-6 h-6 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center text-white"
+              className="absolute bottom-1.5 right-1.5 w-6 h-6 rounded-full bg-ink/60 backdrop-blur-sm flex items-center justify-center text-paper"
               aria-label="Close camera"
             >
               <CameraOff className="w-3 h-3" />
@@ -785,7 +785,7 @@ export default function Interview() {
       {/* Timer */}
       {timerRunning && (
         <div className="flex justify-end px-4 pt-1">
-          <div className="flex items-center gap-1 text-xs font-bold" style={{ color: timerSeconds < 120 ? "#10b981" : timerSeconds < 240 ? "#f97316" : "#ef4444" }}>
+          <div className="flex items-center gap-1 text-[12px] font-bold text-ink-muted">
             <Clock className="w-3 h-3" /> {formatTime(timerSeconds)}
           </div>
         </div>
@@ -798,10 +798,10 @@ export default function Interview() {
             <motion.div key={msg.id} initial={{ opacity: 0, y: 10, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }}
               className={cn("flex", msg.sender === "user" ? "justify-end" : "justify-start")}>
               <div className={cn(
-                "max-w-[88%] px-5 py-4 text-[14px] font-medium shadow-[0_4px_24px_rgba(124,58,237,0.08)] whitespace-pre-wrap",
+                "max-w-[88%] px-5 py-4 text-[14px] font-medium whitespace-pre-wrap",
                 msg.sender === "user"
-                  ? "bg-primary text-white rounded-3xl rounded-tr-none"
-                  : "bg-white text-[#0f172a] rounded-3xl rounded-tl-none border-l-4 border-[#4f46e5]"
+                  ? "bg-ink text-paper rounded-3xl rounded-tr-none"
+                  : "bg-line text-ink rounded-3xl rounded-tl-none"
               )}>
                 {msg.text}
               </div>
@@ -809,25 +809,25 @@ export default function Interview() {
           ))}
           {isTyping && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start">
-              <div className="bg-white border-l-4 border-[#4f46e5] rounded-3xl rounded-tl-none px-5 py-5 flex space-x-1.5 shadow-[0_4px_24px_rgba(124,58,237,0.08)]">
-                <motion.div className="w-2 h-2 bg-primary/60 rounded-full" animate={{ y: [0, -5, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0 }} />
-                <motion.div className="w-2 h-2 bg-primary/60 rounded-full" animate={{ y: [0, -5, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }} />
-                <motion.div className="w-2 h-2 bg-primary/60 rounded-full" animate={{ y: [0, -5, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }} />
+              <div className="bg-line rounded-3xl rounded-tl-none px-5 py-5 flex space-x-1.5">
+                <motion.div className="w-2 h-2 bg-ink/60 rounded-full" animate={{ y: [0, -5, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0 }} />
+                <motion.div className="w-2 h-2 bg-ink/60 rounded-full" animate={{ y: [0, -5, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }} />
+                <motion.div className="w-2 h-2 bg-ink/60 rounded-full" animate={{ y: [0, -5, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }} />
               </div>
             </motion.div>
           )}
           {isSpeaking && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start">
-              <div className="bg-[#f8fafc] border border-[#e0e7ff] rounded-2xl px-4 py-2 flex items-center gap-2">
-                <Volume2 className="w-3.5 h-3.5 text-primary" />
+              <div className="bg-paper border border-line rounded-2xl px-4 py-2 flex items-center gap-2">
+                <Volume2 className="w-3.5 h-3.5 text-ink" />
                 <div className="flex gap-0.5">
                   {[0, 0.15, 0.3, 0.15, 0].map((delay, i) => (
-                    <motion.div key={i} className="w-0.5 rounded-full bg-primary"
+                    <motion.div key={i} className="w-0.5 rounded-full bg-ink"
                       animate={{ height: ["4px", "14px", "4px"] }}
                       transition={{ duration: 0.6, repeat: Infinity, delay }} />
                   ))}
                 </div>
-                <span className="text-xs font-bold text-primary">Speaking…</span>
+                <span className="text-[12px] font-bold text-ink">Speaking…</span>
               </div>
             </motion.div>
           )}
@@ -836,13 +836,13 @@ export default function Interview() {
       </div>
 
       {/* Input area */}
-      <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-white via-white to-transparent pt-6 pb-5 px-4 max-w-md mx-auto">
+      <div className="fixed bottom-0 left-0 right-0 bg-paper border-t border-line pt-4 pb-5 px-4 max-w-md mx-auto">
         {(isRecording || isTranscribing || isSpeaking) && (
           <motion.div animate={{ opacity: [0.5, 1, 0.5] }} transition={{ duration: 1, repeat: Infinity }}
-            className="text-center text-xs font-bold text-primary mb-2">
-            {isRecording ? "🎤 Listening… speak now, tap Stop when done"
-              : isTranscribing ? "✍️ Transcribing your answer…"
-              : "🔊 Interviewer speaking…"}
+            className="text-center text-[12px] font-bold text-ink-muted mb-2">
+            {isRecording ? "Listening… speak now, tap Stop when done"
+              : isTranscribing ? "Transcribing your answer…"
+              : "Interviewer speaking…"}
           </motion.div>
         )}
         <form onSubmit={handleTextSubmit} className="flex gap-2 items-end">
@@ -852,13 +852,16 @@ export default function Interview() {
               whileTap={{ scale: 0.92 }}
               onClick={toggleRecording}
               disabled={isTranscribing || isTyping}
-              className={cn(
-                "flex-1 h-14 rounded-full font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-60",
-                isRecording
-                  ? "bg-[#ef4444] text-white shadow-[0_0_0_6px_rgba(239,68,68,0.2)]"
-                  : "bg-primary text-white shadow-[0_4px_16px_rgba(124,58,237,0.3)]"
-              )}
+              className="relative flex-1 h-14 rounded-full font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-60 bg-ink text-paper"
             >
+              {isRecording && (
+                <motion.span
+                  aria-hidden
+                  className="absolute inset-0 rounded-full border-2 border-line pointer-events-none"
+                  animate={{ scale: [1, 1.06, 1], opacity: [0.9, 0.25, 0.9] }}
+                  transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
+                />
+              )}
               <Mic className="w-5 h-5" />
               {isRecording ? "Stop" : isTranscribing ? "Transcribing…" : "Tap to speak"}
             </motion.button>
@@ -875,7 +878,7 @@ export default function Interview() {
               placeholder="Type your answer… (Shift+Enter for new line)"
               disabled={isTyping}
               rows={3}
-              className="flex-1 min-h-[88px] max-h-[200px] rounded-2xl border-2 border-[#e0e7ff] focus-visible:border-primary focus-visible:ring-0 px-4 py-3 text-[15px] bg-[#fafaf9] text-[#0f172a] resize-none leading-relaxed"
+              className="flex-1 min-h-[88px] max-h-[200px] rounded-2xl border-2 border-line focus-visible:border-ink focus-visible:ring-0 px-4 py-3 text-[15px] bg-paper text-ink placeholder:text-ink-muted resize-none leading-relaxed"
             />
           )}
           {!voiceMode && (
@@ -884,7 +887,7 @@ export default function Interview() {
                 type="submit"
                 size="icon"
                 disabled={isTyping || !inputValue.trim()}
-                className="h-14 w-14 rounded-2xl bg-primary text-white shadow-[0_4px_16px_rgba(124,58,237,0.3)] flex-shrink-0"
+                className="h-14 w-14 rounded-2xl bg-ink hover:bg-ink/90 text-paper flex-shrink-0"
               >
                 <Send className="w-5 h-5" />
               </Button>

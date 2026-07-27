@@ -33,14 +33,13 @@ function StrengthArc({ value }: { value: number }) {
   const circ = 2 * Math.PI * r;
   const dash = (value / 100) * circ * 0.75;
   const gap = circ - dash;
-  const color = value >= 80 ? "#10b981" : value >= 50 ? "#4f46e5" : "#f97316";
 
   return (
     <svg width="100" height="100" viewBox="0 0 100 100">
-      <circle cx="50" cy="50" r={r} fill="none" stroke="#e0e7ff" strokeWidth="8" strokeDasharray={`${circ * 0.75} ${circ}`} strokeDashoffset={circ * 0.125} strokeLinecap="round" transform="rotate(-135 50 50)" />
-      <circle cx="50" cy="50" r={r} fill="none" stroke={color} strokeWidth="8" strokeDasharray={`${dash} ${gap + circ * 0.25}`} strokeDashoffset={circ * 0.125} strokeLinecap="round" transform="rotate(-135 50 50)" />
-      <text x="50" y="47" textAnchor="middle" className="fill-[#0f172a]" fontSize="16" fontWeight="900">{value}</text>
-      <text x="50" y="62" textAnchor="middle" className="fill-[#64748b]" fontSize="8">/ 100</text>
+      <circle cx="50" cy="50" r={r} fill="none" stroke="#ececf0" strokeWidth="8" strokeDasharray={`${circ * 0.75} ${circ}`} strokeDashoffset={circ * 0.125} strokeLinecap="round" transform="rotate(-135 50 50)" />
+      <circle cx="50" cy="50" r={r} fill="none" stroke="#0f0f10" strokeWidth="8" strokeDasharray={`${dash} ${gap + circ * 0.25}`} strokeDashoffset={circ * 0.125} strokeLinecap="round" transform="rotate(-135 50 50)" />
+      <text x="50" y="47" textAnchor="middle" className="fill-[#0f0f10]" fontSize="16" fontWeight="800">{value}</text>
+      <text x="50" y="62" textAnchor="middle" className="fill-[#9a9aa2]" fontSize="8">/ 100</text>
     </svg>
   );
 }
@@ -92,7 +91,7 @@ export function ProfileSidebar({ onClose }: { onClose: () => void }) {
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={onClose}
-        className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px]"
+        className="fixed inset-0 z-50 bg-ink/40"
       />
 
       <motion.div
@@ -100,66 +99,66 @@ export function ProfileSidebar({ onClose }: { onClose: () => void }) {
         animate={{ x: 0 }}
         exit={{ x: "100%" }}
         transition={{ type: "spring", damping: 28, stiffness: 280 }}
-        className="fixed right-0 top-0 bottom-0 z-[51] w-[92%] max-w-sm bg-white shadow-2xl flex flex-col overflow-hidden"
+        className="fixed right-0 top-0 bottom-0 z-[51] w-[92%] max-w-sm bg-paper border-l border-line flex flex-col overflow-hidden"
         style={{ backfaceVisibility: "hidden", willChange: "transform" }}
       >
         {/* Header */}
-        <div className="bg-gradient-to-br from-[#312e81] via-[#3730a3] to-[#4f46e5] px-5 pt-12 pb-6 text-white relative">
+        <div className="bg-paper border-b border-line px-5 pt-12 pb-6 relative">
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/20 flex items-center justify-center"
+            className="absolute top-4 right-4 w-8 h-8 rounded-full border border-line flex items-center justify-center"
           >
-            <X className="w-4 h-4 text-white" />
+            <X className="w-4 h-4 text-ink" />
           </button>
 
           <div className="flex items-center gap-4">
             <div className="relative">
-              <div className="w-16 h-16 rounded-2xl bg-white/20 border-2 border-white/40 flex items-center justify-center text-2xl font-black text-white">
+              <div className="w-16 h-16 rounded-2xl border-2 border-line flex items-center justify-center text-2xl font-extrabold text-ink">
                 {initials}
               </div>
               {profile?.openToWork && (
-                <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-[#10b981] border-2 border-white" />
+                <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-ink border-2 border-paper" />
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <h2 className="font-black text-lg leading-tight truncate">{profile?.name || "Loading..."}</h2>
-              <p className="text-white/80 text-xs mt-0.5 truncate">{profile?.college}</p>
-              <p className="text-white/60 text-[11px]">{profile?.field} · Year {profile?.year}</p>
+              <h2 className="text-[20px] font-extrabold text-ink leading-tight truncate">{profile?.name || "Loading..."}</h2>
+              <p className="text-[12px] text-ink-muted mt-0.5 truncate">{profile?.college}</p>
+              <p className="text-[11px] text-ink-muted">{profile?.field} · Year {profile?.year}</p>
             </div>
           </div>
 
           {profile?.openToWork && (
-            <div className="mt-3 inline-flex items-center gap-1.5 bg-[#10b981]/20 border border-[#10b981]/40 rounded-full px-3 py-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#10b981] animate-pulse" />
-              <span className="text-[11px] font-bold text-[#10b981]">Open to Opportunities</span>
+            <div className="mt-3 inline-flex items-center gap-1.5 border border-line rounded-full px-3 py-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-ink-muted" />
+              <span className="text-[11px] font-bold text-ink-muted">Open to Opportunities</span>
             </div>
           )}
         </div>
 
         {/* Scrollable content */}
-        <div className="flex-1 overflow-y-auto bg-[#f8fafc]">
+        <div className="flex-1 overflow-y-auto bg-paper">
 
           {/* Score + Strength */}
           <div className="px-4 pt-4">
-            <div className="bg-white rounded-2xl p-4 shadow-sm">
+            <div className="border border-line rounded-2xl p-4">
               <div className="flex items-center justify-between">
                 <div className="flex-1">
-                  <h3 className="font-black text-[#0f172a] text-sm mb-3">Profile Strength</h3>
+                  <h3 className="text-[14px] font-extrabold text-ink mb-3">Profile Strength</h3>
                   <div className="grid grid-cols-2 gap-2">
-                    <div className="bg-[#f8fafc] rounded-xl p-2.5 text-center">
-                      <p className="text-lg font-black text-[#4f46e5]">{profile ? Math.round(profile.overallScore) : "—"}</p>
-                      <p className="text-[10px] text-[#64748b] font-bold uppercase">AI Score</p>
+                    <div className="border border-line rounded-xl p-2.5 text-center">
+                      <p className="text-lg font-extrabold text-ink">{profile ? Math.round(profile.overallScore) : "—"}</p>
+                      <p className="text-[10px] text-ink-muted font-bold uppercase">AI Score</p>
                     </div>
-                    <div className="bg-[#f8fafc] rounded-xl p-2.5 text-center">
+                    <div className="border border-line rounded-xl p-2.5 text-center">
                       {profile?.githubUrl ? (
                         <>
-                          <p className="text-lg font-black text-[#0ea5e9]">{profile?.commitmentScore ?? "—"}</p>
-                          <p className="text-[10px] text-[#64748b] font-bold uppercase">Commitment</p>
+                          <p className="text-lg font-extrabold text-ink">{profile?.commitmentScore ?? "—"}</p>
+                          <p className="text-[10px] text-ink-muted font-bold uppercase">Commitment</p>
                         </>
                       ) : (
                         <>
-                          <p className="text-lg font-black text-[#94a3b8]">—</p>
-                          <p className="text-[10px] text-[#94a3b8] font-bold uppercase">Link GitHub</p>
+                          <p className="text-lg font-extrabold text-ink-muted">—</p>
+                          <p className="text-[10px] text-ink-muted font-bold uppercase">Link GitHub</p>
                         </>
                       )}
                     </div>
@@ -173,17 +172,17 @@ export function ProfileSidebar({ onClose }: { onClose: () => void }) {
           {/* Links */}
           {profile && (profile.githubUrl || profile.linkedinUrl || profile.portfolioUrl || profile.phone) && (
             <div className="px-4 pt-3">
-              <div className="bg-white rounded-2xl p-4 shadow-sm space-y-2.5">
+              <div className="border border-line rounded-2xl p-4 space-y-2.5">
                 {[
-                  { icon: Github, value: profile.githubUrl, color: "#0f172a" },
-                  { icon: Linkedin, value: profile.linkedinUrl, color: "#0077b5" },
-                  { icon: Globe, value: profile.portfolioUrl, color: "#4f46e5" },
-                  { icon: Phone, value: profile.phone, color: "#10b981" },
-                ].filter(l => l.value).map(({ icon: Icon, value, color }, i) => (
+                  { icon: Github, value: profile.githubUrl },
+                  { icon: Linkedin, value: profile.linkedinUrl },
+                  { icon: Globe, value: profile.portfolioUrl },
+                  { icon: Phone, value: profile.phone },
+                ].filter(l => l.value).map(({ icon: Icon, value }, i) => (
                   <div key={i} className="flex items-center gap-2">
-                    <Icon className="w-4 h-4 shrink-0" style={{ color }} />
+                    <Icon className="w-4 h-4 shrink-0 text-ink" />
                     <a href={value.startsWith("http") ? value : `https://${value}`} target="_blank" rel="noopener noreferrer"
-                      className="text-xs font-bold truncate flex-1" style={{ color }}>
+                      className="text-[12px] font-bold text-ink truncate flex-1">
                       {value.replace(/^https?:\/\/(www\.)?/, "")}
                       <ExternalLink className="w-2.5 h-2.5 inline-block ml-0.5" />
                     </a>
@@ -196,9 +195,9 @@ export function ProfileSidebar({ onClose }: { onClose: () => void }) {
           {/* Bio */}
           {profile?.bio && (
             <div className="px-4 pt-3">
-              <div className="bg-white rounded-2xl p-4 shadow-sm">
-                <h3 className="font-black text-[#0f172a] text-sm mb-2">About</h3>
-                <p className="text-xs text-[#64748b] leading-relaxed">{profile.bio}</p>
+              <div className="border border-line rounded-2xl p-4">
+                <h3 className="text-[14px] font-extrabold text-ink mb-2">About</h3>
+                <p className="text-[12px] text-ink-muted leading-relaxed">{profile.bio}</p>
               </div>
             </div>
           )}
@@ -206,24 +205,24 @@ export function ProfileSidebar({ onClose }: { onClose: () => void }) {
           {/* Top skills */}
           {topSkills.length > 0 && (
             <div className="px-4 pt-3">
-              <div className="bg-white rounded-2xl p-4 shadow-sm">
+              <div className="border border-line rounded-2xl p-4">
                 <div className="flex items-center gap-2 mb-3">
-                  <BarChart2 className="w-4 h-4 text-[#4f46e5]" />
-                  <h3 className="font-black text-[#0f172a] text-sm">Top Skills</h3>
+                  <BarChart2 className="w-4 h-4 text-ink" />
+                  <h3 className="text-[14px] font-extrabold text-ink">Top Skills</h3>
                 </div>
                 <div className="space-y-2">
                   {topSkills.map(([skill, val]) => (
                     <div key={skill} className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-[#0f172a] w-20 shrink-0 truncate">{skill}</span>
-                      <div className="flex-1 h-1.5 bg-[#f8fafc] rounded-full overflow-hidden">
+                      <span className="text-[12px] font-bold text-ink w-20 shrink-0 truncate">{skill}</span>
+                      <div className="flex-1 h-1.5 bg-line rounded-full overflow-hidden">
                         <motion.div
                           initial={{ width: 0 }}
                           animate={{ width: `${val}%` }}
                           transition={{ duration: 0.6, ease: "easeOut" }}
-                          className="h-full rounded-full bg-gradient-to-r from-[#4f46e5] to-[#0ea5e9]"
+                          className="h-full rounded-full bg-ink"
                         />
                       </div>
-                      <span className="text-[10px] font-black text-[#4f46e5] w-6 text-right">{val}</span>
+                      <span className="text-[10px] font-extrabold text-ink w-6 text-right">{val}</span>
                     </div>
                   ))}
                 </div>
@@ -234,16 +233,16 @@ export function ProfileSidebar({ onClose }: { onClose: () => void }) {
           {/* Projects count + Certs count */}
           {profile && (
             <div className="px-4 pt-3">
-              <div className="bg-white rounded-2xl p-4 shadow-sm">
+              <div className="border border-line rounded-2xl p-4">
                 <div className="flex justify-around">
                   <div className="text-center">
-                    <p className="text-2xl font-black text-[#4f46e5]">{profile.projects?.length ?? 0}</p>
-                    <p className="text-[10px] text-[#64748b] font-bold uppercase">Projects</p>
+                    <p className="text-2xl font-extrabold text-ink">{profile.projects?.length ?? 0}</p>
+                    <p className="text-[10px] text-ink-muted font-bold uppercase">Projects</p>
                   </div>
-                  <div className="w-px bg-[#f8fafc]" />
+                  <div className="w-px bg-line" />
                   <div className="text-center">
-                    <p className="text-2xl font-black text-[#10b981]">{profile.certifications?.length ?? 0}</p>
-                    <p className="text-[10px] text-[#64748b] font-bold uppercase">Certifications</p>
+                    <p className="text-2xl font-extrabold text-ink">{profile.certifications?.length ?? 0}</p>
+                    <p className="text-[10px] text-ink-muted font-bold uppercase">Certifications</p>
                   </div>
                 </div>
               </div>
@@ -253,14 +252,14 @@ export function ProfileSidebar({ onClose }: { onClose: () => void }) {
           <div className="px-4 pt-4 pb-6">
             <button
               onClick={goToProfile}
-              className="w-full bg-gradient-to-r from-[#4f46e5] to-[#6366f1] text-white font-black py-3.5 rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-[#4f46e5]/25 active:scale-95 transition-transform"
+              className="w-full bg-ink text-paper font-bold py-3.5 rounded-2xl flex items-center justify-center gap-2 active:scale-95 transition-transform"
             >
               <Edit2 className="w-4 h-4" />
               Edit Full Profile
             </button>
             <button
               onClick={logout}
-              className="w-full mt-3 bg-white border-2 border-[#e2e8f0] text-[#ef4444] font-black py-3.5 rounded-2xl flex items-center justify-center gap-2 active:scale-95 transition-transform"
+              className="w-full mt-3 border border-line text-danger font-bold py-3.5 rounded-2xl flex items-center justify-center gap-2 active:scale-95 transition-transform"
             >
               <X className="w-4 h-4" />
               Log out

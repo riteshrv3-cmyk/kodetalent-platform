@@ -9,7 +9,6 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { apiFetch } from "@/lib/api/authFetch";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -134,10 +133,10 @@ function extractYouTubeId(url: string): string | null {
 // ─── Lesson type config ───────────────────────────────────────────────────────
 
 const LESSON_TYPE = {
-  video:    { Icon: PlayCircle,  label: "Video",    color: "#ef4444", bg: "#fef2f2" },
-  reading:  { Icon: FileText,    label: "Reading",  color: "#3b82f6", bg: "#eff6ff" },
-  exercise: { Icon: PenLine,     label: "Exercise", color: "#10b981", bg: "#ecfdf5" },
-  project:  { Icon: Hammer,      label: "Project",  color: "#f97316", bg: "#fff7ed" },
+  video:    { Icon: PlayCircle,  label: "Video" },
+  reading:  { Icon: FileText,    label: "Reading" },
+  exercise: { Icon: PenLine,     label: "Exercise" },
+  project:  { Icon: Hammer,      label: "Project" },
 };
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -366,8 +365,6 @@ export default function Course() {
 
   if (!ctx) return null;
 
-  const color = ctx.domainColor;
-  const bg = ctx.domainBg;
   const isLoading = !dataReady || !animReady;
 
   // ── Live-generation animation ──────────────────────────────────────────────
@@ -381,10 +378,10 @@ export default function Course() {
     const progressPct = Math.min(100, Math.round((msgIndex / (LOAD_MSGS.length - 1)) * 100));
 
     return (
-      <div className="min-h-screen bg-[#f8fafc] flex flex-col px-6 pb-28 pt-16">
+      <div className="min-h-screen bg-paper flex flex-col px-6 pb-28 pt-16">
         {/* Domain pill */}
         <div className="flex justify-center mb-8">
-          <span className="text-xs font-extrabold px-3 py-1 rounded-full" style={{ background: bg, color }}>
+          <span className="text-xs font-extrabold px-3 py-1 rounded-full border border-line text-ink-muted">
             {ctx.domainEmoji} {ctx.domainName}
           </span>
         </div>
@@ -394,30 +391,28 @@ export default function Course() {
           <motion.div
             animate={{ scale: [1, 1.15, 1], opacity: [0.85, 1, 0.85] }}
             transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
-            className="w-24 h-24 rounded-3xl flex items-center justify-center text-5xl shadow-lg"
-            style={{ background: bg }}
+            className="w-24 h-24 rounded-3xl flex items-center justify-center text-5xl border border-line bg-paper"
           >
             {ctx.domainEmoji}
           </motion.div>
         </div>
 
         {/* Title */}
-        <h2 className="text-xl font-extrabold text-[#0f172a] text-center mb-1">
+        <h2 className="text-xl font-extrabold text-ink text-center mb-1">
           {ctx.subDomainName} Course
         </h2>
-        <p className="text-[13px] text-[#64748b] text-center mb-8">AI is building your personalised course</p>
+        <p className="text-[13px] text-ink-muted text-center mb-8">AI is building your personalised course</p>
 
         {/* Progress bar */}
-        <div className="w-full bg-white rounded-full h-2 mb-3 shadow-inner overflow-hidden">
+        <div className="w-full bg-line rounded-full h-2 mb-3 overflow-hidden">
           <motion.div
-            className="h-full rounded-full"
-            style={{ background: color }}
+            className="h-full rounded-full bg-ink"
             initial={{ width: "4%" }}
             animate={{ width: `${progressPct}%` }}
             transition={{ duration: 0.5, ease: "easeOut" }}
           />
         </div>
-        <p className="text-[11px] font-extrabold text-center mb-8" style={{ color }}>{progressPct}%</p>
+        <p className="text-[11px] font-extrabold text-center mb-8 text-ink">{progressPct}%</p>
 
         {/* Rotating message */}
         <div className="h-8 flex items-center justify-center mb-10">
@@ -428,39 +423,39 @@ export default function Course() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -6 }}
               transition={{ duration: 0.25 }}
-              className="text-sm font-extrabold text-[#0f172a] text-center"
+              className="text-sm font-bold text-ink-muted text-center"
             >
-              ✦ {LOAD_MSGS[msgIndex]}
+              {LOAD_MSGS[msgIndex]}
             </motion.p>
           </AnimatePresence>
         </div>
 
         {/* Step checklist */}
-        <div className="space-y-3">
+        <div>
           {steps.map((step, i) => (
             <motion.div
               key={step.label}
               initial={{ opacity: 0, x: -12 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: i * 0.12 }}
-              className="flex items-center gap-3 bg-white rounded-2xl px-4 py-3 shadow-sm"
+              className="flex items-center gap-3 py-4 border-t border-line first:border-t-0"
             >
               <div className={cn(
                 "w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-500",
-                step.done ? "bg-[#10b981]" : "border-2"
-              )} style={!step.done ? { borderColor: `${color}50` } : {}}>
+                step.done ? "bg-done" : "border border-line"
+              )}>
                 {step.done && (
                   <motion.svg initial={{ scale: 0 }} animate={{ scale: 1 }} viewBox="0 0 12 12" className="w-3 h-3">
-                    <polyline points="1.5,6 5,9.5 10.5,2.5" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    <polyline points="1.5,6 5,9.5 10.5,2.5" fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                   </motion.svg>
                 )}
               </div>
-              <p className={cn("text-[13px] font-bold", step.done ? "text-[#0f172a]" : "text-[#94a3b8]")}>
+              <p className={cn("text-[13px] font-bold", step.done ? "text-ink" : "text-ink-muted")}>
                 {step.label}
               </p>
               {!step.done && (
                 <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ duration: 1.2, repeat: Infinity }}
-                  className="ml-auto w-1.5 h-1.5 rounded-full" style={{ background: color }} />
+                  className="ml-auto w-1.5 h-1.5 rounded-full bg-ink" />
               )}
             </motion.div>
           ))}
@@ -471,11 +466,10 @@ export default function Course() {
 
   if (error || !courseData) {
     return (
-      <div className="min-h-screen bg-[#f8fafc] flex flex-col items-center justify-center px-6 pb-28">
-        <div className="text-5xl mb-4">😕</div>
-        <h2 className="text-lg font-extrabold text-[#0f172a] mb-2">Something went wrong</h2>
-        <p className="text-sm text-[#64748b] text-center mb-6">{error}</p>
-        <Button onClick={() => { setDataReady(false); setAnimReady(false); setMsgIndex(0); hasFetched.current = false; }} style={{ background: color }} className="text-white rounded-xl px-6">
+      <div className="min-h-screen bg-paper flex flex-col items-center justify-center px-6 pb-28">
+        <h2 className="text-lg font-extrabold text-ink mb-2">Something went wrong</h2>
+        <p className="text-sm text-ink-muted text-center mb-6">{error}</p>
+        <Button onClick={() => { setDataReady(false); setAnimReady(false); setMsgIndex(0); hasFetched.current = false; }} className="bg-ink hover:bg-ink/90 text-paper font-bold rounded-xl px-6">
           Try again
         </Button>
       </div>
@@ -498,28 +492,27 @@ export default function Course() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] pb-28">
+    <div className="min-h-screen bg-paper pb-28">
       {/* Sticky header */}
-      <div className="sticky top-0 z-10 bg-[#f8fafc] px-4 pt-4 pb-0">
+      <div className="sticky top-0 z-10 bg-paper px-4 pt-4 pb-0">
         <div className="flex items-center gap-2 mb-3">
           <button onClick={() => setLocation("/opportunities")}
-            className="w-9 h-9 rounded-full bg-white shadow-sm flex items-center justify-center flex-shrink-0">
-            <ArrowLeft className="w-5 h-5 text-[#0f172a]" />
+            className="w-9 h-9 rounded-full border border-line flex items-center justify-center flex-shrink-0">
+            <ArrowLeft className="w-5 h-5 text-ink" />
           </button>
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-extrabold text-[#64748b] truncate">{ctx.domainEmoji} {ctx.domainName}</p>
-            <h1 className="text-[17px] font-extrabold text-[#0f172a] truncate">{ctx.subDomainName}</h1>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-ink-muted truncate">{ctx.domainEmoji} {ctx.domainName}</p>
+            <h1 className="text-[17px] font-extrabold text-ink truncate">{ctx.subDomainName}</h1>
           </div>
         </div>
-        <div className="flex bg-white rounded-2xl p-1 shadow-sm mb-1">
+        <div className="flex gap-2 mb-1">
           {TABS.map(tab => {
             const Icon = tab.icon;
             const active = activeTab === tab.id;
             return (
               <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                className={cn("flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-[12px] font-extrabold transition-all",
-                  active ? "text-white shadow-sm" : "text-[#64748b]")}
-                style={active ? { background: color } : {}}>
+                className={cn("flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-[12px] font-extrabold transition-colors",
+                  active ? "bg-ink text-paper" : "text-ink-muted border border-line")}>
                 <Icon className="w-3.5 h-3.5" />{tab.label}
               </button>
             );
@@ -537,27 +530,25 @@ export default function Course() {
             <motion.div key="roadmap" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
 
               {/* Hero progress banner */}
-              <div className="rounded-2xl p-4 mb-4 overflow-hidden relative" style={{ background: color }}>
-                <div className="absolute -right-6 -top-6 w-28 h-28 rounded-full opacity-10 bg-white" />
-                <div className="absolute -right-2 -bottom-8 w-36 h-36 rounded-full opacity-10 bg-white" />
-                <div className="flex items-center gap-4 relative z-10">
+              <div className="rounded-2xl border border-line bg-paper p-4 mb-4">
+                <div className="flex items-center gap-4">
                   {/* Circular progress ring */}
                   <div className="relative flex-shrink-0 w-16 h-16">
                     <svg className="w-16 h-16 -rotate-90" viewBox="0 0 64 64">
-                      <circle cx="32" cy="32" r="26" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="6" />
-                      <circle cx="32" cy="32" r="26" fill="none" stroke="white" strokeWidth="6"
+                      <circle cx="32" cy="32" r="26" fill="none" className="stroke-line" strokeWidth="6" />
+                      <circle cx="32" cy="32" r="26" fill="none" className="stroke-ink transition-all duration-700" strokeWidth="6"
                         strokeDasharray={`${2 * Math.PI * 26}`}
                         strokeDashoffset={`${2 * Math.PI * 26 * (1 - overallPct / 100)}`}
-                        strokeLinecap="round" className="transition-all duration-700" />
+                        strokeLinecap="round" />
                     </svg>
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="text-white font-extrabold text-[13px]">{overallPct}%</span>
+                      <span className="text-ink font-extrabold text-[13px]">{overallPct}%</span>
                     </div>
                   </div>
-                  <div className="text-white">
-                    <p className="font-extrabold text-base leading-tight">{ctx.subDomainName} Course</p>
-                    <p className="text-[12px] opacity-80 mt-0.5">{completedCount} / {totalLessons} lessons complete</p>
-                    <p className="text-[11px] opacity-70 mt-1">{courseData.modules.length} modules · {ctx.skills.slice(0, 2).join(", ")}</p>
+                  <div>
+                    <p className="font-extrabold text-base leading-tight text-ink">{ctx.subDomainName} Course</p>
+                    <p className="text-[12px] text-ink-muted mt-0.5">{completedCount} / {totalLessons} lessons complete</p>
+                    <p className="text-[11px] text-ink-muted mt-1">{courseData.modules.length} modules · {ctx.skills.slice(0, 2).join(", ")}</p>
                   </div>
                 </div>
               </div>
@@ -573,25 +564,24 @@ export default function Course() {
                   setLocation(`/profile?${params.toString()}`);
                 }}
                 data-testid="cta-build-project"
-                className="w-full mb-4 rounded-2xl p-4 text-left bg-white border-2 border-dashed hover:bg-[#fafbff] transition-colors flex items-center gap-3 group"
-                style={{ borderColor: `${color}55` }}
+                className="w-full mb-4 rounded-2xl p-4 text-left bg-paper border border-line hover:bg-line/40 transition-colors flex items-center gap-3 group"
               >
-                <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 text-white text-lg" style={{ background: color }}>
+                <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 border border-line text-lg">
                   🚀
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-extrabold text-[#0f172a] text-[14px] leading-tight">
+                  <p className="font-extrabold text-ink text-[14px] leading-tight">
                     {overallPct === 100 ? "Course complete! Ship a project →" : "Build a project with what you've learned →"}
                   </p>
-                  <p className="text-[11px] text-[#64748b] mt-0.5 truncate">
+                  <p className="text-[11px] text-ink-muted mt-0.5 truncate">
                     Add a {ctx.subDomainName} project to your profile — recruiters &amp; TPOs will see it
                   </p>
                 </div>
-                <ArrowLeft className="w-4 h-4 text-[#94a3b8] rotate-180 group-hover:text-[#4f46e5] flex-shrink-0" />
+                <ArrowLeft className="w-4 h-4 text-ink-muted rotate-180 group-hover:text-ink flex-shrink-0" />
               </button>
 
               {/* Module accordion */}
-              <div className="space-y-3">
+              <div>
                 {courseData.modules.map((mod, modIdx) => {
                   const lessons = mod.lessons ?? [];
                   const modCompleted = lessons.filter(l => completedLessons.has(l.id)).length;
@@ -600,40 +590,40 @@ export default function Course() {
                   const isLocked = modIdx > 0 && courseData.modules[modIdx - 1].lessons?.every(l => !completedLessons.has(l.id));
 
                   return (
-                    <motion.div key={mod.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: modIdx * 0.07 }}>
+                    <motion.div key={mod.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: modIdx * 0.07 }}
+                      className="border-t border-line first:border-t-0">
                       {/* Module header */}
                       <button
                         onClick={() => { setExpandedModule(isExpanded ? null : mod.id); setExpandedLesson(null); }}
-                        className="w-full bg-white rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] overflow-hidden text-left"
+                        className="w-full overflow-hidden text-left"
                       >
-                        <div className="p-4">
+                        <div className="py-4">
                           <div className="flex items-center gap-3">
                             {/* Module icon circle */}
-                            <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 text-xl"
-                              style={{ background: modCompleted === lessons.length && lessons.length > 0 ? color : bg }}>
+                            <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 text-xl border border-line bg-paper">
                               {modCompleted === lessons.length && lessons.length > 0
-                                ? <CheckCircle2 className="w-5 h-5 text-white" />
+                                ? <CheckCircle2 className="w-5 h-5 text-done" />
                                 : <span>{mod.emoji}</span>}
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-start justify-between gap-2">
                                 <div>
-                                  <p className="text-[11px] font-extrabold uppercase tracking-wider" style={{ color }}>
+                                  <p className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">
                                     Module {modIdx + 1}
                                   </p>
-                                  <p className="font-extrabold text-[#0f172a] text-[14px] leading-tight">{mod.title}</p>
+                                  <p className="font-extrabold text-ink text-[14px] leading-tight">{mod.title}</p>
                                 </div>
                                 <div className="flex items-center gap-1.5 flex-shrink-0">
-                                  {isLocked && <Lock className="w-3.5 h-3.5 text-[#94a3b8]" />}
-                                  <ChevronDown className={cn("w-4 h-4 text-[#64748b] transition-transform duration-200", isExpanded && "rotate-180")} />
+                                  {isLocked && <Lock className="w-3.5 h-3.5 text-ink-muted" />}
+                                  <ChevronDown className={cn("w-4 h-4 text-ink-muted transition-transform duration-200", isExpanded && "rotate-180")} />
                                 </div>
                               </div>
                               {/* Progress bar */}
                               <div className="flex items-center gap-2 mt-2">
-                                <div className="flex-1 h-1.5 bg-[#f3f4f6] rounded-full overflow-hidden">
-                                  <div className="h-full rounded-full transition-all duration-500" style={{ width: `${modPct}%`, background: color }} />
+                                <div className="flex-1 h-1.5 bg-line rounded-full overflow-hidden">
+                                  <div className="h-full rounded-full bg-ink transition-all duration-500" style={{ width: `${modPct}%` }} />
                                 </div>
-                                <span className="text-[10px] font-bold text-[#64748b] whitespace-nowrap">
+                                <span className="text-[10px] font-bold text-ink-muted whitespace-nowrap">
                                   {modCompleted}/{lessons.length} · <Clock className="w-2.5 h-2.5 inline" /> {mod.duration}
                                 </span>
                               </div>
@@ -649,10 +639,10 @@ export default function Course() {
                               animate={{ height: "auto", opacity: 1 }}
                               exit={{ height: 0, opacity: 0 }}
                               transition={{ duration: 0.25, ease: "easeInOut" }}
-                              className="overflow-hidden border-t border-[#f3f4f6]"
+                              className="overflow-hidden border-t border-line"
                               onClick={e => e.stopPropagation()}
                             >
-                              <div className="px-4 py-1">
+                              <div className="pl-3 py-1">
                                 {lessons.map((lesson, lessonIdx) => {
                                   const cfg = LESSON_TYPE[lesson.type] ?? LESSON_TYPE.video;
                                   const LIcon = cfg.Icon;
@@ -660,40 +650,38 @@ export default function Course() {
                                   const lessonOpen = expandedLesson === lesson.id;
 
                                   return (
-                                    <div key={lesson.id}>
+                                    <div key={lesson.id} className="border-t border-line first:border-t-0">
                                       {/* Lesson row */}
                                       <button
                                         onClick={() => setExpandedLesson(lessonOpen ? null : lesson.id)}
-                                        className="w-full flex items-center gap-3 py-3 text-left border-b border-[#f9fafb] last:border-0"
+                                        className="w-full flex items-center gap-3 py-3 text-left"
                                       >
                                         {/* Type icon */}
-                                        <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
-                                          style={{ background: done ? "#ecfdf5" : cfg.bg }}>
+                                        <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 border border-line">
                                           {done
-                                            ? <CheckCircle2 className="w-4 h-4 text-[#10b981]" />
-                                            : <LIcon className="w-4 h-4" style={{ color: cfg.color }} />}
+                                            ? <CheckCircle2 className="w-4 h-4 text-done" />
+                                            : <LIcon className="w-4 h-4 text-ink-muted" />}
                                         </div>
                                         <div className="flex-1 min-w-0">
                                           <p className={cn("text-[13px] font-bold leading-tight",
-                                            done ? "text-[#94a3b8] line-through" : "text-[#0f172a]")}>
+                                            done ? "text-ink-muted line-through" : "text-ink")}>
                                             {lessonIdx + 1}. {lesson.title}
                                           </p>
                                           <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
-                                              style={{ background: cfg.bg, color: cfg.color }}>
+                                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full border border-line text-ink-muted">
                                               {cfg.label}
                                             </span>
-                                            <span className="text-[10px] text-[#64748b] font-bold flex items-center gap-1">
+                                            <span className="text-[10px] text-ink-muted font-bold flex items-center gap-1">
                                               <Clock className="w-2.5 h-2.5" />{lesson.duration}
                                             </span>
                                             {lesson.type === "video" && watchedVideos.has(lesson.id) && (
-                                              <span className="flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[#eff6ff] text-[#3b82f6]">
+                                              <span className="flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full border border-line text-ink-muted">
                                                 <Eye className="w-2.5 h-2.5" /> Watched
                                               </span>
                                             )}
                                           </div>
                                         </div>
-                                        <ChevronRight className={cn("w-4 h-4 text-[#94a3b8] transition-transform flex-shrink-0", lessonOpen && "rotate-90")} />
+                                        <ChevronRight className={cn("w-4 h-4 text-ink-muted transition-transform flex-shrink-0", lessonOpen && "rotate-90")} />
                                       </button>
 
                                       {/* Lesson detail — inline expand */}
@@ -706,23 +694,23 @@ export default function Course() {
                                             transition={{ duration: 0.2 }}
                                             className="overflow-hidden"
                                           >
-                                            <div className="ml-11 mb-3 rounded-2xl overflow-hidden" style={{ background: bg }}>
+                                            <div className="ml-11 mb-3 rounded-2xl overflow-hidden border border-line bg-paper">
                                               {/* Description */}
                                               <div className="p-4 pb-3">
-                                                <p className="text-xs text-[#0f172a] font-bold leading-relaxed mb-3">
+                                                <p className="text-xs text-ink font-bold leading-relaxed mb-3">
                                                   {lesson.description}
                                                 </p>
 
                                                 {/* Key points */}
                                                 {lesson.keyPoints?.length > 0 && (
                                                   <div className="space-y-1.5 mb-4">
-                                                    <p className="text-[10px] font-extrabold uppercase tracking-wider" style={{ color }}>
+                                                    <p className="text-[10px] font-bold uppercase tracking-wider text-ink-muted">
                                                       What you'll learn
                                                     </p>
                                                     {lesson.keyPoints.map((pt, i) => (
                                                       <div key={i} className="flex items-start gap-2">
-                                                        <div className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0" style={{ background: color }} />
-                                                        <p className="text-[12px] text-[#374151] font-bold leading-snug">{pt}</p>
+                                                        <div className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 bg-ink" />
+                                                        <p className="text-[12px] text-ink font-bold leading-snug">{pt}</p>
                                                       </div>
                                                     ))}
                                                   </div>
@@ -736,7 +724,7 @@ export default function Course() {
                                                       /* Playing — show close button */
                                                       <button
                                                         onClick={() => setPlayingVideoId(null)}
-                                                        className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl font-bold text-[12px] bg-[#fef2f2] text-[#ef4444]"
+                                                        className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl font-bold text-[12px] border border-line text-ink"
                                                       >
                                                         <X className="w-4 h-4" /> Close video
                                                       </button>
@@ -765,8 +753,7 @@ export default function Course() {
                                                             }
                                                           }}
                                                           disabled={videoLoading === lesson.id}
-                                                          className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl font-bold text-[12px] text-white disabled:opacity-70"
-                                                          style={{ background: "#ef4444" }}
+                                                          className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl font-bold text-[12px] bg-ink text-paper disabled:opacity-70"
                                                         >
                                                           {videoLoading === lesson.id
                                                             ? <><Loader2 className="w-4 h-4 animate-spin" /> Loading…</>
@@ -777,7 +764,7 @@ export default function Course() {
                                                             href={`https://www.youtube.com/results?search_query=${encodeURIComponent(lesson.searchQuery || lesson.title)}`}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
-                                                            className="flex items-center gap-1 text-[11px] font-semibold text-[#ef4444] underline underline-offset-2 whitespace-nowrap self-center"
+                                                            className="flex items-center gap-1 text-[11px] font-semibold text-ink underline underline-offset-2 whitespace-nowrap self-center"
                                                           >
                                                             Search on YouTube <ExternalLink className="w-3 h-3" />
                                                           </a>
@@ -789,9 +776,9 @@ export default function Course() {
                                                     (() => {
                                                       const q = lesson.searchQuery || lesson.title;
                                                       const ACTION = {
-                                                        reading:  { label: "Read tutorial",  bg: "#3b82f6", endpoint: `/api/course/best-link?kind=reading&q=${encodeURIComponent(q)}`,  fallback: `https://www.google.com/search?q=${encodeURIComponent(`${q} tutorial site:w3schools.com OR site:developer.mozilla.org OR site:geeksforgeeks.org`)}`, pickUrl: (d: { url?: string | null }) => d?.url ?? null },
-                                                        exercise: { label: "Try exercises",  bg: "#10b981", endpoint: `/api/course/best-link?kind=exercise&q=${encodeURIComponent(q)}`, fallback: `https://www.google.com/search?q=${encodeURIComponent(`${q} practice site:leetcode.com OR site:hackerrank.com OR site:geeksforgeeks.org`)}`,         pickUrl: (d: { url?: string | null }) => d?.url ?? null },
-                                                        project:  { label: "Find project",   bg: "#f97316", endpoint: `/api/course/best-link?kind=project&q=${encodeURIComponent(q)}`,  fallback: `https://www.google.com/search?q=${encodeURIComponent(`${q} project ideas site:github.com OR site:freecodecamp.org`)}`,                              pickUrl: (d: { url?: string | null }) => d?.url ?? null },
+                                                        reading:  { label: "Read tutorial",  endpoint: `/api/course/best-link?kind=reading&q=${encodeURIComponent(q)}`,  fallback: `https://www.google.com/search?q=${encodeURIComponent(`${q} tutorial site:w3schools.com OR site:developer.mozilla.org OR site:geeksforgeeks.org`)}`, pickUrl: (d: { url?: string | null }) => d?.url ?? null },
+                                                        exercise: { label: "Try exercises",  endpoint: `/api/course/best-link?kind=exercise&q=${encodeURIComponent(q)}`, fallback: `https://www.google.com/search?q=${encodeURIComponent(`${q} practice site:leetcode.com OR site:hackerrank.com OR site:geeksforgeeks.org`)}`,         pickUrl: (d: { url?: string | null }) => d?.url ?? null },
+                                                        project:  { label: "Find project",   endpoint: `/api/course/best-link?kind=project&q=${encodeURIComponent(q)}`,  fallback: `https://www.google.com/search?q=${encodeURIComponent(`${q} project ideas site:github.com OR site:freecodecamp.org`)}`,                              pickUrl: (d: { url?: string | null }) => d?.url ?? null },
                                                       } as const;
                                                       const a = ACTION[lesson.type as keyof typeof ACTION];
                                                       if (!a) return null;
@@ -810,8 +797,7 @@ export default function Course() {
                                                               else window.location.href = a.fallback;
                                                             }
                                                           }}
-                                                          className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl font-bold text-[12px] text-white"
-                                                          style={{ background: a.bg }}
+                                                          className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl font-bold text-[12px] bg-ink text-paper"
                                                         >
                                                           <ExternalLink className="w-4 h-4" />
                                                           {a.label}
@@ -823,14 +809,13 @@ export default function Course() {
                                                   <button
                                                     onClick={() => toggleLesson(lesson.id)}
                                                     className={cn(
-                                                      "flex items-center gap-1.5 px-3 py-2.5 rounded-xl font-bold text-[12px] border-2 transition-all",
+                                                      "flex items-center gap-1.5 px-3 py-2.5 rounded-xl font-bold text-[12px] border transition-colors",
                                                       done
-                                                        ? "bg-[#10b981] text-white border-[#10b981]"
-                                                        : "bg-white border-current"
+                                                        ? "bg-line border-line text-ink"
+                                                        : "bg-paper border-line text-ink"
                                                     )}
-                                                    style={!done ? { color, borderColor: color } : {}}
                                                   >
-                                                    <CheckCircle2 className="w-4 h-4" />
+                                                    <CheckCircle2 className={cn("w-4 h-4", done && "text-done")} />
                                                     {done ? "Done!" : "Mark Done"}
                                                   </button>
                                                 </div>
@@ -840,7 +825,7 @@ export default function Course() {
                                                   const ytId = playingVideoId.split("|")[1];
                                                   return (
                                                     <>
-                                                      <div className="mt-3 rounded-xl overflow-hidden bg-black" style={{ aspectRatio: "16/9" }}>
+                                                      <div className="mt-3 rounded-xl overflow-hidden border border-line bg-ink" style={{ aspectRatio: "16/9" }}>
                                                         <iframe
                                                           src={`https://www.youtube.com/embed/${ytId}?autoplay=1&rel=0`}
                                                           title={lesson.title}
@@ -855,15 +840,14 @@ export default function Course() {
                                                           initial={{ opacity: 0, y: 6 }}
                                                           animate={{ opacity: 1, y: 0 }}
                                                           transition={{ delay: 0.4 }}
-                                                          className="mt-2 flex items-center justify-between gap-2 bg-white rounded-xl px-3 py-2.5 border border-[#e2e8f0]"
+                                                          className="mt-2 flex items-center justify-between gap-2 bg-paper rounded-xl px-3 py-2.5 border border-line"
                                                         >
-                                                          <p className="text-[12px] font-bold text-[#0f172a] leading-tight">
+                                                          <p className="text-[12px] font-bold text-ink leading-tight">
                                                             Mark this lesson done?
                                                           </p>
                                                           <button
                                                             onClick={() => toggleLesson(lesson.id)}
-                                                            className="flex items-center gap-1 text-[11px] font-extrabold px-3 py-1.5 rounded-lg text-white flex-shrink-0"
-                                                            style={{ background: color }}
+                                                            className="flex items-center gap-1 text-[11px] font-extrabold px-3 py-1.5 rounded-lg bg-ink text-paper flex-shrink-0"
                                                           >
                                                             <CheckCircle2 className="w-3.5 h-3.5" /> Done
                                                           </button>
@@ -892,20 +876,20 @@ export default function Course() {
 
               {/* Bottom CTA */}
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
-                className="mt-4 rounded-2xl p-4" style={{ background: bg }}>
-                <p className="text-sm font-extrabold mb-1" style={{ color }}>
-                  {overallPct === 100 ? "🎉 Course complete! Now test yourself." : "📚 Learning tip"}
+                className="mt-4 rounded-2xl border border-line bg-paper p-4">
+                <p className="text-sm font-extrabold mb-1 text-ink">
+                  {overallPct === 100 ? "Course complete! Now test yourself." : "Learning tip"}
                 </p>
-                <p className="text-xs text-[#64748b] mb-3">
+                <p className="text-xs text-ink-muted mb-3">
                   {overallPct === 100
                     ? "You've finished all lessons. Reinforce your knowledge with flashcards and the quiz."
                     : "After each lesson, review flashcards and take the quiz to lock in what you learned."}
                 </p>
                 <div className="flex gap-2">
-                  <Button onClick={() => setActiveTab("flashcards")} className="flex-1 h-10 rounded-xl text-white font-bold text-[13px]" style={{ background: color }}>
+                  <Button onClick={() => setActiveTab("flashcards")} className="flex-1 h-10 rounded-xl bg-ink hover:bg-ink/90 text-paper font-bold text-[13px]">
                     <CreditCard className="w-4 h-4 mr-1.5" /> Flashcards
                   </Button>
-                  <Button onClick={() => setActiveTab("quiz")} variant="outline" className="flex-1 h-10 rounded-xl font-bold text-[13px] border-2" style={{ borderColor: color, color }}>
+                  <Button onClick={() => setActiveTab("quiz")} variant="outline" className="flex-1 h-10 rounded-xl font-bold text-[13px] border border-line text-ink bg-paper hover:bg-line/40">
                     <HelpCircle className="w-4 h-4 mr-1.5" /> Quiz
                   </Button>
                 </div>
@@ -921,47 +905,49 @@ export default function Course() {
               {/* Stats bar */}
               <div className="flex gap-2 mb-4">
                 {[
-                  { label: "Reviewed", value: sessionStats.reviewed, color: "#0f172a" },
-                  { label: "Accuracy", value: `${accuracy}%`, color: accuracy >= 70 ? "#10b981" : accuracy >= 40 ? "#f59e0b" : "#ef4444" },
-                  { label: "Streak", value: `🔥 ${streak}`, color: "#f97316" },
+                  { label: "Reviewed", value: sessionStats.reviewed },
+                  { label: "Accuracy", value: `${accuracy}%` },
+                  { label: "Streak", value: `🔥 ${streak}` },
                 ].map(s => (
-                  <div key={s.label} className="flex-1 bg-white rounded-xl p-3 text-center shadow-sm">
-                    <p className="text-[11px] text-[#64748b] font-bold">{s.label}</p>
-                    <p className="text-lg font-extrabold" style={{ color: s.color }}>{s.value}</p>
+                  <div key={s.label} className="flex-1 rounded-xl border border-line bg-paper p-3 text-center">
+                    <p className="text-[11px] text-ink-muted font-bold">{s.label}</p>
+                    <p className="text-lg font-extrabold text-ink">{s.value}</p>
                   </div>
                 ))}
               </div>
 
               {/* Progress */}
               <div className="flex items-center justify-between mb-2 px-1">
-                <p className="text-[11px] font-bold text-[#64748b]">
+                <p className="text-[11px] font-bold text-ink-muted">
                   {cardsLeft > 0 ? `${queueIndex + 1} / ${queue.length} cards` : "Session complete!"}
                 </p>
                 <div className="flex items-center gap-1">
-                  <Star className="w-3 h-3" style={{ color }} />
-                  <p className="text-[11px] font-bold" style={{ color }}>{cardsLeft} remaining</p>
+                  <Star className="w-3 h-3 text-ink-muted" />
+                  <p className="text-[11px] font-bold text-ink-muted">{cardsLeft} remaining</p>
                 </div>
               </div>
               {queue.length > 0 && (
-                <div className="h-1.5 bg-[#e5e7eb] rounded-full mb-4 overflow-hidden">
-                  <div className="h-full rounded-full transition-all duration-500"
-                    style={{ width: `${(queueIndex / queue.length) * 100}%`, background: color }} />
+                <div className="h-1.5 bg-line rounded-full mb-4 overflow-hidden">
+                  <div className="h-full rounded-full bg-ink transition-all duration-500"
+                    style={{ width: `${(queueIndex / queue.length) * 100}%` }} />
                 </div>
               )}
 
               {cardsLeft === 0 ? (
                 <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
-                  className="rounded-2xl p-8 text-center" style={{ background: bg }}>
-                  <div className="text-5xl mb-3">🎉</div>
-                  <h2 className="text-xl font-extrabold text-[#0f172a] mb-1">
-                    {sessionStats.reviewed > 0 ? "Session complete!" : "All caught up!"}
+                  className="rounded-2xl border border-line bg-paper p-8 text-center">
+                  {/* Milestone moments are the one place personality is allowed —
+                      see the Phase 3 call to keep rare celebrations despite the
+                      monochrome palette. */}
+                  <h2 className="text-xl font-extrabold text-ink mb-1">
+                    {sessionStats.reviewed > 0 ? "Session complete! 🎉" : "All caught up!"}
                   </h2>
-                  <p className="text-sm text-[#64748b] mb-4">
+                  <p className="text-sm text-ink-muted mb-4">
                     {sessionStats.reviewed > 0
                       ? `You reviewed ${sessionStats.reviewed} cards with ${accuracy}% accuracy.`
                       : "No cards due right now. Come back tomorrow!"}
                   </p>
-                  <Button onClick={() => setActiveTab("quiz")} className="w-full h-11 rounded-xl font-bold text-white" style={{ background: color }}>
+                  <Button onClick={() => setActiveTab("quiz")} className="w-full h-11 rounded-xl font-bold bg-ink hover:bg-ink/90 text-paper">
                     Try the Quiz <ChevronRight className="w-4 h-4 ml-1" />
                   </Button>
                 </motion.div>
@@ -975,34 +961,34 @@ export default function Course() {
                         <motion.div animate={{ rotateY: isFlipped ? 180 : 0 }} transition={{ duration: 0.45, ease: "easeInOut" }}
                           style={{ transformStyle: "preserve-3d", width: "100%", height: "100%" }}>
                           {/* Front */}
-                          <div className="absolute inset-0 bg-white rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] flex flex-col items-center justify-center p-6 text-center"
+                          <div className="absolute inset-0 border border-line bg-paper rounded-2xl flex flex-col items-center justify-center p-6 text-center"
                             style={{ backfaceVisibility: "hidden" }}>
                             {progress[currentCard.id] && (
                               <div className="absolute top-3 right-3">
                                 <div className={cn("w-2.5 h-2.5 rounded-full", {
-                                  "bg-[#10b981]": getCardDifficulty(progress[currentCard.id].EF) === "easy",
-                                  "bg-[#f59e0b]": getCardDifficulty(progress[currentCard.id].EF) === "moderate",
-                                  "bg-[#ef4444]": getCardDifficulty(progress[currentCard.id].EF) === "hard",
+                                  "bg-line": getCardDifficulty(progress[currentCard.id].EF) === "easy",
+                                  "bg-ink-muted": getCardDifficulty(progress[currentCard.id].EF) === "moderate",
+                                  "bg-ink": getCardDifficulty(progress[currentCard.id].EF) === "hard",
                                 })} />
                               </div>
                             )}
                             {progress[currentCard.id]?.lapses > 4 && (
-                              <div className="absolute top-3 left-3 flex items-center gap-1 text-[#f59e0b]">
+                              <div className="absolute top-3 left-3 flex items-center gap-1 text-ink-muted">
                                 <AlertTriangle className="w-3.5 h-3.5" />
                                 <span className="text-[10px] font-bold">Leech card</span>
                               </div>
                             )}
-                            <p className="text-[10px] font-extrabold uppercase tracking-widest mb-3" style={{ color }}>
+                            <p className="text-[10px] font-bold uppercase tracking-widest mb-3 text-ink-muted">
                               {currentCard.topic}
                             </p>
-                            <p className="text-base font-extrabold text-[#0f172a] leading-snug">{currentCard.front}</p>
-                            <p className="text-[11px] text-[#64748b] mt-4">Tap to reveal answer</p>
+                            <p className="text-base font-extrabold text-ink leading-snug">{currentCard.front}</p>
+                            <p className="text-[11px] text-ink-muted mt-4">Tap to reveal answer</p>
                           </div>
                           {/* Back */}
-                          <div className="absolute inset-0 rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] flex flex-col items-center justify-center p-6 text-center"
-                            style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)", background: bg }}>
-                            <p className="text-[10px] font-extrabold uppercase tracking-widest mb-3" style={{ color }}>Answer</p>
-                            <p className="text-[14px] font-bold text-[#0f172a] leading-relaxed">{currentCard.back}</p>
+                          <div className="absolute inset-0 rounded-2xl border border-line bg-paper flex flex-col items-center justify-center p-6 text-center"
+                            style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}>
+                            <p className="text-[10px] font-bold uppercase tracking-widest mb-3 text-ink-muted">Answer</p>
+                            <p className="text-[14px] font-bold text-ink leading-relaxed">{currentCard.back}</p>
                           </div>
                         </motion.div>
                       </div>
@@ -1012,14 +998,13 @@ export default function Course() {
                           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
                             className="grid grid-cols-4 gap-2">
                             {[
-                              { grade: 1 as const, label: "Again", emoji: "😰", bg: "#fef2f2", color: "#ef4444" },
-                              { grade: 3 as const, label: "Hard",  emoji: "🤔", bg: "#fff7ed", color: "#f97316" },
-                              { grade: 4 as const, label: "Good",  emoji: "👍", bg: "#ecfdf5", color: "#10b981" },
-                              { grade: 5 as const, label: "Easy",  emoji: "😎", bg: "#eff6ff", color: "#3b82f6" },
+                              { grade: 1 as const, label: "Again", emoji: "😰" },
+                              { grade: 3 as const, label: "Hard",  emoji: "🤔" },
+                              { grade: 4 as const, label: "Good",  emoji: "👍" },
+                              { grade: 5 as const, label: "Easy",  emoji: "😎" },
                             ].map(g => (
                               <button key={g.grade} onClick={() => gradeCard(g.grade)}
-                                className="flex flex-col items-center py-2.5 rounded-xl font-bold transition-all active:scale-95"
-                                style={{ background: g.bg, color: g.color }}>
+                                className="flex flex-col items-center py-2.5 rounded-xl font-bold border border-line text-ink bg-paper hover:bg-line active:bg-line transition-colors active:scale-95">
                                 <span className="text-xl mb-0.5">{g.emoji}</span>
                                 <span className="text-[11px]">{g.label}</span>
                               </button>
@@ -1041,30 +1026,29 @@ export default function Course() {
             <motion.div key="quiz" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
               {quizComplete ? (
                 <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
-                  <div className="rounded-2xl p-6 text-center mb-4" style={{ background: bg }}>
-                    <Trophy className="w-12 h-12 mx-auto mb-3" style={{ color }} />
-                    <h2 className="text-2xl font-extrabold text-[#0f172a] mb-1">{quizScore} / {courseData.quizQuestions.length}</h2>
-                    <p className="text-sm text-[#64748b] mb-4">
+                  <div className="rounded-2xl border border-line bg-paper p-6 text-center mb-4">
+                    <Trophy className="w-12 h-12 mx-auto mb-3 text-ink" />
+                    <h2 className="text-2xl font-extrabold text-ink mb-1">{quizScore} / {courseData.quizQuestions.length}</h2>
+                    <p className="text-sm text-ink-muted mb-4">
                       {quizScore === courseData.quizQuestions.length ? "Perfect! You nailed it 🎉"
                         : quizScore >= Math.ceil(courseData.quizQuestions.length * 0.6) ? "Good job! Review the ones you missed."
                         : "Keep studying — try the flashcards first."}
                     </p>
                     <div className="flex gap-2">
-                      <Button onClick={resetQuiz} variant="outline" className="flex-1 h-10 rounded-xl font-bold border-2" style={{ borderColor: color, color }}>
+                      <Button onClick={resetQuiz} variant="outline" className="flex-1 h-10 rounded-xl font-bold border border-line text-ink bg-paper hover:bg-line/40">
                         <RotateCcw className="w-4 h-4 mr-1.5" /> Retry
                       </Button>
-                      <Button onClick={() => setActiveTab("flashcards")} className="flex-1 h-10 rounded-xl font-bold text-white" style={{ background: color }}>
+                      <Button onClick={() => setActiveTab("flashcards")} className="flex-1 h-10 rounded-xl font-bold bg-ink hover:bg-ink/90 text-paper">
                         Study Cards
                       </Button>
                     </div>
                   </div>
-                  <p className="text-xs font-extrabold text-[#64748b] uppercase tracking-wider mb-2 px-1">Breakdown</p>
+                  <p className="text-[11px] font-bold text-ink-muted uppercase tracking-wider mb-2 px-1">Breakdown</p>
                   {courseData.quizQuestions.map(q => (
-                    <div key={q.id} className="bg-white rounded-xl p-3 flex items-center gap-3 mb-2 shadow-sm">
-                      {quizAnswers[q.id] ? <CheckCircle2 className="w-5 h-5 text-[#10b981] flex-shrink-0" /> : <XCircle className="w-5 h-5 text-[#ef4444] flex-shrink-0" />}
-                      <p className="text-sm text-[#0f172a] font-bold flex-1 leading-snug">{q.question}</p>
-                      <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full"
-                        style={{ background: q.difficulty === "easy" ? "#ecfdf5" : q.difficulty === "medium" ? "#fff7ed" : "#fef2f2", color: q.difficulty === "easy" ? "#10b981" : q.difficulty === "medium" ? "#f97316" : "#ef4444" }}>
+                    <div key={q.id} className="flex items-center gap-3 py-4 border-t border-line">
+                      {quizAnswers[q.id] ? <CheckCircle2 className="w-5 h-5 text-done flex-shrink-0" /> : <XCircle className="w-5 h-5 text-danger flex-shrink-0" />}
+                      <p className="text-sm text-ink font-bold flex-1 leading-snug">{q.question}</p>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border border-line text-ink-muted">
                         {q.difficulty}
                       </span>
                     </div>
@@ -1074,54 +1058,54 @@ export default function Course() {
                 <AnimatePresence mode="wait">
                   <motion.div key={quizIndex} initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.2 }}>
                     <div className="flex items-center justify-between mb-2 px-1">
-                      <p className="text-[11px] font-bold text-[#64748b]">Question {quizIndex + 1} of {courseData.quizQuestions.length}</p>
-                      <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full"
-                        style={{ background: currentQ.difficulty === "easy" ? "#ecfdf5" : currentQ.difficulty === "medium" ? "#fff7ed" : "#fef2f2", color: currentQ.difficulty === "easy" ? "#10b981" : currentQ.difficulty === "medium" ? "#f97316" : "#ef4444" }}>
+                      <p className="text-[11px] font-bold text-ink-muted">Question {quizIndex + 1} of {courseData.quizQuestions.length}</p>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border border-line text-ink-muted">
                         {currentQ.difficulty}
                       </span>
                     </div>
-                    <div className="h-1.5 bg-[#e5e7eb] rounded-full mb-4 overflow-hidden">
-                      <div className="h-full rounded-full transition-all duration-500" style={{ width: `${(quizIndex / courseData.quizQuestions.length) * 100}%`, background: color }} />
+                    <div className="h-1.5 bg-line rounded-full mb-4 overflow-hidden">
+                      <div className="h-full rounded-full bg-ink transition-all duration-500" style={{ width: `${(quizIndex / courseData.quizQuestions.length) * 100}%` }} />
                     </div>
-                    <Card className="border-0 shadow-[0_4px_16px_rgba(0,0,0,0.07)] rounded-2xl mb-4">
-                      <CardContent className="p-5">
-                        <p className="text-base font-extrabold text-[#0f172a] leading-snug">{currentQ.question}</p>
-                      </CardContent>
-                    </Card>
+                    <div className="border border-line bg-paper rounded-2xl mb-4 p-5">
+                      <p className="text-base font-extrabold text-ink leading-snug">{currentQ.question}</p>
+                    </div>
                     <div className="space-y-2 mb-4">
                       {currentQ.options.map(opt => {
                         const letter = opt.charAt(0);
                         const chosen = selectedAnswer === letter;
                         const isCorrect = letter === currentQ.answer;
-                        let optBg = "bg-white", optColor = "text-[#0f172a]", optBorder = "border-transparent";
+                        let optBg = "bg-paper", optBorder = "border-line";
+                        let mark: "correct" | "incorrect" | null = null;
                         if (showExplanation) {
-                          if (isCorrect) { optBg = "bg-[#ecfdf5]"; optColor = "text-[#10b981]"; optBorder = "border-[#10b981]"; }
-                          else if (chosen) { optBg = "bg-[#fef2f2]"; optColor = "text-[#ef4444]"; optBorder = "border-[#ef4444]"; }
-                        } else if (chosen) optBorder = "border-current";
+                          if (isCorrect) { optBg = "bg-line"; optBorder = "border-ink"; mark = "correct"; }
+                          else if (chosen) { optBg = "bg-line"; optBorder = "border-ink"; mark = "incorrect"; }
+                        } else if (chosen) { optBg = "bg-line"; optBorder = "border-ink"; }
                         return (
                           <button key={opt} onClick={() => selectAnswer(opt)} disabled={!!selectedAnswer}
-                            className={cn("w-full text-left p-3.5 rounded-xl border-2 font-bold text-sm shadow-sm transition-all", optBg, optColor, optBorder)}>
-                            {opt}
+                            className={cn("w-full flex items-center gap-2 text-left p-3.5 rounded-xl border font-bold text-sm text-ink transition-colors", optBg, optBorder)}>
+                            <span className="flex-1">{opt}</span>
+                            {mark === "correct" && <CheckCircle2 className="w-4 h-4 text-done flex-shrink-0" />}
+                            {mark === "incorrect" && <XCircle className="w-4 h-4 text-danger flex-shrink-0" />}
                           </button>
                         );
                       })}
                     </div>
                     <AnimatePresence>
                       {showExplanation && (
-                        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl p-4 mb-4" style={{ background: bg }}>
+                        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl border border-line bg-paper p-4 mb-4">
                           <div className="flex items-center gap-2 mb-1">
-                            {selectedAnswer === currentQ.answer ? <CheckCircle2 className="w-4 h-4 text-[#10b981]" /> : <XCircle className="w-4 h-4 text-[#ef4444]" />}
-                            <p className="text-[12px] font-extrabold" style={{ color }}>
+                            {selectedAnswer === currentQ.answer ? <CheckCircle2 className="w-4 h-4 text-done" /> : <XCircle className="w-4 h-4 text-danger" />}
+                            <p className="text-[12px] font-extrabold text-ink">
                               {selectedAnswer === currentQ.answer ? "Correct!" : `Correct answer: ${currentQ.answer}`}
                             </p>
                           </div>
-                          <p className="text-xs text-[#64748b] leading-relaxed">{currentQ.explanation}</p>
+                          <p className="text-xs text-ink-muted leading-relaxed">{currentQ.explanation}</p>
                         </motion.div>
                       )}
                     </AnimatePresence>
                     {showExplanation && (
-                      <Button onClick={nextQuestion} className="w-full h-11 rounded-xl font-bold text-white text-[14px]" style={{ background: color }}>
-                        {quizIndex + 1 < courseData.quizQuestions.length ? "Next Question →" : "See Results 🏆"}
+                      <Button onClick={nextQuestion} className="w-full h-11 rounded-xl font-bold bg-ink hover:bg-ink/90 text-paper text-[14px]">
+                        {quizIndex + 1 < courseData.quizQuestions.length ? "Next Question →" : "See Results"}
                       </Button>
                     )}
                   </motion.div>

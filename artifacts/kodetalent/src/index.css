@@ -62,81 +62,81 @@
   --color-danger: #dc2626;
 }
 
+/* shadcn theme variables, repointed at the "W" monochrome palette.
+   Every shared primitive in components/ui/* reads these, so they are what stop
+   Button/Badge/Toast/Switch/etc. from re-introducing the old indigo. Keep these
+   in sync with the --color-* tokens in the @theme block above:
+     ink #0f0f10 = 240 3% 6%   |  paper #ffffff  = 0 0% 100%
+     line #ececf0 = 240 12% 93% |  muted #9a9aa2 = 240 4% 62%
+     danger #dc2626 = 0 71% 51% |  done #22c55e  = 142 71% 45% */
 :root {
-  /* Page background: #f8fafc (slate-50) */
-  --background: 210 40% 98%;
-  /* Text primary: #0f172a (slate-900) */
-  --foreground: 222 47% 11%;
+  --background: 0 0% 100%;
+  --foreground: 240 3% 6%;
 
-  /* Card background: #ffffff */
   --card: 0 0% 100%;
-  --card-foreground: 222 47% 11%;
-  /* Card border: #e0e7ff (indigo-100) */
-  --card-border: 228 100% 93%;
+  --card-foreground: 240 3% 6%;
+  --card-border: 240 12% 93%;
 
   --popover: 0 0% 100%;
-  --popover-foreground: 222 47% 11%;
-  --popover-border: 228 100% 93%;
+  --popover-foreground: 240 3% 6%;
+  --popover-border: 240 12% 93%;
 
-  /* Primary: #4f46e5 (indigo-600) */
-  --primary: 239 76% 59%;
+  /* Primary is ink — the single CTA colour. */
+  --primary: 240 3% 6%;
   --primary-foreground: 0 0% 100%;
 
-  /* Secondary (sky): #0ea5e9 (sky-500) */
-  --secondary: 199 89% 48%;
-  --secondary-foreground: 0 0% 100%;
+  /* Secondary is a line-weight fill, not a second brand colour. */
+  --secondary: 240 12% 93%;
+  --secondary-foreground: 240 3% 6%;
 
-  /* Muted backgrounds */
-  --muted: 210 40% 96%;
-  /* Muted text: #64748b (slate-500) */
-  --muted-foreground: 215 16% 47%;
+  --muted: 240 12% 93%;
+  --muted-foreground: 240 4% 62%;
 
-  /* Accent: #f59e0b (amber-400) — XP, achievements */
-  --accent: 38 92% 50%;
-  --accent-foreground: 0 0% 100%;
+  --accent: 240 12% 93%;
+  --accent-foreground: 240 3% 6%;
 
-  /* Brand: #f97316 (orange-500) — logo, CTA accents */
-  --brand: 21 90% 53%;
+  --brand: 240 3% 6%;
   --brand-foreground: 0 0% 100%;
 
-  /* Destructive: #ef4444 */
-  --destructive: 0 84% 60%;
+  /* Red is reserved for real errors and scam warnings. */
+  --destructive: 0 71% 51%;
   --destructive-foreground: 0 0% 100%;
 
-  --success: 160 84% 39%;
-  --streak: 25 95% 53%;
-  --achievement: 38 92% 50%;
+  /* Green is reserved for completed checkmarks and passing gates. */
+  --success: 142 71% 45%;
+  --streak: 240 3% 6%;
+  --achievement: 240 3% 6%;
 
-  --border: 228 100% 93%;
-  --input: 228 100% 93%;
-  --ring: 239 76% 59%;
+  --border: 240 12% 93%;
+  --input: 240 12% 93%;
+  --ring: 240 3% 6%;
 
   --radius: 0.75rem;
 }
 
 /* Ensure no dark mode override */
 .dark {
-  --background: 210 40% 98%;
-  --foreground: 222 47% 11%;
+  --background: 0 0% 100%;
+  --foreground: 240 3% 6%;
   --card: 0 0% 100%;
-  --card-foreground: 222 47% 11%;
-  --card-border: 228 100% 93%;
+  --card-foreground: 240 3% 6%;
+  --card-border: 240 12% 93%;
   --popover: 0 0% 100%;
-  --popover-foreground: 222 47% 11%;
-  --popover-border: 228 100% 93%;
-  --primary: 239 76% 59%;
+  --popover-foreground: 240 3% 6%;
+  --popover-border: 240 12% 93%;
+  --primary: 240 3% 6%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 199 89% 48%;
-  --secondary-foreground: 0 0% 100%;
-  --muted: 210 40% 96%;
-  --muted-foreground: 215 16% 47%;
-  --accent: 38 92% 50%;
-  --accent-foreground: 0 0% 100%;
-  --destructive: 0 84% 60%;
+  --secondary: 240 12% 93%;
+  --secondary-foreground: 240 3% 6%;
+  --muted: 240 12% 93%;
+  --muted-foreground: 240 4% 62%;
+  --accent: 240 12% 93%;
+  --accent-foreground: 240 3% 6%;
+  --destructive: 0 71% 51%;
   --destructive-foreground: 0 0% 100%;
-  --border: 228 100% 93%;
-  --input: 228 100% 93%;
-  --ring: 239 76% 59%;
+  --border: 240 12% 93%;
+  --input: 240 12% 93%;
+  --ring: 240 3% 6%;
 }
 
 @layer base {

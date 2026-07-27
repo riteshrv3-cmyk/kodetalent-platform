@@ -2,12 +2,11 @@ import { useState, useEffect, useCallback } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  ArrowLeft, Download, FileText, Plus, Trash2, Sparkles,
+  ArrowLeft, Download, Plus, Trash2, Sparkles,
   Loader2, Building2, AlignLeft, ChevronRight, X, Pencil,
-  Check, PlusCircle, MinusCircle, Target, TrendingUp, Zap
+  Check, PlusCircle, MinusCircle, TrendingUp, Zap
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -55,22 +54,19 @@ const TEMPLATES = [
     id: "classic",
     label: "Classic",
     desc: "Clean ATS-friendly layout",
-    color: "#4f46e5",
-    badge: "bg-[#e0e7ff] text-[#4f46e5]",
+    badge: "border border-line text-ink",
   },
   {
     id: "tech",
     label: "Tech-Focused",
     desc: "Highlights your stack & GitHub",
-    color: "#10b981",
-    badge: "bg-[#d1fae5] text-[#059669]",
+    badge: "border border-line text-ink",
   },
   {
     id: "minimal",
     label: "Minimal",
     desc: "Ultra-clean typography",
-    color: "#64748b",
-    badge: "bg-[#f1f5f9] text-[#475569]",
+    badge: "border border-line text-ink",
   },
 ];
 
@@ -156,9 +152,9 @@ function getRecommendations(userSkills: string[]): (RoleRec & { matchPct: number
 }
 
 const TIER_META = {
-  tier1: { label: "Tier 1", bg: "bg-[#fef3c7]", text: "text-[#92400e]", dot: "bg-[#f59e0b]" },
-  tier2: { label: "Unicorn", bg: "bg-[#e0e7ff]", text: "text-[#3730a3]", dot: "bg-[#4f46e5]" },
-  startup: { label: "Startup", bg: "bg-[#d1fae5]", text: "text-[#065f46]", dot: "bg-[#10b981]" },
+  tier1: { label: "Tier 1" },
+  tier2: { label: "Unicorn" },
+  startup: { label: "Startup" },
 };
 
 function TargetRecommendations({
@@ -198,13 +194,12 @@ function TargetRecommendations({
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2">
-        <Target className="w-4 h-4 text-[#4f46e5]" />
-        <h2 className="text-sm font-black text-[#0f172a]">Target Companies & Roles</h2>
-        <span className="text-[10px] text-[#64748b] bg-[#f1f5f9] px-2 py-0.5 rounded-full font-medium ml-auto">
+        <h2 className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">Target Companies &amp; Roles</h2>
+        <span className="text-[11px] font-bold uppercase tracking-wider text-ink-muted ml-auto">
           {recs.length} matches
         </span>
       </div>
-      <p className="text-[11px] text-[#64748b] -mt-1">Based on your skills — click to instantly generate a tailored resume</p>
+      <p className="text-[12px] text-ink-muted -mt-1">Based on your skills — click to instantly generate a tailored resume</p>
 
       <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4" style={{ scrollbarWidth: "none" }}>
         {recs.map((rec, i) => {
@@ -215,80 +210,52 @@ function TargetRecommendations({
               initial={{ opacity: 0, x: 12 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: i * 0.05 }}
-              className="shrink-0 w-44 bg-white rounded-2xl border border-[#e2e8f0] shadow-sm overflow-hidden"
+              className="shrink-0 w-44 bg-paper rounded-2xl border border-line overflow-hidden"
             >
-              {/* Top accent bar */}
-              <div
-                className="h-1"
-                style={{
-                  background: rec.tier === "tier1"
-                    ? "linear-gradient(90deg, #f59e0b, #f97316)"
-                    : rec.tier === "tier2"
-                    ? "linear-gradient(90deg, #4f46e5, #7c3aed)"
-                    : "linear-gradient(90deg, #10b981, #0ea5e9)",
-                }}
-              />
               <div className="p-3 space-y-2.5">
-                {/* Logo + Tier badge */}
+                {/* Logo + Tier label */}
                 <div className="flex items-center justify-between">
-                  <div
-                    className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-black text-[10px]"
-                    style={{
-                      background: rec.tier === "tier1"
-                        ? "linear-gradient(135deg, #f59e0b, #f97316)"
-                        : rec.tier === "tier2"
-                        ? "linear-gradient(135deg, #4f46e5, #7c3aed)"
-                        : "linear-gradient(135deg, #10b981, #0ea5e9)",
-                    }}
-                  >
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center border border-line text-ink font-bold text-[10px]">
                     {rec.logo}
                   </div>
-                  <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${tier.bg} ${tier.text}`}>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-ink-muted">
                     {tier.label}
                   </span>
                 </div>
 
                 {/* Company + Role */}
                 <div>
-                  <p className="font-black text-[#0f172a] text-sm leading-tight">{rec.company}</p>
-                  <p className="text-[11px] text-[#4f46e5] font-semibold leading-tight mt-0.5">{rec.role}</p>
+                  <p className="font-bold text-ink text-[14px] leading-tight">{rec.company}</p>
+                  <p className="text-[11px] text-ink-muted font-semibold leading-tight mt-0.5">{rec.role}</p>
                 </div>
 
-                {/* Salary + Match */}
+                {/* Salary */}
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-0.5">
-                    <TrendingUp className="w-3 h-3 text-[#10b981]" />
-                    <span className="text-[10px] font-bold text-[#10b981]">{rec.salaryRange}</span>
+                  <div className="flex items-center gap-1">
+                    <TrendingUp className="w-3 h-3 text-ink-muted" />
+                    <span className="text-[11px] font-semibold text-ink">{rec.salaryRange}</span>
                   </div>
                 </div>
 
                 {/* Match bar */}
                 <div className="space-y-1">
                   <div className="flex items-center justify-between">
-                    <span className="text-[9px] text-[#94a3b8] font-medium">Match</span>
-                    <span className="text-[10px] font-black text-[#0f172a]">{rec.matchPct}%</span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-ink-muted">Match</span>
+                    <span className="text-[11px] font-bold text-ink">{rec.matchPct}%</span>
                   </div>
-                  <div className="h-1.5 bg-[#f1f5f9] rounded-full overflow-hidden">
+                  <div className="h-1.5 bg-line rounded-full overflow-hidden">
                     <div
-                      className="h-full rounded-full"
-                      style={{
-                        width: `${rec.matchPct}%`,
-                        background: rec.matchPct >= 85
-                          ? "linear-gradient(90deg, #10b981, #0ea5e9)"
-                          : rec.matchPct >= 70
-                          ? "linear-gradient(90deg, #4f46e5, #7c3aed)"
-                          : "linear-gradient(90deg, #f59e0b, #f97316)",
-                      }}
+                      className="h-full rounded-full bg-ink"
+                      style={{ width: `${rec.matchPct}%` }}
                     />
                   </div>
-                  <p className="text-[9px] text-[#94a3b8]">{rec.openings} openings</p>
+                  <p className="text-[10px] text-ink-muted">{rec.openings} openings</p>
                 </div>
 
                 {/* CTA */}
                 <button
                   onClick={() => onGenerate(rec.company, rec.role)}
-                  className="w-full h-7 rounded-xl text-white font-bold text-[10px] flex items-center justify-center gap-1 active:scale-95 transition-transform"
-                  style={{ background: "linear-gradient(135deg, #4f46e5, #7c3aed)" }}
+                  className="w-full h-8 rounded-xl bg-ink text-paper font-bold text-[11px] flex items-center justify-center gap-1 active:scale-95 transition-transform"
                 >
                   <Zap className="w-3 h-3" />
                   Generate Resume
@@ -335,10 +302,10 @@ function downloadClassicPDF(r: ResumeContent, filename: string) {
     y += 14;
     doc.setFont("helvetica", "bold");
     doc.setFontSize(9);
-    doc.setTextColor(79, 70, 229);
+    doc.setTextColor(15, 15, 16);
     doc.text(title.toUpperCase(), ML, y);
     y += 4;
-    doc.setDrawColor(79, 70, 229);
+    doc.setDrawColor(15, 15, 16);
     doc.setLineWidth(0.75);
     doc.line(ML, y, PW - MR, y);
     y += 11;
@@ -370,7 +337,7 @@ function downloadClassicPDF(r: ResumeContent, filename: string) {
   // ── Role / title line
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
-  doc.setTextColor(79, 70, 229);
+  doc.setTextColor(15, 15, 16);
   doc.text(r.degree, PW / 2, y + 10, { align: "center" });
   y += 22;
 
@@ -462,7 +429,7 @@ function downloadClassicPDF(r: ResumeContent, filename: string) {
       doc.text(p.title, ML, y);
       doc.setFont("helvetica", "italic");
       doc.setFontSize(8.5);
-      doc.setTextColor(79, 70, 229);
+      doc.setTextColor(15, 15, 16);
       const techW = doc.getTextWidth(p.tech);
       if (techW < CW * 0.45) {
         doc.text(p.tech, PW - MR, y, { align: "right" });
@@ -922,7 +889,7 @@ function EditResumeSheet({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-end"
+      className="fixed inset-0 z-50 bg-ink/40 flex items-end"
       onClick={onClose}
     >
       <motion.div
@@ -930,17 +897,20 @@ function EditResumeSheet({
         animate={{ y: 0 }}
         exit={{ y: "100%" }}
         transition={{ type: "spring", damping: 28, stiffness: 300 }}
-        className="w-full max-w-lg mx-auto bg-white rounded-t-3xl flex flex-col"
+        className="w-full max-w-lg mx-auto bg-paper rounded-t-3xl flex flex-col"
         style={{ maxHeight: "92vh" }}
         onClick={e => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-[#f1f5f9] shrink-0">
-          <h2 className="font-black text-[#0f172a] text-lg flex items-center gap-2">
-            <Pencil className="w-5 h-5 text-[#4f46e5]" />
+        <div className="pt-3 pb-1 flex justify-center shrink-0">
+          <div className="w-10 h-1 rounded-full bg-line" />
+        </div>
+        <div className="flex items-center justify-between px-5 pt-2 pb-3 border-b border-line shrink-0">
+          <h2 className="text-[17px] font-extrabold text-ink flex items-center gap-2">
+            <Pencil className="w-4 h-4 text-ink" />
             Edit Resume
           </h2>
-          <button onClick={onClose} className="w-8 h-8 rounded-full bg-[#f1f5f9] flex items-center justify-center">
-            <X className="w-4 h-4 text-[#64748b]" />
+          <button onClick={onClose} className="w-8 h-8 rounded-full border border-line flex items-center justify-center">
+            <X className="w-4 h-4 text-ink-muted" />
           </button>
         </div>
 
@@ -948,22 +918,22 @@ function EditResumeSheet({
 
           {/* Summary */}
           <div className="space-y-2">
-            <label className="text-xs font-extrabold text-[#64748b] uppercase tracking-wider">Professional Summary</label>
+            <label className="text-[11px] font-bold text-ink-muted uppercase tracking-wider">Professional Summary</label>
             <Textarea
               value={summary}
               onChange={e => setSummary(e.target.value)}
               rows={4}
-              className="rounded-xl border-[#e2e8f0] font-medium text-sm resize-none"
+              className="rounded-xl border border-line focus:border-ink text-ink text-sm resize-none"
             />
           </div>
 
           {/* Skills */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-extrabold text-[#64748b] uppercase tracking-wider">Skill Sections</label>
+              <label className="text-[11px] font-bold text-ink-muted uppercase tracking-wider">Skill Sections</label>
               <button
                 onClick={addSkillSection}
-                className="flex items-center gap-1 text-[10px] font-bold text-[#4f46e5]"
+                className="flex items-center gap-1 text-[11px] font-bold text-ink"
               >
                 <PlusCircle className="w-3.5 h-3.5" /> Add
               </button>
@@ -975,18 +945,18 @@ function EditResumeSheet({
                     value={s.category}
                     onChange={e => updateSkillCategory(i, e.target.value)}
                     placeholder="Category (e.g. Languages)"
-                    className="rounded-lg border-[#e2e8f0] text-sm h-8"
+                    className="rounded-lg border border-line focus:border-ink text-ink text-sm h-8"
                   />
                   <Input
                     value={s.items}
                     onChange={e => updateSkillItems(i, e.target.value)}
                     placeholder="Items (comma-separated)"
-                    className="rounded-lg border-[#e2e8f0] text-sm h-8"
+                    className="rounded-lg border border-line focus:border-ink text-ink text-sm h-8"
                   />
                 </div>
                 <button
                   onClick={() => removeSkillSection(i)}
-                  className="mt-1 text-[#ef4444] shrink-0"
+                  className="mt-1 text-danger shrink-0"
                 >
                   <MinusCircle className="w-4 h-4" />
                 </button>
@@ -996,41 +966,41 @@ function EditResumeSheet({
 
           {/* Projects */}
           <div className="space-y-4">
-            <label className="text-xs font-extrabold text-[#64748b] uppercase tracking-wider">Projects</label>
+            <label className="text-[11px] font-bold text-ink-muted uppercase tracking-wider">Projects</label>
             {projects.map((p, pi) => (
-              <div key={pi} className="bg-[#f8fafc] rounded-xl p-3 space-y-2 border border-[#e2e8f0]">
+              <div key={pi} className="bg-paper rounded-xl p-3 space-y-2 border border-line">
                 <div className="flex gap-2">
                   <Input
                     value={p.title}
                     onChange={e => updateProjectTitle(pi, e.target.value)}
                     placeholder="Project title"
-                    className="rounded-lg border-[#e2e8f0] text-sm h-8 flex-1"
+                    className="rounded-lg border border-line focus:border-ink text-ink text-sm h-8 flex-1"
                   />
                   <Input
                     value={p.tech}
                     onChange={e => updateProjectTech(pi, e.target.value)}
                     placeholder="Tech stack"
-                    className="rounded-lg border-[#e2e8f0] text-sm h-8 flex-1"
+                    className="rounded-lg border border-line focus:border-ink text-ink text-sm h-8 flex-1"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <p className="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wider">Bullets</p>
+                  <p className="text-[10px] font-bold text-ink-muted uppercase tracking-wider">Bullets</p>
                   {p.bullets.map((b, bi) => (
                     <div key={bi} className="flex gap-1.5 items-center">
                       <Textarea
                         value={b}
                         onChange={e => updateProjectBullet(pi, bi, e.target.value)}
                         rows={2}
-                        className="flex-1 rounded-lg border-[#e2e8f0] text-xs resize-none"
+                        className="flex-1 rounded-lg border border-line focus:border-ink text-ink text-xs resize-none"
                       />
-                      <button onClick={() => removeProjectBullet(pi, bi)} className="text-[#ef4444] shrink-0">
+                      <button onClick={() => removeProjectBullet(pi, bi)} className="text-danger shrink-0">
                         <MinusCircle className="w-4 h-4" />
                       </button>
                     </div>
                   ))}
                   <button
                     onClick={() => addProjectBullet(pi)}
-                    className="flex items-center gap-1 text-[10px] font-bold text-[#4f46e5] mt-1"
+                    className="flex items-center gap-1 text-[11px] font-bold text-ink mt-1"
                   >
                     <PlusCircle className="w-3 h-3" /> Add bullet
                   </button>
@@ -1042,10 +1012,10 @@ function EditResumeSheet({
           {/* Achievements */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-extrabold text-[#64748b] uppercase tracking-wider">Achievements</label>
+              <label className="text-[11px] font-bold text-ink-muted uppercase tracking-wider">Achievements</label>
               <button
                 onClick={addAchievement}
-                className="flex items-center gap-1 text-[10px] font-bold text-[#4f46e5]"
+                className="flex items-center gap-1 text-[11px] font-bold text-ink"
               >
                 <PlusCircle className="w-3.5 h-3.5" /> Add
               </button>
@@ -1056,9 +1026,9 @@ function EditResumeSheet({
                   value={a}
                   onChange={e => updateAchievement(i, e.target.value)}
                   placeholder="Achievement"
-                  className="flex-1 rounded-lg border-[#e2e8f0] text-sm h-8"
+                  className="flex-1 rounded-lg border border-line focus:border-ink text-ink text-sm h-8"
                 />
-                <button onClick={() => removeAchievement(i)} className="text-[#ef4444] shrink-0">
+                <button onClick={() => removeAchievement(i)} className="text-danger shrink-0">
                   <MinusCircle className="w-4 h-4" />
                 </button>
               </div>
@@ -1066,12 +1036,11 @@ function EditResumeSheet({
           </div>
         </div>
 
-        <div className="px-5 pb-8 pt-3 border-t border-[#f1f5f9] shrink-0">
+        <div className="px-5 pb-8 pt-3 border-t border-line shrink-0">
           <Button
             onClick={handleSave}
             disabled={saving}
-            className="w-full h-12 rounded-2xl text-white font-black text-base shadow-[0_4px_16px_rgba(79,70,229,0.3)]"
-            style={{ background: "linear-gradient(135deg, #4f46e5, #7c3aed)" }}
+            className="w-full h-12 rounded-xl bg-ink text-paper hover:bg-ink font-bold text-[15px]"
           >
             {saving ? (
               <>
@@ -1115,33 +1084,33 @@ function ResumeCard({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -8 }}
-      className="bg-white rounded-2xl p-4 shadow-sm border border-[#f1f5f9]"
+      className="bg-paper rounded-2xl p-4 border border-line"
     >
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="min-w-0 flex-1">
-          <p className="font-black text-[#0f172a] text-sm truncate">{resume.name}</p>
+          <p className="font-bold text-ink text-[15px] truncate">{resume.name}</p>
           <div className="flex items-center gap-2 mt-1 flex-wrap">
             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${tmpl.badge}`}>
               {tmpl.label}
             </span>
             {resume.companyName && (
-              <span className="text-[10px] text-[#64748b] font-medium flex items-center gap-1">
+              <span className="text-[11px] text-ink-muted font-medium flex items-center gap-1">
                 <Building2 className="w-3 h-3" />{resume.companyName}
               </span>
             )}
-            <span className="text-[10px] text-[#94a3b8]">{date}</span>
+            <span className="text-[11px] text-ink-muted">{date}</span>
           </div>
         </div>
         <button
           onClick={onDelete}
-          className="w-7 h-7 rounded-full bg-[#fee2e2] flex items-center justify-center shrink-0 active:scale-95 transition-transform"
+          className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 active:scale-95 transition-transform"
         >
-          <Trash2 className="w-3.5 h-3.5 text-[#ef4444]" />
+          <Trash2 className="w-4 h-4 text-danger" />
         </button>
       </div>
 
       {resume.content.summary && (
-        <p className="text-xs text-[#64748b] line-clamp-2 mb-3 leading-relaxed">
+        <p className="text-[12px] text-ink-muted line-clamp-2 mb-3 leading-relaxed">
           {resume.content.summary}
         </p>
       )}
@@ -1150,15 +1119,14 @@ function ResumeCard({
         <Button
           onClick={onEdit}
           variant="outline"
-          className="flex-1 h-9 rounded-xl font-bold text-xs border-[#e2e8f0] text-[#4f46e5]"
+          className="flex-1 h-9 rounded-xl font-bold text-xs border border-line text-ink"
         >
           <Pencil className="w-3.5 h-3.5 mr-1.5" />
           Edit
         </Button>
         <Button
           onClick={onDownload}
-          className="flex-1 h-9 rounded-xl text-white font-bold text-xs"
-          style={{ background: `linear-gradient(135deg, ${tmpl.color}, ${tmpl.color}cc)` }}
+          className="flex-1 h-9 rounded-xl bg-ink text-paper hover:bg-ink font-bold text-xs"
         >
           <Download className="w-3.5 h-3.5 mr-1.5" />
           Download PDF
@@ -1220,7 +1188,7 @@ function GenerateSheet({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-end"
+      className="fixed inset-0 z-50 bg-ink/40 flex items-end"
       onClick={onClose}
     >
       <motion.div
@@ -1228,84 +1196,87 @@ function GenerateSheet({
         animate={{ y: 0 }}
         exit={{ y: "100%" }}
         transition={{ type: "spring", damping: 28, stiffness: 300 }}
-        className="w-full max-w-lg mx-auto bg-white rounded-t-3xl p-5 pb-8 space-y-5"
+        className="w-full max-w-lg mx-auto bg-paper rounded-t-3xl p-5 pb-8 space-y-5"
         onClick={e => e.stopPropagation()}
       >
+        <div className="flex justify-center -mt-2 mb-1">
+          <div className="w-10 h-1 rounded-full bg-line" />
+        </div>
+
         <div className="flex items-center justify-between">
-          <h2 className="font-black text-[#0f172a] text-lg flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-[#4f46e5]" />
+          <h2 className="text-[17px] font-extrabold text-ink flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-ink" />
             Generate New Resume
           </h2>
-          <button onClick={onClose} className="w-8 h-8 rounded-full bg-[#f1f5f9] flex items-center justify-center">
-            <X className="w-4 h-4 text-[#64748b]" />
+          <button onClick={onClose} className="w-8 h-8 rounded-full border border-line flex items-center justify-center">
+            <X className="w-4 h-4 text-ink-muted" />
           </button>
         </div>
 
         <div className="space-y-2">
-          <label className="text-xs font-extrabold text-[#64748b] uppercase tracking-wider">Template</label>
+          <label className="text-[11px] font-bold text-ink-muted uppercase tracking-wider">Template</label>
           <div className="grid grid-cols-3 gap-2">
             {TEMPLATES.map(t => (
               <button
                 key={t.id}
                 onClick={() => setTemplateId(t.id)}
-                className={`rounded-xl p-3 text-left border-2 transition-all ${
+                className={`rounded-xl p-3 text-left border transition-colors ${
                   templateId === t.id
-                    ? "border-[#4f46e5] bg-[#e0e7ff]"
-                    : "border-[#e2e8f0] bg-white"
+                    ? "border-ink bg-line"
+                    : "border-line bg-paper"
                 }`}
               >
-                <p className="font-black text-[#0f172a] text-xs">{t.label}</p>
-                <p className="text-[9px] text-[#64748b] mt-0.5 leading-tight">{t.desc}</p>
+                <p className="font-bold text-ink text-xs">{t.label}</p>
+                <p className="text-[10px] text-ink-muted mt-0.5 leading-tight">{t.desc}</p>
               </button>
             ))}
           </div>
         </div>
 
         <div className="space-y-2">
-          <label className="text-xs font-extrabold text-[#64748b] uppercase tracking-wider flex items-center gap-1">
+          <label className="text-[11px] font-bold text-ink-muted uppercase tracking-wider flex items-center gap-1">
             <Building2 className="w-3 h-3" /> Company Name
-            <span className="text-[#94a3b8] normal-case font-medium ml-1">(optional)</span>
+            <span className="text-ink-muted normal-case font-medium ml-1">(optional)</span>
           </label>
           <Input
             value={companyName}
             onChange={e => setCompanyName(e.target.value)}
             placeholder="e.g. Google, Flipkart, Razorpay"
-            className="rounded-xl border-[#e2e8f0] font-medium"
+            className="rounded-xl border border-line focus:border-ink text-ink"
           />
         </div>
 
         <div className="space-y-2">
-          <label className="text-xs font-extrabold text-[#64748b] uppercase tracking-wider flex items-center gap-1">
+          <label className="text-[11px] font-bold text-ink-muted uppercase tracking-wider flex items-center gap-1">
             <AlignLeft className="w-3 h-3" /> Job Description
-            <span className="text-[#94a3b8] normal-case font-medium ml-1">(optional — paste JD for tailored resume)</span>
+            <span className="text-ink-muted normal-case font-medium ml-1">(optional — paste JD for tailored resume)</span>
           </label>
           <Textarea
             value={jdText}
             onChange={e => setJdText(e.target.value)}
             placeholder="Paste job description here for an ATS-optimized, targeted resume..."
             rows={4}
-            className="rounded-xl border-[#e2e8f0] font-medium text-sm resize-none"
+            className="rounded-xl border border-line focus:border-ink text-ink text-sm resize-none"
           />
         </div>
 
         <div className="space-y-2">
-          <label className="text-xs font-extrabold text-[#64748b] uppercase tracking-wider">
+          <label className="text-[11px] font-bold text-ink-muted uppercase tracking-wider">
             Resume Name
-            <span className="text-[#94a3b8] normal-case font-medium ml-1">(optional)</span>
+            <span className="text-ink-muted normal-case font-medium ml-1">(optional)</span>
           </label>
           <Input
             value={resumeName}
             onChange={e => setResumeName(e.target.value)}
             placeholder="e.g. Google SWE Resume, FAANG Attempt 1"
-            className="rounded-xl border-[#e2e8f0] font-medium"
+            className="rounded-xl border border-line focus:border-ink text-ink"
           />
         </div>
 
         <Button
           onClick={generate}
           disabled={generating}
-          className="w-full h-13 rounded-2xl text-white font-black text-base shadow-[0_4px_16px_rgba(79,70,229,0.3)]"
-          style={{ background: "linear-gradient(135deg, #4f46e5, #7c3aed)" }}
+          className="w-full h-12 rounded-xl bg-ink text-paper hover:bg-ink font-bold text-[15px]"
         >
           {generating ? (
             <>
@@ -1320,7 +1291,7 @@ function GenerateSheet({
           )}
         </Button>
         {generating && (
-          <p className="text-center text-xs text-[#64748b] -mt-2">
+          <p className="text-center text-[12px] text-ink-muted -mt-2">
             Using your real profile data — this takes 10–20 seconds
           </p>
         )}
@@ -1390,7 +1361,7 @@ export default function Resume() {
 
   if (loading) {
     return (
-      <div className="p-4 pb-28 max-w-md mx-auto space-y-4 min-h-screen bg-[#f8fafc]">
+      <div className="p-4 pb-28 max-w-md mx-auto space-y-4 min-h-screen bg-paper">
         <Skeleton className="h-8 w-32 rounded-xl" />
         <Skeleton className="h-32 w-full rounded-2xl" />
         <Skeleton className="h-32 w-full rounded-2xl" />
@@ -1400,29 +1371,28 @@ export default function Resume() {
 
   return (
     <>
-      <div className="p-4 pb-28 max-w-md mx-auto space-y-5 min-h-screen bg-[#f8fafc]">
+      <div className="p-4 pb-28 max-w-md mx-auto space-y-5 min-h-screen bg-paper">
         <Button
           variant="ghost"
           onClick={() => setLocation("/profile")}
-          className="-ml-2 text-[#64748b] font-bold"
+          className="-ml-2 text-ink-muted font-bold"
         >
           <ArrowLeft className="w-5 h-5 mr-2" /> Back
         </Button>
 
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-black text-[#0f172a] flex items-center gap-2">
-              <FileText className="w-6 h-6 text-[#4f46e5]" /> My Resumes
+            <h1 className="text-[26px] font-extrabold text-ink leading-[1.06] tracking-tight">
+              My Resumes
             </h1>
-            <p className="text-[#64748b] text-xs font-medium mt-0.5">
+            <p className="text-[13px] text-ink-muted mt-1">
               AI-generated from your real profile · ATS-friendly
             </p>
           </div>
           <motion.div whileTap={{ scale: 0.96 }}>
             <Button
               onClick={() => setGenerateFor({ company: "", role: "" })}
-              className="rounded-full text-white font-bold shadow-[0_4px_16px_rgba(79,70,229,0.3)] px-4 h-10"
-              style={{ background: "linear-gradient(135deg, #4f46e5, #7c3aed)" }}
+              className="rounded-xl bg-ink text-paper hover:bg-ink font-bold px-4 h-10"
             >
               <Plus className="w-4 h-4 mr-1.5" />
               New
@@ -1442,21 +1412,15 @@ export default function Resume() {
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-white rounded-3xl p-8 shadow-sm border border-[#e0e7ff] text-center space-y-4"
+            className="py-8 space-y-3"
           >
-            <div className="w-16 h-16 bg-[#e0e7ff] rounded-2xl flex items-center justify-center mx-auto">
-              <FileText className="w-8 h-8 text-[#4f46e5]" />
-            </div>
-            <div>
-              <p className="font-black text-[#0f172a] text-base">No resumes yet</p>
-              <p className="text-xs text-[#64748b] mt-1 leading-relaxed">
-                Pick a company above or generate a blank resume to get started.
-              </p>
-            </div>
+            <p className="text-[15px] font-bold text-ink">No resumes yet</p>
+            <p className="text-[13px] text-ink-muted leading-relaxed">
+              Pick a company above or generate a blank resume to get started.
+            </p>
             <Button
               onClick={() => setGenerateFor({ company: "", role: "" })}
-              className="rounded-full text-white font-bold px-6 h-11"
-              style={{ background: "linear-gradient(135deg, #4f46e5, #7c3aed)" }}
+              className="rounded-xl bg-ink text-paper hover:bg-ink font-bold px-4 h-11"
             >
               <Sparkles className="w-4 h-4 mr-2" />
               Generate First Resume
@@ -1464,7 +1428,7 @@ export default function Resume() {
           </motion.div>
         ) : (
           <div className="space-y-3">
-            <p className="text-xs font-extrabold text-[#64748b] uppercase tracking-wider">Your Resumes</p>
+            <p className="text-[11px] font-bold text-ink-muted uppercase tracking-wider">Your Resumes</p>
             <AnimatePresence mode="popLayout">
               {resumes.map(resume => (
                 <ResumeCard
@@ -1481,20 +1445,18 @@ export default function Resume() {
           </div>
         )}
 
-        <Card className="border-0 shadow-sm rounded-2xl bg-[#fef3c7]">
-          <CardContent className="p-4">
-            <p className="text-sm font-black text-[#92400e] mb-1">Pro tip</p>
-            <p className="text-xs text-[#78350f] leading-relaxed">
-              Complete your Profile with real projects and certifications — the AI will use them to generate a much stronger, targeted resume for each company.
-            </p>
-            <button
-              onClick={() => setLocation("/profile")}
-              className="mt-3 flex items-center gap-1 text-xs font-black text-[#d97706]"
-            >
-              Update my profile <ChevronRight className="w-3.5 h-3.5" />
-            </button>
-          </CardContent>
-        </Card>
+        <div className="border border-line rounded-2xl p-4">
+          <p className="text-[14px] font-bold text-ink mb-1">Pro tip</p>
+          <p className="text-[12px] text-ink-muted leading-relaxed">
+            Complete your Profile with real projects and certifications — the AI will use them to generate a much stronger, targeted resume for each company.
+          </p>
+          <button
+            onClick={() => setLocation("/profile")}
+            className="mt-3 flex items-center gap-1 text-[12px] font-bold text-ink"
+          >
+            Update my profile <ChevronRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
       </div>
 
       <AnimatePresence>
