@@ -522,7 +522,7 @@ export default function DriveCheck() {
     <div className="min-h-screen bg-canvas pb-24">
       {/* Canopy header */}
       <div className="bg-brand px-6 pt-8 pb-14">
-        <div className="max-w-md mx-auto">
+        <div className="max-w-md lg:max-w-3xl mx-auto">
           <button
             onClick={() => setLocation("/home")}
             className="flex items-center gap-1 text-[12px] font-bold text-white/70 mb-4"
@@ -536,7 +536,7 @@ export default function DriveCheck() {
         </div>
       </div>
 
-      <div className="px-4 -mt-6 max-w-md mx-auto">
+      <div className="px-4 -mt-6 max-w-md lg:max-w-3xl mx-auto">
       {/* Pending pings — drives student applied to 7+ days ago */}
       {pendingPings.length > 0 && (
         <div className="mb-4 bg-paper rounded-2xl shadow-soft p-4">

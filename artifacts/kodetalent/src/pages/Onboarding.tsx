@@ -136,7 +136,7 @@ export default function Onboarding() {
         <p className="text-[13px] text-white/70">This shapes everything the app suggests for you.</p>
       </div>
 
-      <div className="bg-paper rounded-t-3xl -mt-6 px-6 pt-6 pb-10 max-w-md mx-auto shadow-soft">
+      <div className="bg-paper rounded-t-3xl -mt-6 px-6 pt-6 pb-10 max-w-md lg:max-w-lg mx-auto shadow-soft">
         <label className="text-[12px] font-semibold text-ink-muted uppercase tracking-wider mb-2 block">Your name</label>
         <input
           autoFocus

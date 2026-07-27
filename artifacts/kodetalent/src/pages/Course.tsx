@@ -378,7 +378,7 @@ export default function Course() {
     const progressPct = Math.min(100, Math.round((msgIndex / (LOAD_MSGS.length - 1)) * 100));
 
     return (
-      <div className="min-h-screen bg-paper flex flex-col px-6 pb-28 pt-16">
+      <div className="min-h-screen bg-paper flex flex-col px-6 pb-28 pt-16 lg:max-w-2xl lg:mx-auto">
         {/* Domain pill */}
         <div className="flex justify-center mb-8">
           <span className="text-xs font-extrabold px-3 py-1 rounded-full border border-line text-ink-muted">
@@ -466,7 +466,7 @@ export default function Course() {
 
   if (error || !courseData) {
     return (
-      <div className="min-h-screen bg-paper flex flex-col items-center justify-center px-6 pb-28">
+      <div className="min-h-screen bg-paper flex flex-col items-center justify-center px-6 pb-28 lg:max-w-2xl lg:mx-auto">
         <h2 className="text-lg font-extrabold text-ink mb-2">Something went wrong</h2>
         <p className="text-sm text-ink-muted text-center mb-6">{error}</p>
         <Button onClick={() => { setDataReady(false); setAnimReady(false); setMsgIndex(0); hasFetched.current = false; }} className="bg-brand hover:bg-brand/90 text-paper font-bold rounded-xl px-6">
@@ -527,7 +527,7 @@ export default function Course() {
               ROADMAP / COURSE TAB — Coursera-style
           ══════════════════════════════════════════════════════ */}
           {activeTab === "roadmap" && (
-            <motion.div key="roadmap" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+            <motion.div key="roadmap" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="lg:max-w-3xl lg:mx-auto">
 
               {/* Hero progress banner */}
               <div className="rounded-2xl bg-paper shadow-soft p-4 mb-4">
@@ -901,7 +901,7 @@ export default function Course() {
               FLASHCARDS TAB
           ══════════════════════════════════════════════════════ */}
           {activeTab === "flashcards" && (
-            <motion.div key="flashcards" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+            <motion.div key="flashcards" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="lg:max-w-2xl lg:mx-auto">
               {/* Stats bar */}
               <div className="flex gap-2 mb-4">
                 {[
@@ -1023,7 +1023,7 @@ export default function Course() {
               QUIZ TAB
           ══════════════════════════════════════════════════════ */}
           {activeTab === "quiz" && (
-            <motion.div key="quiz" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+            <motion.div key="quiz" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="lg:max-w-2xl lg:mx-auto">
               {quizComplete ? (
                 <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
                   <div className="rounded-2xl bg-paper shadow-soft p-6 text-center mb-4">

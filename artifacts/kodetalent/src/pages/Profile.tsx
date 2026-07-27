@@ -446,7 +446,7 @@ export default function Profile() {
   const isGuest = profile.name === "Guest" || profile.email?.startsWith("guest_");
 
   return (
-    <div className="pb-28 max-w-md mx-auto min-h-screen bg-canvas">
+    <div className="pb-28 max-w-md lg:max-w-4xl mx-auto min-h-screen bg-canvas">
 
       {/* ── Canopy header ── */}
       <div className="relative bg-brand pt-8 pb-10 px-6">
@@ -675,6 +675,9 @@ export default function Profile() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* ── Two-column section grid (desktop only; stacks on mobile) ── */}
+        <div className="space-y-4 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-4 lg:items-start">
 
         {/* ── Profile Strength ── */}
         <div className="bg-paper rounded-2xl shadow-soft">
@@ -1143,6 +1146,9 @@ export default function Profile() {
 
         {/* ── My Resumes ── */}
         <MyResumesCard studentId={studentId!} onNavigate={() => setLocation("/resume")} />
+
+        </div>
+        {/* ── End two-column section grid ── */}
 
         {/* ── Resume ── */}
         <div className="pb-4">

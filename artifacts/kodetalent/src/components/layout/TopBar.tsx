@@ -22,7 +22,7 @@ export function TopBar({ pendingCount, initials, onProfileClick }: TopBarProps) 
   };
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-40 bg-paper/90 backdrop-blur-md border-b border-line" style={{ transform: "translateZ(0)", backfaceVisibility: "hidden", willChange: "transform" }}>
+    <div className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-paper/90 backdrop-blur-md border-b border-line" style={{ transform: "translateZ(0)", backfaceVisibility: "hidden", willChange: "transform" }}>
       <div className="max-w-md mx-auto px-4 h-14 flex items-center justify-between">
         <div className="flex items-center gap-2">
           {showBack && (

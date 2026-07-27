@@ -85,7 +85,7 @@ export default function Prep() {
   return (
     <div className="pb-28 min-h-screen bg-canvas">
       <div className="bg-brand px-4 pt-6 pb-10">
-        <div className="max-w-md mx-auto flex items-start justify-between gap-3">
+        <div className="max-w-md lg:max-w-2xl mx-auto flex items-start justify-between gap-3">
           <div>
             <h1 className="text-2xl font-extrabold flex items-center text-white">
               <Target className="mr-2" /> Practice
@@ -104,7 +104,7 @@ export default function Prep() {
         </div>
       </div>
 
-      <div className="p-4 -mt-6 max-w-md mx-auto space-y-4">
+      <div className="p-4 -mt-6 max-w-md lg:max-w-2xl mx-auto space-y-4 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-4">
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
           <Card
             className="border-0 shadow-soft rounded-2xl bg-paper cursor-pointer group"
@@ -154,26 +154,26 @@ export default function Prep() {
 
       <AnimatePresence>
         {(interviewDrawerOpen || testDrawerOpen) && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-ink/40 backdrop-blur-sm z-[60]"
-              onClick={closeDrawers}
-            />
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-ink/40 backdrop-blur-sm z-[60] flex items-end lg:items-center"
+            onClick={closeDrawers}
+          >
             <motion.div
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="fixed bottom-0 left-0 right-0 bg-paper rounded-t-3xl z-[60] shadow-[0_-10px_40px_rgba(0,0,0,0.12)] max-w-md mx-auto flex flex-col max-h-[90dvh]"
+              className="w-full bg-paper rounded-t-3xl lg:rounded-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.12)] max-w-md lg:max-w-lg mx-auto flex flex-col max-h-[90dvh] lg:max-h-[85dvh]"
+              onClick={(e) => e.stopPropagation()}
             >
               {/* Header stays put; only the form body scrolls, and the CTA
                   lives in a pinned footer below so it can never scroll out
                   of reach or collide with the bottom nav. */}
               <div className="relative flex-shrink-0 pt-4 pb-1">
-                <div className="w-12 h-1.5 bg-line rounded-full mx-auto" />
+                <div className="w-12 h-1.5 bg-line rounded-full mx-auto lg:hidden" />
                 <button className="absolute top-4 right-6 text-ink-muted rounded-full p-1" onClick={closeDrawers}>
                   <X className="w-5 h-5" />
                 </button>
@@ -328,7 +328,7 @@ export default function Prep() {
                 )}
               </div>
             </motion.div>
-          </>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

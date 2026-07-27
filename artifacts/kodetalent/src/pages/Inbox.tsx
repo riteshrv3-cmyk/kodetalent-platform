@@ -277,11 +277,13 @@ export default function Inbox() {
             )}
           </motion.div>
         ) : (
-          <AnimatePresence>
-            {filtered.map(invite => (
-              <InviteCard key={invite.id} invite={invite} onUpdate={handleUpdate} />
-            ))}
-          </AnimatePresence>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-4">
+            <AnimatePresence>
+              {filtered.map(invite => (
+                <InviteCard key={invite.id} invite={invite} onUpdate={handleUpdate} />
+              ))}
+            </AnimatePresence>
+          </div>
         )}
       </div>
     </div>

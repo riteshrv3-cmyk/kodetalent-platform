@@ -496,7 +496,7 @@ export default function Interview() {
       : [session?.round || "Technical"];
 
     return (
-      <div className="p-4 pb-24 max-w-md mx-auto space-y-4 min-h-screen bg-canvas">
+      <div className="p-4 pb-24 max-w-md lg:max-w-2xl mx-auto space-y-4 min-h-screen bg-canvas">
         <Button variant="ghost" onClick={() => setLocation("/practice")} className="mb-2 -ml-2 text-ink-muted font-bold">
           <ArrowLeft className="w-5 h-5 mr-2" /> Back
         </Button>
@@ -505,8 +505,9 @@ export default function Interview() {
           <p className="text-[12px] text-ink-muted font-bold">{interviewTypeLabel} · {session?.company}</p>
         </div>
 
+        <div className="space-y-4 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-4">
         {/* Main score card */}
-        <Card className="rounded-2xl bg-paper shadow-soft overflow-hidden">
+        <Card className="rounded-2xl bg-paper shadow-soft overflow-hidden lg:order-1">
           <CardContent className="p-6 text-center">
             <div className="text-[80px] font-black leading-none mb-1 text-brand">
               {evalData?.overallScore ?? 85}
@@ -524,6 +525,7 @@ export default function Interview() {
         <AnimatePresence>
           {!confidenceSent && (
             <motion.div
+              className="lg:order-2"
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95 }}
@@ -575,7 +577,7 @@ export default function Interview() {
             </motion.div>
           )}
           {confidenceSent && (
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
+            <motion.div className="lg:order-2" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
               <Card className="rounded-2xl bg-paper shadow-soft">
                 <CardContent className="p-4 text-center">
                   <p className="text-[14px] font-bold text-ink">
@@ -589,7 +591,7 @@ export default function Interview() {
 
         {/* Category scores */}
         {evalData && (
-          <Card className="rounded-2xl bg-paper shadow-soft">
+          <Card className="rounded-2xl bg-paper shadow-soft lg:order-3">
             <CardContent className="p-5">
               <p className="text-[11px] font-bold uppercase tracking-wider text-ink-muted mb-4">Category Scores</p>
               <div className="flex justify-around">
@@ -602,7 +604,7 @@ export default function Interview() {
         )}
 
         {evalData && (
-          <div className="space-y-3">
+          <div className="space-y-3 lg:order-5 lg:col-span-2">
             <Card className="border-0 border-l-2 border-done shadow-none rounded-none bg-paper">
               <CardContent className="p-4">
                 <p className="text-[11px] font-bold text-ink-muted uppercase tracking-wider mb-1">Strength</p>
@@ -629,7 +631,7 @@ export default function Interview() {
         )}
 
         {times.length > 0 && (
-          <Card className="rounded-2xl bg-paper shadow-soft">
+          <Card className="rounded-2xl bg-paper shadow-soft lg:order-4">
             <CardContent className="p-4">
               <p className="text-[11px] font-bold text-ink-muted uppercase tracking-wider mb-3">
                 <Clock className="w-3 h-3 inline mr-1" /> Response Times
@@ -642,6 +644,7 @@ export default function Interview() {
             </CardContent>
           </Card>
         )}
+        </div>
 
         {evalData?.questionFeedback && evalData.questionFeedback.length > 0 && (
           <div>
@@ -700,7 +703,7 @@ export default function Interview() {
     : [session?.round || "Technical"];
 
   return (
-    <div className="flex flex-col h-[100dvh] bg-canvas max-w-md mx-auto relative overflow-hidden">
+    <div className="flex flex-col h-[100dvh] bg-canvas max-w-md lg:max-w-2xl mx-auto relative overflow-hidden">
       {/* Header */}
       <div className="bg-paper p-4 sticky top-0 z-10 border-b border-line">
         <div className="flex items-center justify-between mb-2">
@@ -839,7 +842,7 @@ export default function Interview() {
       </div>
 
       {/* Input area */}
-      <div className="fixed bottom-0 left-0 right-0 bg-paper border-t border-line pt-4 pb-5 px-4 max-w-md mx-auto">
+      <div className="fixed bottom-0 left-0 right-0 bg-paper border-t border-line pt-4 pb-5 px-4 max-w-md lg:max-w-2xl mx-auto">
         {(isRecording || isTranscribing || isSpeaking) && (
           <motion.div animate={{ opacity: [0.5, 1, 0.5] }} transition={{ duration: 1, repeat: Infinity }}
             className="text-center text-[12px] font-bold text-ink-muted mb-2">

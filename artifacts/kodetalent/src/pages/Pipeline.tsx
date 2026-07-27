@@ -131,7 +131,7 @@ export default function Pipeline() {
         </p>
       </div>
 
-      <div className="bg-paper rounded-t-3xl -mt-6 px-6 pt-6 pb-6 shadow-soft">
+      <div className="bg-paper rounded-t-3xl -mt-6 px-6 pt-6 pb-6 shadow-soft lg:max-w-2xl lg:mx-auto">
         <textarea
           value={rawText}
           onChange={(e) => setRawText(e.target.value)}
@@ -236,25 +236,27 @@ export default function Pipeline() {
       {applications.length > 0 && (
         <div className="mt-8">
           <p className="text-[11px] font-bold uppercase tracking-wider text-ink-muted mb-3">Tracked ({applications.length})</p>
-          {applications.map((app) => (
-            <div key={app.id} className="bg-paper rounded-2xl shadow-soft p-4 mb-3">
-              <div className="flex items-center justify-between gap-2 mb-1.5">
-                <p className="text-[14px] font-semibold text-ink truncate">
-                  {app.company ?? "Unknown"}{app.role ? ` · ${app.role}` : ""}
-                </p>
-                <ChevronRight className="w-4 h-4 text-ink-muted shrink-0" />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-4">
+            {applications.map((app) => (
+              <div key={app.id} className="bg-paper rounded-2xl shadow-soft p-4">
+                <div className="flex items-center justify-between gap-2 mb-1.5">
+                  <p className="text-[14px] font-semibold text-ink truncate">
+                    {app.company ?? "Unknown"}{app.role ? ` · ${app.role}` : ""}
+                  </p>
+                  <ChevronRight className="w-4 h-4 text-ink-muted shrink-0" />
+                </div>
+                <select
+                  value={app.status}
+                  onChange={(e) => updateStatus(app.id, e.target.value)}
+                  className="text-[12px] font-semibold text-brand bg-brand-soft rounded-lg px-2 py-1 border-0 focus:outline-none"
+                >
+                  {STATUS_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
               </div>
-              <select
-                value={app.status}
-                onChange={(e) => updateStatus(app.id, e.target.value)}
-                className="text-[12px] font-semibold text-brand bg-brand-soft rounded-lg px-2 py-1 border-0 focus:outline-none"
-              >
-                {STATUS_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       )}
       </div>

@@ -1,6 +1,7 @@
 import { ReactNode, useEffect, useState } from "react";
 import { BottomNav } from "./BottomNav";
 import { TopBar } from "./TopBar";
+import { SideNav } from "./SideNav";
 import { ProfileSidebar } from "./ProfileSidebar";
 import { KitBubble } from "@/components/kodetalent/KitBubble";
 import { AnimatePresence, motion } from "framer-motion";
@@ -61,14 +62,22 @@ export function AppLayout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="min-h-[100dvh] bg-canvas" style={{ isolation: "isolate", overflowX: "clip" }}>
+    // lg:pl-[240px] on the OUTER container reserves the fixed SideNav's width,
+    // so <main>'s own max-w + mx-auto center within the space actually left
+    // over — not within the full viewport minus a padding on main itself.
+    <div className="min-h-[100dvh] bg-canvas lg:pl-[240px]" style={{ isolation: "isolate", overflowX: "clip" }}>
       <TopBar
         pendingCount={pendingCount}
         initials={initials}
         onProfileClick={() => setSidebarOpen(true)}
       />
+      <SideNav
+        pendingCount={pendingCount}
+        initials={initials}
+        onProfileClick={() => setSidebarOpen(true)}
+      />
 
-      <main className="max-w-md mx-auto w-full pt-14 pb-[calc(4rem+env(safe-area-inset-bottom))] min-h-[100dvh]">
+      <main className="max-w-md mx-auto w-full pt-14 pb-[calc(4rem+env(safe-area-inset-bottom))] min-h-[100dvh] lg:max-w-5xl lg:px-8 lg:pt-8 lg:pb-8">
         {/* No willChange/backfaceVisibility on this wrapper: a persistent
             stacking context here traps every in-page fixed overlay
             (Prep/Resume/Opportunities bottom sheets) beneath BottomNav. */}

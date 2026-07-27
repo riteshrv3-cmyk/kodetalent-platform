@@ -184,7 +184,7 @@ export default function InterviewHistory() {
             {/* Session list */}
             <div>
               <p className="text-[11px] font-bold uppercase tracking-wider text-ink-muted mb-1">All Sessions</p>
-              <div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 lg:gap-4">
                 {[...items].reverse().map((it, i) => (
                   <motion.button
                     key={it.id}

@@ -593,30 +593,32 @@ export default function AIChat() {
       <AnimatePresence>{showConfetti && <Confetti key="confetti" />}</AnimatePresence>
 
       {/* ── Header ── */}
-      <div className="bg-brand px-4 py-2.5 flex items-center gap-3">
-        <div
-          aria-label="Kit"
-          className="w-8 h-8 rounded-full bg-white/15 flex items-center justify-center shrink-0"
-        >
-          <Cat className="w-4 h-4 text-white" strokeWidth={2} />
-        </div>
-
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5">
-            <p className="font-black text-white text-sm">Kit</p>
-            <span className="text-[9px] font-bold text-white/80 border border-white/30 px-1.5 py-0.5 rounded-full">AI</span>
+      <div className="bg-brand">
+        <div className="px-4 py-2.5 flex items-center gap-3 lg:max-w-2xl lg:mx-auto">
+          <div
+            aria-label="Kit"
+            className="w-8 h-8 rounded-full bg-white/15 flex items-center justify-center shrink-0"
+          >
+            <Cat className="w-4 h-4 text-white" strokeWidth={2} />
           </div>
-          <p className="text-[10px] text-white/70 font-semibold">
-            {kitMood === "thinking" ? "Kit is thinking..." : "purrfessional career coach • online"}
-          </p>
-        </div>
 
-        <button onClick={resetChat}
-          className="w-8 h-8 rounded-xl bg-white/15 flex items-center justify-center active:scale-90 transition-transform"
-          title="New chat"
-        >
-          <RefreshCw className="w-3.5 h-3.5 text-white" />
-        </button>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1.5">
+              <p className="font-black text-white text-sm">Kit</p>
+              <span className="text-[9px] font-bold text-white/80 border border-white/30 px-1.5 py-0.5 rounded-full">AI</span>
+            </div>
+            <p className="text-[10px] text-white/70 font-semibold">
+              {kitMood === "thinking" ? "Kit is thinking..." : "purrfessional career coach • online"}
+            </p>
+          </div>
+
+          <button onClick={resetChat}
+            className="w-8 h-8 rounded-xl bg-white/15 flex items-center justify-center active:scale-90 transition-transform"
+            title="New chat"
+          >
+            <RefreshCw className="w-3.5 h-3.5 text-white" />
+          </button>
+        </div>
       </div>
 
       {/* ── Resume chat banner ── */}
@@ -638,7 +640,7 @@ export default function AIChat() {
       </AnimatePresence>
 
       {/* ── Messages ── */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 lg:max-w-2xl lg:mx-auto">
         <AnimatePresence initial={false}>
           {listItems.map((item, idx) =>
             item.type === "sep" ? (
@@ -664,81 +666,83 @@ export default function AIChat() {
       </div>
 
       {/* ── Input bar ── */}
-      <div className="bg-paper border-t border-line px-4 pt-3 pb-4">
-        {/* Interim voice text preview */}
-        <AnimatePresence>
-          {interimText && (
-            <motion.p
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              className="text-[11px] text-ink-muted italic mb-1.5 px-1"
-            >
-              "{interimText}"
-            </motion.p>
-          )}
-        </AnimatePresence>
+      <div className="bg-paper border-t border-line">
+        <div className="px-4 pt-3 pb-4 lg:max-w-2xl lg:mx-auto">
+          {/* Interim voice text preview */}
+          <AnimatePresence>
+            {interimText && (
+              <motion.p
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="text-[11px] text-ink-muted italic mb-1.5 px-1"
+              >
+                "{interimText}"
+              </motion.p>
+            )}
+          </AnimatePresence>
 
-        <div className="flex items-end gap-2">
-          {/* Voice button */}
-          {voiceSupported && (
-            <button
-              onPointerDown={startListening}
-              onPointerUp={stopListening}
-              onPointerLeave={stopListening}
-              disabled={streaming}
-              className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-all active:scale-90 disabled:opacity-40 ${
-                listening
-                  ? "bg-brand text-white"
-                  : "border border-line text-ink-muted"
-              }`}
-              title="Hold to speak"
+          <div className="flex items-end gap-2">
+            {/* Voice button */}
+            {voiceSupported && (
+              <button
+                onPointerDown={startListening}
+                onPointerUp={stopListening}
+                onPointerLeave={stopListening}
+                disabled={streaming}
+                className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-all active:scale-90 disabled:opacity-40 ${
+                  listening
+                    ? "bg-brand text-white"
+                    : "border border-line text-ink-muted"
+                }`}
+                title="Hold to speak"
+              >
+                {listening ? (
+                  <ListeningWave />
+                ) : (
+                  <Mic className="w-4 h-4 text-ink-muted" />
+                )}
+              </button>
+            )}
+
+            <div className="flex-1 relative">
+              <textarea
+                ref={inputRef}
+                value={listening && interimText ? interimText : input}
+                onChange={(e) => {
+                  setInput(e.target.value);
+                  e.target.style.height = "auto";
+                  e.target.style.height = Math.min(e.target.scrollHeight, 96) + "px";
+                }}
+                onKeyDown={handleKeyDown}
+                placeholder={listening ? "Listening... 🎤" : "Ask Kit anything... 🐾"}
+                rows={1}
+                disabled={streaming}
+                className={`w-full resize-none text-[13px] text-ink placeholder:text-ink-muted bg-paper rounded-2xl px-4 py-2.5 outline-none border transition-all max-h-[96px] disabled:opacity-60 ${
+                  listening ? "border-brand" : "border-line focus:border-brand"
+                }`}
+              />
+            </div>
+
+            <motion.button
+              whileTap={{ scale: 0.85 }}
+              onClick={() => sendMessage(input)}
+              disabled={!input.trim() || streaming}
+              className="w-10 h-10 rounded-full bg-brand text-white flex items-center justify-center disabled:opacity-35 shrink-0 transition-opacity"
             >
-              {listening ? (
-                <ListeningWave />
+              {streaming ? (
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
               ) : (
-                <Mic className="w-4 h-4 text-ink-muted" />
+                <Send className="w-4 h-4 text-white" />
               )}
-            </button>
-          )}
-
-          <div className="flex-1 relative">
-            <textarea
-              ref={inputRef}
-              value={listening && interimText ? interimText : input}
-              onChange={(e) => {
-                setInput(e.target.value);
-                e.target.style.height = "auto";
-                e.target.style.height = Math.min(e.target.scrollHeight, 96) + "px";
-              }}
-              onKeyDown={handleKeyDown}
-              placeholder={listening ? "Listening... 🎤" : "Ask Kit anything... 🐾"}
-              rows={1}
-              disabled={streaming}
-              className={`w-full resize-none text-[13px] text-ink placeholder:text-ink-muted bg-paper rounded-2xl px-4 py-2.5 outline-none border transition-all max-h-[96px] disabled:opacity-60 ${
-                listening ? "border-brand" : "border-line focus:border-brand"
-              }`}
-            />
+            </motion.button>
           </div>
 
-          <motion.button
-            whileTap={{ scale: 0.85 }}
-            onClick={() => sendMessage(input)}
-            disabled={!input.trim() || streaming}
-            className="w-10 h-10 rounded-full bg-brand text-white flex items-center justify-center disabled:opacity-35 shrink-0 transition-opacity"
-          >
-            {streaming ? (
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <Send className="w-4 h-4 text-white" />
-            )}
-          </motion.button>
+          <p className="text-[9.5px] text-ink-muted text-center mt-2 font-medium flex items-center justify-center gap-1">
+            {voiceSupported && <><Volume2 className="w-3 h-3" /> Hold mic to speak •</>}
+            Kit can update your profile • add projects • career advice
+          </p>
         </div>
-
-        <p className="text-[9.5px] text-ink-muted text-center mt-2 font-medium flex items-center justify-center gap-1">
-          {voiceSupported && <><Volume2 className="w-3 h-3" /> Hold mic to speak •</>}
-          Kit can update your profile • add projects • career advice
-        </p>
       </div>
     </div>
   );

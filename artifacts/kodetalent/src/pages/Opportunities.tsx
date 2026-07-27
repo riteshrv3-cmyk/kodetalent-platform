@@ -227,61 +227,65 @@ export default function Opportunities() {
       );
     }
 
-    return items.map((o, i) => (
-      <motion.div key={o.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i, 8) * 0.04 }}>
-        <div className="bg-paper rounded-2xl shadow-soft overflow-hidden">
-          <div className="p-4">
-            <div className="flex items-start justify-between mb-2 gap-2">
-              <div className="flex items-center gap-2 min-w-0">
-                {o.logo
-                  ? <img src={o.logo} alt={o.company} className="w-9 h-9 rounded-lg object-cover border border-line flex-shrink-0" onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
-                  : <span className="text-2xl flex-shrink-0">{emojiFor(o.source)}</span>
-                }
-                <div className="min-w-0">
-                  <p className="text-[11px] text-ink-muted truncate">{o.company} · {o.source}</p>
-                  <p className="text-[14px] font-bold text-ink leading-tight line-clamp-2">{o.title}</p>
+    return (
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {items.map((o, i) => (
+          <motion.div key={o.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i, 8) * 0.04 }}>
+            <div className="bg-paper rounded-2xl shadow-soft overflow-hidden">
+              <div className="p-4">
+                <div className="flex items-start justify-between mb-2 gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    {o.logo
+                      ? <img src={o.logo} alt={o.company} className="w-9 h-9 rounded-lg object-cover border border-line flex-shrink-0" onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+                      : <span className="text-2xl flex-shrink-0">{emojiFor(o.source)}</span>
+                    }
+                    <div className="min-w-0">
+                      <p className="text-[11px] text-ink-muted truncate">{o.company} · {o.source}</p>
+                      <p className="text-[14px] font-bold text-ink leading-tight line-clamp-2">{o.title}</p>
+                    </div>
+                  </div>
+                  {o.pay && (
+                    <span className="text-[11px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap bg-brand-soft text-brand">
+                      {o.pay}
+                    </span>
+                  )}
                 </div>
-              </div>
-              {o.pay && (
-                <span className="text-[11px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap bg-brand-soft text-brand">
-                  {o.pay}
-                </span>
-              )}
-            </div>
-            <p className="text-[12px] text-ink-muted mb-3">
-              📍 {o.location}{o.postedAt ? ` · ${o.postedAt}` : ""}
-            </p>
-            <div className="flex flex-wrap gap-1.5 mb-3">
-              {(o.tags.length ? o.tags : skills).slice(0, 4).map(s => (
-                <span key={s} className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-brand-soft text-brand">
-                  {s}
-                </span>
-              ))}
-            </div>
-            <div className="flex gap-2 mb-2">
-              <Button
-                onClick={() => checkFit(o)}
-                className="flex-1 h-10 rounded-full font-bold text-[13px] bg-brand text-white hover:bg-brand/90"
-              >
-                <Sparkles className="w-3.5 h-3.5 mr-1.5" /> Check fit
-              </Button>
-              <a href={o.url} target="_blank" rel="noopener noreferrer" className="flex-1">
-                <Button variant="outline" className="w-full h-10 rounded-full font-bold text-[13px] border border-line text-brand bg-paper">
-                  Apply <ExternalLink className="w-3 h-3 ml-1" />
+                <p className="text-[12px] text-ink-muted mb-3">
+                  📍 {o.location}{o.postedAt ? ` · ${o.postedAt}` : ""}
+                </p>
+                <div className="flex flex-wrap gap-1.5 mb-3">
+                  {(o.tags.length ? o.tags : skills).slice(0, 4).map(s => (
+                    <span key={s} className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-brand-soft text-brand">
+                      {s}
+                    </span>
+                  ))}
+                </div>
+                <div className="flex gap-2 mb-2">
+                  <Button
+                    onClick={() => checkFit(o)}
+                    className="flex-1 h-10 rounded-full font-bold text-[13px] bg-brand text-white hover:bg-brand/90"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 mr-1.5" /> Check fit
+                  </Button>
+                  <a href={o.url} target="_blank" rel="noopener noreferrer" className="flex-1">
+                    <Button variant="outline" className="w-full h-10 rounded-full font-bold text-[13px] border border-line text-brand bg-paper">
+                      Apply <ExternalLink className="w-3 h-3 ml-1" />
+                    </Button>
+                  </a>
+                </div>
+                <Button
+                  onClick={navigateToCourse}
+                  variant="ghost"
+                  className="w-full h-8 rounded-lg font-bold text-[12px] text-brand"
+                >
+                  <Target className="w-3 h-3 mr-1" /> Prepare for this role
                 </Button>
-              </a>
+              </div>
             </div>
-            <Button
-              onClick={navigateToCourse}
-              variant="ghost"
-              className="w-full h-8 rounded-lg font-bold text-[12px] text-brand"
-            >
-              <Target className="w-3 h-3 mr-1" /> Prepare for this role
-            </Button>
-          </div>
-        </div>
-      </motion.div>
-    ));
+          </motion.div>
+        ))}
+      </div>
+    );
   };
 
   const renderCards = () => renderLiveCards();
@@ -373,7 +377,7 @@ export default function Opportunities() {
               </div>
 
               {searchQuery.trim() && (
-                <div className="mt-2 bg-paper rounded-2xl shadow-soft overflow-hidden">
+                <div className="mt-2 bg-paper rounded-2xl shadow-soft overflow-hidden grid grid-cols-1 lg:grid-cols-2 gap-4">
                   {searchResults.length === 0 ? (
                     <div className="px-4 py-6 text-center">
                       <p className="text-[14px] text-ink">No matches</p>
@@ -429,7 +433,7 @@ export default function Opportunities() {
                 </div>
                 <ChevronRight className="w-4 h-4 text-ink-muted shrink-0" />
               </button>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-3 lg:grid-cols-6 gap-3">
                 {DOMAINS.map((domain, i) => (
                   <motion.button
                     key={domain.id}
@@ -561,27 +565,27 @@ export default function Opportunities() {
         </AnimatePresence>
       </div>
 
-      {/* JD-Gap bottom sheet */}
+      {/* JD-Gap bottom sheet (centered dialog on lg) */}
       <AnimatePresence>
         {gapOpen && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={closeGap}
-              className="fixed inset-0 bg-ink/40 z-[60]"
-            />
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={closeGap}
+            className="fixed inset-0 bg-ink/40 z-[60] flex items-end lg:items-center"
+          >
             <motion.div
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 30, stiffness: 280 }}
-              className="fixed bottom-0 left-0 right-0 z-[60] bg-paper rounded-t-3xl shadow-soft max-h-[85dvh] overflow-y-auto max-w-md mx-auto border-t border-line pb-[env(safe-area-inset-bottom)]"
+              className="w-full bg-paper rounded-t-3xl lg:rounded-3xl shadow-soft max-h-[85dvh] overflow-y-auto max-w-md lg:max-w-lg mx-auto border-t border-line lg:border pb-[env(safe-area-inset-bottom)]"
               data-testid="jd-gap-sheet"
+              onClick={(e) => e.stopPropagation()}
             >
-              <div className="sticky top-0 bg-paper rounded-t-3xl px-5 pt-3 pb-2 border-b border-line">
-                <div className="w-12 h-1 rounded-full bg-line mx-auto mb-3" />
+              <div className="sticky top-0 bg-paper rounded-t-3xl lg:rounded-t-3xl px-5 pt-3 pb-2 border-b border-line">
+                <div className="w-12 h-1 rounded-full bg-line mx-auto mb-3 lg:hidden" />
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">AI Fit Check</p>
@@ -706,7 +710,7 @@ export default function Opportunities() {
                 })()}
               </div>
             </motion.div>
-          </>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

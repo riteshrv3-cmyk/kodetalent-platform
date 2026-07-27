@@ -85,7 +85,43 @@ plain shadcn component defaults is usually correct without extra classes.
     body, `flex-shrink-0 border-t border-line` footer holding the primary CTA)
     — this is what fixed the CTA-trapped-under-nav bug and must not regress.
     All sheets stay `z-[60]`, use `dvh` units for max-height, and pad for
-    `env(safe-area-inset-bottom)`.
+    `env(safe-area-inset-bottom)`. On `lg:` the backdrop centers instead of
+    bottom-anchoring (`items-end lg:items-center justify-center`) and the
+    sheet becomes a centered rounded card (`lg:max-w-lg lg:rounded-3xl`,
+    grabber `lg:hidden`) — see the v2.1 responsive pass in WP-B.
+
+## Responsive rules (v2.1 — desktop)
+
+The app was mobile-only; `lg` (1024px) is now the ONLY desktop breakpoint. Below
+`lg` nothing changes — every rule here is `lg:`-ADDITIVE, never a replacement of
+mobile markup. The shell already handles navigation: `BottomNav`/`TopBar` are
+`lg:hidden`, `SideNav` (`components/layout/SideNav.tsx`) takes over at `lg:`,
+and `AppLayout`'s `<main>` widens to `lg:max-w-5xl lg:px-8`. Screens only need
+their own internal content to use that width instead of clamping to phone size.
+
+1. **Remove/relax page-level `max-w-md`.** Any page-root or section wrapper
+   with a hardcoded `max-w-md` (a mobile-era leftover — the shell now provides
+   the outer width) should drop it, or override with `lg:max-w-none` /
+   `lg:max-w-{2xl,3xl,5xl}` depending on content type (see below). Don't touch
+   `max-w-md` on things that should legitimately stay narrow on desktop too
+   (e.g. a single form field group) — use judgment.
+2. **Card/list grids:** `grid grid-cols-1 lg:grid-cols-2 gap-4` for anything
+   that was a single-column stack of cards (Opportunities feed, Prep's two
+   mode cards, InterviewHistory sessions, Inbox invites, Resume's saved list,
+   Pipeline's tracked applications). The Opportunities domain grid goes
+   `grid-cols-3 lg:grid-cols-6`.
+3. **Single-column reading/form content** (Course lessons, Onboarding, Join,
+   AIChat thread, DriveCheck paste box, Test question) centers at
+   `lg:max-w-2xl` or `lg:max-w-3xl mx-auto` depending on how text-heavy it is
+   — don't stretch prose edge-to-edge on a wide screen.
+4. **Canopy headers span the content area** — no extra width rule needed,
+   they already stretch full-width of their container; just make sure the
+   container itself isn't still clamped to `max-w-md`.
+5. **Fullscreen routes** (`/practice/interview/:id`, `/onboarding` — no shell,
+   no SideNav) widen their OWN centered column, e.g. `lg:max-w-2xl mx-auto`,
+   since there's no shell-level max-width to inherit.
+6. **Sheets/drawers on `lg:`** become centered dialogs, not bottom sheets —
+   see rule 10 below; don't touch this per-screen, it's handled once per sheet.
 
 ## Non-negotiable
 
@@ -100,3 +136,7 @@ plain shadcn component defaults is usually correct without extra classes.
 - Do not regress the sheet-overlay fix: no `willChange`/`backfaceVisibility`
   on the AppLayout page-fade wrapper, and every bottom sheet keeps its
   header/scrollable-body/pinned-footer structure.
+- Do not regress mobile: every change in the v2.1 responsive pass must be a
+  `lg:`-prefixed ADDITION. The rendered result below `lg` (1024px) must be
+  pixel-equivalent to before the pass — if you're unsure, diff the classes
+  you touched and confirm none of the unprefixed ones changed.

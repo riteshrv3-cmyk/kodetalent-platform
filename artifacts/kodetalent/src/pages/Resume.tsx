@@ -889,7 +889,7 @@ function EditResumeSheet({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[60] bg-ink/40 flex items-end"
+      className="fixed inset-0 z-[60] bg-ink/40 flex items-end lg:items-center"
       onClick={onClose}
     >
       <motion.div
@@ -897,11 +897,10 @@ function EditResumeSheet({
         animate={{ y: 0 }}
         exit={{ y: "100%" }}
         transition={{ type: "spring", damping: 28, stiffness: 300 }}
-        className="w-full max-w-lg mx-auto bg-paper rounded-t-3xl flex flex-col"
-        style={{ maxHeight: "92vh" }}
+        className="w-full max-w-lg mx-auto bg-paper rounded-t-3xl lg:rounded-3xl flex flex-col max-h-[92vh] lg:max-h-[85dvh]"
         onClick={e => e.stopPropagation()}
       >
-        <div className="pt-3 pb-1 flex justify-center shrink-0">
+        <div className="pt-3 pb-1 flex justify-center shrink-0 lg:hidden">
           <div className="w-10 h-1 rounded-full bg-line" />
         </div>
         <div className="flex items-center justify-between px-5 pt-2 pb-3 border-b border-line shrink-0">
@@ -1188,7 +1187,7 @@ function GenerateSheet({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[60] bg-ink/40 flex items-end"
+      className="fixed inset-0 z-[60] bg-ink/40 flex items-end lg:items-center"
       onClick={onClose}
     >
       <motion.div
@@ -1196,10 +1195,10 @@ function GenerateSheet({
         animate={{ y: 0 }}
         exit={{ y: "100%" }}
         transition={{ type: "spring", damping: 28, stiffness: 300 }}
-        className="w-full max-w-lg mx-auto bg-paper rounded-t-3xl p-5 pb-8 space-y-5 max-h-[92dvh] overflow-y-auto"
+        className="w-full max-w-lg mx-auto bg-paper rounded-t-3xl lg:rounded-3xl p-5 pb-8 space-y-5 max-h-[92dvh] lg:max-h-[85dvh] overflow-y-auto"
         onClick={e => e.stopPropagation()}
       >
-        <div className="flex justify-center -mt-2 mb-1">
+        <div className="flex justify-center -mt-2 mb-1 lg:hidden">
           <div className="w-10 h-1 rounded-full bg-line" />
         </div>
 
@@ -1361,7 +1360,7 @@ export default function Resume() {
 
   if (loading) {
     return (
-      <div className="p-4 pb-28 max-w-md mx-auto space-y-4 min-h-screen bg-canvas">
+      <div className="p-4 pb-28 max-w-md lg:max-w-3xl mx-auto space-y-4 min-h-screen bg-canvas">
         <Skeleton className="h-8 w-32 rounded-xl" />
         <Skeleton className="h-32 w-full rounded-2xl" />
         <Skeleton className="h-32 w-full rounded-2xl" />
@@ -1371,7 +1370,7 @@ export default function Resume() {
 
   return (
     <>
-      <div className="p-4 pb-28 max-w-md mx-auto space-y-5 min-h-screen bg-canvas">
+      <div className="p-4 pb-28 max-w-md lg:max-w-3xl mx-auto space-y-5 min-h-screen bg-canvas">
         <Button
           variant="ghost"
           onClick={() => setLocation("/profile")}
@@ -1429,19 +1428,21 @@ export default function Resume() {
         ) : (
           <div className="space-y-3">
             <p className="text-[11px] font-bold text-ink-muted uppercase tracking-wider">Your Resumes</p>
-            <AnimatePresence mode="popLayout">
-              {resumes.map(resume => (
-                <ResumeCard
-                  key={resume.id}
-                  resume={resume}
-                  onDelete={() => {
-                    if (deletingId !== resume.id) handleDelete(resume.id);
-                  }}
-                  onDownload={() => downloadResumePDF(resume)}
-                  onEdit={() => setEditingResume(resume)}
-                />
-              ))}
-            </AnimatePresence>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-4">
+              <AnimatePresence mode="popLayout">
+                {resumes.map(resume => (
+                  <ResumeCard
+                    key={resume.id}
+                    resume={resume}
+                    onDelete={() => {
+                      if (deletingId !== resume.id) handleDelete(resume.id);
+                    }}
+                    onDownload={() => downloadResumePDF(resume)}
+                    onEdit={() => setEditingResume(resume)}
+                  />
+                ))}
+              </AnimatePresence>
+            </div>
           </div>
         )}
 

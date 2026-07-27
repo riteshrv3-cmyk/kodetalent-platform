@@ -65,7 +65,7 @@ export default function Join({ code }: { code: string }) {
   }
 
   return (
-    <div className="min-h-[100dvh] bg-canvas flex flex-col items-center justify-between p-6 text-center max-w-md mx-auto">
+    <div className="min-h-[100dvh] bg-canvas flex flex-col items-center justify-between p-6 text-center max-w-md lg:max-w-lg mx-auto">
       <div className="flex-1 flex flex-col items-center justify-center w-full">
         <motion.div
           initial={{ scale: 0.6, opacity: 0 }}

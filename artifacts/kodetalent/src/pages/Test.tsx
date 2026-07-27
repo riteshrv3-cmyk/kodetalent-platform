@@ -77,7 +77,7 @@ export default function Test() {
   };
 
   if (isLoading || !session) {
-    return <div className="p-6 space-y-6 max-w-md mx-auto mt-10 min-h-screen bg-canvas">
+    return <div className="p-6 space-y-6 max-w-md lg:max-w-3xl mx-auto mt-10 min-h-screen bg-canvas">
       <Skeleton className="h-4 w-full" />
       <Skeleton className="h-40 w-full rounded-2xl" />
       <div className="space-y-4">
@@ -88,7 +88,7 @@ export default function Test() {
 
   if (testResult) {
     return (
-      <div className="p-4 pb-24 max-w-md mx-auto space-y-6 min-h-screen bg-canvas">
+      <div className="p-4 pb-24 max-w-md lg:max-w-3xl mx-auto space-y-6 min-h-screen bg-canvas">
         <div className="text-center space-y-2 mt-10 mb-10">
           <h1 className="text-[26px] font-extrabold text-ink leading-[1.06] tracking-tight">Test Complete</h1>
           <p className="text-[12px] text-ink-muted">{session.testType}</p>
@@ -138,7 +138,7 @@ export default function Test() {
   const selectedAnswer = answers[currentQuestionIdx];
 
   return (
-    <div className="flex flex-col h-[100dvh] bg-canvas max-w-md mx-auto relative overflow-hidden">
+    <div className="flex flex-col h-[100dvh] bg-canvas max-w-md lg:max-w-3xl mx-auto relative overflow-hidden">
       <div className="bg-brand p-4 pb-6 sticky top-0 z-10">
         <div className="flex justify-between items-center mb-4">
           <div className="bg-white/20 text-white px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider">

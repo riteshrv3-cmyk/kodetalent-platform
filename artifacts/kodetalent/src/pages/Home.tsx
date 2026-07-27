@@ -53,28 +53,30 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-canvas pb-24">
       <div className="bg-brand px-6 pt-8 pb-14">
-        <div className="flex items-start justify-between mb-1">
-          <div>
-            <p className="text-[12px] font-medium uppercase tracking-wider text-white/70">Good {greeting}</p>
-            <h1 className="text-[30px] font-extrabold text-white leading-[1.06] tracking-tight">{firstName}.</h1>
+        <div className="lg:max-w-2xl lg:mx-auto">
+          <div className="flex items-start justify-between mb-1">
+            <div>
+              <p className="text-[12px] font-medium uppercase tracking-wider text-white/70">Good {greeting}</p>
+              <h1 className="text-[30px] font-extrabold text-white leading-[1.06] tracking-tight">{firstName}.</h1>
+            </div>
+            <div className="w-9 h-9 rounded-full bg-white/15 flex items-center justify-center shrink-0 mt-1">
+              <Cat className="w-5 h-5 text-white" strokeWidth={2} />
+            </div>
           </div>
-          <div className="w-9 h-9 rounded-full bg-white/15 flex items-center justify-center shrink-0 mt-1">
-            <Cat className="w-5 h-5 text-white" strokeWidth={2} />
-          </div>
-        </div>
 
-        <div className="flex items-center gap-2">
-          {goal && <span className="text-[12px] text-white/70">{goal}</span>}
-          {streakCount > 0 && (
-            <>
-              {goal && <span className="text-white/40">·</span>}
-              <span className="text-[12px] font-semibold text-white">{streakCount} day{streakCount === 1 ? "" : "s"} in a row</span>
-            </>
-          )}
+          <div className="flex items-center gap-2">
+            {goal && <span className="text-[12px] text-white/70">{goal}</span>}
+            {streakCount > 0 && (
+              <>
+                {goal && <span className="text-white/40">·</span>}
+                <span className="text-[12px] font-semibold text-white">{streakCount} day{streakCount === 1 ? "" : "s"} in a row</span>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
-      <div className="bg-canvas rounded-t-3xl -mt-6 px-6 pt-6">
+      <div className="bg-canvas rounded-t-3xl -mt-6 px-6 pt-6 lg:max-w-2xl lg:mx-auto">
         {tasks.map((task) => (
           <TaskRow
             key={task.id}
