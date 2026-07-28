@@ -2,7 +2,7 @@ import { Router } from "express";
 import { db, studentsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { requireStudent } from "../middlewares/studentAuth";
-import { getOpportunities, type Kind, type Opportunity } from "./opportunities";
+import { getOpportunities, isEntryFriendly, type Kind, type Opportunity } from "./opportunities";
 
 const router = Router();
 
@@ -20,23 +20,82 @@ const ROLE_MATCH: Record<string, { roleLabel: string; skills: string[] }> = {
   "Cybersecurity": { roleLabel: "Security Analyst", skills: ["SIEM", "Threat Intelligence"] },
 };
 
+/**
+ * Degree -> starter job title.
+ *
+ * A student's `field` is what they study, not a job anyone hires for. Feeding
+ * it to the boards verbatim searched for "CSE", which matches nothing on any
+ * job site, so every student who skipped the goal question or answered "Not
+ * sure" got an empty feed. Branches map to the role their graduates actually
+ * get hired into first.
+ */
+const FIELD_TO_ROLE: Record<string, string> = {
+  cse: "Full Stack Developer",
+  cs: "Full Stack Developer",
+  "computer science": "Full Stack Developer",
+  "computer engineering": "Full Stack Developer",
+  it: "Full Stack Developer",
+  "information technology": "Full Stack Developer",
+  ai: "Data Science",
+  "ai/ml": "Data Science",
+  "data science": "Data Science",
+  ece: "Embedded Engineer",
+  electronics: "Embedded Engineer",
+  // Non-software branches (mechanical, civil, chemical...) are deliberately
+  // absent. The listing sources are tech boards, so mapping those fields to
+  // their real titles produced a correct-sounding label attached to Rails and
+  // service-desk jobs — a worse lie than showing nothing. They fall through
+  // to the default, which the client labels as a guess rather than a match.
+};
+
+/**
+ * Where an unknown student starts. Chosen by measuring what the live sources
+ * actually return, not by which label sounds most neutral: "Software
+ * Developer" came back almost entirely Staff/Principal remote roles, while
+ * this query surfaces campus-hire and intern listings.
+ */
+const DEFAULT_ROLE = "Full Stack Developer";
+
+/**
+ * Starter skills for the guessed path. A student who has not picked a goal
+ * also has no skills recorded, and passing none through narrows the source
+ * queries badly — the same role returned 3 listings with no skills against 12
+ * with them. These mirror ROLE_MATCH["SDE"], since that is the same role.
+ */
+const DEFAULT_SKILLS = ["React", "Node.js", "MongoDB", "AWS"];
+
+function normalizeField(field: string | null): string | null {
+  if (!field) return null;
+  const f = field.toLowerCase().trim();
+  // "Not set" is the placeholder guest onboarding writes — never a search term.
+  if (!f || f === "not set") return null;
+  return f;
+}
+
 function resolveRoleAndSkills(student: {
   targetRole: string | null;
   skills: unknown;
   field: string | null;
-}): { roleLabel: string; skills: string[] } {
+}): { roleLabel: string; skills: string[]; isGuess: boolean } {
   const known = student.targetRole ? ROLE_MATCH[student.targetRole] : undefined;
-  if (known) return known;
+  if (known) return { ...known, isGuess: false };
 
-  // "Not sure" or unset — fall back to the student's own top skills, or their
-  // academic field, so the feed is never a hardcoded generic query.
   const skillMap = (student.skills as Record<string, number>) || {};
   const topSkills = Object.entries(skillMap)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 4)
     .map(([name]) => name);
-  const field = student.field && student.field !== "Not set" ? student.field : null;
-  return { roleLabel: field || "Software Engineer", skills: topSkills };
+
+  // "Not sure" or unset. Every branch below must produce a real job title —
+  // an honest guess that returns actual work beats an accurate label that
+  // returns nothing.
+  const field = normalizeField(student.field);
+  const mapped = field ? FIELD_TO_ROLE[field] : undefined;
+  return {
+    roleLabel: mapped ?? DEFAULT_ROLE,
+    skills: topSkills.length > 0 ? topSkills : DEFAULT_SKILLS,
+    isGuess: true,
+  };
 }
 
 /**
@@ -73,7 +132,7 @@ router.get("/students/:id/opportunities/matched", requireStudent({ allowGuest: t
     const [student] = await db.select().from(studentsTable).where(eq(studentsTable.id, id)).limit(1);
     if (!student) return res.status(404).json({ error: "Not found" });
 
-    const { roleLabel, skills } = resolveRoleAndSkills(student);
+    const { roleLabel, skills, isGuess } = resolveRoleAndSkills(student);
     const order = resolveKindOrder(student);
 
     const settled = await Promise.allSettled(
@@ -93,22 +152,44 @@ router.get("/students/:id/opportunities/matched", requireStudent({ allowGuest: t
     let newCount = 0;
     const groups = order.map((kind, i) => {
       const result = settled[i];
-      const items: Opportunity[] = result.status === "fulfilled" ? result.value.items : [];
-      // Real listings (not the "search on X" platform links) lead every
-      // group, since a preview's whole point is showing real, specific work.
-      const ranked = [...items].sort((a, b) => Number(!!a.isSearchLink) - Number(!!b.isSearchLink));
-      const sliced = ranked.slice(0, PREVIEW_SIZE).map(o => {
-        const isNew = !firstEverLoad && !o.isSearchLink && !seen.has(o.id);
+      const all: Opportunity[] = result.status === "fulfilled" ? result.value.items : [];
+
+      // Search links are split out rather than listed. Rendered as a card they
+      // carry an Apply button and sit at the same weight as a real posting,
+      // so a student taps through expecting a job and lands on a board's
+      // search page. That is the product having nothing while looking like it
+      // has something. The client shows these only as plain links, and only
+      // when there is genuinely no real work to show.
+      const real = all.filter(o => !o.isSearchLink);
+      const searchLinks = all
+        .filter(o => o.isSearchLink)
+        .map(o => ({ id: o.id, source: o.source, url: o.url }));
+
+      // This is the fresher's payoff screen, so Staff/Principal/Director
+      // listings are dropped rather than sorted down — with only a handful of
+      // results they otherwise still land on screen, which is the "nothing
+      // here for me" signal the whole year-ordering exists to avoid.
+      //
+      // Deliberately no fall back to senior roles when nothing survives: an
+      // empty group renders an honest "nothing today" state, and that beats
+      // filling the screen with jobs this student cannot get.
+      const entry = real.filter(isEntryFriendly);
+
+      const sliced = entry.slice(0, PREVIEW_SIZE).map(o => {
+        const isNew = !firstEverLoad && !seen.has(o.id);
         if (isNew) newCount++;
         return { ...o, isNew };
       });
-      return { kind, label: GROUP_LABEL[kind], items: sliced };
+      return { kind, label: GROUP_LABEL[kind], items: sliced, searchLinks };
     });
 
     return res.json({
       role: roleLabel,
       targetRole: student.targetRole,
-      matchedFrom: student.targetRole ? "targetRole" : skills.length > 0 ? "skills" : "field",
+      // True when the role was inferred rather than chosen, so the client can
+      // say so instead of presenting a guess as a match.
+      isGuess,
+      matchedFrom: student.targetRole && !isGuess ? "targetRole" : skills.length > 0 ? "skills" : "field",
       order,
       newCount,
       groups,

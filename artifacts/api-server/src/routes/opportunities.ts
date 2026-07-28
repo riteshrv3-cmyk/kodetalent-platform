@@ -327,7 +327,7 @@ function isFreelanceLike(o: Opportunity): boolean {
  */
 const SENIOR_TITLE = /\b(senior|staff|principal|lead|director|head of|vp\b|chief|architect|manager)\b/i;
 
-function isEntryFriendly(o: Opportunity): boolean {
+export function isEntryFriendly(o: Opportunity): boolean {
   const hay = `${o.title} ${o.tags.join(" ")}`.toLowerCase();
   if (/\b(junior|jr\.?|entry.?level|graduate|associate|new grad|campus)\b/.test(hay)) return true;
   return !SENIOR_TITLE.test(o.title);

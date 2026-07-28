@@ -29,10 +29,18 @@ interface LiveOpportunity {
 interface MatchedFeed {
   role: string;
   targetRole: string | null;
+  /** The role was inferred, not chosen — say so rather than call it a match. */
+  isGuess: boolean;
   matchedFrom: "targetRole" | "skills" | "field";
   order: OpportunityType[];
   newCount: number;
-  groups: { kind: OpportunityType; label: string; items: (LiveOpportunity & { isNew?: boolean })[] }[];
+  groups: {
+    kind: OpportunityType;
+    label: string;
+    items: (LiveOpportunity & { isNew?: boolean })[];
+    /** Board search pages. Offered as plain links when a group has no real work. */
+    searchLinks: { id: string; source: string; url: string }[];
+  }[];
 }
 
 const GROUP_EMOJI: Record<string, string> = { jobs: "💼", internship: "🎓", freelancing: "🌍" };
@@ -186,7 +194,9 @@ export default function Opportunities() {
   useEffect(() => {
     const feed = matchedQuery.data;
     if (!feed || !studentId) return;
-    const ids = feed.groups.flatMap(g => g.items.filter(i => !i.isSearchLink).map(i => i.id));
+    // Server already excludes search links from items, so everything here is
+    // a real posting the student actually saw.
+    const ids = feed.groups.flatMap(g => g.items.map(i => i.id));
     if (ids.length === 0) return;
     apiFetch(`/api/students/${studentId}/opportunities/mark-seen`, {
       method: "POST",
@@ -511,13 +521,12 @@ export default function Opportunities() {
               {matchedQuery.data && (() => {
                 const feed = matchedQuery.data;
                 const dest = matchedDestination(feed.targetRole);
-                const groups = feed.groups.filter(g => g.items.length > 0);
-                if (groups.length === 0) return null;
+                const totalReal = feed.groups.reduce((n, g) => n + g.items.length, 0);
                 return (
                   <div className="mb-6">
-                    <div className="flex items-baseline justify-between mb-3 px-1">
+                    <div className="flex items-baseline justify-between mb-1 px-1">
                       <p className="text-[15px] font-extrabold text-ink">
-                        Matched for you
+                        {feed.isGuess ? "A place to start" : "Matched for you"}
                         {feed.newCount > 0 && (
                           <span className="ml-2 text-[11px] font-bold text-brand bg-brand-soft rounded-full px-2 py-0.5 align-middle">
                             {feed.newCount} new
@@ -526,7 +535,17 @@ export default function Opportunities() {
                       </p>
                       <p className="text-[11px] text-ink-muted">{feed.role}</p>
                     </div>
-                    {groups.map(group => (
+
+                    {/* An inferred role is never presented as a match. Saying
+                        so is what makes the fix honest rather than just
+                        non-empty. */}
+                    <p className="text-[12px] text-ink-muted mb-3 px-1">
+                      {feed.isGuess
+                        ? <>Showing {feed.role} work while you decide. <button onClick={() => setLocation("/profile")} className="text-brand font-semibold underline">Pick your goal</button> to sharpen this.</>
+                        : <>Live {feed.role} openings, updated daily.</>}
+                    </p>
+
+                    {feed.groups.map(group => (
                       <div key={group.kind} className="mb-4">
                         <button
                           onClick={() => {
@@ -540,24 +559,55 @@ export default function Opportunities() {
                           <p className="text-[12px] font-bold text-ink-muted uppercase tracking-wider">
                             {GROUP_EMOJI[group.kind]} {group.label}
                           </p>
-                          {dest && <ChevronRight className="w-4 h-4 text-ink-muted" />}
+                          {dest && group.items.length > 0 && <ChevronRight className="w-4 h-4 text-ink-muted" />}
                         </button>
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                          {group.items.map((o, i) => (
-                            <OpportunityCard
-                              key={o.id}
-                              o={o}
-                              index={i}
-                              fallbackSkills={dest?.sub.skills ?? []}
-                              practicing={practicingId === o.id}
-                              onPractice={() => startPractice(o, dest?.sub.name ?? feed.role)}
-                              onPrepare={dest ? () => navigateToCourse(dest.domain, dest.sub) : null}
-                              onApply={() => logApply(o)}
-                            />
-                          ))}
-                        </div>
+                        {group.items.length > 0 ? (
+                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                            {group.items.map((o, i) => (
+                              <OpportunityCard
+                                key={o.id}
+                                o={o}
+                                index={i}
+                                fallbackSkills={dest?.sub.skills ?? []}
+                                practicing={practicingId === o.id}
+                                onPractice={() => startPractice(o, dest?.sub.name ?? feed.role)}
+                                onPrepare={dest ? () => navigateToCourse(dest.domain, dest.sub) : null}
+                                onApply={() => logApply(o)}
+                              />
+                            ))}
+                          </div>
+                        ) : (
+                          /* Nothing real today. Said plainly, with the boards
+                             offered as plain links — deliberately not cards
+                             with Apply buttons, which is what made a search
+                             redirect read as a job. */
+                          <div className="bg-paper rounded-2xl shadow-soft p-4">
+                            <p className="text-[13px] text-ink font-semibold mb-1">
+                              No {group.label.toLowerCase()} for {feed.role} today.
+                            </p>
+                            <p className="text-[12px] text-ink-muted">
+                              We check every day — this fills up as new postings appear.
+                              {group.searchLinks.length > 0 && " Meanwhile, search directly on "}
+                              {group.searchLinks.map((l, i) => (
+                                <span key={l.id}>
+                                  {i > 0 && (i === group.searchLinks.length - 1 ? " or " : ", ")}
+                                  <a href={l.url} target="_blank" rel="noopener noreferrer" className="text-brand font-semibold underline">
+                                    {l.source}
+                                  </a>
+                                </span>
+                              ))}
+                              {group.searchLinks.length > 0 && "."}
+                            </p>
+                          </div>
+                        )}
                       </div>
                     ))}
+
+                    {totalReal === 0 && (
+                      <p className="text-[12px] text-ink-muted px-1">
+                        Nothing live for {feed.role} right now. Explore the domains below to find a role with more openings.
+                      </p>
+                    )}
                   </div>
                 );
               })()}
