@@ -17,6 +17,7 @@
   "private": true,
   "devDependencies": {
     "prettier": "^3.8.1",
+    "sharp": "^0.35.3",
     "typescript": "~5.9.2"
   },
   "comment:optionalDependencies": "Windows-only native binaries for local dev/build. pnpm-workspace.yaml overrides strip the win32 variants that rollup/lightningcss/tailwind pull transitively, so we re-add them here at the exact resolved versions. On Linux (deploy) these are skipped via their os field, and the linux-x64-gnu variants load normally.",

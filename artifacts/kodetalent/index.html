@@ -2,13 +2,26 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+    <!-- viewport-fit=cover is what makes env(safe-area-inset-*) resolve to real
+         values; without it every safe-area rule in the app silently computes to
+         0 and the bottom nav sits under the iPhone home indicator once
+         installed. maximum-scale is deliberately absent so pinch-zoom works —
+         see the (pointer: coarse) input rule in index.css for the iOS
+         focus-zoom this would otherwise cause. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>KodeTalent</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <meta name="theme-color" content="#F97316">
+    <!-- Matches the TopBar surface so the status bar blends with the app's top
+         edge. Keep in sync with manifest theme_color in vite.config.ts. -->
+    <meta name="theme-color" content="#ffffff">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="KodeTalent">
     <meta name="description" content="KodeTalent — India's AI Career Companion for engineering students. GitHub-verified, AI-scored, recruiter-ready in 60 seconds.">
   </head>
   <body>

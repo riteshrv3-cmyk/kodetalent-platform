@@ -3,6 +3,7 @@ import { BottomNav } from "./BottomNav";
 import { TopBar } from "./TopBar";
 import { SideNav } from "./SideNav";
 import { ProfileSidebar } from "./ProfileSidebar";
+import { OfflineBanner } from "./OfflineBanner";
 import { KitBubble } from "@/components/kodetalent/KitBubble";
 import { AnimatePresence, motion } from "framer-motion";
 import { useLocation } from "wouter";
@@ -77,7 +78,10 @@ export function AppLayout({ children }: { children: ReactNode }) {
         onProfileClick={() => setSidebarOpen(true)}
       />
 
-      <main className="max-w-md mx-auto w-full pt-14 pb-[calc(4rem+env(safe-area-inset-bottom))] min-h-[100dvh] lg:max-w-5xl lg:px-8 lg:pt-8 lg:pb-8">
+      {/* pt clears the TopBar (h-14) plus the status-bar inset the TopBar now
+          absorbs, since the page renders with viewport-fit=cover. */}
+      <main className="max-w-md mx-auto w-full pt-[calc(3.5rem+env(safe-area-inset-top))] pb-[calc(4rem+env(safe-area-inset-bottom))] min-h-[100dvh] lg:max-w-5xl lg:px-8 lg:pt-8 lg:pb-8">
+        <OfflineBanner />
         {/* No willChange/backfaceVisibility on this wrapper: a persistent
             stacking context here traps every in-page fixed overlay
             (Prep/Resume/Opportunities bottom sheets) beneath BottomNav. */}

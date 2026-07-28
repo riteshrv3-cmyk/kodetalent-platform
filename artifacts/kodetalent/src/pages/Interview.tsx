@@ -705,7 +705,10 @@ export default function Interview() {
   return (
     <div className="flex flex-col h-[100dvh] bg-canvas max-w-md lg:max-w-2xl mx-auto relative overflow-hidden">
       {/* Header */}
-      <div className="bg-paper p-4 sticky top-0 z-10 border-b border-line">
+      {/* Interview is a fullscreen route with no TopBar above it, so this
+          header is what sits under the status bar once viewport-fit=cover is
+          in play — it has to clear the inset itself. */}
+      <div className="bg-paper p-4 pt-[calc(1rem+env(safe-area-inset-top))] sticky top-0 z-10 border-b border-line">
         <div className="flex items-center justify-between mb-2">
           <Button variant="ghost" size="icon" className="-ml-2 text-ink" onClick={() => setLocation("/practice")}>
             <ArrowLeft className="w-6 h-6" />

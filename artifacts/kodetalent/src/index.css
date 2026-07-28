@@ -162,6 +162,21 @@
   }
 }
 
+/* iOS Safari zooms the whole viewport when a field under 16px takes focus. The
+   viewport tag no longer pins maximum-scale (that would also kill pinch-zoom),
+   so the fields themselves have to clear the threshold. Touch pointers only —
+   desktop keeps the designed 15px.
+
+   Deliberately NOT inside @layer base: the app's inputs carry Tailwind size
+   utilities (text-[15px]), and any layered rule loses to them no matter its
+   specificity. Unlayered declarations outrank every layer, which is the only
+   way this wins without editing each input. */
+@media (pointer: coarse) {
+  input, select, textarea {
+    font-size: 16px;
+  }
+}
+
 .pb-safe {
   padding-bottom: env(safe-area-inset-bottom);
 }

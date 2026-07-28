@@ -3,6 +3,7 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import path from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
+import { VitePWA } from "vite-plugin-pwa";
 
 const rawPort = process.env.PORT;
 
@@ -32,6 +33,65 @@ export default defineConfig({
     react(),
     tailwindcss(),
     runtimeErrorOverlay(),
+    VitePWA({
+      // Students get the new build on next launch with no prompt. An update
+      // toast would be the alternative, but the product deliberately has no
+      // install/update banners.
+      registerType: "autoUpdate",
+      includeAssets: ["favicon.svg", "apple-touch-icon.png"],
+      manifest: {
+        name: "KodeTalent",
+        short_name: "KodeTalent",
+        description:
+          "India's AI career companion for engineering students — find work, prepare for it, and apply.",
+        id: "/",
+        start_url: "/",
+        scope: "/",
+        display: "standalone",
+        orientation: "portrait",
+        // Matches the TopBar surface (bg-paper/90), not the brand indigo —
+        // the status bar should blend into the app's top edge rather than
+        // sit as a coloured band above a white header.
+        theme_color: "#ffffff",
+        background_color: "#f4f5f7",
+        categories: ["education", "productivity"],
+        icons: [
+          { src: "/pwa-192x192.png", sizes: "192x192", type: "image/png" },
+          { src: "/pwa-512x512.png", sizes: "512x512", type: "image/png" },
+          {
+            src: "/pwa-maskable-512x512.png",
+            sizes: "512x512",
+            type: "image/png",
+            purpose: "maskable",
+          },
+        ],
+      },
+      workbox: {
+        globPatterns: ["**/*.{js,css,html,svg,png,ico,woff2}"],
+        navigateFallback: "/index.html",
+        // Without this an offline navigation to /api/* would be answered with
+        // the app shell instead of failing, so fetches would parse HTML as JSON.
+        navigateFallbackDenylist: [/^\/api\//],
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\/.*/i,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "google-fonts",
+              expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 365 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          // Deliberately no /api rule. Workbox defaults unmatched requests to
+          // NetworkOnly, which is what we want: a cached opportunity feed or
+          // profile would show stale listings, and caching authenticated
+          // responses risks serving one student's data to the next person on
+          // a shared phone.
+        ],
+      },
+      // A service worker in dev caches stale modules and makes HMR lie.
+      devOptions: { enabled: false },
+    }),
     ...(process.env.NODE_ENV !== "production" &&
     process.env.REPL_ID !== undefined
       ? [

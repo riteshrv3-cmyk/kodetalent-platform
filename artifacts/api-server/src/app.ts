@@ -67,7 +67,19 @@ app.use("/api", notFoundHandler);
 // the frontend separately), this whole block is skipped.
 const publicDir = process.env.PUBLIC_DIR ?? path.join(__dirname, "public");
 if (fs.existsSync(path.join(publicDir, "index.html"))) {
-  app.use(express.static(publicDir));
+  app.use(
+    express.static(publicDir, {
+      setHeaders(res, filePath) {
+        // The service worker decides which build every installed client runs.
+        // If a proxy or browser holds an old sw.js, those clients stay pinned
+        // to a stale app indefinitely, so these three must always revalidate.
+        // Hashed assets are untouched and stay long-cacheable.
+        if (/(?:sw\.js|workbox-[^/\\]+\.js|manifest\.webmanifest|registerSW\.js)$/.test(filePath)) {
+          res.setHeader("Cache-Control", "no-cache");
+        }
+      },
+    }),
+  );
   // SPA fallback: any non-/api GET returns index.html so client-side routing works.
   // (/api/* is already handled + 404'd above, so it never reaches here.)
   app.use((req, res, next) => {

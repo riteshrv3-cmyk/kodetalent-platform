@@ -6,7 +6,7 @@ import {
   Briefcase, Award, MapPin, DollarSign, FileText,
   Loader2, ExternalLink, Star,
   Code2, Building2, TrendingUp, Zap, ChevronRight, Sparkles,
-  Camera, User, BookOpen, Save,
+  Camera, User, BookOpen, Save, Share,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -195,6 +195,46 @@ function ActivityCard({ studentId }: { studentId: number }) {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * iOS-only prompt to add the app to the home screen.
+ *
+ * Android and desktop are left to the browser's own install affordance, which
+ * is the product's choice. iOS has no equivalent: Safari never offers to
+ * install a PWA and exposes no API to ask, so without this row an iPhone
+ * student has no way to discover the app is installable at all.
+ */
+function InstallCard() {
+  const [show, setShow] = useState(false);
+
+  useEffect(() => {
+    // navigator.standalone is the iOS-specific signal for "already installed";
+    // the display-mode query covers the same thing on newer versions.
+    const installed =
+      window.matchMedia("(display-mode: standalone)").matches ||
+      (navigator as Navigator & { standalone?: boolean }).standalone === true;
+    // iPadOS 13+ reports a desktop Safari user-agent, so the UA test alone
+    // misses every modern iPad. A Mac that reports touch points is one.
+    const iPadOS =
+      navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || iPadOS;
+    setShow(isIOS && !installed);
+  }, []);
+
+  if (!show) return null;
+
+  return (
+    <div className="bg-paper rounded-2xl shadow-soft p-5">
+      <h3 className="text-[14px] font-bold text-ink mb-1 flex items-center gap-2">
+        <Share className="w-4 h-4 text-ink" /> Add to home screen
+      </h3>
+      <p className="text-[12px] text-ink-muted">
+        Tap the Share button in Safari, then choose <span className="font-semibold text-ink">Add to Home Screen</span> to
+        open KodeTalent like an app.
+      </p>
     </div>
   );
 }
@@ -1240,6 +1280,9 @@ export default function Profile() {
 
         {/* ── Your activity ── */}
         <ActivityCard studentId={studentId!} />
+
+        {/* ── Add to home screen (iOS only) ── */}
+        <InstallCard />
 
         </div>
         {/* ── End two-column section grid ── */}

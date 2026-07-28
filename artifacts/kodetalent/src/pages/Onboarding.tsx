@@ -145,7 +145,8 @@ export default function Onboarding() {
 
   return (
     <div className="min-h-[100dvh] bg-canvas">
-      <div className="bg-brand px-6 pt-16 pb-10">
+      {/* Fullscreen route, no TopBar — clear the status bar ourselves. */}
+      <div className="bg-brand px-6 pt-[calc(4rem+env(safe-area-inset-top))] pb-10">
         <h1 className="text-[26px] font-extrabold text-white leading-[1.1] mb-1">What's your goal?</h1>
         <p className="text-[13px] text-white/70">This shapes everything the app suggests for you.</p>
       </div>
