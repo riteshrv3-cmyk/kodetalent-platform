@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Download, Plus, Trash2, Sparkles,
   Loader2, Building2, AlignLeft, ChevronRight, X, Pencil,
-  Check, PlusCircle, MinusCircle, TrendingUp, Zap
+  Check, PlusCircle, MinusCircle, Zap
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -76,52 +76,54 @@ function templateBadge(templateId: string) {
 
 // ─── Recommendation Engine ────────────────────────────────────────────────────
 
+// Company/role/skill mapping is a static reference taxonomy (which stacks
+// these companies are known to hire for) — not a live listing. It carries no
+// salary figure or opening count, since neither can be verified per-student
+// and both were previously invented numbers presented as fact.
 interface RoleRec {
   company: string;
   role: string;
-  salaryRange: string;
   tier: "tier1" | "tier2" | "startup";
   triggerSkills: string[];
   logo: string;
-  openings: string;
 }
 
 const ALL_RECS: RoleRec[] = [
   // Tier 1 — Product companies
-  { company: "Google", role: "SDE-1", salaryRange: "₹25–45 LPA", tier: "tier1", logo: "G", triggerSkills: ["python", "java", "c++", "dsa", "algorithms", "data structures"], openings: "35+" },
-  { company: "Microsoft", role: "SDE-1", salaryRange: "₹22–40 LPA", tier: "tier1", logo: "M", triggerSkills: ["java", "c#", ".net", "azure", "python", "typescript", "dsa"], openings: "20+" },
-  { company: "Amazon", role: "SDE-1", salaryRange: "₹20–38 LPA", tier: "tier1", logo: "A", triggerSkills: ["java", "python", "aws", "dsa", "distributed systems"], openings: "50+" },
-  { company: "Flipkart", role: "SDE-1", salaryRange: "₹18–32 LPA", tier: "tier1", logo: "F", triggerSkills: ["java", "python", "react", "dsa", "kafka", "mysql"], openings: "25+" },
-  { company: "Atlassian", role: "Software Dev", salaryRange: "₹20–35 LPA", tier: "tier1", logo: "AT", triggerSkills: ["java", "python", "javascript", "react", "jira"], openings: "10+" },
-  { company: "Adobe", role: "MTS-1", salaryRange: "₹18–30 LPA", tier: "tier1", logo: "AD", triggerSkills: ["java", "c++", "python", "ml", "graphics", "javascript"], openings: "15+" },
+  { company: "Google", role: "SDE-1", tier: "tier1", logo: "G", triggerSkills: ["python", "java", "c++", "dsa", "algorithms", "data structures"] },
+  { company: "Microsoft", role: "SDE-1", tier: "tier1", logo: "M", triggerSkills: ["java", "c#", ".net", "azure", "python", "typescript", "dsa"] },
+  { company: "Amazon", role: "SDE-1", tier: "tier1", logo: "A", triggerSkills: ["java", "python", "aws", "dsa", "distributed systems"] },
+  { company: "Flipkart", role: "SDE-1", tier: "tier1", logo: "F", triggerSkills: ["java", "python", "react", "dsa", "kafka", "mysql"] },
+  { company: "Atlassian", role: "Software Dev", tier: "tier1", logo: "AT", triggerSkills: ["java", "python", "javascript", "react", "jira"] },
+  { company: "Adobe", role: "MTS-1", tier: "tier1", logo: "AD", triggerSkills: ["java", "c++", "python", "ml", "graphics", "javascript"] },
   // Data / ML
-  { company: "Google", role: "Data Analyst", salaryRange: "₹18–30 LPA", tier: "tier1", logo: "G", triggerSkills: ["python", "sql", "pandas", "machine learning", "bigquery", "data analytics"], openings: "20+" },
-  { company: "Meesho", role: "Data Analyst", salaryRange: "₹10–18 LPA", tier: "tier2", logo: "ME", triggerSkills: ["python", "pandas", "sql", "machine learning", "tableau", "data analytics", "numpy"], openings: "12+" },
-  { company: "Juspay", role: "ML Engineer", salaryRange: "₹14–24 LPA", tier: "tier2", logo: "JP", triggerSkills: ["machine learning", "python", "tensorflow", "pytorch", "data science", "ai", "ml"], openings: "8+" },
+  { company: "Google", role: "Data Analyst", tier: "tier1", logo: "G", triggerSkills: ["python", "sql", "pandas", "machine learning", "bigquery", "data analytics"] },
+  { company: "Meesho", role: "Data Analyst", tier: "tier2", logo: "ME", triggerSkills: ["python", "pandas", "sql", "machine learning", "tableau", "data analytics", "numpy"] },
+  { company: "Juspay", role: "ML Engineer", tier: "tier2", logo: "JP", triggerSkills: ["machine learning", "python", "tensorflow", "pytorch", "data science", "ai", "ml"] },
   // Tier 2 — Indian unicorns
-  { company: "Razorpay", role: "Backend Engineer", salaryRange: "₹14–26 LPA", tier: "tier2", logo: "R", triggerSkills: ["node.js", "python", "java", "golang", "go", "postgresql", "redis"], openings: "18+" },
-  { company: "Swiggy", role: "SDE-1", salaryRange: "₹14–24 LPA", tier: "tier2", logo: "SW", triggerSkills: ["react", "node.js", "python", "java", "golang", "mongodb"], openings: "22+" },
-  { company: "Zomato", role: "SDE-1", salaryRange: "₹13–22 LPA", tier: "tier2", logo: "Z", triggerSkills: ["react", "node.js", "python", "redis", "kafka", "mysql"], openings: "15+" },
-  { company: "PhonePe", role: "SDE-1", salaryRange: "₹16–28 LPA", tier: "tier2", logo: "PP", triggerSkills: ["java", "kotlin", "spring", "mysql", "kafka", "microservices"], openings: "20+" },
-  { company: "CRED", role: "SDE-1", salaryRange: "₹15–25 LPA", tier: "tier2", logo: "CR", triggerSkills: ["kotlin", "swift", "react native", "java", "ios", "android", "mobile"], openings: "10+" },
-  { company: "Zerodha", role: "Software Dev", salaryRange: "₹12–22 LPA", tier: "tier2", logo: "ZE", triggerSkills: ["python", "javascript", "react", "go", "golang", "postgresql"], openings: "8+" },
-  { company: "Groww", role: "SDE-1", salaryRange: "₹12–22 LPA", tier: "tier2", logo: "GR", triggerSkills: ["react", "java", "kotlin", "spring", "android", "mysql"], openings: "12+" },
-  { company: "Ola", role: "SDE-1", salaryRange: "₹12–20 LPA", tier: "tier2", logo: "OL", triggerSkills: ["react", "node.js", "python", "java", "kafka", "aws"], openings: "15+" },
+  { company: "Razorpay", role: "Backend Engineer", tier: "tier2", logo: "R", triggerSkills: ["node.js", "python", "java", "golang", "go", "postgresql", "redis"] },
+  { company: "Swiggy", role: "SDE-1", tier: "tier2", logo: "SW", triggerSkills: ["react", "node.js", "python", "java", "golang", "mongodb"] },
+  { company: "Zomato", role: "SDE-1", tier: "tier2", logo: "Z", triggerSkills: ["react", "node.js", "python", "redis", "kafka", "mysql"] },
+  { company: "PhonePe", role: "SDE-1", tier: "tier2", logo: "PP", triggerSkills: ["java", "kotlin", "spring", "mysql", "kafka", "microservices"] },
+  { company: "CRED", role: "SDE-1", tier: "tier2", logo: "CR", triggerSkills: ["kotlin", "swift", "react native", "java", "ios", "android", "mobile"] },
+  { company: "Zerodha", role: "Software Dev", tier: "tier2", logo: "ZE", triggerSkills: ["python", "javascript", "react", "go", "golang", "postgresql"] },
+  { company: "Groww", role: "SDE-1", tier: "tier2", logo: "GR", triggerSkills: ["react", "java", "kotlin", "spring", "android", "mysql"] },
+  { company: "Ola", role: "SDE-1", tier: "tier2", logo: "OL", triggerSkills: ["react", "node.js", "python", "java", "kafka", "aws"] },
   // Frontend / Full-stack
-  { company: "upGrad", role: "Full Stack Dev", salaryRange: "₹10–18 LPA", tier: "startup", logo: "UG", triggerSkills: ["react", "node.js", "mongodb", "express", "javascript", "typescript", "nextjs"], openings: "10+" },
-  { company: "BrowserStack", role: "SDE-1", salaryRange: "₹12–22 LPA", tier: "startup", logo: "BS", triggerSkills: ["java", "javascript", "react", "selenium", "qa", "testing", "automation"], openings: "8+" },
-  { company: "Freshworks", role: "SDE-1", salaryRange: "₹10–18 LPA", tier: "startup", logo: "FW", triggerSkills: ["ruby", "react", "javascript", "python", "salesforce"], openings: "12+" },
-  { company: "Postman", role: "SDE-1", salaryRange: "₹14–24 LPA", tier: "startup", logo: "PM", triggerSkills: ["javascript", "typescript", "react", "node.js", "api", "rest"], openings: "6+" },
-  { company: "Hasura", role: "Backend Dev", salaryRange: "₹12–22 LPA", tier: "startup", logo: "HA", triggerSkills: ["graphql", "postgresql", "haskell", "node.js", "typescript", "api"], openings: "5+" },
+  { company: "upGrad", role: "Full Stack Dev", tier: "startup", logo: "UG", triggerSkills: ["react", "node.js", "mongodb", "express", "javascript", "typescript", "nextjs"] },
+  { company: "BrowserStack", role: "SDE-1", tier: "startup", logo: "BS", triggerSkills: ["java", "javascript", "react", "selenium", "qa", "testing", "automation"] },
+  { company: "Freshworks", role: "SDE-1", tier: "startup", logo: "FW", triggerSkills: ["ruby", "react", "javascript", "python", "salesforce"] },
+  { company: "Postman", role: "SDE-1", tier: "startup", logo: "PM", triggerSkills: ["javascript", "typescript", "react", "node.js", "api", "rest"] },
+  { company: "Hasura", role: "Backend Dev", tier: "startup", logo: "HA", triggerSkills: ["graphql", "postgresql", "haskell", "node.js", "typescript", "api"] },
   // Cloud / DevOps
-  { company: "Nutanix", role: "SDE-1", salaryRange: "₹18–28 LPA", tier: "tier2", logo: "NU", triggerSkills: ["kubernetes", "docker", "cloud", "aws", "azure", "devops", "linux"], openings: "10+" },
-  { company: "Druva", role: "Cloud Dev", salaryRange: "₹14–22 LPA", tier: "startup", logo: "DR", triggerSkills: ["aws", "go", "golang", "kubernetes", "docker", "cloud", "devops"], openings: "8+" },
+  { company: "Nutanix", role: "SDE-1", tier: "tier2", logo: "NU", triggerSkills: ["kubernetes", "docker", "cloud", "aws", "azure", "devops", "linux"] },
+  { company: "Druva", role: "Cloud Dev", tier: "startup", logo: "DR", triggerSkills: ["aws", "go", "golang", "kubernetes", "docker", "cloud", "devops"] },
   // Cybersec
-  { company: "Rubrik", role: "SDE-1", salaryRange: "₹16–26 LPA", tier: "tier2", logo: "RU", triggerSkills: ["cybersecurity", "security", "python", "c++", "networking"], openings: "6+" },
+  { company: "Rubrik", role: "SDE-1", tier: "tier2", logo: "RU", triggerSkills: ["cybersecurity", "security", "python", "c++", "networking"] },
 ];
 
 function getMatchScore(rec: RoleRec, userSkills: string[]): number {
-  if (!userSkills.length) return 0.5;
+  if (!userSkills.length) return 0;
   const lower = userSkills.map(s => s.toLowerCase());
   let hits = 0;
   for (const trigger of rec.triggerSkills) {
@@ -130,14 +132,16 @@ function getMatchScore(rec: RoleRec, userSkills: string[]): number {
   return hits / rec.triggerSkills.length;
 }
 
+// matchPct is a real skill-overlap percentage against each company's listed
+// stack — it can be 0, and is never padded with an artificial floor.
 function getRecommendations(userSkills: string[]): (RoleRec & { matchPct: number })[] {
   const scored = ALL_RECS.map(rec => ({
     ...rec,
-    matchPct: Math.round((0.55 + getMatchScore(rec, userSkills) * 0.45) * 100),
+    matchPct: Math.round(getMatchScore(rec, userSkills) * 100),
   }));
 
   if (!userSkills.length) {
-    // Default: show a balanced mix
+    // No skills yet: show a balanced mix with an honest 0% match rather than guessing.
     return scored
       .filter(r => ["Google", "Flipkart", "Razorpay", "Swiggy", "upGrad", "Freshworks"].includes(r.company))
       .slice(0, 8);
@@ -199,7 +203,7 @@ function TargetRecommendations({
           {recs.length} matches
         </span>
       </div>
-      <p className="text-[12px] text-ink-muted -mt-1">Based on your skills — click to instantly generate a tailored resume</p>
+      <p className="text-[12px] text-ink-muted -mt-1">Companies known to hire for this stack — match % is your skill overlap, not a live opening. Click to generate a tailored resume.</p>
 
       <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4" style={{ scrollbarWidth: "none" }}>
         {recs.map((rec, i) => {
@@ -229,18 +233,10 @@ function TargetRecommendations({
                   <p className="text-[11px] text-ink-muted font-semibold leading-tight mt-0.5">{rec.role}</p>
                 </div>
 
-                {/* Salary */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1">
-                    <TrendingUp className="w-3 h-3 text-ink-muted" />
-                    <span className="text-[11px] font-semibold text-ink">{rec.salaryRange}</span>
-                  </div>
-                </div>
-
-                {/* Match bar */}
+                {/* Match bar — real skill overlap with this company's known stack */}
                 <div className="space-y-1">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-ink-muted">Match</span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-ink-muted">Skill match</span>
                     <span className="text-[11px] font-bold text-ink">{rec.matchPct}%</span>
                   </div>
                   <div className="h-1.5 bg-line rounded-full overflow-hidden">
@@ -249,7 +245,6 @@ function TargetRecommendations({
                       style={{ width: `${rec.matchPct}%` }}
                     />
                   </div>
-                  <p className="text-[10px] text-ink-muted">{rec.openings} openings</p>
                 </div>
 
                 {/* CTA */}

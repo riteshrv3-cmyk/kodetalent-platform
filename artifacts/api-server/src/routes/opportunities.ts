@@ -15,6 +15,8 @@ export interface Opportunity {
   tags: string[];
   url: string;
   source: string;
+  /** True for the hand-built "search this platform" cards — not a real posting. */
+  isSearchLink?: boolean;
 }
 
 interface RemoteOkRaw {
@@ -315,56 +317,67 @@ function isFreelanceLike(o: Opportunity): boolean {
   return /\b(contract|freelance|freelancer|consultant|part.?time|hourly)\b/.test(hay);
 }
 
+/**
+ * Titles that require years of prior experience a student cannot have.
+ * A fresher opening a "jobs" feed should not have the first screen be
+ * Staff/Principal/Director roles — that reads as "this platform has
+ * nothing for me," which is fatal for a college launch.
+ */
+const SENIOR_TITLE = /\b(senior|staff|principal|lead|director|head of|vp\b|chief|architect|manager)\b/i;
+
+function isEntryFriendly(o: Opportunity): boolean {
+  const hay = `${o.title} ${o.tags.join(" ")}`.toLowerCase();
+  if (/\b(junior|jr\.?|entry.?level|graduate|associate|new grad|campus)\b/.test(hay)) return true;
+  return !SENIOR_TITLE.test(o.title);
+}
+
+function isIndiaLocation(o: Opportunity): boolean {
+  return /india/i.test(o.location) || o.source === "Adzuna";
+}
+
+// Search-link cards never claim a pay band, a posting age, or vetted status —
+// they are a deep link into another site's search results, not a listing.
 function buildFreelancePlatformLinks(skill: string, role: string): Opportunity[] {
   const q = encodeURIComponent(`${role} ${skill}`.trim());
   return [
     {
       id: "upwork-" + skill,
-      title: `${role} contracts`,
+      title: `Search Upwork for ${role} contracts`,
       company: "Upwork",
       logo: null,
       location: "Worldwide · Remote",
-      pay: "$15–80/hr typical",
-      postedAt: "Live search",
+      pay: null,
+      postedAt: null,
       tags: [skill, "Freelance"],
       url: `https://www.upwork.com/nx/search/jobs/?q=${q}`,
       source: "Upwork",
-    },
-    {
-      id: "toptal-" + skill,
-      title: `Senior ${role} (vetted talent)`,
-      company: "Toptal",
-      logo: null,
-      location: "Remote",
-      pay: "Top 3% network",
-      postedAt: "Live search",
-      tags: [skill, "Senior"],
-      url: `https://www.toptal.com/talent#${q}`,
-      source: "Toptal",
+      isSearchLink: true,
     },
     {
       id: "freelancer-" + skill,
-      title: `${role} projects`,
+      title: `Search Freelancer.com for ${role} projects`,
       company: "Freelancer.com",
       logo: null,
       location: "Worldwide",
-      pay: "Project-based",
-      postedAt: "Live search",
+      pay: null,
+      postedAt: null,
       tags: [skill, "Project"],
       url: `https://www.freelancer.com/jobs/?keyword=${q}`,
       source: "Freelancer",
+      isSearchLink: true,
     },
     {
       id: "fiverr-" + skill,
-      title: `Sell ${role} services`,
+      title: `Browse Fiverr for ${role} gigs`,
       company: "Fiverr",
       logo: null,
       location: "Worldwide",
-      pay: "Set your rate",
-      postedAt: "Live search",
+      pay: null,
+      postedAt: null,
       tags: [skill, "Gig"],
       url: `https://www.fiverr.com/search/gigs?query=${q}`,
       source: "Fiverr",
+      isSearchLink: true,
     },
   ];
 }
@@ -375,27 +388,29 @@ function buildInternshipPlatformLinks(skill: string, role: string): Opportunity[
   return [
     {
       id: "internshala-" + skill,
-      title: `${role} internships in India`,
+      title: `Search Internshala for ${role} internships`,
       company: "Internshala",
       logo: null,
       location: "India · Remote/On-site",
-      pay: "₹10k–25k/mo typical",
-      postedAt: "Live search",
+      pay: null,
+      postedAt: null,
       tags: [skill, "Intern"],
       url: `https://internshala.com/internships/${encodeURIComponent(slug)}`,
       source: "Internshala",
+      isSearchLink: true,
     },
     {
       id: "linkedin-intern-" + skill,
-      title: `${role} intern (India)`,
+      title: `Search LinkedIn for ${role} interns (India)`,
       company: "LinkedIn",
       logo: null,
       location: "India",
-      pay: "Varies",
-      postedAt: "Live search",
+      pay: null,
+      postedAt: null,
       tags: [skill, "Intern"],
       url: `https://www.linkedin.com/jobs/search/?keywords=${q}%20intern&location=India&f_E=1`,
       source: "LinkedIn",
+      isSearchLink: true,
     },
   ];
 }
@@ -405,27 +420,29 @@ function buildJobPlatformLinks(skill: string, role: string): Opportunity[] {
   return [
     {
       id: "naukri-" + skill,
-      title: `${role} roles in India`,
+      title: `Search Naukri for ${role} roles (India)`,
       company: "Naukri",
       logo: null,
       location: "India",
-      pay: "Varies",
-      postedAt: "Live search",
+      pay: null,
+      postedAt: null,
       tags: [skill, "Full-time"],
       url: `https://www.naukri.com/${encodeURIComponent(role.toLowerCase().replace(/\s+/g, "-"))}-jobs`,
       source: "Naukri",
+      isSearchLink: true,
     },
     {
       id: "linkedin-" + skill,
-      title: `${role} on LinkedIn (India)`,
+      title: `Search LinkedIn for ${role} (India)`,
       company: "LinkedIn",
       logo: null,
       location: "India",
-      pay: "Varies",
-      postedAt: "Live search",
+      pay: null,
+      postedAt: null,
       tags: [skill, "Full-time"],
       url: `https://www.linkedin.com/jobs/search/?keywords=${q}&location=India`,
       source: "LinkedIn",
+      isSearchLink: true,
     },
   ];
 }
@@ -454,23 +471,28 @@ router.get("/opportunities", async (req, res) => {
 
     // Search-based sources do best with the role name; RemoteOK is tag-based
     // so it keeps the primary skill. Internship searches append the word so
-    // Remotive/Adzuna surface actual intern postings.
+    // Remotive/Adzuna surface actual intern postings. Jobs searches also fire
+    // a second "entry level" query — most students opening this feed are
+    // freshers, and a plain role search skews toward senior openings.
     const query = role || primarySkill;
     const searchQuery = kind === "internship" ? `${query} intern` : query;
+    const entryQuery = `entry level ${query}`;
 
     const settled = await Promise.allSettled([
       primarySkill ? fetchRemoteOk(primarySkill) : Promise.resolve([]),
       fetchRemotive(searchQuery),
       fetchAdzunaIndia(searchQuery),
+      kind === "jobs" ? fetchRemotive(entryQuery) : Promise.resolve([]),
+      kind === "jobs" ? fetchAdzunaIndia(entryQuery) : Promise.resolve([]),
     ]);
-    const [remoteOk, remotive, adzuna] = settled.map(s =>
+    const [remoteOk, remotive, adzuna, remotiveEntry, adzunaEntry] = settled.map(s =>
       s.status === "fulfilled" ? s.value : [],
     );
 
     // Adzuna's own search is topical, so it only needs the denylist;
     // RemoteOK/Remotive results are noisy and get the full keyword gate.
-    const gatedAdzuna = adzuna.filter(o => passesTitleDenylist(o, skills, role));
-    const gatedRemotive = remotive.filter(o => isRelevant(o, skills, role));
+    const gatedAdzuna = [...adzuna, ...adzunaEntry].filter(o => passesTitleDenylist(o, skills, role));
+    const gatedRemotive = [...remotive, ...remotiveEntry].filter(o => isRelevant(o, skills, role));
     const gatedRemoteOk = remoteOk.filter(o => isRelevant(o, skills, role));
 
     // Round-robin across sources (India-first) so no single board fills the
@@ -497,10 +519,16 @@ router.get("/opportunities", async (req, res) => {
       const interns = real.filter(isInternshipLike).slice(0, 8);
       items = [...interns, ...buildInternshipPlatformLinks(primarySkill, role || "Intern")];
     } else {
-      // jobs
-      const jobs = real
-        .filter(o => !isInternshipLike(o))
-        .slice(0, 12);
+      // jobs — entry-friendly and India-based listings surface first, since
+      // the primary user is a fresher; senior-only roles are pushed down
+      // rather than dropped, so the feed is never empty for a niche role.
+      const candidates = real.filter(o => !isInternshipLike(o));
+      const ranked = [...candidates].sort((a, b) => {
+        const entryDiff = Number(isEntryFriendly(b)) - Number(isEntryFriendly(a));
+        if (entryDiff !== 0) return entryDiff;
+        return Number(isIndiaLocation(b)) - Number(isIndiaLocation(a));
+      });
+      const jobs = ranked.slice(0, 12);
       items = [...jobs, ...buildJobPlatformLinks(primarySkill, role || "Engineer")];
     }
 

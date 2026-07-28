@@ -22,6 +22,7 @@ interface LiveOpportunity {
   tags: string[];
   url: string;
   source: string;
+  isSearchLink?: boolean;
 }
 
 function emojiFor(source: string): string {
@@ -244,14 +245,19 @@ export default function Opportunities() {
                       <p className="text-[14px] font-bold text-ink leading-tight line-clamp-2">{o.title}</p>
                     </div>
                   </div>
-                  {o.pay && (
+                  {o.isSearchLink ? (
+                    <span className="text-[11px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap bg-line text-ink-muted">
+                      🔗 Search link
+                    </span>
+                  ) : o.pay ? (
                     <span className="text-[11px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap bg-brand-soft text-brand">
                       {o.pay}
                     </span>
-                  )}
+                  ) : null}
                 </div>
                 <p className="text-[12px] text-ink-muted mb-3">
                   📍 {o.location}{o.postedAt ? ` · ${o.postedAt}` : ""}
+                  {o.isSearchLink && " · Opens this platform's search — not a specific posting"}
                 </p>
                 <div className="flex flex-wrap gap-1.5 mb-3">
                   {(o.tags.length ? o.tags : skills).slice(0, 4).map(s => (
@@ -261,15 +267,17 @@ export default function Opportunities() {
                   ))}
                 </div>
                 <div className="flex gap-2 mb-2">
-                  <Button
-                    onClick={() => checkFit(o)}
-                    className="flex-1 h-10 rounded-full font-bold text-[13px] bg-brand text-white hover:bg-brand/90"
-                  >
-                    <Sparkles className="w-3.5 h-3.5 mr-1.5" /> Check fit
-                  </Button>
+                  {!o.isSearchLink && (
+                    <Button
+                      onClick={() => checkFit(o)}
+                      className="flex-1 h-10 rounded-full font-bold text-[13px] bg-brand text-white hover:bg-brand/90"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 mr-1.5" /> Check fit
+                    </Button>
+                  )}
                   <a href={o.url} target="_blank" rel="noopener noreferrer" className="flex-1">
                     <Button variant="outline" className="w-full h-10 rounded-full font-bold text-[13px] border border-line text-brand bg-paper">
-                      Apply <ExternalLink className="w-3 h-3 ml-1" />
+                      {o.isSearchLink ? "Search" : "Apply"} <ExternalLink className="w-3 h-3 ml-1" />
                     </Button>
                   </a>
                 </div>
