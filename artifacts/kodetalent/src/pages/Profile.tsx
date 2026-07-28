@@ -16,6 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import confetti from "canvas-confetti";
 import { apiFetch } from "@/lib/api/authFetch";
+import { ResumeImport } from "@/components/ResumeImport";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -134,6 +135,70 @@ const TEMPLATE_BADGES: Record<string, { label: string; badge: string }> = {
   minimal: { label: "Minimal", badge: "border border-line text-ink-muted" },
 };
 
+/**
+ * Everything the platform tracked automatically. Locked spec: platform actions
+ * write back to context on their own; outside-world events (interview calls,
+ * offers) stay the student's to record. Every number here counts real rows —
+ * nothing estimated, nothing inferred.
+ */
+function ActivityCard({ studentId }: { studentId: number }) {
+  const [stats, setStats] = useState<{
+    mockInterviews: number;
+    mockTests: number;
+    resumesGenerated: number;
+    applicationsOpened: number;
+  } | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    apiFetch(`/api/students/${studentId}/activity/summary`)
+      .then(r => r.ok ? r.json() : null)
+      .then(setStats)
+      .catch(() => setStats(null))
+      .finally(() => setLoading(false));
+  }, [studentId]);
+
+  if (loading) {
+    return (
+      <div className="bg-paper rounded-2xl shadow-soft p-5">
+        <Skeleton className="h-4 w-32 rounded mb-4" />
+        <Skeleton className="h-9 w-full rounded-xl" />
+      </div>
+    );
+  }
+  if (!stats) return null;
+
+  const rows: { label: string; value: number }[] = [
+    { label: "Mock interviews taken", value: stats.mockInterviews },
+    { label: "Mock tests taken", value: stats.mockTests },
+    { label: "Resumes generated", value: stats.resumesGenerated },
+    { label: "Applications opened", value: stats.applicationsOpened },
+  ];
+  const total = rows.reduce((sum, r) => sum + r.value, 0);
+
+  return (
+    <div className="bg-paper rounded-2xl shadow-soft p-5">
+      <h3 className="text-[14px] font-bold text-ink mb-1 flex items-center gap-2">
+        <Sparkles className="w-4 h-4 text-ink" /> Your activity
+      </h3>
+      {total === 0 ? (
+        <p className="text-[12px] text-ink-muted">
+          Nothing yet. Practice an interview or generate a resume — it shows up here automatically.
+        </p>
+      ) : (
+        <div className="mt-2">
+          {rows.map(r => (
+            <div key={r.label} className="flex items-baseline justify-between py-2.5 border-t border-line first:border-t-0">
+              <p className="text-[13px] text-ink">{r.label}</p>
+              <p className="text-[13px] font-bold text-ink tabular-nums">{r.value}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function MyResumesCard({ studentId, onNavigate }: { studentId: number; onNavigate: () => void }) {
   const [resumes, setResumes] = useState<{ id: number; name: string; templateId: string; createdAt: string }[]>([]);
   const [loading, setLoading] = useState(true);
@@ -166,7 +231,7 @@ function MyResumesCard({ studentId, onNavigate }: { studentId: number; onNavigat
         ) : resumes.length === 0 ? (
           <div className="flex flex-col items-center gap-2 text-center">
             <Sparkles className="w-5 h-5 text-ink-muted" />
-            <p className="text-[12px] text-ink-muted">AI-tailored to any JD · 3 templates</p>
+            <p className="text-[12px] text-ink-muted">AI-tailored to any JD · 4 templates</p>
             <button
               onClick={onNavigate}
               className="w-full mt-1 bg-brand text-white text-[13px] font-bold rounded-full px-4 py-3"
@@ -1156,8 +1221,25 @@ export default function Profile() {
           </div>
         )}
 
+        {/* ── Import from resume ── */}
+        <div className="bg-paper rounded-2xl shadow-soft p-5">
+          <h3 className="text-[14px] font-bold text-ink mb-1 flex items-center gap-2">
+            <FileText className="w-4 h-4 text-ink" /> Import from resume
+          </h3>
+          <p className="text-[12px] text-ink-muted mb-3">
+            Upload an existing resume and we'll fill in projects, skills and certifications for you.
+          </p>
+          <ResumeImport
+            studentId={studentId}
+            onImported={() => { if (studentId) loadProfile(studentId); }}
+          />
+        </div>
+
         {/* ── My Resumes ── */}
         <MyResumesCard studentId={studentId!} onNavigate={() => setLocation("/resume")} />
+
+        {/* ── Your activity ── */}
+        <ActivityCard studentId={studentId!} />
 
         </div>
         {/* ── End two-column section grid ── */}

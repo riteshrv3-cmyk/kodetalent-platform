@@ -1,8 +1,10 @@
 import { Router } from "express";
+import { db, curatedOpportunitiesTable } from "@workspace/db";
+import { and, desc, eq } from "drizzle-orm";
 
 const router = Router();
 
-type Kind = "jobs" | "internship" | "freelancing";
+export type Kind = "jobs" | "internship" | "freelancing";
 
 export interface Opportunity {
   id: string;
@@ -447,15 +449,71 @@ function buildJobPlatformLinks(skill: string, role: string): Opportunity[] {
   ];
 }
 
-router.get("/opportunities", async (req, res) => {
-  const kindRaw = String(req.query.kind || "").trim();
-  const role = String(req.query.role || "").trim();
-  const skillsRaw = String(req.query.skills || "").trim();
-  if (!["jobs", "internship", "freelancing"].includes(kindRaw)) {
-    return res.status(400).json({ error: "kind must be jobs|internship|freelancing" });
+/**
+ * Hand-curated picks for this kind/role, newest first. A row with an empty
+ * `role` targets every role; otherwise it matches when either string contains
+ * the other (so a "Frontend" pick surfaces for "Frontend Developer" and vice
+ * versa). Failures here are non-fatal: curation is an enhancement, and a DB
+ * hiccup must never take down the whole feed.
+ */
+async function fetchCurated(kind: Kind, role: string): Promise<Opportunity[]> {
+  try {
+    const rows = await db
+      .select()
+      .from(curatedOpportunitiesTable)
+      .where(and(eq(curatedOpportunitiesTable.kind, kind), eq(curatedOpportunitiesTable.active, true)))
+      .orderBy(desc(curatedOpportunitiesTable.createdAt))
+      .limit(20);
+
+    const target = role.toLowerCase().trim();
+    return rows
+      .filter(r => {
+        const rowRole = (r.role ?? "").toLowerCase().trim();
+        if (!rowRole || !target) return true;
+        return rowRole.includes(target) || target.includes(rowRole);
+      })
+      .slice(0, 5)
+      .map(r => ({
+        id: `curated-${r.id}`,
+        title: r.title,
+        company: r.company,
+        logo: r.logo,
+        location: r.location,
+        pay: r.pay,
+        postedAt: timeAgo(r.createdAt.toISOString()),
+        tags: Array.isArray(r.tags) ? (r.tags as string[]).slice(0, 4) : [],
+        url: r.url,
+        source: r.source,
+      }));
+  } catch {
+    return [];
   }
-  const kind = kindRaw as Kind;
-  const skills = skillsRaw ? skillsRaw.split(",").map(s => s.trim()).filter(Boolean) : [];
+}
+
+/**
+ * Core fetch+filter+rank logic, shared by the public /opportunities route and
+ * the student-matched endpoint below — one place that knows how to turn
+ * (kind, role, skills) into a ranked list, regardless of caller.
+ */
+export async function getOpportunities(
+  kind: Kind,
+  role: string,
+  skills: string[],
+): Promise<{ items: Opportunity[]; cached: boolean; fallback?: boolean }> {
+  const aggregated = await getAggregated(kind, role, skills);
+  // Curated picks are merged OUTSIDE the aggregated cache, on every request.
+  // Baking them into the cached payload would make a freshly-added pick wait
+  // out the hour-long TTL before any student saw it — which defeats the point
+  // of curating by hand.
+  const curated = await fetchCurated(kind, role);
+  return { ...aggregated, items: [...curated, ...aggregated.items] };
+}
+
+async function getAggregated(
+  kind: Kind,
+  role: string,
+  skills: string[],
+): Promise<{ items: Opportunity[]; cached: boolean; fallback?: boolean }> {
   const primarySkill = skills[0] || "";
 
   // Full skills list, not just primarySkill: the relevance filter below
@@ -463,7 +521,7 @@ router.get("/opportunities", async (req, res) => {
   const cacheKey = `${kind}::${skills.join(",")}::${role}`;
   const cached = cache.get(cacheKey);
   if (cached && Date.now() - cached.ts < CACHE_TTL_MS) {
-    return res.json({ items: cached.data, cached: true });
+    return { items: cached.data, cached: true };
   }
 
   try {
@@ -533,9 +591,8 @@ router.get("/opportunities", async (req, res) => {
     }
 
     setCache(cacheKey, items);
-    return res.json({ items, cached: false });
+    return { items, cached: false };
   } catch (err) {
-    req.log.error({ err }, "opportunities fetch failed");
     // Fallback to platform-direct only
     const fallback =
       kind === "freelancing"
@@ -543,7 +600,26 @@ router.get("/opportunities", async (req, res) => {
         : kind === "internship"
         ? buildInternshipPlatformLinks(primarySkill, role || "Intern")
         : buildJobPlatformLinks(primarySkill, role || "Engineer");
-    return res.json({ items: fallback, cached: false, fallback: true });
+    return { items: fallback, cached: false, fallback: true };
+  }
+}
+
+router.get("/opportunities", async (req, res) => {
+  const kindRaw = String(req.query.kind || "").trim();
+  const role = String(req.query.role || "").trim();
+  const skillsRaw = String(req.query.skills || "").trim();
+  if (!["jobs", "internship", "freelancing"].includes(kindRaw)) {
+    return res.status(400).json({ error: "kind must be jobs|internship|freelancing" });
+  }
+  const kind = kindRaw as Kind;
+  const skills = skillsRaw ? skillsRaw.split(",").map(s => s.trim()).filter(Boolean) : [];
+
+  try {
+    const result = await getOpportunities(kind, role, skills);
+    return res.json(result);
+  } catch (err) {
+    req.log.error({ err }, "opportunities fetch failed");
+    return res.json({ items: [], cached: false, fallback: true });
   }
 });
 

@@ -54,7 +54,7 @@ router.post("/students/:id/resumes", requireStudent({ allowGuest: true }), rlAiH
   const id = Number(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
 
-  const VALID_TEMPLATES = ["classic", "tech", "minimal"] as const;
+  const VALID_TEMPLATES = ["ats", "classic", "tech", "minimal"] as const;
   type TemplateId = typeof VALID_TEMPLATES[number];
 
   const rawBody = req.body as {
@@ -62,6 +62,8 @@ router.post("/students/:id/resumes", requireStudent({ allowGuest: true }), rlAiH
     jdText?: unknown;
     companyName?: unknown;
     resumeName?: unknown;
+    roleTitle?: unknown;
+    jobTags?: unknown;
   };
 
   const rawTemplate = typeof rawBody.templateId === "string" ? rawBody.templateId : "classic";
@@ -72,6 +74,10 @@ router.post("/students/:id/resumes", requireStudent({ allowGuest: true }), rlAiH
   const jdText = typeof rawBody.jdText === "string" ? rawBody.jdText.slice(0, 5000) : "";
   const companyName = typeof rawBody.companyName === "string" ? rawBody.companyName.slice(0, 200) : "";
   const resumeName = typeof rawBody.resumeName === "string" ? rawBody.resumeName.slice(0, 200) : undefined;
+  const roleTitle = typeof rawBody.roleTitle === "string" ? rawBody.roleTitle.slice(0, 200) : "";
+  const jobTags = Array.isArray(rawBody.jobTags)
+    ? rawBody.jobTags.filter((t): t is string => typeof t === "string").slice(0, 8).map(t => t.slice(0, 40))
+    : [];
 
   try {
     const [student] = await db
@@ -123,21 +129,43 @@ Student Profile:
 `.trim();
 
     const jdSection = jdText
-      ? `\nJob Description / Target Role:\n${jdText}\nCompany: ${companyName || "not specified"}\n`
-      : "";
+      ? `\nJob Description / Target Role (for tailoring wording and emphasis ONLY — not a source of the student's skills):\n${jdText}\nCompany: ${companyName || "not specified"}${roleTitle ? `\nRole: ${roleTitle}` : ""}\n`
+      : roleTitle || companyName || jobTags.length > 0
+        ? `\nTarget Role: ${roleTitle || "not specified"}${companyName ? ` at ${companyName}` : ""}\n${
+            jobTags.length > 0
+              ? `The job posting lists these skills: ${jobTags.join(", ")}. This is context about what the EMPLOYER wants, not a description of the student. Do NOT copy these into skillSections, summary, or anywhere else unless the exact same skill already appears in the student's own Skills or GitHub Languages listed above.\n`
+              : ""
+          }(No full job description available.)\n`
+        : "";
 
     const pack = await contextPack(id);
 
-    const systemPrompt = `You are an expert ATS-optimized resume writer for Indian engineering students. 
-Generate a structured resume JSON based ONLY on the student's actual profile data provided. 
-DO NOT invent or fabricate any projects, skills, or experience that are not mentioned in the profile.
+    const experience = Array.isArray(student.experience) ? student.experience : [];
+
+    const realSkillsList = [...topSkillNames, ...(githubStats?.topLanguages ?? [])];
+    const whitelistSection = `\nThe student's COMPLETE list of real, verified skills/technologies is: ${
+      realSkillsList.length > 0 ? realSkillsList.join(", ") : "(none on file yet)"
+    }. This is a closed list — every skill or technology name you write anywhere in the resume (summary, skillSections, bullets) MUST come from this list. Do not add any technology name from the job posting/target role that is not in this list, even to describe "interest" or "familiarity".\n`;
+
+    const systemPrompt = `You are an expert ATS-optimized resume writer for Indian engineering students.
+Generate a structured resume JSON based ONLY on the student's actual profile data provided.
+DO NOT invent or fabricate any projects, skills, experience, or achievements that are not mentioned in the profile.
 If the student has no projects, leave the projects array empty.
 If the student has no certifications, leave the certifications array empty.
+If the student has no experience entries, leave the experience array empty — never invent a job.
 Use action verbs and quantify achievements where possible.
 Tailor the content to the job description if one is provided.
+
+ATS RULES (apply whenever a job description, target role, or job-posting skills are given):
+- The job posting / target-role skills describe what the EMPLOYER wants — they are NOT a list of the student's abilities. Never copy a skill from the job posting into skillSections, the summary, a project, or anywhere else unless that exact skill is already present in the student's own Skills or GitHub Languages data above.
+- Where the student's real skills genuinely overlap with the job posting, mirror the job posting's exact terminology and give that overlap emphasis in the summary and bullets.
+- Where the student does NOT have a skill the posting wants, simply omit it — do not add it, do not hedge with "familiar with" or "exposure to" for something absent from the profile.
+- Every project/experience bullet: action verb + what was done + quantified result wherever the profile supports a number.
+- Use plain, standard section vocabulary — no graphics, no tables, nothing a parser can't read.
 Always respond with valid JSON only — no markdown, no explanation.`;
 
-    const userPrompt = `${profileCtx}${jdSection}
+    const userPrompt = `${profileCtx}${jdSection}${whitelistSection}
+Experience (${experience.length}): ${experience.length > 0 ? JSON.stringify(experience) : "none added yet"}
 
 ${pack?.text ?? ""}
 
@@ -147,6 +175,14 @@ Generate a resume JSON with this exact structure:
   "skillSections": [
     { "category": "Languages", "items": "comma-separated list" },
     { "category": "Frameworks & Tools", "items": "comma-separated list" }
+  ],
+  "experience": [
+    {
+      "company": "Company Name",
+      "role": "Role Title",
+      "period": "Month Year – Month Year",
+      "bullets": ["action verb + what + result/impact"]
+    }
   ],
   "projects": [
     {
@@ -160,20 +196,23 @@ Generate a resume JSON with this exact structure:
   ],
   "achievements": [
     "Achievement or award line item"
-  ]
+  ],
+  "jdKeywords": ["EVERY exact skill/tech/qualification term mentioned in the job description or target-role skill list — including ones the student does NOT have — [] if neither was given"]
 }
 
 Rules:
-- skillSections: derive from actual skills data and GitHub languages only
+- skillSections: derive from actual skills data and GitHub languages only — job-posting/target-role skills are NEVER a valid source for this field, even if it means some categories are empty or thin
+- experience: use ONLY entries from the profile's Experience list above. If none exist, return []
 - projects: use ONLY projects from the profile. If none exist, return []
-- certifications: use ONLY certifications from the profile. If none exist, return []  
+- certifications: use ONLY certifications from the profile. If none exist, return []
 - achievements: include things like college rank, certifications completed, GitHub contributions, KodeTalent activity
-- summary: must mention their actual college, field, and real skills
-- Tailor everything to the provided job description / company if given`;
+- summary: must mention their actual college, field, and real skills only — do not name-drop a job-posting skill the student doesn't have just because it's the target role
+- jdKeywords: list EVERY skill/tech/qualification term the job description or target-role list mentions, required or "nice to have" alike — this powers an honest coverage score, so leaving out a skill the student is missing is as wrong as inventing one they don't have. Do not invent terms the JD never mentions, but do not omit ones it does.
+- Tailor everything to the provided job description / target role if given, using only real, existing skills to do so`;
 
     const response = await anthropic.messages.create({
       model: AI_MODEL,
-      max_tokens: 2000,
+      max_tokens: 3000,
       system: systemPrompt,
       messages: [{ role: "user", content: userPrompt }],
     });
@@ -182,15 +221,61 @@ Rules:
     let generatedContent: {
       summary: string;
       skillSections: { category: string; items: string }[];
+      experience?: { company: string; role: string; period: string; bullets: string[] }[];
       projects: { title: string; tech: string; bullets: string[] }[];
       certifications: { name: string; issuer: string; date?: string }[];
       achievements: string[];
+      jdKeywords?: string[];
     };
     try {
       generatedContent = extractJson(rawText);
     } catch {
       req.log.error({ rawText }, "AI did not return valid JSON");
       return res.status(500).json({ error: "Failed to generate resume content" });
+    }
+
+    // The model is instructed not to borrow job-posting/target-role skills into
+    // skillSections, but a cheap model does not reliably hold that line — verified
+    // by testing: an empty-skills profile still got the job's tags echoed back as
+    // the student's own skills. Enforce it deterministically instead of trusting
+    // the prompt: keep only items that actually match the student's real skills
+    // or GitHub languages (same fuzzy substring match Resume.tsx's getMatchScore uses).
+    const realSkillPool = [...topSkillNames, ...(githubStats?.topLanguages ?? [])].map(s => s.toLowerCase());
+    if (realSkillPool.length > 0 && Array.isArray(generatedContent.skillSections)) {
+      generatedContent.skillSections = generatedContent.skillSections
+        .map(section => {
+          const items = (section.items ?? "")
+            .split(",")
+            .map(i => i.trim())
+            .filter(Boolean)
+            .filter(item => {
+              const low = item.toLowerCase();
+              return realSkillPool.some(real => real.includes(low) || low.includes(real));
+            });
+          return { ...section, items: items.join(", ") };
+        })
+        .filter(section => section.items.length > 0);
+    } else if (Array.isArray(generatedContent.skillSections)) {
+      // No real skills on file at all — there is nothing genuine to list.
+      generatedContent.skillSections = [];
+    }
+
+    // Deterministic, honest-by-construction ATS coverage: only count a JD keyword
+    // as "matched" if it actually appears in the student's real skills or in the
+    // profile-grounded content we just generated — never trust the model's own claim.
+    const hasJdSignal = Boolean(jdText || roleTitle || jobTags.length > 0);
+    const rawKeywords = Array.isArray(generatedContent.jdKeywords) ? generatedContent.jdKeywords : [];
+    const jdKeywords = rawKeywords.filter((k): k is string => typeof k === "string").slice(0, 25);
+    const { jdKeywords: _omit, ...contentWithoutKeywords } = generatedContent;
+    let atsMeta: { jdKeywords: string[]; matched: string[]; coveragePct: number } | null = null;
+    if (hasJdSignal && jdKeywords.length > 0) {
+      const haystack = (
+        topSkillNames.join(" ") +
+        " " +
+        JSON.stringify(contentWithoutKeywords)
+      ).toLowerCase();
+      const matched = jdKeywords.filter(k => haystack.includes(k.toLowerCase()));
+      atsMeta = { jdKeywords, matched, coveragePct: Math.round((matched.length / jdKeywords.length) * 100) };
     }
 
     const fullContent = {
@@ -206,12 +291,17 @@ Rules:
       startYear,
       gradYear,
       cgpa: student.cgpa ?? null,
-      ...generatedContent,
+      ...contentWithoutKeywords,
+      atsMeta,
     };
 
     const name =
       resumeName?.trim() ||
-      (companyName ? `${companyName} Resume` : `${templateId.charAt(0).toUpperCase() + templateId.slice(1)} Resume`);
+      (companyName && roleTitle
+        ? `${companyName} — ${roleTitle}`
+        : companyName
+          ? `${companyName} Resume`
+          : `${templateId.charAt(0).toUpperCase() + templateId.slice(1)} Resume`);
 
     const [saved] = await db
       .insert(studentResumesTable)
@@ -264,6 +354,27 @@ router.patch("/students/:id/resumes/:resumeId", requireStudent({ allowGuest: tru
       const section = s as Record<string, unknown>;
       if (typeof section.category !== "string" || typeof section.items !== "string") {
         return res.status(400).json({ error: "Each skillSection must have string category and items" });
+      }
+    }
+  }
+
+  if ("experience" in incoming) {
+    if (!Array.isArray(incoming.experience)) {
+      return res.status(400).json({ error: "content.experience must be an array" });
+    }
+    for (const e of incoming.experience as unknown[]) {
+      if (typeof e !== "object" || e === null || Array.isArray(e)) {
+        return res.status(400).json({ error: "Each experience entry must be an object" });
+      }
+      const exp = e as Record<string, unknown>;
+      if (typeof exp.company !== "string" || typeof exp.role !== "string") {
+        return res.status(400).json({ error: "Each experience entry must have string company and role" });
+      }
+      if ("period" in exp && exp.period !== undefined && typeof exp.period !== "string") {
+        return res.status(400).json({ error: "experience.period must be a string if provided" });
+      }
+      if (!Array.isArray(exp.bullets) || (exp.bullets as unknown[]).some(b => typeof b !== "string")) {
+        return res.status(400).json({ error: "Each experience.bullets must be an array of strings" });
       }
     }
   }
@@ -323,7 +434,7 @@ router.patch("/students/:id/resumes/:resumeId", requireStudent({ allowGuest: tru
 
     const existingContent = (resume.content ?? {}) as Record<string, unknown>;
 
-    const allowedKeys = ["summary", "skillSections", "projects", "certifications", "achievements"] as const;
+    const allowedKeys = ["summary", "skillSections", "experience", "projects", "certifications", "achievements"] as const;
     const patchedFields: Record<string, unknown> = {};
     for (const key of allowedKeys) {
       if (key in incoming) {

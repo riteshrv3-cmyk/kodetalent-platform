@@ -1,25 +1,14 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { apiFetch, setGuestToken } from "@/lib/api/authFetch";
+import { ResumeImport, type ImportSummary } from "@/components/ResumeImport";
+import { ROLE_DESTINATIONS } from "@/data/domains";
 
 type Screen = "goal" | "explore";
 
 const ROLES = ["SDE", "Data/ML", "App Dev", "Cybersecurity", "Not sure"];
-const BATCHES = [2025, 2026, 2027, 2028];
-
-/**
- * Where each goal drops the student in the Opportunities taxonomy, so the
- * screen right after onboarding is real jobs/internships/freelance work for
- * the role they picked rather than an empty browse grid. Each role maps to
- * its most general specialisation — they can switch once they're in.
- * "Not sure" intentionally has no mapping: it lands on the domain grid.
- */
-const ROLE_DESTINATIONS: Record<string, { domain: string; sub: string; label: string }> = {
-  "SDE": { domain: "webdev", sub: "fullstack", label: "Full Stack" },
-  "Data/ML": { domain: "data", sub: "data-science", label: "Data Science" },
-  "App Dev": { domain: "mobile", sub: "rn", label: "React Native" },
-  "Cybersecurity": { domain: "security", sub: "security-analysis", label: "Security Analysis" },
-};
+const CURRENT_YEAR = new Date().getFullYear();
+const BATCHES = [CURRENT_YEAR, CURRENT_YEAR + 1, CURRENT_YEAR + 2, CURRENT_YEAR + 3];
 
 function opportunitiesHref(role: string | null): string {
   const dest = role ? ROLE_DESTINATIONS[role] : undefined;
@@ -34,6 +23,8 @@ export default function Onboarding() {
   const [targetBatch, setTargetBatch] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [parsedResumeText, setParsedResumeText] = useState<string | null>(null);
+  const [importSummary, setImportSummary] = useState<ImportSummary | null>(null);
 
   async function submitGoal() {
     setSubmitting(true);
@@ -71,6 +62,22 @@ export default function Onboarding() {
         studentId = student.id;
         localStorage.setItem("studentId", String(studentId));
         if (student.guestToken) setGuestToken(student.guestToken);
+      }
+
+      if (parsedResumeText) {
+        try {
+          const r = await apiFetch(`/api/students/${studentId}/profile/import-resume`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ resumeText: parsedResumeText }),
+          });
+          if (r.ok) {
+            const data = await r.json() as { summary: ImportSummary };
+            setImportSummary(data.summary);
+          }
+        } catch {
+          // Import is a bonus, never blocks onboarding.
+        }
       }
 
       const inviteCode = sessionStorage.getItem("inviteCode");
@@ -112,10 +119,17 @@ export default function Onboarding() {
         <h1 className="text-[28px] font-extrabold text-white leading-[1.1] mb-3">
           {dest ? `Here's what's open in ${dest.label}.` : "Let's find your opportunities."}
         </h1>
-        <p className="text-[14px] text-white/70 mb-8 max-w-xs">
-          Live jobs, internships and freelance work
-          {targetRole && targetRole !== "Not sure" ? ` for ${targetRole}` : ""} — updated daily.
-        </p>
+        <div className="mb-8 max-w-xs">
+          <p className="text-[14px] text-white/70">
+            Live jobs, internships and freelance work
+            {targetRole && targetRole !== "Not sure" ? ` for ${targetRole}` : ""} — updated daily.
+          </p>
+          {importSummary && (importSummary.projectsAdded > 0 || importSummary.certificationsAdded > 0 || importSummary.experienceAdded > 0) && (
+            <p className="text-[13px] text-white/80 mt-2">
+              Your profile is pre-filled from your resume — {importSummary.projectsAdded} project(s), {importSummary.certificationsAdded} certification(s) ready.
+            </p>
+          )}
+        </div>
         <button
           onClick={() => setLocation(opportunitiesHref(targetRole))}
           className="w-full max-w-xs bg-white text-brand text-[15px] font-bold rounded-full py-4"
@@ -174,6 +188,17 @@ export default function Onboarding() {
               {batch}
             </button>
           ))}
+        </div>
+
+        <div className="mb-8 rounded-2xl border border-line bg-canvas p-4">
+          <p className="text-[13px] font-semibold text-ink mb-1">Have a resume?</p>
+          <p className="text-[12px] text-ink-muted mb-3">
+            Upload it and we'll fill your profile for you. (Optional)
+          </p>
+          <ResumeImport
+            deferred
+            onTextReady={(text) => setParsedResumeText(text)}
+          />
         </div>
 
         {error && <p className="text-[12px] text-danger mb-4">{error}</p>}

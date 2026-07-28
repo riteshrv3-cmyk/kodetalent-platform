@@ -31,9 +31,11 @@ interface ResumeContent {
   cgpa?: string | null;
   summary: string;
   skillSections: { category: string; items: string }[];
+  experience?: { company: string; role: string; period: string; bullets: string[] }[];
   projects: { title: string; tech: string; bullets: string[] }[];
   certifications: { name: string; issuer: string; date?: string }[];
   achievements: string[];
+  atsMeta?: { jdKeywords: string[]; matched: string[]; coveragePct: number } | null;
 }
 
 interface SavedResume {
@@ -50,6 +52,12 @@ interface SavedResume {
 // ─── Template definitions ─────────────────────────────────────────────────────
 
 const TEMPLATES = [
+  {
+    id: "ats",
+    label: "ATS Pro",
+    desc: "Complete ATS structure — recommended",
+    badge: "bg-brand-soft text-brand",
+  },
   {
     id: "classic",
     label: "Classic",
@@ -462,6 +470,191 @@ function downloadClassicPDF(r: ResumeContent, filename: string) {
   openPDF(doc, filename);
 }
 
+// Single-column, no fills/tables/graphics, standard section vocabulary, plain
+// hyphen bullets — built to be read cleanly by ATS parsers, not just humans.
+function downloadAtsPDF(r: ResumeContent, filename: string) {
+  const doc = new jsPDF({ unit: "pt", format: "letter" });
+  const PW = 612, PH = 792, ML = 54, MR = 54, MT = 46, MB = 44;
+  const CW = PW - ML - MR;
+  let y = MT;
+
+  const checkPage = (needed = 20) => {
+    if (y + needed > PH - MB) { doc.addPage(); y = MT; }
+  };
+
+  const section = (title: string) => {
+    checkPage(36);
+    y += 14;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(15, 23, 42);
+    doc.text(title.toUpperCase(), ML, y);
+    y += 4;
+    doc.setDrawColor(15, 23, 42);
+    doc.setLineWidth(0.75);
+    doc.line(ML, y, PW - MR, y);
+    y += 12;
+    doc.setTextColor(15, 23, 42);
+    doc.setFont("helvetica", "normal");
+  };
+
+  // ── Name (left-aligned — plain reading order for parsers)
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(20);
+  doc.setTextColor(15, 23, 42);
+  doc.text(r.name, ML, y);
+  y += 16;
+
+  // ── Contact line
+  const contact = [r.email, r.phone, r.city, r.githubUrl, r.linkedinUrl, r.portfolioUrl]
+    .filter(Boolean) as string[];
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor(51, 65, 85);
+  const contactLines = doc.splitTextToSize(contact.join("  |  "), CW) as string[];
+  for (const cl of contactLines) { doc.text(cl, ML, y); y += 11; }
+  y += 4;
+
+  doc.setDrawColor(15, 23, 42);
+  doc.setLineWidth(1);
+  doc.line(ML, y, PW - MR, y);
+  y += 2;
+
+  // ── Summary
+  if (r.summary) {
+    section("Summary");
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9.5);
+    doc.setTextColor(30, 41, 59);
+    const ls = doc.splitTextToSize(r.summary, CW) as string[];
+    for (const l of ls) { checkPage(13); doc.text(l, ML, y); y += 12; }
+  }
+
+  // ── Education
+  section("Education");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.setTextColor(15, 23, 42);
+  doc.text(r.degree, ML, y);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9.5);
+  doc.setTextColor(51, 65, 85);
+  doc.text(`${r.startYear} - ${r.gradYear}`, PW - MR, y, { align: "right" });
+  y += 13;
+  doc.text(`${r.college}, ${r.city}${r.cgpa ? `  |  CGPA ${r.cgpa}` : ""}`, ML, y);
+  y += 4;
+
+  // ── Skills
+  if (r.skillSections.length > 0) {
+    section("Skills");
+    for (const s of r.skillSections) {
+      checkPage(15);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9.5);
+      doc.setTextColor(15, 23, 42);
+      const lbl = `${s.category}: `;
+      const lw = doc.getTextWidth(lbl);
+      doc.text(lbl, ML, y);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(30, 41, 59);
+      const wrapped = doc.splitTextToSize(s.items, CW - lw) as string[];
+      for (let wi = 0; wi < wrapped.length; wi++) {
+        checkPage(13);
+        doc.text(wrapped[wi], ML + lw, y);
+        y += 12;
+      }
+    }
+  }
+
+  // ── Experience (omitted entirely when empty)
+  if (r.experience && r.experience.length > 0) {
+    section("Experience");
+    for (const e of r.experience) {
+      checkPage(40);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.setTextColor(15, 23, 42);
+      doc.text(`${e.role}, ${e.company}`, ML, y);
+      if (e.period) {
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8.5);
+        doc.setTextColor(51, 65, 85);
+        doc.text(e.period, PW - MR, y, { align: "right" });
+      }
+      y += 13;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9.5);
+      doc.setTextColor(30, 41, 59);
+      for (const b of e.bullets) {
+        const ls = doc.splitTextToSize(`-  ${b}`, CW - 6) as string[];
+        for (let li = 0; li < ls.length; li++) {
+          checkPage(13);
+          doc.text(ls[li], ML + (li > 0 ? 8 : 0), y);
+          y += 12;
+        }
+      }
+      y += 5;
+    }
+  }
+
+  // ── Projects
+  if (r.projects.length > 0) {
+    section("Projects");
+    for (const p of r.projects) {
+      checkPage(40);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.setTextColor(15, 23, 42);
+      doc.text(p.title, ML, y);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.5);
+      doc.setTextColor(51, 65, 85);
+      if (doc.getTextWidth(p.tech) < CW * 0.45) {
+        doc.text(p.tech, PW - MR, y, { align: "right" });
+      }
+      y += 13;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9.5);
+      doc.setTextColor(30, 41, 59);
+      for (const b of p.bullets) {
+        const ls = doc.splitTextToSize(`-  ${b}`, CW - 6) as string[];
+        for (let li = 0; li < ls.length; li++) {
+          checkPage(13);
+          doc.text(ls[li], ML + (li > 0 ? 8 : 0), y);
+          y += 12;
+        }
+      }
+      y += 5;
+    }
+  }
+
+  // ── Certifications
+  if (r.certifications.length > 0) {
+    section("Certifications");
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9.5);
+    doc.setTextColor(30, 41, 59);
+    for (const c of r.certifications) {
+      const ls = doc.splitTextToSize(`-  ${c.name} - ${c.issuer}${c.date ? ` (${c.date})` : ""}`, CW) as string[];
+      for (const l of ls) { checkPage(13); doc.text(l, ML, y); y += 12; }
+    }
+  }
+
+  // ── Achievements
+  if (r.achievements.length > 0) {
+    section("Achievements");
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9.5);
+    doc.setTextColor(30, 41, 59);
+    for (const a of r.achievements) {
+      const ls = doc.splitTextToSize(`-  ${a}`, CW) as string[];
+      for (const l of ls) { checkPage(13); doc.text(l, ML, y); y += 12; }
+    }
+  }
+
+  openPDF(doc, filename);
+}
+
 function downloadTechPDF(r: ResumeContent, filename: string) {
   const doc = new jsPDF({ unit: "pt", format: "letter" });
   const PW = 612, PH = 792, ML = 45, MR = 45, MB = 44;
@@ -784,6 +977,8 @@ function downloadResumePDF(resume: SavedResume) {
     downloadTechPDF(resume.content, filename);
   } else if (resume.templateId === "minimal") {
     downloadMinimalPDF(resume.content, filename);
+  } else if (resume.templateId === "ats") {
+    downloadAtsPDF(resume.content, filename);
   } else {
     downloadClassicPDF(resume.content, filename);
   }
@@ -1094,6 +1289,23 @@ function ResumeCard({
             )}
             <span className="text-[11px] text-ink-muted">{date}</span>
           </div>
+          {resume.content.atsMeta && (
+            <div className="mt-2" title={
+              resume.content.atsMeta.matched.length < resume.content.atsMeta.jdKeywords.length
+                ? `Missing: ${resume.content.atsMeta.jdKeywords.filter(k => !resume.content.atsMeta!.matched.includes(k)).join(", ")} — skill gaps to learn, not padded in`
+                : "All extracted JD keywords are covered by your real profile"
+            }>
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                resume.content.atsMeta.coveragePct >= 70
+                  ? "bg-green-100 text-green-700"
+                  : resume.content.atsMeta.coveragePct >= 40
+                    ? "bg-amber-100 text-amber-700"
+                    : "bg-red-100 text-red-700"
+              }`}>
+                ATS match {resume.content.atsMeta.coveragePct}%
+              </span>
+            </div>
+          )}
         </div>
         <button
           onClick={onDelete}
@@ -1138,16 +1350,20 @@ function GenerateSheet({
   studentId,
   initialCompany = "",
   initialRole = "",
+  initialJd = "",
+  initialTags = [],
 }: {
   onClose: () => void;
   onGenerated: (r: SavedResume) => void;
   studentId: number;
   initialCompany?: string;
   initialRole?: string;
+  initialJd?: string;
+  initialTags?: string[];
 }) {
   const { toast } = useToast();
-  const [templateId, setTemplateId] = useState("classic");
-  const [jdText, setJdText] = useState("");
+  const [templateId, setTemplateId] = useState("ats");
+  const [jdText, setJdText] = useState(initialJd);
   const [companyName, setCompanyName] = useState(initialCompany);
   const [resumeName, setResumeName] = useState(
     initialCompany && initialRole ? `${initialCompany} — ${initialRole}` : ""
@@ -1160,7 +1376,10 @@ function GenerateSheet({
       const r = await apiFetch(`/api/students/${studentId}/resumes`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ templateId, jdText, companyName, resumeName }),
+        body: JSON.stringify({
+          templateId, jdText, companyName, resumeName,
+          roleTitle: initialRole, jobTags: initialTags,
+        }),
       });
       if (!r.ok) {
         const err = await r.json().catch(() => ({})) as { error?: string };
@@ -1209,7 +1428,7 @@ function GenerateSheet({
 
         <div className="space-y-2">
           <label className="text-[11px] font-bold text-ink-muted uppercase tracking-wider">Template</label>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 gap-2">
             {TEMPLATES.map(t => (
               <button
                 key={t.id}
@@ -1252,6 +1471,11 @@ function GenerateSheet({
             rows={4}
             className="rounded-xl border border-line focus:border-brand text-ink text-sm resize-none"
           />
+          {!jdText && (initialCompany || initialTags.length > 0) && (
+            <p className="text-[11px] text-ink-muted">
+              Tip: paste the JD from the posting for the strongest tailoring.
+            </p>
+          )}
         </div>
 
         <div className="space-y-2">
@@ -1302,7 +1526,9 @@ export default function Resume() {
   const [studentId, setStudentId] = useState<number | null>(null);
   const [resumes, setResumes] = useState<SavedResume[]>([]);
   const [loading, setLoading] = useState(true);
-  const [generateFor, setGenerateFor] = useState<{ company: string; role: string } | null>(null);
+  const [generateFor, setGenerateFor] = useState<
+    { company: string; role: string; jd?: string; tags?: string[] } | null
+  >(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [editingResume, setEditingResume] = useState<SavedResume | null>(null);
 
@@ -1311,6 +1537,25 @@ export default function Resume() {
     if (!id) { setLocation("/"); return; }
     setStudentId(parseInt(id, 10));
   }, [setLocation]);
+
+  // Seeded by Opportunities/Pipeline via sessionStorage.resumeContext — consumed
+  // once so a refresh or back-nav to /resume never reopens the sheet.
+  useEffect(() => {
+    const raw = sessionStorage.getItem("resumeContext");
+    if (!raw) return;
+    sessionStorage.removeItem("resumeContext");
+    try {
+      const ctx = JSON.parse(raw) as { company?: string; role?: string; jd?: string; tags?: string[] };
+      setGenerateFor({
+        company: ctx.company ?? "",
+        role: ctx.role ?? "",
+        jd: ctx.jd ?? "",
+        tags: Array.isArray(ctx.tags) ? ctx.tags : [],
+      });
+    } catch {
+      // malformed context — ignore, sheet simply doesn't auto-open
+    }
+  }, []);
 
   const fetchResumes = useCallback(async (id: number) => {
     try {
@@ -1463,6 +1708,8 @@ export default function Resume() {
             onGenerated={handleGenerated}
             initialCompany={generateFor.company}
             initialRole={generateFor.role}
+            initialJd={generateFor.jd}
+            initialTags={generateFor.tags}
           />
         )}
       </AnimatePresence>

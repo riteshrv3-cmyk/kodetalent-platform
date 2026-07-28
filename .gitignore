@@ -52,3 +52,9 @@ Thumbs.db
 .env
 .env.*
 !.env.example
+
+# graphify (local knowledge-graph cache, regenerate with /graphify .)
+graphify-out/
+
+# pitch/fundraising material — this repo is public, keep these local
+docs/

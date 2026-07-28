@@ -20,3 +20,4 @@ export * from "./studentResumes";
 export * from "./studentActivityLog";
 export * from "./dailyTasks";
 export * from "./applications";
+export * from "./curatedOpportunities";

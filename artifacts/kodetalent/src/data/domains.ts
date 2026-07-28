@@ -299,3 +299,17 @@ export const DOMAINS: Domain[] = [
 export const ALL_SUBDOMAINS = DOMAINS.flatMap(domain =>
   domain.subDomains.map(sd => ({ ...sd, domain }))
 );
+
+/**
+ * Where each onboarding goal-picker option maps in the domain/subdomain
+ * taxonomy above. Shared by Onboarding (deep-linking a new student into their
+ * first feed) and Opportunities (resolving Prepare/Practice context for the
+ * profile-matched preview cards) — one mapping, so the two screens can't
+ * silently drift onto different roles for the same targetRole value.
+ */
+export const ROLE_DESTINATIONS: Record<string, { domain: string; sub: string; label: string }> = {
+  "SDE": { domain: "webdev", sub: "fullstack", label: "Full Stack" },
+  "Data/ML": { domain: "data", sub: "data-science", label: "Data Science" },
+  "App Dev": { domain: "mobile", sub: "rn", label: "React Native" },
+  "Cybersecurity": { domain: "security", sub: "security-analysis", label: "Security Analysis" },
+};

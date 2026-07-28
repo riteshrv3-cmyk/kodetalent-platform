@@ -117,6 +117,289 @@ router.patch("/students/:id/profile", requireStudent({ allowGuest: true }), asyn
   return res.status(500).json({ error: "Server error" });
 });
 
+// ─── POST /students/:id/profile/import-resume ────────────────────────────────
+// Parses an uploaded resume's plain text and fills in whatever profile fields
+// are still empty/placeholder — effortless onboarding, never overwrites real
+// data the student already entered.
+
+const VALID_FIELDS = [
+  "Computer Science", "Electronics", "Mechanical", "Civil",
+  "Electrical", "Information Technology", "Data Science",
+] as const;
+
+interface ParsedResume {
+  name: string | null;
+  college: string | null;
+  city: string | null;
+  gradYear: number | null;
+  field: string | null;
+  cgpa: string | null;
+  phone: string | null;
+  githubUrl: string | null;
+  linkedinUrl: string | null;
+  portfolioUrl: string | null;
+  bio: string | null;
+  skills: string[];
+  projects: { title: string; description: string; techStack: string[]; githubUrl: string | null; liveUrl: string | null }[];
+  certifications: { name: string; issuer: string; date: string | null; credentialUrl: string | null }[];
+  experience: { company: string; role: string; period: string; bullets: string[] }[];
+}
+
+function isHttpUrl(v: unknown): v is string {
+  return typeof v === "string" && /^https?:\/\//i.test(v) && v.length <= 300;
+}
+
+function sanitizeParsed(raw: unknown): ParsedResume {
+  const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+  const str = (v: unknown, cap = 300) => (typeof v === "string" && v.trim() ? v.trim().slice(0, cap) : null);
+
+  const gradYearRaw = r.gradYear;
+  const gradYear = typeof gradYearRaw === "number" && gradYearRaw > 2000 && gradYearRaw < 2100 ? gradYearRaw : null;
+
+  const fieldRaw = str(r.field, 100);
+  const field = fieldRaw && (VALID_FIELDS as readonly string[]).includes(fieldRaw) ? fieldRaw : fieldRaw;
+
+  const skills = Array.isArray(r.skills)
+    ? r.skills.filter((s): s is string => typeof s === "string" && s.trim().length > 0).map(s => s.trim().slice(0, 60)).slice(0, 25)
+    : [];
+
+  const projects = Array.isArray(r.projects)
+    ? (r.projects as unknown[])
+        .filter((p): p is Record<string, unknown> => typeof p === "object" && p !== null)
+        .filter(p => typeof p.title === "string" && p.title.trim())
+        .slice(0, 10)
+        .map(p => ({
+          title: str(p.title, 150) ?? "",
+          description: str(p.description, 500) ?? "",
+          techStack: Array.isArray(p.techStack)
+            ? (p.techStack as unknown[]).filter((t): t is string => typeof t === "string").slice(0, 12).map(t => t.slice(0, 40))
+            : [],
+          githubUrl: isHttpUrl(p.githubUrl) ? p.githubUrl : null,
+          liveUrl: isHttpUrl(p.liveUrl) ? p.liveUrl : null,
+        }))
+    : [];
+
+  const certifications = Array.isArray(r.certifications)
+    ? (r.certifications as unknown[])
+        .filter((c): c is Record<string, unknown> => typeof c === "object" && c !== null)
+        .filter(c => typeof c.name === "string" && c.name.trim())
+        .slice(0, 10)
+        .map(c => ({
+          name: str(c.name, 150) ?? "",
+          issuer: str(c.issuer, 150) ?? "",
+          date: str(c.date, 40),
+          credentialUrl: isHttpUrl(c.credentialUrl) ? c.credentialUrl : null,
+        }))
+    : [];
+
+  const experience = Array.isArray(r.experience)
+    ? (r.experience as unknown[])
+        .filter((e): e is Record<string, unknown> => typeof e === "object" && e !== null)
+        .filter(e => typeof e.company === "string" && e.company.trim() && typeof e.role === "string" && e.role.trim())
+        .slice(0, 6)
+        .map(e => ({
+          company: str(e.company, 150) ?? "",
+          role: str(e.role, 150) ?? "",
+          period: str(e.period, 60) ?? "",
+          bullets: Array.isArray(e.bullets)
+            ? (e.bullets as unknown[]).filter((b): b is string => typeof b === "string").slice(0, 5).map(b => b.slice(0, 300))
+            : [],
+        }))
+    : [];
+
+  return {
+    name: str(r.name, 150),
+    college: str(r.college, 200),
+    city: str(r.city, 100),
+    gradYear,
+    field,
+    cgpa: str(r.cgpa, 20),
+    phone: str(r.phone, 30),
+    githubUrl: isHttpUrl(r.githubUrl) ? r.githubUrl : null,
+    linkedinUrl: isHttpUrl(r.linkedinUrl) ? r.linkedinUrl : null,
+    portfolioUrl: isHttpUrl(r.portfolioUrl) ? r.portfolioUrl : null,
+    bio: str(r.bio, 500),
+    skills,
+    projects,
+    certifications,
+    experience,
+  };
+}
+
+function dedupeKey(name: string) {
+  return name.trim().toLowerCase();
+}
+
+router.post("/students/:id/profile/import-resume", requireStudent({ allowGuest: true }), rlAiHeavy, async (req, res) => {
+  const id = Number(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
+
+  const resumeText = typeof req.body?.resumeText === "string" ? req.body.resumeText.trim() : "";
+  if (resumeText.length < 100 || resumeText.length > 20000) {
+    return res.status(400).json({ error: "resumeText must be between 100 and 20000 characters" });
+  }
+
+  try {
+    const [student] = await db.select().from(studentsTable).where(eq(studentsTable.id, id)).limit(1);
+    if (!student) return res.status(404).json({ error: "Student not found" });
+
+    const systemPrompt = `You are a resume parser. Extract ONLY information explicitly present in the resume text.
+Use null for any field not clearly stated. NEVER guess, infer, or invent a value that isn't written in the resume.
+Respond with valid JSON only — no markdown, no explanation.`;
+
+    const userPrompt = `Resume text:
+"""
+${resumeText}
+"""
+
+Extract into this exact JSON structure:
+{
+  "name": string|null,
+  "college": string|null,
+  "city": string|null,
+  "gradYear": number|null,
+  "field": string|null,
+  "cgpa": string|null,
+  "phone": string|null,
+  "githubUrl": string|null,
+  "linkedinUrl": string|null,
+  "portfolioUrl": string|null,
+  "bio": "1-2 sentence professional summary in the resume's own words, or null",
+  "skills": ["technologies/skills explicitly listed"],
+  "projects": [{ "title": "", "description": "", "techStack": [""], "githubUrl": string|null, "liveUrl": string|null }],
+  "certifications": [{ "name": "", "issuer": "", "date": string|null, "credentialUrl": string|null }],
+  "experience": [{ "company": "", "role": "", "period": "", "bullets": [""] }]
+}
+
+Rules:
+- field: map the branch/degree to one of exactly: Computer Science, Electronics, Mechanical, Civil, Electrical, Information Technology, Data Science — if it clearly doesn't match any, use the literal branch name from the resume
+- gradYear: the graduation year as a 4-digit number, null if not stated
+- skills, projects, certifications, experience: [] if none found — never invent an entry`;
+
+    const response = await anthropic.messages.create({
+      model: AI_MODEL,
+      max_tokens: 2500,
+      system: systemPrompt,
+      messages: [{ role: "user", content: userPrompt }],
+    });
+
+    const rawText = response.content[0]?.type === "text" ? response.content[0].text : "";
+    let parsed: ParsedResume;
+    try {
+      parsed = sanitizeParsed(extractJson(rawText));
+    } catch {
+      req.log.error({ rawText }, "Resume import: AI did not return valid JSON");
+      return res.status(500).json({ error: "Couldn't read this resume — try pasting it as plain text" });
+    }
+
+    const fieldsFilled: string[] = [];
+    const updates: Record<string, unknown> = {};
+
+    const fillIfEmpty = (col: keyof typeof studentsTable.$inferSelect, value: unknown, isEmpty: boolean) => {
+      if (value !== null && value !== undefined && isEmpty) {
+        updates[col] = value;
+        fieldsFilled.push(col as string);
+      }
+    };
+
+    fillIfEmpty("name", parsed.name, !student.name || student.name.startsWith("guest_"));
+    fillIfEmpty("college", parsed.college, !student.college || student.college === "Not set");
+    fillIfEmpty("city", parsed.city, !student.city || student.city === "Not set");
+    fillIfEmpty("field", parsed.field, !student.field || student.field === "Not set");
+    fillIfEmpty("cgpa", parsed.cgpa, !student.cgpa);
+    fillIfEmpty("phone", parsed.phone, !student.phone);
+    fillIfEmpty("bio", parsed.bio, !student.bio);
+    fillIfEmpty("githubUrl", parsed.githubUrl, !student.githubUrl);
+    fillIfEmpty("linkedinUrl", parsed.linkedinUrl, !student.linkedinUrl);
+    fillIfEmpty("portfolioUrl", parsed.portfolioUrl, !student.portfolioUrl);
+
+    if (parsed.gradYear && student.year === 1 && !student.targetBatch) {
+      const inferredYear = Math.min(4, Math.max(1, 4 - (parsed.gradYear - new Date().getFullYear())));
+      updates.year = inferredYear;
+      updates.targetBatch = parsed.gradYear;
+      fieldsFilled.push("year", "targetBatch");
+    }
+
+    const existingProjects = Array.isArray(student.projects)
+      ? (student.projects as { id: string; title: string }[])
+      : [];
+    const existingProjectKeys = new Set(existingProjects.map(p => dedupeKey(p.title)));
+    const newProjects = parsed.projects
+      .filter(p => !existingProjectKeys.has(dedupeKey(p.title)))
+      .map((p, i) => ({ id: `imp_p_${Date.now()}_${i}`, ...p }));
+    if (newProjects.length > 0) {
+      updates.projects = [...existingProjects, ...newProjects];
+      fieldsFilled.push(`${newProjects.length} project(s)`);
+    }
+
+    const existingCerts = Array.isArray(student.certifications)
+      ? (student.certifications as { id: string; name: string }[])
+      : [];
+    const existingCertKeys = new Set(existingCerts.map(c => dedupeKey(c.name)));
+    const newCerts = parsed.certifications
+      .filter(c => !existingCertKeys.has(dedupeKey(c.name)))
+      .map((c, i) => ({ id: `imp_c_${Date.now()}_${i}`, ...c }));
+    if (newCerts.length > 0) {
+      updates.certifications = [...existingCerts, ...newCerts];
+      fieldsFilled.push(`${newCerts.length} certification(s)`);
+    }
+
+    const existingExperience = Array.isArray(student.experience)
+      ? (student.experience as { id: string; company: string; role: string }[])
+      : [];
+    const existingExpKeys = new Set(existingExperience.map(e => dedupeKey(`${e.company}|${e.role}`)));
+    const newExperience = parsed.experience
+      .filter(e => !existingExpKeys.has(dedupeKey(`${e.company}|${e.role}`)))
+      .map((e, i) => ({ id: `imp_e_${Date.now()}_${i}`, ...e }));
+    if (newExperience.length > 0) {
+      updates.experience = [...existingExperience, ...newExperience];
+      fieldsFilled.push(`${newExperience.length} experience entr${newExperience.length === 1 ? "y" : "ies"}`);
+    }
+
+    if (parsed.skills.length > 0) {
+      const existingSkills = (student.skills as Record<string, number>) ?? {};
+      const mergedSkills = { ...existingSkills };
+      let skillsAdded = 0;
+      for (const skill of parsed.skills) {
+        if (!(skill in mergedSkills)) {
+          mergedSkills[skill] = 60;
+          skillsAdded++;
+        }
+      }
+      if (skillsAdded > 0) {
+        updates.skills = mergedSkills;
+        fieldsFilled.push(`${skillsAdded} skill(s)`);
+      }
+    }
+
+    let profileStrength = student.profileStrength;
+    let commitmentScore = student.commitmentScore;
+    if (Object.keys(updates).length > 0) {
+      await db.update(studentsTable).set(updates).where(eq(studentsTable.id, id));
+      const [updated] = await db.select().from(studentsTable).where(eq(studentsTable.id, id)).limit(1);
+      profileStrength = computeProfileStrength(updated);
+      commitmentScore = computeCommitmentScore(updated);
+      await db.update(studentsTable).set({ profileStrength, commitmentScore }).where(eq(studentsTable.id, id));
+      logEvent(id, "profile_imported", `Resume imported: ${fieldsFilled.join(", ") || "no new fields"}`, { fieldsFilled });
+    }
+
+    return res.json({
+      ok: true,
+      summary: {
+        fieldsFilled,
+        projectsAdded: newProjects.length,
+        certificationsAdded: newCerts.length,
+        experienceAdded: newExperience.length,
+      },
+      profileStrength,
+      commitmentScore,
+    });
+  } catch (err) {
+    req.log.error({ err }, "Failed to import resume");
+    return res.status(500).json({ error: "Failed to import resume" });
+  }
+});
+
 // ─── POST /students/:id/analyze-github ───────────────────────────────────────
 
 router.post("/students/:id/analyze-github", requireStudent(), rlAiHeavy, async (req, res) => {

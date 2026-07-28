@@ -27,6 +27,8 @@ export const studentsTable = pgTable("students", {
   // ─── Rich profile data ────────────────────────────────────────────────────
   projects: jsonb("projects").notNull().default([]),
   certifications: jsonb("certifications").notNull().default([]),
+  // { id, company, role, period, bullets: string[] }[] — feeds the resume EXPERIENCE section
+  experience: jsonb("experience").notNull().default([]),
 
   // ─── Job preferences ──────────────────────────────────────────────────────
   openToWork: boolean("open_to_work").notNull().default(true),
@@ -60,6 +62,11 @@ export const studentsTable = pgTable("students", {
   baselineScore: integer("baseline_score"),    // first completed mock's score; set once
   lastCourse: jsonb("last_course"),            // { subDomainId, subDomainName, completed, total, updatedAt }
   noticingHistory: jsonb("noticing_history"),  // { [ruleType]: lastShownDate, lastGapFramedDate }
+  // Opportunity ids already surfaced to this student, newest-first and capped.
+  // Compared against the live matched feed to mark genuinely-new listings —
+  // id-based rather than date-based because sources report posting age as a
+  // humanised string ("7d ago"), which is not a reliable ordering key.
+  seenOpportunityIds: jsonb("seen_opportunity_ids").notNull().default([]),
 
   createdAt: timestamp("created_at").notNull().defaultNow(),
 }, t => ({

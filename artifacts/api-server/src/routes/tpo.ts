@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { studentsTable, recruiterInvites, mentors, driveChecksTable, recruiterJobsTable, tpoDrivesTable, tpoAccountsTable } from "@workspace/db";
+import { studentsTable, recruiterInvites, mentors, driveChecksTable, recruiterJobsTable, tpoDrivesTable, tpoAccountsTable, interviewSessionsTable, testSessionsTable, studentResumesTable, studentActivityLogTable } from "@workspace/db";
 import { eq, inArray, desc, and, gte, sql } from "drizzle-orm";
 import { requireTpo, type TpoAuthedRequest } from "../middlewares/tpoAuth";
 
@@ -24,6 +24,64 @@ router.get("/colleges/:college/stats", async (req, res) => {
     };
   }).filter(b => b.count > 0);
   res.json({ total, ready, atRisk, avgScore, avgStrength, byYear });
+});
+
+/**
+ * The locked phase-1 college view: aggregate platform activity only. Colleges
+ * are a distribution channel, not a product user — this is enough for a TPO to
+ * see the app is being used on their campus, and deliberately exposes no
+ * individual student data. Every number is a real row count.
+ */
+router.get("/colleges/:college/platform-activity", async (req, res) => {
+  const { college } = req.params;
+  try {
+    const rows = await db
+      .select({ id: studentsTable.id })
+      .from(studentsTable)
+      .where(eq(studentsTable.college, college));
+    const ids = rows.map(r => r.id);
+
+    if (ids.length === 0) {
+      return res.json({
+        college,
+        activeStudents: 0,
+        mockInterviews: 0,
+        mockTests: 0,
+        resumesGenerated: 0,
+        applicationsOpened: 0,
+      });
+    }
+
+    const [interviews, tests, resumes, opened] = await Promise.all([
+      db.select({ n: sql<number>`count(*)::int` }).from(interviewSessionsTable)
+        .where(and(inArray(interviewSessionsTable.studentId, ids), eq(interviewSessionsTable.completed, true)))
+        .then(r => r[0]?.n ?? 0),
+      db.select({ n: sql<number>`count(*)::int` }).from(testSessionsTable)
+        .where(inArray(testSessionsTable.studentId, ids))
+        .then(r => r[0]?.n ?? 0),
+      db.select({ n: sql<number>`count(*)::int` }).from(studentResumesTable)
+        .where(inArray(studentResumesTable.studentId, ids))
+        .then(r => r[0]?.n ?? 0),
+      db.select({ n: sql<number>`count(*)::int` }).from(studentActivityLogTable)
+        .where(and(
+          inArray(studentActivityLogTable.studentId, ids),
+          eq(studentActivityLogTable.action, "opportunity_opened"),
+        ))
+        .then(r => r[0]?.n ?? 0),
+    ]);
+
+    return res.json({
+      college,
+      activeStudents: ids.length,
+      mockInterviews: interviews,
+      mockTests: tests,
+      resumesGenerated: resumes,
+      applicationsOpened: opened,
+    });
+  } catch (err) {
+    req.log.error({ err }, "Failed to get college platform activity");
+    return res.status(500).json({ error: "Server error" });
+  }
 });
 
 router.get("/colleges/:college/students", async (req, res) => {

@@ -11,6 +11,7 @@ import {
   interviewSessionsTable,
   testSessionsTable,
   tpoAccountsTable,
+  curatedOpportunitiesTable,
 } from "@workspace/db";
 import { desc, sql, gte, eq } from "drizzle-orm";
 import { timingSafeEqual } from "crypto";
@@ -358,6 +359,91 @@ router.get("/admin/activity", async (_req, res) => {
 
   events.sort((a, b) => (a.at < b.at ? 1 : -1));
   res.json(events.slice(0, 100));
+});
+
+// ─── Curated opportunities ───────────────────────────────────────────────────
+// The "curated" half of the locked aggregated+curated sourcing model. These
+// rows pin above scraped results for a matching role/kind, which is how
+// fresher-friendly Indian listings get a quality floor the generic boards
+// don't provide.
+
+const CURATED_KINDS = ["jobs", "internship", "freelancing"] as const;
+
+router.get("/admin/curated-opportunities", async (_req, res) => {
+  const rows = await db
+    .select()
+    .from(curatedOpportunitiesTable)
+    .orderBy(desc(curatedOpportunitiesTable.createdAt))
+    .limit(200);
+  res.json(rows);
+});
+
+router.post("/admin/curated-opportunities", async (req, res) => {
+  const b = (req.body ?? {}) as Record<string, unknown>;
+  const str = (v: unknown, max: number) => (typeof v === "string" ? v.trim().slice(0, max) : "");
+
+  const title = str(b.title, 200);
+  const company = str(b.company, 120);
+  const url = str(b.url, 600);
+  const kind = str(b.kind, 20);
+  if (!title || !company || !url) {
+    return res.status(400).json({ error: "title, company and url are required" });
+  }
+  if (!CURATED_KINDS.includes(kind as (typeof CURATED_KINDS)[number])) {
+    return res.status(400).json({ error: `kind must be one of ${CURATED_KINDS.join("|")}` });
+  }
+  // Only http(s) — a curated row becomes an Apply button on every matching
+  // student's feed, so a javascript:/data: URL here would be stored XSS.
+  if (!/^https?:\/\//i.test(url)) {
+    return res.status(400).json({ error: "url must start with http:// or https://" });
+  }
+
+  const tags = Array.isArray(b.tags)
+    ? b.tags.filter((t): t is string => typeof t === "string").map(t => t.trim().slice(0, 40)).filter(Boolean).slice(0, 8)
+    : [];
+
+  const [row] = await db.insert(curatedOpportunitiesTable).values({
+    title,
+    company,
+    logo: str(b.logo, 600) || null,
+    location: str(b.location, 120) || "India",
+    pay: str(b.pay, 60) || null,
+    tags,
+    url,
+    source: str(b.source, 60) || "KodeTalent",
+    kind,
+    role: str(b.role, 120),
+    active: b.active !== false,
+  }).returning();
+
+  return res.status(201).json(row);
+});
+
+router.patch("/admin/curated-opportunities/:id", async (req, res) => {
+  const id = Number(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
+  const { active } = (req.body ?? {}) as { active?: unknown };
+  if (typeof active !== "boolean") {
+    return res.status(400).json({ error: "active (boolean) is required" });
+  }
+  const [row] = await db
+    .update(curatedOpportunitiesTable)
+    .set({ active })
+    .where(eq(curatedOpportunitiesTable.id, id))
+    .returning();
+  if (!row) return res.status(404).json({ error: "Not found" });
+  return res.json(row);
+});
+
+router.delete("/admin/curated-opportunities/:id", async (req, res) => {
+  const id = Number(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
+  const [row] = await db
+    .delete(curatedOpportunitiesTable)
+    .where(eq(curatedOpportunitiesTable.id, id))
+    .returning();
+  if (!row) return res.status(404).json({ error: "Not found" });
+  return res.json({ ok: true });
 });
 
 export default router;

@@ -11,7 +11,9 @@ export type EventAction =
   | "application_status_changed"
   | "course_progress"
   | "resume_generated"
-  | "goal_changed";
+  | "goal_changed"
+  | "profile_imported"
+  | "opportunity_opened";
 
 /** Fire-and-forget event log write. Never blocks or throws into the caller's response path. */
 export function logEvent(studentId: number, action: EventAction, description: string, payload?: Record<string, unknown>): void {

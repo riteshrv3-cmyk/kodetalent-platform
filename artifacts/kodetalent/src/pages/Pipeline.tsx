@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
-import { AlertTriangle, ShieldCheck, ShieldAlert, Loader2, ChevronRight } from "lucide-react";
+import { AlertTriangle, ShieldCheck, ShieldAlert, Loader2, ChevronRight, FileText } from "lucide-react";
 import { apiFetch } from "@/lib/api/authFetch";
 import { cn } from "@/lib/utils";
 
@@ -8,6 +8,7 @@ interface Application {
   id: number;
   company: string | null;
   role: string | null;
+  rawText: string | null;
   ctc: string | null;
   applyLink: string | null;
   scamScore: number | null;
@@ -39,6 +40,16 @@ const VERDICT_STYLE: Record<string, { icon: typeof ShieldCheck; label: string; c
   risky: { icon: ShieldAlert, label: "Looks risky", className: "bg-brand-soft text-brand" },
   scam: { icon: AlertTriangle, label: "Likely a scam", className: "bg-danger/10 text-danger" },
 };
+
+function tailorResumeFor(app: Application, setLocation: (path: string) => void) {
+  sessionStorage.setItem("resumeContext", JSON.stringify({
+    company: app.company ?? "",
+    role: app.role ?? "",
+    jd: app.rawText ?? "",
+    tags: [],
+  }));
+  setLocation("/resume");
+}
 
 export default function Pipeline() {
   const [, setLocation] = useLocation();
@@ -245,15 +256,23 @@ export default function Pipeline() {
                   </p>
                   <ChevronRight className="w-4 h-4 text-ink-muted shrink-0" />
                 </div>
-                <select
-                  value={app.status}
-                  onChange={(e) => updateStatus(app.id, e.target.value)}
-                  className="text-[12px] font-semibold text-brand bg-brand-soft rounded-lg px-2 py-1 border-0 focus:outline-none"
-                >
-                  {STATUS_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                  ))}
-                </select>
+                <div className="flex items-center justify-between gap-2">
+                  <select
+                    value={app.status}
+                    onChange={(e) => updateStatus(app.id, e.target.value)}
+                    className="text-[12px] font-semibold text-brand bg-brand-soft rounded-lg px-2 py-1 border-0 focus:outline-none"
+                  >
+                    {STATUS_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={() => tailorResumeFor(app, setLocation)}
+                    className="shrink-0 flex items-center gap-1 text-[12px] font-bold text-brand"
+                  >
+                    <FileText className="w-3.5 h-3.5" /> Tailor resume
+                  </button>
+                </div>
               </div>
             ))}
           </div>

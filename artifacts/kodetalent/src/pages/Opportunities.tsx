@@ -1,11 +1,12 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, ChevronRight, ExternalLink, Target, Loader2, Search, X, Sparkles, CheckCircle2, AlertCircle, BookOpen } from "lucide-react";
+import { ArrowLeft, ChevronRight, ExternalLink, Target, Loader2, Search, X, Mic } from "lucide-react";
+import { useCreateInterviewSession } from "@workspace/api-client-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { DOMAINS, type Domain, type SubDomain } from "@/data/domains";
+import { DOMAINS, ROLE_DESTINATIONS, type Domain, type SubDomain } from "@/data/domains";
 import { useCoursePreloader, prefetchCourse } from "@/hooks/useCoursePreloader";
 import { apiFetch } from "@/lib/api/authFetch";
 
@@ -25,6 +26,17 @@ interface LiveOpportunity {
   isSearchLink?: boolean;
 }
 
+interface MatchedFeed {
+  role: string;
+  targetRole: string | null;
+  matchedFrom: "targetRole" | "skills" | "field";
+  order: OpportunityType[];
+  newCount: number;
+  groups: { kind: OpportunityType; label: string; items: (LiveOpportunity & { isNew?: boolean })[] }[];
+}
+
+const GROUP_EMOJI: Record<string, string> = { jobs: "💼", internship: "🎓", freelancing: "🌍" };
+
 function emojiFor(source: string): string {
   const s = source.toLowerCase();
   if (s.includes("remote")) return "🌐";
@@ -38,12 +50,92 @@ function emojiFor(source: string): string {
   return "✨";
 }
 
-interface JdGap {
-  fitScore: number;
-  summary: string;
-  have: string[];
-  missing: string[];
-  plan: Array<{ title: string; hours: number; action: string }>;
+/**
+ * The locked card anatomy, shared by the role-drilldown feed and the
+ * profile-matched preview at the top of the page: Apply top-right (direct
+ * redirect, no detour), Prepare + Practice below acting on the ROLE, not the
+ * individual posting. `onPrepare` is null when there's no resolvable role
+ * course to generate (e.g. targetRole unset) — the button is omitted rather
+ * than wired to something fabricated.
+ */
+function OpportunityCard({
+  o, fallbackSkills, index, practicing, onPractice, onPrepare, onApply,
+}: {
+  o: LiveOpportunity & { isNew?: boolean };
+  fallbackSkills: string[];
+  index: number;
+  practicing: boolean;
+  onPractice: () => void;
+  onPrepare: (() => void) | null;
+  onApply: () => void;
+}) {
+  return (
+    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(index, 8) * 0.04 }}>
+      <div className="bg-paper rounded-2xl shadow-soft overflow-hidden">
+        <div className="p-4 relative">
+          <a
+            href={o.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={onApply}
+            className="absolute top-4 right-4 h-8 px-3.5 rounded-full font-bold text-[12px] bg-brand text-white flex items-center gap-1"
+          >
+            {o.isSearchLink ? "Search" : "Apply"} <ExternalLink className="w-3 h-3" />
+          </a>
+
+          <div className="flex items-center gap-2 min-w-0 mb-2 pr-20">
+            {o.logo
+              ? <img src={o.logo} alt={o.company} className="w-9 h-9 rounded-lg object-cover border border-line flex-shrink-0" onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+              : <span className="text-2xl flex-shrink-0">{emojiFor(o.source)}</span>
+            }
+            <div className="min-w-0">
+              <p className="text-[11px] text-ink-muted truncate">
+                {o.isNew && <span className="text-brand font-bold">New · </span>}
+                {o.company} · {o.source}
+              </p>
+              <p className="text-[14px] font-bold text-ink leading-tight line-clamp-2">{o.title}</p>
+            </div>
+          </div>
+
+          <p className="text-[12px] text-ink-muted mb-3">
+            📍 {o.location}{o.postedAt ? ` · ${o.postedAt}` : ""}
+            {o.pay && ` · ${o.pay}`}
+            {o.isSearchLink && " · Opens this platform's search — not a specific posting"}
+          </p>
+          <div className="flex flex-wrap gap-1.5 mb-3">
+            {(o.tags.length ? o.tags : fallbackSkills).slice(0, 4).map(s => (
+              <span key={s} className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-brand-soft text-brand">
+                {s}
+              </span>
+            ))}
+          </div>
+
+          <div className="flex gap-2">
+            {onPrepare && (
+              <Button
+                onClick={onPrepare}
+                variant="outline"
+                className="flex-1 h-9 rounded-full font-bold text-[12px] border border-line text-brand bg-paper"
+              >
+                <Target className="w-3.5 h-3.5 mr-1.5" /> Prepare
+              </Button>
+            )}
+            <Button
+              onClick={onPractice}
+              disabled={practicing}
+              variant="outline"
+              className="flex-1 h-9 rounded-full font-bold text-[12px] border border-line text-brand bg-paper"
+            >
+              {practicing
+                ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                : <Mic className="w-3.5 h-3.5 mr-1.5" />}
+              Practice
+            </Button>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
 }
 
 /**
@@ -67,62 +159,89 @@ export default function Opportunities() {
   const [selectedSubDomain, setSelectedSubDomain] = useState<SubDomain | null>(initialSelection.sub);
   const [activeTab, setActiveTab] = useState<OpportunityType>("jobs");
   const [searchQuery, setSearchQuery] = useState("");
+  const [practicingId, setPracticingId] = useState<string | null>(null);
 
-  // JD-gap analyser state
-  const [gapOpen, setGapOpen] = useState(false);
-  const [gapJobTitle, setGapJobTitle] = useState("");
-  const [gapData, setGapData] = useState<JdGap | null>(null);
-  const [gapLoading, setGapLoading] = useState(false);
-  const [gapError, setGapError] = useState<string | null>(null);
+  const createInterview = useCreateInterviewSession();
 
-  const checkFit = async (op: LiveOpportunity) => {
+  const studentId = typeof window !== "undefined" ? localStorage.getItem("studentId") : null;
+
+  // The profile-matched "best matches for you" preview — the payoff feed that
+  // sits above the domain grid. Grouped by kind, ordered by student year
+  // server-side (locked spec: order-by-year, no fit numbers). Only shown at
+  // the top level, when not searching or drilled into a domain.
+  const matchedQuery = useQuery<MatchedFeed>({
+    queryKey: ["matched-opportunities", studentId],
+    queryFn: async () => {
+      const r = await apiFetch(`/api/students/${studentId}/opportunities/matched`);
+      if (!r.ok) throw new Error("fetch failed");
+      return r.json();
+    },
+    enabled: !!studentId && !selectedDomain && !selectedSubDomain,
+    staleTime: 10 * 60 * 1000,
+  });
+
+  // Once the matched feed is on screen, everything in it stops being "new".
+  // Marked after render (not at fetch) so a failed render never eats the
+  // badge, and keyed on the data object so it fires once per fresh load.
+  useEffect(() => {
+    const feed = matchedQuery.data;
+    if (!feed || !studentId) return;
+    const ids = feed.groups.flatMap(g => g.items.filter(i => !i.isSearchLink).map(i => i.id));
+    if (ids.length === 0) return;
+    apiFetch(`/api/students/${studentId}/opportunities/mark-seen`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids }),
+    }).catch(() => null);
+  }, [matchedQuery.data, studentId]);
+
+  // Apply logs activity only — never a pipeline entry. Opening a posting is
+  // not the same as applying to it, and the locked spec keeps the pipeline
+  // fully student-owned. Fire-and-forget so the redirect is never delayed.
+  const logApply = (o: LiveOpportunity) => {
+    if (!studentId || o.isSearchLink) return;
+    apiFetch(`/api/students/${studentId}/activity/opportunity-opened`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: o.title, company: o.company, source: o.source, url: o.url }),
+    }).catch(() => null);
+  };
+
+  // Resolve a matched card's role back to a domain/subdomain so its
+  // Prepare/Practice buttons carry real course/interview context. Uses the
+  // shared ROLE_DESTINATIONS mapping; null when the student's targetRole has
+  // no course mapping (e.g. "Not sure") — Prepare is then hidden on that card.
+  const matchedDestination = (targetRole: string | null): { domain: Domain; sub: SubDomain } | null => {
+    if (!targetRole) return null;
+    const dest = ROLE_DESTINATIONS[targetRole];
+    if (!dest) return null;
+    const domain = DOMAINS.find(d => d.id === dest.domain);
+    const sub = domain?.subDomains.find(s => s.id === dest.sub);
+    return domain && sub ? { domain, sub } : null;
+  };
+
+  // Practice, for this specific role, zero setup: the role name IS the
+  // context — no company/JD form, per the locked card spec. contextPack
+  // (server-side) layers the student's own projects/skills on top of every
+  // question, so this reads as "knows me", not a generic question bank.
+  const startPractice = async (op: LiveOpportunity, roleLabel: string) => {
     const studentId = Number(localStorage.getItem("studentId") || "0");
     if (!studentId) {
       setLocation("/");
       return;
     }
-    setGapOpen(true);
-    setGapJobTitle(op.title);
-    setGapData(null);
-    setGapError(null);
-    setGapLoading(true);
+    setPracticingId(op.id);
     try {
-      const r = await apiFetch(`/api/ai/jd-gap`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const session = await createInterview.mutateAsync({
+        data: {
           studentId,
-          jobTitle: op.title,
-          company: op.company,
-          tags: op.tags,
-          source: op.source,
-        }),
+          company: `an employer hiring for the ${roleLabel} role`,
+          round: "Mixed|Standard",
+        },
       });
-      if (!r.ok) {
-        const e = await r.json().catch(() => ({}));
-        throw new Error(e.error || "Couldn't analyse fit");
-      }
-      const data: JdGap = await r.json();
-      setGapData(data);
-    } catch (err) {
-      setGapError(err instanceof Error ? err.message : "Failed to analyse fit");
-    } finally {
-      setGapLoading(false);
-    }
-  };
-
-  const closeGap = () => {
-    setGapOpen(false);
-    setGapData(null);
-    setGapError(null);
-  };
-
-  const goLearnGap = () => {
-    closeGap();
-    if (selectedDomain && selectedSubDomain) {
-      navigateToCourse();
-    } else {
-      setLocation("/opportunities");
+      setLocation(`/practice/interview/${session.id}`);
+    } catch {
+      setPracticingId(null);
     }
   };
 
@@ -162,16 +281,18 @@ export default function Opportunities() {
   // Silently pre-generate all 48 courses in the background
   useCoursePreloader();
 
-  const navigateToCourse = () => {
-    if (!selectedDomain || !selectedSubDomain) return;
+  const navigateToCourse = (domain?: Domain, sub?: SubDomain) => {
+    const d = domain ?? selectedDomain;
+    const s = sub ?? selectedSubDomain;
+    if (!d || !s) return;
     sessionStorage.setItem("courseContext", JSON.stringify({
-      subDomainId: selectedSubDomain.id,
-      subDomainName: selectedSubDomain.name,
-      domainName: selectedDomain.name,
-      domainColor: selectedDomain.color,
-      domainBg: selectedDomain.bg,
-      domainEmoji: selectedDomain.emoji,
-      skills: selectedSubDomain.skills,
+      subDomainId: s.id,
+      subDomainName: s.name,
+      domainName: d.name,
+      domainColor: d.color,
+      domainBg: d.bg,
+      domainEmoji: d.emoji,
+      skills: s.skills,
     }));
     setLocation("/opportunities/course");
   };
@@ -231,66 +352,16 @@ export default function Opportunities() {
     return (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {items.map((o, i) => (
-          <motion.div key={o.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i, 8) * 0.04 }}>
-            <div className="bg-paper rounded-2xl shadow-soft overflow-hidden">
-              <div className="p-4">
-                <div className="flex items-start justify-between mb-2 gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    {o.logo
-                      ? <img src={o.logo} alt={o.company} className="w-9 h-9 rounded-lg object-cover border border-line flex-shrink-0" onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
-                      : <span className="text-2xl flex-shrink-0">{emojiFor(o.source)}</span>
-                    }
-                    <div className="min-w-0">
-                      <p className="text-[11px] text-ink-muted truncate">{o.company} · {o.source}</p>
-                      <p className="text-[14px] font-bold text-ink leading-tight line-clamp-2">{o.title}</p>
-                    </div>
-                  </div>
-                  {o.isSearchLink ? (
-                    <span className="text-[11px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap bg-line text-ink-muted">
-                      🔗 Search link
-                    </span>
-                  ) : o.pay ? (
-                    <span className="text-[11px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap bg-brand-soft text-brand">
-                      {o.pay}
-                    </span>
-                  ) : null}
-                </div>
-                <p className="text-[12px] text-ink-muted mb-3">
-                  📍 {o.location}{o.postedAt ? ` · ${o.postedAt}` : ""}
-                  {o.isSearchLink && " · Opens this platform's search — not a specific posting"}
-                </p>
-                <div className="flex flex-wrap gap-1.5 mb-3">
-                  {(o.tags.length ? o.tags : skills).slice(0, 4).map(s => (
-                    <span key={s} className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-brand-soft text-brand">
-                      {s}
-                    </span>
-                  ))}
-                </div>
-                <div className="flex gap-2 mb-2">
-                  {!o.isSearchLink && (
-                    <Button
-                      onClick={() => checkFit(o)}
-                      className="flex-1 h-10 rounded-full font-bold text-[13px] bg-brand text-white hover:bg-brand/90"
-                    >
-                      <Sparkles className="w-3.5 h-3.5 mr-1.5" /> Check fit
-                    </Button>
-                  )}
-                  <a href={o.url} target="_blank" rel="noopener noreferrer" className="flex-1">
-                    <Button variant="outline" className="w-full h-10 rounded-full font-bold text-[13px] border border-line text-brand bg-paper">
-                      {o.isSearchLink ? "Search" : "Apply"} <ExternalLink className="w-3 h-3 ml-1" />
-                    </Button>
-                  </a>
-                </div>
-                <Button
-                  onClick={navigateToCourse}
-                  variant="ghost"
-                  className="w-full h-8 rounded-lg font-bold text-[12px] text-brand"
-                >
-                  <Target className="w-3 h-3 mr-1" /> Prepare for this role
-                </Button>
-              </div>
-            </div>
-          </motion.div>
+          <OpportunityCard
+            key={o.id}
+            o={o}
+            index={i}
+            fallbackSkills={skills}
+            practicing={practicingId === o.id}
+            onPractice={() => startPractice(o, selectedSubDomain.name)}
+            onPrepare={() => navigateToCourse()}
+            onApply={() => logApply(o)}
+          />
         ))}
       </div>
     );
@@ -319,9 +390,9 @@ export default function Opportunities() {
               {selectedSubDomain && selectedSubDomain.name}
             </h1>
             <p className="text-[12px] text-ink-muted mt-1">
-              {!selectedDomain && `Explore ${DOMAINS.length} tech domains · 100+ AI courses · Jobs · Internships`}
-              {selectedDomain && !selectedSubDomain && "Select a specialisation to explore roles"}
-              {selectedSubDomain && "Browse opportunities and get prepared"}
+              {!selectedDomain && "Real jobs, internships and freelance work — updated daily"}
+              {selectedDomain && !selectedSubDomain && `${selectedDomain.subDomains.length} roles in this domain`}
+              {selectedSubDomain && "Apply, prepare with a course, or practice an interview"}
             </p>
           </div>
         </div>
@@ -427,6 +498,70 @@ export default function Opportunities() {
 
             {!searchQuery.trim() && (
             <div>
+              {/* Matched for you — the payoff feed. Real work for this
+                  student's own role, before any browsing decision is asked
+                  of them. Grouped, never scored: the locked spec is
+                  grouping-only, no fit percentages. */}
+              {matchedQuery.isLoading && (
+                <div className="flex items-center gap-2 mb-4 px-1">
+                  <Loader2 className="w-4 h-4 animate-spin text-ink-muted" />
+                  <p className="text-[12px] text-ink-muted">Finding work that matches your profile…</p>
+                </div>
+              )}
+              {matchedQuery.data && (() => {
+                const feed = matchedQuery.data;
+                const dest = matchedDestination(feed.targetRole);
+                const groups = feed.groups.filter(g => g.items.length > 0);
+                if (groups.length === 0) return null;
+                return (
+                  <div className="mb-6">
+                    <div className="flex items-baseline justify-between mb-3 px-1">
+                      <p className="text-[15px] font-extrabold text-ink">
+                        Matched for you
+                        {feed.newCount > 0 && (
+                          <span className="ml-2 text-[11px] font-bold text-brand bg-brand-soft rounded-full px-2 py-0.5 align-middle">
+                            {feed.newCount} new
+                          </span>
+                        )}
+                      </p>
+                      <p className="text-[11px] text-ink-muted">{feed.role}</p>
+                    </div>
+                    {groups.map(group => (
+                      <div key={group.kind} className="mb-4">
+                        <button
+                          onClick={() => {
+                            if (!dest) return;
+                            setSelectedDomain(dest.domain);
+                            setSelectedSubDomain(dest.sub);
+                            setActiveTab(group.kind);
+                          }}
+                          className="w-full flex items-center justify-between mb-2 px-1 text-left"
+                        >
+                          <p className="text-[12px] font-bold text-ink-muted uppercase tracking-wider">
+                            {GROUP_EMOJI[group.kind]} {group.label}
+                          </p>
+                          {dest && <ChevronRight className="w-4 h-4 text-ink-muted" />}
+                        </button>
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                          {group.items.map((o, i) => (
+                            <OpportunityCard
+                              key={o.id}
+                              o={o}
+                              index={i}
+                              fallbackSkills={dest?.sub.skills ?? []}
+                              practicing={practicingId === o.id}
+                              onPractice={() => startPractice(o, dest?.sub.name ?? feed.role)}
+                              onPrepare={dest ? () => navigateToCourse(dest.domain, dest.sub) : null}
+                              onApply={() => logApply(o)}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+
               <button
                 onClick={() => setLocation("/pipeline")}
                 className="w-full mb-4 flex items-center gap-3 px-4 py-3 rounded-2xl bg-paper shadow-soft text-left transition-colors"
@@ -441,6 +576,10 @@ export default function Opportunities() {
                 </div>
                 <ChevronRight className="w-4 h-4 text-ink-muted shrink-0" />
               </button>
+
+              <p className="text-[12px] font-bold text-ink-muted uppercase tracking-wider mb-2 px-1">
+                Explore {DOMAINS.length} domains
+              </p>
               <div className="grid grid-cols-3 lg:grid-cols-6 gap-3">
                 {DOMAINS.map((domain, i) => (
                   <motion.button
@@ -547,180 +686,10 @@ export default function Opportunities() {
               </div>
 
               {renderCards()}
-
-              {/* Prepare CTA */}
-              <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-                className="rounded-2xl bg-paper shadow-soft p-4 mt-2"
-              >
-                <p className="text-[14px] font-bold text-ink mb-1">
-                  Not ready to apply yet?
-                </p>
-                <p className="text-[12px] text-ink-muted mb-3">
-                  Practice mock interviews tailored to {selectedSubDomain.name} roles and build your confidence first.
-                </p>
-                <Button
-                  onClick={navigateToCourse}
-                  className="w-full h-10 rounded-full font-bold text-[13px] bg-brand text-white hover:bg-brand/90"
-                >
-                  Start Practice Session →
-                </Button>
-              </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
-
-      {/* JD-Gap bottom sheet (centered dialog on lg) */}
-      <AnimatePresence>
-        {gapOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={closeGap}
-            className="fixed inset-0 bg-ink/40 z-[60] flex items-end lg:items-center"
-          >
-            <motion.div
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "100%" }}
-              transition={{ type: "spring", damping: 30, stiffness: 280 }}
-              className="w-full bg-paper rounded-t-3xl lg:rounded-3xl shadow-soft max-h-[85dvh] overflow-y-auto max-w-md lg:max-w-lg mx-auto border-t border-line lg:border pb-[env(safe-area-inset-bottom)]"
-              data-testid="jd-gap-sheet"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="sticky top-0 bg-paper rounded-t-3xl lg:rounded-t-3xl px-5 pt-3 pb-2 border-b border-line">
-                <div className="w-12 h-1 rounded-full bg-line mx-auto mb-3 lg:hidden" />
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">AI Fit Check</p>
-                    <p className="text-[16px] font-extrabold text-ink line-clamp-2">{gapJobTitle}</p>
-                  </div>
-                  <button onClick={closeGap} className="w-8 h-8 rounded-full border border-line flex items-center justify-center flex-shrink-0">
-                    <X className="w-4 h-4 text-ink-muted" />
-                  </button>
-                </div>
-              </div>
-
-              <div className="px-5 py-4 pb-8">
-                {gapLoading && (
-                  <div className="flex flex-col items-center justify-center py-12 gap-3">
-                    <Loader2 className="w-7 h-7 animate-spin text-ink" />
-                    <p className="text-[12px] text-ink-muted">Analysing your fit…</p>
-                  </div>
-                )}
-                {gapError && !gapLoading && (
-                  <div className="flex flex-col items-center justify-center py-10 gap-2">
-                    <AlertCircle className="w-7 h-7 text-danger" />
-                    <p className="text-[14px] text-danger">{gapError}</p>
-                    <Button onClick={closeGap} variant="outline" className="mt-2 border border-line text-brand bg-paper rounded-full">Close</Button>
-                  </div>
-                )}
-                {gapData && !gapLoading && (() => {
-                  const score = gapData.fitScore;
-                  const verdict = score >= 70 ? "Strong fit — apply now" : score >= 40 ? "Decent fit — close the gaps first" : "Stretch role — build skills first";
-                  const r = 42, c = 2 * Math.PI * r;
-                  const offset = c - (score / 100) * c;
-                  return (
-                    <>
-                      <div className="flex items-center gap-4 mb-4">
-                        <div className="relative w-[110px] h-[110px] flex-shrink-0">
-                          <svg width="110" height="110" className="-rotate-90">
-                            <circle cx="55" cy="55" r={r} fill="none" className="stroke-line" strokeWidth="10" />
-                            <motion.circle
-                              cx="55" cy="55" r={r} fill="none" className="stroke-brand" strokeWidth="10"
-                              strokeLinecap="round" strokeDasharray={c}
-                              initial={{ strokeDashoffset: c }}
-                              animate={{ strokeDashoffset: offset }}
-                              transition={{ duration: 1.1, ease: "easeOut" }}
-                            />
-                          </svg>
-                          <div className="absolute inset-0 flex flex-col items-center justify-center">
-                            <span className="text-2xl font-extrabold text-ink">{score}</span>
-                            <span className="text-[9px] font-bold text-ink-muted uppercase tracking-wider">Fit</span>
-                          </div>
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-[11px] font-bold uppercase tracking-wider text-brand">{verdict}</p>
-                          <p className="text-[13px] text-ink mt-1 leading-snug">{gapData.summary}</p>
-                        </div>
-                      </div>
-
-                      {gapData.have.length > 0 && (
-                        <div className="mb-4">
-                          <p className="text-[11px] font-bold text-ink-muted uppercase tracking-wider mb-2 flex items-center gap-1">
-                            <CheckCircle2 className="w-3.5 h-3.5" /> What you bring
-                          </p>
-                          <div className="flex flex-wrap gap-1.5">
-                            {gapData.have.map(s => (
-                              <span key={s} className="text-[12px] font-semibold px-2.5 py-1 rounded-full bg-brand-soft text-brand">
-                                {s}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {gapData.missing.length > 0 && (
-                        <div className="mb-4">
-                          <p className="text-[11px] font-bold text-ink-muted uppercase tracking-wider mb-2 flex items-center gap-1">
-                            <AlertCircle className="w-3.5 h-3.5" /> Gaps to close
-                          </p>
-                          <div className="flex flex-wrap gap-1.5">
-                            {gapData.missing.map(s => (
-                              <span key={s} className="text-[12px] font-semibold px-2.5 py-1 rounded-full bg-line/60 text-ink-muted">
-                                {s}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {gapData.plan.length > 0 && (
-                        <div className="mb-4">
-                          <p className="text-[11px] font-bold text-ink-muted uppercase tracking-wider mb-2 flex items-center gap-1">
-                            <BookOpen className="w-3.5 h-3.5" /> Your action plan
-                          </p>
-                          <div>
-                            {gapData.plan.map((p, i) => (
-                              <motion.div
-                                key={i}
-                                initial={{ opacity: 0, x: -8 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: i * 0.08 }}
-                                className="py-3 border-t border-line first:border-t-0"
-                              >
-                                <div className="flex items-start justify-between gap-2 mb-1">
-                                  <p className="text-[13px] font-semibold text-ink leading-tight">{p.title}</p>
-                                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-brand-soft text-brand whitespace-nowrap">
-                                    {p.hours}h
-                                  </span>
-                                </div>
-                                <p className="text-[12px] text-ink-muted leading-snug">{p.action}</p>
-                              </motion.div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      <Button
-                        onClick={goLearnGap}
-                        className="w-full h-12 rounded-full font-bold bg-brand text-white text-[14px] hover:bg-brand/90"
-                        data-testid="button-learn-gap"
-                      >
-                        <Sparkles className="w-4 h-4 mr-1.5" /> Learn the gap →
-                      </Button>
-                    </>
-                  );
-                })()}
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }
