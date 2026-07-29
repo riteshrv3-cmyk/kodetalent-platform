@@ -58,3 +58,4 @@ graphify-out/
 
 # pitch/fundraising material — this repo is public, keep these local
 docs/
+.gstack/

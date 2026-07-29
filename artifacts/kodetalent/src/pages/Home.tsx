@@ -43,7 +43,10 @@ export default function Home() {
 
   const firstName = profile?.name?.split(" ")[0] ?? "there";
   const hour = new Date().getHours();
-  const greeting = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
+  // Late-night study sessions are the norm for this audience, and the old
+  // three-band split greeted someone at 2am with "good morning".
+  const greeting =
+    hour < 5 ? "night" : hour < 12 ? "morning" : hour < 17 ? "afternoon" : hour < 22 ? "evening" : "night";
   const goal = profile?.targetRole
     ? `${profile.targetRole}${profile.targetBatch ? ` · Batch ${profile.targetBatch}` : ""}`
     : profile?.field && profile.field !== "Not set"
