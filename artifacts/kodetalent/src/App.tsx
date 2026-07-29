@@ -74,15 +74,21 @@ const clerkAppearance = {
     socialButtonsPlacement: "bottom" as const,
     socialButtonsVariant: "blockButton" as const,
   },
+  // Canopy tokens, not a parallel slate/indigo-600 palette. These were
+  // Tailwind defaults (#4f46e5 indigo-600, #0f172a slate-900, #64748b
+  // slate-500, #e2e8f0 slate-200, #f8fafc slate-50), so sign-in and sign-up
+  // rendered in a colder, bluer palette than every other screen. Values below
+  // mirror index.css: brand #4a55c7, ink #1a1d2e, ink-muted #9aa0ae,
+  // line #ecedf3, canvas #f4f5f7, danger #dc2626.
   variables: {
-    colorPrimary: "#4f46e5",
-    colorForeground: "#0f172a",
-    colorMutedForeground: "#64748b",
-    colorDanger: "#ef4444",
+    colorPrimary: "#4a55c7",
+    colorForeground: "#1a1d2e",
+    colorMutedForeground: "#9aa0ae",
+    colorDanger: "#dc2626",
     colorBackground: "#ffffff",
-    colorInput: "#f8fafc",
-    colorInputForeground: "#0f172a",
-    colorNeutral: "#e2e8f0",
+    colorInput: "#f4f5f7",
+    colorInputForeground: "#1a1d2e",
+    colorNeutral: "#ecedf3",
     fontFamily: "'Plus Jakarta Sans', sans-serif",
     borderRadius: "0.75rem",
   },
@@ -92,23 +98,26 @@ const clerkAppearance = {
       "bg-white rounded-2xl w-[440px] max-w-full overflow-hidden shadow-lg",
     card: "!shadow-none !border-0 !bg-transparent !rounded-none",
     footer: "!shadow-none !border-0 !bg-transparent !rounded-none",
-    headerTitle: "text-[#0f172a] font-bold text-xl",
-    headerSubtitle: "text-[#64748b] text-sm",
-    socialButtonsBlockButtonText: "text-[#0f172a] font-semibold",
-    formFieldLabel: "text-[#0f172a] font-semibold text-sm",
-    footerActionLink: "text-[#4f46e5] font-semibold",
-    footerActionText: "text-[#64748b] text-sm",
-    dividerText: "text-[#94a3b8] text-xs font-medium",
+    headerTitle: "text-ink font-bold text-xl",
+    headerSubtitle: "text-ink-muted text-sm",
+    socialButtonsBlockButtonText: "text-ink font-semibold",
+    formFieldLabel: "text-ink font-semibold text-sm",
+    footerActionLink: "text-brand font-semibold",
+    footerActionText: "text-ink-muted text-sm",
+    dividerText: "text-ink-muted text-xs font-medium",
     logoBox: "mb-4",
     logoImage: "w-10 h-10",
     socialButtonsBlockButton:
-      "h-11 rounded-xl border border-[#e2e8f0] hover:bg-[#f8fafc]",
+      "h-11 rounded-xl border border-line hover:bg-canvas",
+    // Solid brand, not a gradient. The blue-to-violet gradient CTA was the
+    // loudest element on the first screen a new user sees, and the design
+    // system rules out gradients on buttons outright.
     formButtonPrimary:
-      "h-11 rounded-xl bg-gradient-to-r from-[#4f46e5] to-[#6366f1] font-bold hover:opacity-90",
+      "h-11 rounded-xl bg-brand font-bold hover:opacity-90",
     formFieldInput:
-      "h-11 rounded-xl bg-[#f8fafc] border-[#e2e8f0] text-[#0f172a]",
+      "h-11 rounded-xl bg-canvas border-line text-ink",
     footerAction: "mt-4",
-    dividerLine: "bg-[#e2e8f0]",
+    dividerLine: "bg-line",
     alert: "rounded-xl",
     otpCodeFieldInput: "h-11 rounded-xl",
     formFieldRow: "gap-3",
@@ -168,8 +177,8 @@ function RoleSelectRedirect() {
 
   if (!isLoaded) {
     return (
-      <div className="min-h-[100dvh] flex items-center justify-center bg-[#f8fafc]">
-        <div className="animate-spin w-8 h-8 border-4 border-[#4f46e5] border-t-transparent rounded-full" />
+      <div className="min-h-[100dvh] flex items-center justify-center bg-canvas">
+        <div className="animate-spin w-8 h-8 border-4 border-brand border-t-transparent rounded-full" />
       </div>
     );
   }
@@ -180,7 +189,7 @@ function RoleSelectRedirect() {
 
 function SignInPage() {
   return (
-    <div className="flex min-h-[100dvh] items-center justify-center bg-[#f8fafc] px-4">
+    <div className="flex min-h-[100dvh] items-center justify-center bg-canvas px-4">
       <SignIn
         routing="path"
         path={`${basePath}/sign-in`}
@@ -193,7 +202,7 @@ function SignInPage() {
 
 function SignUpPage() {
   return (
-    <div className="flex min-h-[100dvh] items-center justify-center bg-[#f8fafc] px-4">
+    <div className="flex min-h-[100dvh] items-center justify-center bg-canvas px-4">
       <SignUp
         routing="path"
         path={`${basePath}/sign-up`}
