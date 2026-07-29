@@ -620,7 +620,16 @@ export default function Profile() {
       </div>
 
       {/* ── Sheet ── */}
-      <div className="bg-canvas -mt-4 rounded-t-3xl pt-4 space-y-4">
+      {/* -mt-6/pt-6 like every other canopy sheet (Home, Prep, Pipeline,
+          Onboarding, DriveCheck). Profile was the only one at -mt-4/pt-4, so
+          its sheet bit 8px less into the canopy and sat on a different
+          vertical rhythm than the rest of the app.
+
+          `relative` matters: the canopy above is positioned (it anchors the
+          Edit Profile button), so it painted over this sheet's negative
+          margin and the rounded top never showed — Profile was the one canopy
+          in the app that ended in a hard square-cornered edge. */}
+      <div className="relative bg-canvas -mt-6 rounded-t-3xl pt-6 space-y-4">
 
         {/* Guest banner */}
         {isGuest && (
