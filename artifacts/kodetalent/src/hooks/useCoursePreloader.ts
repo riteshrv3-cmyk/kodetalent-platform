@@ -3,7 +3,17 @@ import { ALL_SUBDOMAINS } from "@/data/domains";
 
 const CACHE_VERSION = "v2";
 const BATCH_SIZE = 3;
-const MAX_PER_SESSION = 30;
+/**
+ * Deliberately far below the server's ai-heavy allowance (30/hour), which this
+ * endpoint shares with resume generation, resume import, roadmap generation and
+ * pipeline analysis.
+ *
+ * At 30 a single page load spent the student's entire hourly budget on courses
+ * they had not asked for, so the next tap on "Build resume" came back 429 and
+ * looked like the app was broken. Speculative work must never crowd out what
+ * the student actually requested.
+ */
+const MAX_PER_SESSION = 6;
 const STATUS_KEY = "course_preload_status";
 
 // Module-level singleton — only one preloader runs across the app lifetime
@@ -24,11 +34,17 @@ function setStatus(id: string, status: "done" | "error") {
   localStorage.setItem(STATUS_KEY, JSON.stringify(map));
 }
 
-async function generateOne(subDomainId: string, subDomainName: string, domainName: string, skills: string[]) {
+/** Resolves true when the server asked us to back off, so callers can stop. */
+async function generateOne(
+  subDomainId: string,
+  subDomainName: string,
+  domainName: string,
+  skills: string[],
+): Promise<{ rateLimited: boolean }> {
   const key = getCacheKey(subDomainId);
   if (localStorage.getItem(key)) {
     setStatus(subDomainId, "done");
-    return;
+    return { rateLimited: false };
   }
   try {
     const resp = await fetch("/api/course/generate", {
@@ -36,12 +52,18 @@ async function generateOne(subDomainId: string, subDomainName: string, domainNam
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ subDomainName, domainName, skills }),
     });
+    // A 429 is not a failure of this course — it means we are asking for too
+    // much. Leaving the status unset keeps it eligible for a later session;
+    // marking it "error" would be wrong, and marking it "done" would lose it.
+    if (resp.status === 429) return { rateLimited: true };
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const data = await resp.json();
     localStorage.setItem(key, JSON.stringify(data));
     setStatus(subDomainId, "done");
+    return { rateLimited: false };
   } catch {
     setStatus(subDomainId, "error");
+    return { rateLimited: false };
   }
 }
 
@@ -62,9 +84,13 @@ async function runPreloader() {
 
   for (let i = 0; i < pending.length; i += BATCH_SIZE) {
     const batch = pending.slice(i, i + BATCH_SIZE);
-    await Promise.all(
+    const results = await Promise.all(
       batch.map(sd => generateOne(sd.id, sd.name, sd.domain.name, sd.skills))
     );
+    // Stop the whole run the moment the server pushes back. Continuing would
+    // keep spending a budget the student needs for resumes and roadmaps, and
+    // every extra call is guaranteed to fail anyway.
+    if (results.some(r => r.rateLimited)) return;
     // Small pause between batches to be kind to the API
     if (i + BATCH_SIZE < pending.length) {
       await new Promise(r => setTimeout(r, 500));
@@ -95,6 +121,7 @@ export function prefetchCourse(
   const existing = inflight.get(subDomainId);
   if (existing) return existing;
   const p = generateOne(subDomainId, subDomainName, domainName, skills)
+    .then(() => undefined)
     .finally(() => inflight.delete(subDomainId));
   inflight.set(subDomainId, p);
   return p;
