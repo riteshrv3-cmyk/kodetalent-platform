@@ -136,10 +136,15 @@ export default function Pipeline() {
   return (
     <div className="min-h-screen bg-canvas pb-24">
       <div className="bg-brand px-6 pt-8 pb-14">
-        <h1 className="text-[26px] font-extrabold text-white leading-[1.06] tracking-tight">Pipeline</h1>
-        <p className="text-[13px] text-white/70 mt-1">
-          Paste any job posting or placement drive — scam check, eligibility, and fit, in one shot.
-        </p>
+        {/* Same clamp as the sheet below. Without it the canopy title sat at
+            the canopy's own left edge while the card it heads was centred at
+            2xl — a 144px gap between a heading and its content on desktop. */}
+        <div className="lg:max-w-2xl lg:mx-auto">
+          <h1 className="text-[26px] font-extrabold text-white leading-[1.06] tracking-tight">Pipeline</h1>
+          <p className="text-[13px] text-white/70 mt-1">
+            Paste any job posting or placement drive — scam check, eligibility, and fit, in one shot.
+          </p>
+        </div>
       </div>
 
       <div className="bg-paper rounded-t-3xl -mt-6 px-6 pt-6 pb-6 shadow-soft lg:max-w-2xl lg:mx-auto">

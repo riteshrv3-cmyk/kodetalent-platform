@@ -79,7 +79,13 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="bg-canvas rounded-t-3xl -mt-6 px-6 pt-6 lg:max-w-2xl lg:mx-auto">
+      {/* The sheet spans the canopy, not the reading column. Clamping the
+          sheet itself to lg:max-w-2xl left 144px of bare indigo standing proud
+          on each side of its rounded top on desktop — the canopy's flat bottom
+          edge showing past the curve that exists to hide it. Content stays at
+          2xl via the inner wrapper. */}
+      <div className="bg-canvas rounded-t-3xl -mt-6 px-6 pt-6">
+        <div className="lg:max-w-2xl lg:mx-auto">
         {noticing && (
           <div className="bg-brand-soft rounded-2xl p-4 mb-4">
             <button
@@ -113,6 +119,7 @@ export default function Home() {
             onAction={() => setLocation(task.href)}
           />
         ))}
+        </div>
       </div>
     </div>
   );
