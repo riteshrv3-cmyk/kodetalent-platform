@@ -6,6 +6,7 @@ import { ArrowLeft, ChevronRight, ExternalLink, Target, Loader2, Search, X, Mic 
 import { useCreateInterviewSession } from "@workspace/api-client-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { DOMAINS, ROLE_DESTINATIONS, type Domain, type SubDomain } from "@/data/domains";
 import { useCoursePreloader, prefetchCourse } from "@/hooks/useCoursePreloader";
 import { apiFetch } from "@/lib/api/authFetch";
@@ -512,10 +513,27 @@ export default function Opportunities() {
                   student's own role, before any browsing decision is asked
                   of them. Grouped, never scored: the locked spec is
                   grouping-only, no fit percentages. */}
+              {/* Skeleton shaped like the feed it replaces (group label + a
+                  2-up grid of 173px cards), not a bare spinner row. The old
+                  one-line spinner let the pipeline card and domain grid render
+                  at the top of the page, then the resolved feed inserted
+                  ~1345px above them — a 0.52 CLS, five times the 0.1 budget. */}
               {matchedQuery.isLoading && (
-                <div className="flex items-center gap-2 mb-4 px-1">
-                  <Loader2 className="w-4 h-4 animate-spin text-ink-muted" />
-                  <p className="text-[12px] text-ink-muted">Finding work that matches your profile…</p>
+                <div className="mb-6" data-testid="matched-feed-skeleton">
+                  <div className="flex items-center gap-2 mb-4 px-1">
+                    <Loader2 className="w-4 h-4 animate-spin text-ink-muted" />
+                    <p className="text-[12px] text-ink-muted">Finding work that matches your profile…</p>
+                  </div>
+                  {[0, 1].map((g) => (
+                    <div key={g} className="mb-4">
+                      <Skeleton className="h-3.5 w-24 mb-2 ml-1 rounded-full" />
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        {[0, 1].map((c) => (
+                          <Skeleton key={c} className="h-[173px] w-full rounded-2xl" />
+                        ))}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
               {matchedQuery.data && (() => {
@@ -612,6 +630,12 @@ export default function Opportunities() {
                 );
               })()}
 
+              {/* Held back until the feed resolves. Mounting these while the
+                  feed is still loading is what put them at the top of the page
+                  and made the feed's arrival a half-viewport shift; mounting
+                  them in the same commit as the feed costs no shift at all. */}
+              {!matchedQuery.isLoading && (
+              <>
               <button
                 onClick={() => setLocation("/pipeline")}
                 className="w-full mb-4 flex items-center gap-3 px-4 py-3 rounded-2xl bg-paper shadow-soft text-left transition-colors"
@@ -648,6 +672,8 @@ export default function Opportunities() {
                   </motion.button>
                 ))}
               </div>
+              </>
+              )}
             </div>
             )}
             </motion.div>
