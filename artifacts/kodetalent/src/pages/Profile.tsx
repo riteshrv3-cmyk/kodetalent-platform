@@ -867,7 +867,7 @@ export default function Profile() {
           <div className="p-5">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-[14px] font-bold text-ink flex items-center gap-2"><Zap className="w-4 h-4 text-ink" /> Links</h3>
-              <button onClick={() => setEditSection(editSection === "links" ? null : "links")} className="text-ink">
+              <button onClick={() => setEditSection(editSection === "links" ? null : "links")} aria-label="Edit links" className="-m-3.5 p-3.5 rounded-full text-ink hover-elevate active-elevate-2">
                 {editSection === "links" ? <X className="w-4 h-4" /> : <Edit2 className="w-4 h-4" />}
               </button>
             </div>
@@ -1007,7 +1007,7 @@ export default function Profile() {
           <div className="p-5">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-[14px] font-bold text-ink">About</h3>
-              <button onClick={() => setEditSection(editSection === "bio" ? null : "bio")} className="text-ink">
+              <button onClick={() => setEditSection(editSection === "bio" ? null : "bio")} aria-label="Edit about" className="-m-3.5 p-3.5 rounded-full text-ink hover-elevate active-elevate-2">
                 {editSection === "bio" ? <X className="w-4 h-4" /> : <Edit2 className="w-4 h-4" />}
               </button>
             </div>
@@ -1169,7 +1169,7 @@ export default function Profile() {
           <div className="p-5">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-[14px] font-bold text-ink flex items-center gap-2"><Briefcase className="w-4 h-4 text-ink" /> Job Preferences</h3>
-              <button onClick={() => setEditSection(editSection === "prefs" ? null : "prefs")} className="text-ink">
+              <button onClick={() => setEditSection(editSection === "prefs" ? null : "prefs")} aria-label="Edit job preferences" className="-m-3.5 p-3.5 rounded-full text-ink hover-elevate active-elevate-2">
                 {editSection === "prefs" ? <X className="w-4 h-4" /> : <Edit2 className="w-4 h-4" />}
               </button>
             </div>
