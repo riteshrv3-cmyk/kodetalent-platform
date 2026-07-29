@@ -160,6 +160,30 @@
   p {
     @apply font-medium text-ink-muted;
   }
+
+  /* Tailwind v4's preflight sets `cursor: default` on buttons, so every
+     hand-rolled button in the app (task rows, filter chips, icon buttons,
+     card CTAs) read as non-clickable under the pointer. Restore the affordance
+     globally rather than adding `cursor-pointer` to ~150 call sites. */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  summary {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed;
+  }
+
+  /* Keyboard focus was invisible on everything except shadcn primitives (only
+     they carry `focus-visible:ring-*`). This is the fallback ring for the
+     hand-rolled controls; anything declaring its own focus-visible ring still
+     wins on specificity. */
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
 }
 
 /* iOS Safari zooms the whole viewport when a field under 16px takes focus. The
