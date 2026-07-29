@@ -793,8 +793,12 @@ export default function Profile() {
           <span className="text-brand text-[13px] font-bold">→</span>
         </button>
 
-        {/* ── Two-column section grid (desktop only; stacks on mobile) ── */}
-        <div className="space-y-4 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-4 lg:items-start">
+        {/* ── Two-column section grid (desktop only; stacks on mobile) ──
+            No lg:items-start: with it, a short card left a hole the height of
+            its taller row-mate (Profile Strength is 130px against Links' 300px,
+            so ~170px of canvas read as a missing card). Letting cards stretch
+            to the row height gives clean rows instead. */}
+        <div className="space-y-4 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-4">
 
         {/* ── Profile Strength ── */}
         <div className="bg-paper rounded-2xl shadow-soft">
