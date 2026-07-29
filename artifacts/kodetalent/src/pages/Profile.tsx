@@ -550,8 +550,13 @@ export default function Profile() {
   const isEditingBasic = editSection === "basic";
   const isGuest = profile.name === "Guest" || profile.email?.startsWith("guest_");
 
+  // lg:max-w-none, not 4xl: every other page sits at one of three widths — the
+  // shell's full column (Opportunities, the other two-column card grid), 3xl
+  // (Resume, DriveCheck, Test) or 2xl (Home, Prep, Pipeline, Notebook, AIChat).
+  // 4xl was a singleton, so walking Opportunities -> Profile moved the
+  // content's left edge 32px for no reason.
   return (
-    <div className="pb-28 max-w-md lg:max-w-4xl mx-auto min-h-screen bg-canvas">
+    <div className="pb-28 max-w-md lg:max-w-none mx-auto min-h-screen bg-canvas">
 
       {/* ── Canopy header ── */}
       <div className="relative bg-brand pt-8 pb-10 px-6">
