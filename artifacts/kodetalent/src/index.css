@@ -181,6 +181,54 @@
   padding-bottom: env(safe-area-inset-bottom);
 }
 
+/* Elevation overlays used by components/ui/button.tsx and badge.tsx
+   (`hover-elevate`, `active-elevate-2`). Those classes shipped with the
+   Replit shadcn variant but their definitions were dropped when this file was
+   rewritten for the Canopy palette, so every Button/Badge in the app rendered
+   with `transition-colors` and nothing to transition to — no hover, no press
+   feedback anywhere. Implemented as a translucent ink overlay rather than a
+   per-variant `hover:bg-*` so one rule covers every variant and any background
+   the button is dropped onto. */
+:root {
+  --elevate-1: rgba(26, 29, 46, 0.05);
+  --elevate-2: rgba(26, 29, 46, 0.1);
+}
+
+.hover-elevate,
+.active-elevate,
+.active-elevate-2 {
+  position: relative;
+}
+
+.hover-elevate::after,
+.active-elevate::after,
+.active-elevate-2::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background-color: transparent;
+  transition: background-color 120ms ease-out;
+}
+
+.hover-elevate:hover:not(:disabled)::after {
+  background-color: var(--elevate-1);
+}
+
+.active-elevate:active:not(:disabled)::after,
+.active-elevate-2:active:not(:disabled)::after {
+  background-color: var(--elevate-2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hover-elevate::after,
+  .active-elevate::after,
+  .active-elevate-2::after {
+    transition: none;
+  }
+}
+
 .shadow-soft {
   box-shadow: 0 8px 24px rgba(26, 29, 46, 0.08);
 }
