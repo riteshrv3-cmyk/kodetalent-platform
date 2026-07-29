@@ -74,16 +74,58 @@ function timeAgo(iso?: string): string | null {
   return `${Math.floor(day / 30)}mo ago`;
 }
 
+/**
+ * Repairs text that was UTF-8 encoded but decoded as Latin-1 somewhere upstream,
+ * which is how "Júnior" reaches us as "JÃºnior". Roughly 9% of RemoteOK's feed
+ * arrives this way; the bytes are recoverable because the mangling is lossless.
+ *
+ * Only rewrites when the result is strictly better: the telltale sequences must
+ * be present to begin with, and re-decoding must not produce U+FFFD. Text that
+ * legitimately contains "Ã" (Portuguese "Ação") is left alone by the guard.
+ */
+export function repairMojibake(input: string): string {
+  if (!input || !/[ÃÂâ][-¿ -⁯ -ÿ]/.test(input)) return input;
+  try {
+    const bytes = Uint8Array.from(input, ch => ch.charCodeAt(0) & 0xff);
+    const decoded = new TextDecoder("utf-8", { fatal: false }).decode(bytes);
+    return decoded.includes("�") ? input : decoded;
+  } catch {
+    return input;
+  }
+}
+
+/**
+ * RemoteOK repeats the city in its location strings ("Toronto, Toronto,
+ * Ontario, Canada" — 37% of their feed) and leaves trailing separators
+ * ("Brasil, "). Both render as visible junk on the card.
+ */
+export function cleanLocation(input: string | null | undefined): string {
+  const repaired = repairMojibake(String(input ?? "")).trim();
+  if (!repaired) return "Remote";
+  const seen = new Set<string>();
+  const parts = repaired
+    .split(",")
+    .map(p => p.trim())
+    .filter(p => p && p !== ".")
+    .filter(p => {
+      const key = p.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  return parts.join(", ") || "Remote";
+}
+
 function normalizeRemoteOk(raw: RemoteOkRaw): Opportunity | null {
   if (!raw.position || !raw.company) return null;
   const url = raw.url || raw.apply_url || (raw.slug ? `https://remoteok.com/remote-jobs/${raw.slug}` : "");
   if (!url) return null;
   return {
     id: String(raw.id ?? raw.slug ?? `${raw.company}-${raw.position}`),
-    title: raw.position,
-    company: raw.company,
+    title: repairMojibake(raw.position),
+    company: repairMojibake(raw.company),
     logo: raw.company_logo || raw.logo || null,
-    location: raw.location || "Remote",
+    location: cleanLocation(raw.location),
     pay: fmtPay(raw.salary_min, raw.salary_max),
     postedAt: timeAgo(raw.date),
     tags: (raw.tags || []).slice(0, 4),
@@ -154,10 +196,10 @@ async function fetchRemotive(query: string): Promise<Opportunity[]> {
     .filter(j => j.title && j.company_name && j.url)
     .map(j => ({
       id: `rmv-${j.id ?? `${j.company_name}-${j.title}`}`,
-      title: j.title!,
-      company: j.company_name!,
+      title: repairMojibake(j.title!),
+      company: repairMojibake(j.company_name!),
       logo: j.company_logo || null,
-      location: j.candidate_required_location || "Remote",
+      location: cleanLocation(j.candidate_required_location),
       pay: j.salary || null,
       postedAt: timeAgo(j.publication_date),
       // Surface job_type as a tag so the internship/freelance heuristics see it.
@@ -208,10 +250,10 @@ async function fetchAdzunaIndia(query: string): Promise<Opportunity[]> {
     .map(r => ({
       id: `adz-${r.id ?? r.redirect_url}`,
       // Adzuna wraps matched terms in <strong> tags.
-      title: r.title!.replace(/<\/?strong>/g, ""),
-      company: r.company?.display_name || "Company on Adzuna",
+      title: repairMojibake(r.title!.replace(/<\/?strong>/g, "")),
+      company: repairMojibake(r.company?.display_name || "Company on Adzuna"),
       logo: null,
-      location: r.location?.display_name || "India",
+      location: cleanLocation(r.location?.display_name) || "India",
       pay: fmtPayInr(r.salary_min, r.salary_max),
       postedAt: timeAgo(r.created),
       tags: ["India"],
@@ -253,6 +295,29 @@ const TITLE_DENYLIST = [
 ];
 
 const ROLE_STOPWORDS = new Set(["and", "or", "the", "of", "in", "a", "an"]);
+
+/**
+ * Employment-type tags carry no topical signal — every full-time posting has
+ * one. They matter to the internship/freelance heuristics, so they stay on the
+ * Opportunity, but they must not count toward "is this the role you searched
+ * for". Leaving them in meant the token "full" (from "Full Stack") matched the
+ * tag "full time" on every full-time job, so a Full Stack search returned
+ * service-desk and DevOps postings.
+ */
+const EMPLOYMENT_TYPE_TAGS = new Set([
+  "full time", "full-time", "part time", "part-time", "contract", "freelance",
+  "internship", "temporary", "permanent", "full", "time", "part",
+]);
+
+function topicalTags(tags: string[]): string[] {
+  return tags.filter(t => !EMPLOYMENT_TYPE_TAGS.has(t.toLowerCase().trim()));
+}
+
+/** Whole-word containment, so "full" cannot match inside "fullfilment". */
+function hasWord(haystack: string, needle: string): boolean {
+  const escaped = needle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`(^|[^a-z0-9])${escaped}([^a-z0-9]|$)`, "i").test(haystack);
+}
 
 function keywordSet(skills: string[], role: string): string[] {
   const words = [
@@ -296,13 +361,14 @@ export function isRelevant(o: Pick<Opportunity, "title" | "tags">, skills: strin
   const titleHay = ` ${o.title.toLowerCase()} `;
 
   // A keyword in the title is a strong signal — keep.
-  if (keywords.some(k => titleHay.includes(k))) return true;
+  if (keywords.some(k => hasWord(titleHay, k))) return true;
 
   // A keyword only in the tags is weak (RemoteOK stuffs `react` etc. onto
   // couriers and merchandisers), so it must be backed by a title that at
-  // least reads as a tech role.
-  const tagHay = o.tags.join(" ").toLowerCase();
-  return keywords.some(k => tagHay.includes(k)) && TECH_TITLE.test(o.title);
+  // least reads as a tech role. Employment-type tags are stripped first —
+  // they are metadata, not topic.
+  const tagHay = topicalTags(o.tags).join(" ").toLowerCase();
+  return keywords.some(k => hasWord(tagHay, k)) && TECH_TITLE.test(o.title);
 }
 
 /** Backstop for tag-only matches: does the title itself read as a tech role? */
@@ -554,8 +620,18 @@ async function getAggregated(
     const gatedRemoteOk = remoteOk.filter(o => isRelevant(o, skills, role));
 
     // Round-robin across sources (India-first) so no single board fills the
-    // cap and pushes the others' relevant listings out. Dedupe title+company.
+    // cap and pushes the others' relevant listings out.
+    //
+    // Two levels of deduping. The exact key kills byte-identical reposts. The
+    // family key handles the common case of one role fanned out across offices
+    // — "Staff Software Engineer, Product (Belo Horizonte)" through
+    // "(Florianópolis)" was consuming 6 of 13 job slots from a single employer.
+    // Stripping the parenthetical entirely would also merge genuinely different
+    // roles ("Engineer (Frontend)" vs "(Backend)"), so the family is capped at
+    // two rather than collapsed to one.
     const seen = new Set<string>();
+    const familyCount = new Map<string, number>();
+    const MAX_PER_FAMILY = 2;
     const real: Opportunity[] = [];
     const pools = [gatedAdzuna, gatedRemotive, gatedRemoteOk];
     const maxLen = Math.max(...pools.map(p => p.length), 0);
@@ -563,8 +639,18 @@ async function getAggregated(
       for (const pool of pools) {
         const o = pool[i];
         if (!o) continue;
-        const key = `${o.title.toLowerCase().trim()}|${o.company.toLowerCase().trim()}`;
+        const company = o.company.toLowerCase().trim();
+        const key = `${o.title.toLowerCase().trim()}|${company}`;
         if (seen.has(key)) continue;
+        const family = `${o.title
+          .toLowerCase()
+          .replace(/\s*\([^)]*\)\s*/g, " ")
+          .replace(/[^a-z0-9 ]/g, " ")
+          .replace(/\s+/g, " ")
+          .trim()}|${company}`;
+        const count = familyCount.get(family) ?? 0;
+        if (count >= MAX_PER_FAMILY) continue;
+        familyCount.set(family, count + 1);
         seen.add(key);
         real.push(o);
       }
@@ -577,16 +663,31 @@ async function getAggregated(
       const interns = real.filter(isInternshipLike).slice(0, 8);
       items = [...interns, ...buildInternshipPlatformLinks(primarySkill, role || "Intern")];
     } else {
-      // jobs — entry-friendly and India-based listings surface first, since
-      // the primary user is a fresher; senior-only roles are pushed down
-      // rather than dropped, so the feed is never empty for a niche role.
-      const candidates = real.filter(o => !isInternshipLike(o));
-      const ranked = [...candidates].sort((a, b) => {
-        const entryDiff = Number(isEntryFriendly(b)) - Number(isEntryFriendly(a));
-        if (entryDiff !== 0) return entryDiff;
-        return Number(isIndiaLocation(b)) - Number(isIndiaLocation(a));
-      });
-      const jobs = ranked.slice(0, 12);
+      // jobs — the primary user is a fresher, so entry-friendly and India-based
+      // listings lead.
+      //
+      // Sorting alone was not enough. The remote boards that still answer
+      // without an Adzuna key skew heavily senior, so a "push seniors down"
+      // ranking still handed students a full page of Staff/Lead roles — 11 of
+      // 13 on a Full Stack search. Ranking cannot fix a supply problem; the
+      // count has to be capped. Seniors are allowed in only up to the number of
+      // entry-friendly roles found, with a small floor so a niche role still
+      // returns something rather than nothing.
+      // Excludes freelance-like posts as well as internships. The three tabs
+      // are presented as distinct kinds of work, so a contract gig appearing
+      // under both "Jobs" and "Freelancing" reads as the feed repeating itself.
+      const candidates = real.filter(o => !isInternshipLike(o) && !isFreelanceLike(o));
+      const byIndiaFirst = (a: Opportunity, b: Opportunity) =>
+        Number(isIndiaLocation(b)) - Number(isIndiaLocation(a));
+      const entryLevel = candidates.filter(isEntryFriendly).sort(byIndiaFirst);
+      const seniorLevel = candidates.filter(o => !isEntryFriendly(o)).sort(byIndiaFirst);
+
+      const MIN_SENIOR_FALLBACK = 3;
+      const seniorAllowance = Math.max(MIN_SENIOR_FALLBACK, entryLevel.length);
+      const jobs = [
+        ...entryLevel.slice(0, 12),
+        ...seniorLevel.slice(0, Math.max(0, Math.min(seniorAllowance, 12 - entryLevel.length))),
+      ];
       items = [...jobs, ...buildJobPlatformLinks(primarySkill, role || "Engineer")];
     }
 
