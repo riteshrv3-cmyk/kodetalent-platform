@@ -275,7 +275,7 @@ function AIBubble({
           </motion.div>
         )}
 
-        <span className="text-[9px] text-ink-muted ml-0.5">{fmtTime(msg.ts)}</span>
+        <span className="text-[10px] text-ink-muted ml-0.5">{fmtTime(msg.ts)}</span>
       </div>
     </motion.div>
   );
@@ -298,7 +298,7 @@ function UserBubble({ msg }: { msg: Message }) {
         <div className="bg-paper shadow-soft rounded-2xl rounded-br-md px-4 py-3">
           <p className="text-[13px] text-ink leading-relaxed">{msg.text}</p>
         </div>
-        <span className="text-[9px] text-ink-muted mr-0.5">{fmtTime(msg.ts)}</span>
+        <span className="text-[10px] text-ink-muted mr-0.5">{fmtTime(msg.ts)}</span>
       </div>
     </motion.div>
   );
@@ -605,7 +605,7 @@ export default function AIChat() {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5">
               <p className="font-black text-white text-sm">Kit</p>
-              <span className="text-[9px] font-bold text-white/80 border border-white/30 px-1.5 py-0.5 rounded-full">AI</span>
+              <span className="text-[10px] font-bold text-white/80 border border-white/30 px-1.5 py-0.5 rounded-full">AI</span>
             </div>
             <p className="text-[10px] text-white/70 font-semibold">
               {kitMood === "thinking" ? "Kit is thinking..." : "purrfessional career coach • online"}

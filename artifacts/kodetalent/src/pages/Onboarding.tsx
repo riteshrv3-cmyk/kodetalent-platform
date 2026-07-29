@@ -116,7 +116,7 @@ export default function Onboarding() {
     return (
       <div className="min-h-[100dvh] bg-brand flex flex-col items-center justify-center px-6 text-center">
         <p className="text-[13px] font-semibold uppercase tracking-wider text-white/70 mb-3">You're in</p>
-        <h1 className="text-[28px] font-extrabold text-white leading-[1.1] mb-3">
+        <h1 className="text-[30px] font-extrabold text-white leading-[1.1] mb-3">
           {dest ? `Here's what's open in ${dest.label}.` : "Let's find your opportunities."}
         </h1>
         <div className="mb-8 max-w-xs">

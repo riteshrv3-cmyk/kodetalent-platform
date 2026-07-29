@@ -1094,7 +1094,7 @@ function EditResumeSheet({
           <div className="w-10 h-1 rounded-full bg-line" />
         </div>
         <div className="flex items-center justify-between px-5 pt-2 pb-3 border-b border-line shrink-0">
-          <h2 className="text-[17px] font-extrabold text-ink flex items-center gap-2">
+          <h2 className="text-[18px] font-extrabold text-ink flex items-center gap-2">
             <Pencil className="w-4 h-4 text-ink" />
             Edit Resume
           </h2>
@@ -1417,7 +1417,7 @@ function GenerateSheet({
         </div>
 
         <div className="flex items-center justify-between">
-          <h2 className="text-[17px] font-extrabold text-ink flex items-center gap-2">
+          <h2 className="text-[18px] font-extrabold text-ink flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-brand" />
             Generate New Resume
           </h2>

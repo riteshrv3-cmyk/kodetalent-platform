@@ -9,7 +9,7 @@ export default function RoleSelect() {
       <div className="w-16 h-16 rounded-2xl bg-white/15 flex items-center justify-center mb-6">
         <Cat className="w-8 h-8 text-white" strokeWidth={2} />
       </div>
-      <h1 className="text-[28px] font-extrabold text-white leading-[1.1] mb-2">KodeTalent</h1>
+      <h1 className="text-[30px] font-extrabold text-white leading-[1.1] mb-2">KodeTalent</h1>
       <p className="text-[14px] text-white/70 mb-10 max-w-xs">
         Your AI career companion — mock interviews, job fit, and a daily plan built from real progress.
       </p>

@@ -121,7 +121,7 @@ function StrengthRing({ value }: { value: number }) {
       </svg>
       <div className="absolute flex flex-col items-center">
         <span className="text-xl font-extrabold text-ink">{value}%</span>
-        <span className="text-[9px] font-bold text-ink-muted uppercase tracking-wider">Profile</span>
+        <span className="text-[10px] font-bold text-ink-muted uppercase tracking-wider">Profile</span>
       </div>
     </div>
   );
@@ -289,7 +289,7 @@ function MyResumesCard({ studentId, onNavigate }: { studentId: number; onNavigat
                   <div className="min-w-0 flex-1">
                     <p className="text-[14px] font-semibold text-ink truncate">{r.name}</p>
                     <div className="flex items-center gap-1.5 mt-0.5">
-                      <span className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full ${tmpl.badge}`}>{tmpl.label}</span>
+                      <span className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full ${tmpl.badge}`}>{tmpl.label}</span>
                       <span className="text-[10px] text-ink-muted">{date}</span>
                     </div>
                   </div>

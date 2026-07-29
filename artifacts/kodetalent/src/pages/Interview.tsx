@@ -771,13 +771,13 @@ export default function Interview() {
             {!cameraError && (
               <div className="absolute top-1.5 left-1.5 flex items-center gap-1 bg-ink/50 backdrop-blur-sm rounded-full px-1.5 py-0.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-paper animate-pulse" />
-                <span className="text-[8px] font-bold text-paper tracking-wider">LIVE</span>
+                <span className="text-[10px] font-bold text-paper tracking-wider">LIVE</span>
               </div>
             )}
             {cameraError && (
               <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-2 bg-ink/95">
                 <CameraOff className="w-5 h-5 text-danger mb-1" />
-                <span className="text-[9px] font-bold text-paper leading-tight">{cameraError}</span>
+                <span className="text-[10px] font-bold text-paper leading-tight">{cameraError}</span>
               </div>
             )}
             <button

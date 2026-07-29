@@ -55,7 +55,7 @@ export function TopBar({ pendingCount, initials, onProfileClick }: TopBarProps) 
                 <motion.span
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
-                  className="absolute -top-1 -right-1 w-4 h-4 bg-highlight text-white text-[9px] font-black rounded-full flex items-center justify-center"
+                  className="absolute -top-1 -right-1 w-4 h-4 bg-highlight text-white text-[10px] font-black rounded-full flex items-center justify-center"
                 >
                   {pendingCount > 9 ? "9+" : pendingCount}
                 </motion.span>

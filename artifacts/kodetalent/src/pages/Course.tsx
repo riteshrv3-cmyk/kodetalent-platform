@@ -502,7 +502,7 @@ export default function Course() {
           </button>
           <div className="min-w-0 flex-1">
             <p className="text-[11px] font-bold uppercase tracking-wider text-ink-muted truncate">{ctx.domainEmoji} {ctx.domainName}</p>
-            <h1 className="text-[17px] font-extrabold text-ink truncate">{ctx.subDomainName}</h1>
+            <h1 className="text-[18px] font-extrabold text-ink truncate">{ctx.subDomainName}</h1>
           </div>
         </div>
         <div className="flex gap-2 mb-1">
