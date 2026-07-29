@@ -218,15 +218,33 @@
   --elevate-2: rgba(26, 29, 46, 0.1);
 }
 
-.hover-elevate,
-.active-elevate,
-.active-elevate-2 {
-  position: relative;
+/* Applied to every button, not just the ones carrying `hover-elevate`: the
+   app is mostly hand-rolled buttons (task rows, filter chips, domain tiles,
+   card CTAs, section headers) and none of them declared a hover state, so
+   ~74 controls across the app gave no feedback under the pointer at all.
+   Anything already declaring `hover:bg-*` composes with this rather than
+   fighting it. */
+/* Inside @layer base on purpose. The overlay needs a positioned box to sit in,
+   but an unlayered `position: relative` outranks every layer — including
+   Tailwind's own `fixed`/`absolute` utilities, which sent the fixed Kit bubble
+   to the bottom-left of the document. In @layer base, any position utility on
+   the element wins, and the overlay works against `fixed`/`absolute`/`sticky`
+   boxes just as well as relative ones. */
+@layer base {
+  .hover-elevate,
+  .active-elevate,
+  .active-elevate-2,
+  button,
+  [role="button"] {
+    position: relative;
+  }
 }
 
 .hover-elevate::after,
 .active-elevate::after,
-.active-elevate-2::after {
+.active-elevate-2::after,
+button::after,
+[role="button"]::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -236,19 +254,25 @@
   transition: background-color 120ms ease-out;
 }
 
-.hover-elevate:hover:not(:disabled)::after {
+.hover-elevate:hover:not(:disabled)::after,
+button:hover:not(:disabled)::after,
+[role="button"]:hover:not([aria-disabled="true"])::after {
   background-color: var(--elevate-1);
 }
 
 .active-elevate:active:not(:disabled)::after,
-.active-elevate-2:active:not(:disabled)::after {
+.active-elevate-2:active:not(:disabled)::after,
+button:active:not(:disabled)::after,
+[role="button"]:active:not([aria-disabled="true"])::after {
   background-color: var(--elevate-2);
 }
 
 @media (prefers-reduced-motion: reduce) {
   .hover-elevate::after,
   .active-elevate::after,
-  .active-elevate-2::after {
+  .active-elevate-2::after,
+  button::after,
+  [role="button"]::after {
     transition: none;
   }
 }
