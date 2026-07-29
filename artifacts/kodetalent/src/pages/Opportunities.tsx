@@ -124,7 +124,7 @@ function OpportunityCard({
               <Button
                 onClick={onPrepare}
                 variant="outline"
-                className="flex-1 h-9 rounded-full font-bold text-[12px] border border-line text-brand bg-paper"
+                className="flex-1 h-11 rounded-full font-bold text-[12px] border border-line text-brand bg-paper"
               >
                 <Target className="w-3.5 h-3.5 mr-1.5" /> Prepare
               </Button>
@@ -133,7 +133,7 @@ function OpportunityCard({
               onClick={onPractice}
               disabled={practicing}
               variant="outline"
-              className="flex-1 h-9 rounded-full font-bold text-[12px] border border-line text-brand bg-paper"
+              className="flex-1 h-11 rounded-full font-bold text-[12px] border border-line text-brand bg-paper"
             >
               {practicing
                 ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
@@ -572,7 +572,7 @@ export default function Opportunities() {
                             setSelectedSubDomain(dest.sub);
                             setActiveTab(group.kind);
                           }}
-                          className="w-full flex items-center justify-between mb-2 px-1 text-left"
+                          className="w-full flex items-center justify-between py-3.5 px-1 text-left"
                         >
                           <p className="text-[12px] font-bold text-ink-muted uppercase tracking-wider">
                             {GROUP_EMOJI[group.kind]} {group.label}
