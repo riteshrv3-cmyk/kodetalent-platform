@@ -75,7 +75,7 @@ export async function contextPack(studentId: number): Promise<ContextPack | null
     .where(eq(studentActivityLogTable.studentId, studentId))
     .orderBy(desc(studentActivityLogTable.createdAt))
     .limit(8);
-  const topNoticings = await getNoticings(studentId, 3);
+  const topNoticings = await getNoticings(studentId, student, 3);
 
   const data: StudentContext = {
     goal: { role: student.targetRole, batch: student.targetBatch, dreamCompany: student.dreamCompany },

@@ -35,15 +35,61 @@ function daysSince(dateIso: string, today: string): number {
 }
 
 /** Ranked deterministic "noticing" rules, zero LLM cost. Every rule has a day-one derivation from existing tables. */
-export async function getNoticings(studentId: number, limit = 3): Promise<Noticing[]> {
+export async function getNoticings(
+  studentId: number,
+  student: typeof studentsTable.$inferSelect,
+  limit = 3,
+): Promise<Noticing[]> {
   const today = istToday();
   const yesterday = istYesterday();
 
-  const [student] = await db.select().from(studentsTable).where(eq(studentsTable.id, studentId)).limit(1);
-  if (!student) return [];
-
   const history = (student.noticingHistory as NoticingHistory) ?? {};
   const candidates: Noticing[] = [];
+
+  const skills = (student.skills as Record<string, number>) ?? {};
+  const nonGenericSkills = Object.entries(skills).filter(([name]) => !GENERIC_SKILLS.has(name.toLowerCase().trim()));
+  const needsStreakCheck = student.streakCount >= 3 && student.lastActiveDate === yesterday;
+  const sinceDate = new Date(Date.now() - AVOIDANCE_DAYS * 86_400_000);
+  const sevenDaysAgo = new Date(Date.now() - 7 * 86_400_000).toISOString().slice(0, 10);
+
+  // None of these five reads depend on each other or on anything computed from
+  // one another — fire them concurrently instead of one round trip at a time.
+  const [todayTasks, recentSessions, recentEvents, [staleApp], thisWeekTasks] = await Promise.all([
+    needsStreakCheck
+      ? db
+          .select({ done: dailyTasksTable.done })
+          .from(dailyTasksTable)
+          .where(and(eq(dailyTasksTable.studentId, studentId), eq(dailyTasksTable.date, today)))
+      : Promise.resolve([] as { done: boolean }[]),
+    db
+      .select({ overallScore: interviewSessionsTable.overallScore, createdAt: interviewSessionsTable.createdAt })
+      .from(interviewSessionsTable)
+      .where(and(eq(interviewSessionsTable.studentId, studentId), eq(interviewSessionsTable.completed, true)))
+      .orderBy(desc(interviewSessionsTable.createdAt))
+      .limit(2),
+    nonGenericSkills.length > 0
+      ? db
+          .select({ description: studentActivityLogTable.description })
+          .from(studentActivityLogTable)
+          .where(
+            and(
+              eq(studentActivityLogTable.studentId, studentId),
+              inArray(studentActivityLogTable.action, AVOIDANCE_ACTIONS),
+              gte(studentActivityLogTable.createdAt, sinceDate),
+            ),
+          )
+      : Promise.resolve([] as { description: string }[]),
+    db
+      .select({ company: applicationsTable.company, statusUpdatedAt: applicationsTable.statusUpdatedAt, status: applicationsTable.status })
+      .from(applicationsTable)
+      .where(eq(applicationsTable.studentId, studentId))
+      .orderBy(applicationsTable.statusUpdatedAt)
+      .limit(1),
+    db
+      .select({ done: dailyTasksTable.done })
+      .from(dailyTasksTable)
+      .where(and(eq(dailyTasksTable.studentId, studentId), gte(dailyTasksTable.date, sevenDaysAgo))),
+  ]);
 
   // comeback — highest weight
   if (student.lastActiveDate) {
@@ -60,11 +106,7 @@ export async function getNoticings(studentId: number, limit = 3): Promise<Notici
   }
 
   // streak_risk — streak alive, today's tasks not yet done
-  if (student.streakCount >= 3 && student.lastActiveDate === yesterday) {
-    const todayTasks = await db
-      .select({ done: dailyTasksTable.done })
-      .from(dailyTasksTable)
-      .where(and(eq(dailyTasksTable.studentId, studentId), eq(dailyTasksTable.date, today)));
+  if (needsStreakCheck) {
     const anyDone = todayTasks.some((t) => t.done);
     if (!anyDone) {
       candidates.push({
@@ -102,12 +144,6 @@ export async function getNoticings(studentId: number, limit = 3): Promise<Notici
   }
 
   // score_delta
-  const recentSessions = await db
-    .select({ overallScore: interviewSessionsTable.overallScore, createdAt: interviewSessionsTable.createdAt })
-    .from(interviewSessionsTable)
-    .where(and(eq(interviewSessionsTable.studentId, studentId), eq(interviewSessionsTable.completed, true)))
-    .orderBy(desc(interviewSessionsTable.createdAt))
-    .limit(2);
   const scores = recentSessions.map((s) => s.overallScore).filter((s): s is number => typeof s === "number");
   if (scores.length >= 2) {
     const delta = scores[0] - scores[1];
@@ -125,21 +161,8 @@ export async function getNoticings(studentId: number, limit = 3): Promise<Notici
   }
 
   // avoidance
-  const skills = (student.skills as Record<string, number>) ?? {};
-  const nonGeneric = Object.entries(skills).filter(([name]) => !GENERIC_SKILLS.has(name.toLowerCase().trim()));
-  if (nonGeneric.length > 0) {
-    const [weakestName] = nonGeneric.sort(([, a], [, b]) => a - b)[0];
-    const sinceDate = new Date(Date.now() - AVOIDANCE_DAYS * 86_400_000).toISOString();
-    const recentEvents = await db
-      .select({ description: studentActivityLogTable.description })
-      .from(studentActivityLogTable)
-      .where(
-        and(
-          eq(studentActivityLogTable.studentId, studentId),
-          inArray(studentActivityLogTable.action, AVOIDANCE_ACTIONS),
-          gte(studentActivityLogTable.createdAt, new Date(sinceDate)),
-        ),
-      );
+  if (nonGenericSkills.length > 0) {
+    const [weakestName] = nonGenericSkills.sort(([, a], [, b]) => a - b)[0];
     const touched = recentEvents.some((e) => e.description.toLowerCase().includes(weakestName.toLowerCase()));
     if (!touched) {
       candidates.push({
@@ -153,12 +176,6 @@ export async function getNoticings(studentId: number, limit = 3): Promise<Notici
   }
 
   // stale_application
-  const [staleApp] = await db
-    .select({ company: applicationsTable.company, statusUpdatedAt: applicationsTable.statusUpdatedAt, status: applicationsTable.status })
-    .from(applicationsTable)
-    .where(eq(applicationsTable.studentId, studentId))
-    .orderBy(applicationsTable.statusUpdatedAt)
-    .limit(1);
   if (staleApp) {
     const staleDays = Math.round((Date.now() - staleApp.statusUpdatedAt.getTime()) / 86_400_000);
     if (staleDays >= STALE_APPLICATION_DAYS) {
@@ -173,11 +190,6 @@ export async function getNoticings(studentId: number, limit = 3): Promise<Notici
   }
 
   // fallback progress_note
-  const sevenDaysAgo = new Date(Date.now() - 7 * 86_400_000).toISOString().slice(0, 10);
-  const thisWeekTasks = await db
-    .select({ done: dailyTasksTable.done })
-    .from(dailyTasksTable)
-    .where(and(eq(dailyTasksTable.studentId, studentId), gte(dailyTasksTable.date, sevenDaysAgo)));
   const doneCount = thisWeekTasks.filter((t) => t.done).length;
   if (doneCount > 0) {
     candidates.push({
@@ -201,11 +213,11 @@ export async function getNoticings(studentId: number, limit = 3): Promise<Notici
 }
 
 /** Returns today's top noticing, or a neutral goal-tied greeting (or null) when no rule fires. Persists shown-state for suppression. */
-export async function getTopNoticing(studentId: number): Promise<Noticing | null> {
-  const [student] = await db.select().from(studentsTable).where(eq(studentsTable.id, studentId)).limit(1);
-  if (!student) return null;
-
-  const noticings = await getNoticings(studentId, 1);
+export async function getTopNoticing(
+  studentId: number,
+  student: typeof studentsTable.$inferSelect,
+): Promise<Noticing | null> {
+  const noticings = await getNoticings(studentId, student, 1);
   const top = noticings[0] ?? null;
 
   const today = istToday();

@@ -42,7 +42,15 @@ interface Candidate {
   source: "rule" | "report";
 }
 
-async function weakestSkill(studentId: number): Promise<string | null> {
+async function weakestSkill(studentId: number, skills: Record<string, number>): Promise<string | null> {
+  const nonGeneric = Object.entries(skills).filter(([name]) => !GENERIC_SKILLS.has(name.toLowerCase().trim()));
+  if (nonGeneric.length > 0) {
+    return nonGeneric.sort(([, a], [, b]) => a - b)[0][0];
+  }
+
+  // Fall back to the weakest sub-score across recent evaluations, if any. Only
+  // reached when there's no scored skill yet, so this query is skipped entirely
+  // for the common case instead of always running alongside the skills lookup.
   const recent = await db
     .select({ evaluation: interviewSessionsTable.evaluation })
     .from(interviewSessionsTable)
@@ -50,15 +58,6 @@ async function weakestSkill(studentId: number): Promise<string | null> {
     .orderBy(desc(interviewSessionsTable.createdAt))
     .limit(3);
 
-  const [student] = await db.select({ skills: studentsTable.skills }).from(studentsTable).where(eq(studentsTable.id, studentId)).limit(1);
-  const skills = (student?.skills as Record<string, number>) ?? {};
-
-  const nonGeneric = Object.entries(skills).filter(([name]) => !GENERIC_SKILLS.has(name.toLowerCase().trim()));
-  if (nonGeneric.length > 0) {
-    return nonGeneric.sort(([, a], [, b]) => a - b)[0][0];
-  }
-
-  // Fall back to the weakest sub-score across recent evaluations, if any.
   for (const row of recent) {
     const ev = row.evaluation as { communicationScore?: number; technicalScore?: number; confidenceScore?: number } | null;
     if (!ev) continue;
@@ -73,19 +72,33 @@ async function weakestSkill(studentId: number): Promise<string | null> {
   return null;
 }
 
-async function buildCandidates(studentId: number): Promise<Candidate[]> {
+async function buildCandidates(
+  studentId: number,
+  student: typeof studentsTable.$inferSelect,
+): Promise<Candidate[]> {
   const candidates: Candidate[] = [];
 
-  const [student] = await db.select().from(studentsTable).where(eq(studentsTable.id, studentId)).limit(1);
-  if (!student) return candidates;
+  // R1/R2, R4, R5 are independent lookups against different tables — run them
+  // concurrently instead of one round trip at a time.
+  const [[completedInterview], [recentApplication], [pendingInvite]] = await Promise.all([
+    db
+      .select({ id: interviewSessionsTable.id })
+      .from(interviewSessionsTable)
+      .where(and(eq(interviewSessionsTable.studentId, studentId), eq(interviewSessionsTable.completed, true)))
+      .limit(1),
+    db
+      .select({ id: applicationsTable.id })
+      .from(applicationsTable)
+      .where(eq(applicationsTable.studentId, studentId))
+      .limit(1),
+    db
+      .select({ id: recruiterInvites.id })
+      .from(recruiterInvites)
+      .where(and(eq(recruiterInvites.studentId, studentId), eq(recruiterInvites.status, "pending"), eq(recruiterInvites.studentSeen, false)))
+      .limit(1),
+  ]);
 
   // R1 / R2 — exactly one hot task.
-  const [completedInterview] = await db
-    .select({ id: interviewSessionsTable.id })
-    .from(interviewSessionsTable)
-    .where(and(eq(interviewSessionsTable.studentId, studentId), eq(interviewSessionsTable.completed, true)))
-    .limit(1);
-
   if (!completedInterview) {
     candidates.push({
       kind: "first_mock",
@@ -97,7 +110,7 @@ async function buildCandidates(studentId: number): Promise<Candidate[]> {
       source: "rule",
     });
   } else {
-    const skill = await weakestSkill(studentId);
+    const skill = await weakestSkill(studentId, (student.skills as Record<string, number>) ?? {});
     if (skill) {
       candidates.push({
         kind: "practice",
@@ -132,11 +145,6 @@ async function buildCandidates(studentId: number): Promise<Candidate[]> {
   }
 
   // R4 — pipeline nudge.
-  const [recentApplication] = await db
-    .select({ id: applicationsTable.id })
-    .from(applicationsTable)
-    .where(eq(applicationsTable.studentId, studentId))
-    .limit(1);
   candidates.push({
     kind: "jobs",
     label: recentApplication ? "Update your pipeline" : "Add a job to your pipeline",
@@ -147,11 +155,6 @@ async function buildCandidates(studentId: number): Promise<Candidate[]> {
   });
 
   // R5 — a recruiter is waiting on a response.
-  const [pendingInvite] = await db
-    .select({ id: recruiterInvites.id })
-    .from(recruiterInvites)
-    .where(and(eq(recruiterInvites.studentId, studentId), eq(recruiterInvites.status, "pending"), eq(recruiterInvites.studentSeen, false)))
-    .limit(1);
   if (pendingInvite) {
     candidates.push({
       kind: "invite",
@@ -178,15 +181,22 @@ async function buildCandidates(studentId: number): Promise<Candidate[]> {
 }
 
 /** Idempotent: safe to call on every "today" load. R6 (report follow-ups) is written separately by the report's "Add" action, so it's read here as pre-existing rows, never generated. */
-export async function generateTodayTasks(studentId: number): Promise<void> {
+export async function generateTodayTasks(
+  studentId: number,
+  student: typeof studentsTable.$inferSelect,
+): Promise<void> {
   const date = istToday();
-  const existing = await db
-    .select({ kind: dailyTasksTable.kind })
-    .from(dailyTasksTable)
-    .where(and(eq(dailyTasksTable.studentId, studentId), eq(dailyTasksTable.date, date)));
+  // existingKinds and the candidate pool don't depend on each other — build both concurrently.
+  const [existing, candidatesRaw] = await Promise.all([
+    db
+      .select({ kind: dailyTasksTable.kind })
+      .from(dailyTasksTable)
+      .where(and(eq(dailyTasksTable.studentId, studentId), eq(dailyTasksTable.date, date))),
+    buildCandidates(studentId, student),
+  ]);
   const existingKinds = new Set(existing.map((r) => r.kind));
 
-  const candidates = (await buildCandidates(studentId)).filter((c) => !existingKinds.has(c.kind));
+  const candidates = candidatesRaw.filter((c) => !existingKinds.has(c.kind));
   const remainingSlots = Math.max(0, CAP - existing.length);
   const toInsert = candidates.slice(0, remainingSlots);
   if (toInsert.length === 0) return;
@@ -210,8 +220,8 @@ export async function generateTodayTasks(studentId: number): Promise<void> {
     .onConflictDoNothing();
 }
 
-export async function getTodayTasks(studentId: number) {
-  await generateTodayTasks(studentId);
+export async function getTodayTasks(studentId: number, student: typeof studentsTable.$inferSelect) {
+  await generateTodayTasks(studentId, student);
   const date = istToday();
   const rows = await db
     .select()

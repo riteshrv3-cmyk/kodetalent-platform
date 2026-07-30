@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db, studentsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
-import { requireStudent } from "../middlewares/studentAuth";
+import { requireStudent, StudentAuthedRequest } from "../middlewares/studentAuth";
 import { getTodayTasks, completeTask, addFollowupTask, autoCompleteTaskKind, formatDailyTask, istToday } from "../lib/dailyTasks";
 import { logEvent } from "../lib/events";
 import { getTopNoticing } from "../lib/noticings";
@@ -9,22 +9,27 @@ import { getTopNoticing } from "../lib/noticings";
 const router = Router();
 
 // GET /students/:id/today-tasks
-router.get("/students/:id/today-tasks", requireStudent({ allowGuest: true }), async (req, res) => {
+router.get("/students/:id/today-tasks", requireStudent({ allowGuest: true }), async (req: StudentAuthedRequest, res) => {
   const id = Number(req.params.id);
+  const student = req.student!;
   try {
-    const { date, tasks } = await getTodayTasks(id);
-    const [student] = await db.select({ streakCount: studentsTable.streakCount, lastActiveDate: studentsTable.lastActiveDate }).from(studentsTable).where(eq(studentsTable.id, id)).limit(1);
-    // Compute the noticing BEFORE advancing lastActiveDate — comeback/streak_risk rules
-    // need to see whether the student was already active today or arriving after a gap.
-    const noticing = await getTopNoticing(id);
+    // getTodayTasks and getTopNoticing are independent of each other — run them
+    // concurrently. Both work off the same pre-fetched `student` snapshot, so the
+    // noticing rules (comeback/streak_risk) still see pre-request state regardless
+    // of ordering, preserving the "compute noticing before advancing lastActiveDate"
+    // requirement below.
+    const [{ date, tasks }, noticing] = await Promise.all([
+      getTodayTasks(id, student),
+      getTopNoticing(id, student),
+    ]);
     const today = istToday();
-    if (student && student.lastActiveDate !== today) {
+    if (student.lastActiveDate !== today) {
       await db.update(studentsTable).set({ lastActiveDate: today }).where(eq(studentsTable.id, id));
     }
     return res.json({
       date,
       tasks: tasks.map(formatDailyTask),
-      streakCount: student?.streakCount ?? 0,
+      streakCount: student.streakCount ?? 0,
       noticing: noticing ? { text: noticing.text, href: noticing.href } : null,
     });
   } catch (err) {
@@ -34,7 +39,7 @@ router.get("/students/:id/today-tasks", requireStudent({ allowGuest: true }), as
 });
 
 // POST /students/:id/tasks/:taskId/complete
-router.post("/students/:id/tasks/:taskId/complete", requireStudent({ allowGuest: true }), async (req, res) => {
+router.post("/students/:id/tasks/:taskId/complete", requireStudent({ allowGuest: true }), async (req: StudentAuthedRequest, res) => {
   const id = Number(req.params.id);
   const taskId = Number(req.params.taskId);
   if (isNaN(taskId)) return res.status(400).json({ error: "Invalid taskId" });
@@ -42,7 +47,7 @@ router.post("/students/:id/tasks/:taskId/complete", requireStudent({ allowGuest:
     const result = await completeTask(id, taskId, true);
     if (!result) return res.status(404).json({ error: "Task not found" });
     logEvent(id, "task_completed", result.task.label, { date: result.task.date });
-    const { tasks: todayTasks } = await getTodayTasks(id);
+    const { tasks: todayTasks } = await getTodayTasks(id, req.student!);
     if (todayTasks.length > 0 && todayTasks.every((t) => t.done)) {
       logEvent(id, "all_tasks_done", "Completed all tasks for the day", { date: result.task.date });
     }
