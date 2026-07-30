@@ -11,8 +11,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import jsPDF from "jspdf";
+import type jsPDF from "jspdf";
 import { apiFetch } from "@/lib/api/authFetch";
+import { upgradeContent } from "@workspace/resume-core";
+import { renderResumePdf, TEMPLATE_REGISTRY, resolveTemplateConfig } from "@/lib/resume-pdf";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -50,47 +52,14 @@ interface SavedResume {
 }
 
 // ─── Template definitions ─────────────────────────────────────────────────────
-
-const TEMPLATES = [
-  {
-    id: "ats",
-    label: "ATS Pro",
-    desc: "Complete ATS structure — recommended",
-    badge: "bg-brand-soft text-brand",
-  },
-  {
-    id: "classic",
-    label: "Classic",
-    desc: "Clean ATS-friendly layout",
-    badge: "bg-brand-soft text-brand",
-  },
-  {
-    id: "tech",
-    label: "Tech-Focused",
-    desc: "Highlights your stack & GitHub",
-    badge: "bg-brand-soft text-brand",
-  },
-  {
-    id: "minimal",
-    label: "Minimal",
-    desc: "Ultra-clean typography",
-    badge: "bg-brand-soft text-brand",
-  },
-];
-
-// Single source of truth for "which template config applies to an unknown/invalid
-// templateId" — templateBadge() and downloadResumePDF() used to fall back to two
-// different templates (ats vs classic) for the same bad id. "classic" matches the
-// server's own fallback (routes/resume.ts's VALID_TEMPLATES default).
-const DEFAULT_TEMPLATE_ID = "classic";
-
-function resolveTemplate(templateId: string) {
-  return TEMPLATES.find(t => t.id === templateId) ?? TEMPLATES.find(t => t.id === DEFAULT_TEMPLATE_ID)!;
-}
-
-function templateBadge(templateId: string) {
-  return resolveTemplate(templateId);
-}
+//
+// TEMPLATE_REGISTRY (src/lib/resume-pdf) is the single source of truth for
+// template id/label/description — it used to be duplicated here with
+// slightly different wording, which is exactly the kind of drift a shared
+// registry exists to prevent. resolveTemplateConfig() also fixes the old bug
+// where an unrecognized templateId showed an "ATS Pro" badge but downloaded
+// a Classic PDF (two different fallbacks for the same bad id).
+const TEMPLATE_LIST = Object.values(TEMPLATE_REGISTRY);
 
 // ─── Recommendation Engine ────────────────────────────────────────────────────
 
@@ -282,7 +251,30 @@ function TargetRecommendations({
   );
 }
 
-// ─── PDF generators ───────────────────────────────────────────────────────────
+// ─── PDF generation ───────────────────────────────────────────────────────────
+//
+// The four hand-rolled jsPDF templates that used to live here (ten arbitrary
+// font sizes, four body grays, a broken bullet glyph, silently-dropped
+// Experience/tech-stack content, bullets split mid-line across pages — see
+// the resume-quality-overhaul plan for the full list) are gone. Rendering now
+// goes through the shared typeset engine in src/lib/resume-pdf/, which both
+// this download path and the live preview (Phase 3) use identically, so what
+// a student sees on screen and what they download are pixel-for-pixel the
+// same PDF bytes.
+//
+// upgradeContent() bridges the server's current v1 content shape (this file's
+// ResumeContent type) into the engine's ResumeDocument (v2) — a pure,
+// read-time conversion, so this keeps working unchanged once Phase 5 starts
+// persisting v2 content directly.
+
+async function downloadResumePDF(resume: SavedResume): Promise<void> {
+  const doc = upgradeContent(resume.content);
+  const { doc: pdfDoc, filename } = await renderResumePdf(doc, resume.templateId, {
+    resumeName: resume.name,
+    companyName: resume.companyName ?? null,
+  });
+  openPDF(pdfDoc, filename);
+}
 
 // Opens PDF in a new tab instead of direct download — avoids Chrome/Edge
 // Safe Browsing "Virus detected" false-positive on blob downloads
@@ -298,701 +290,6 @@ function openPDF(doc: jsPDF, filename: string) {
   document.body.removeChild(a);
   // Short delay before revoke so browser has time to start the download
   setTimeout(() => URL.revokeObjectURL(url), 5000);
-}
-
-function downloadClassicPDF(r: ResumeContent, filename: string) {
-  const doc = new jsPDF({ unit: "pt", format: "letter" });
-  const PW = 612, PH = 792, ML = 48, MR = 48, MT = 44, MB = 44;
-  const CW = PW - ML - MR;
-  let y = MT;
-
-  const checkPage = (needed = 20) => {
-    if (y + needed > PH - MB) { doc.addPage(); y = MT; }
-  };
-
-  const section = (title: string) => {
-    checkPage(38);
-    y += 14;
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(9);
-    doc.setTextColor(15, 15, 16);
-    doc.text(title.toUpperCase(), ML, y);
-    y += 4;
-    doc.setDrawColor(15, 15, 16);
-    doc.setLineWidth(0.75);
-    doc.line(ML, y, PW - MR, y);
-    y += 11;
-    doc.setTextColor(15, 23, 42);
-    doc.setFont("helvetica", "normal");
-  };
-
-  const bullet = (text: string, indent = 0, color: [number, number, number] = [55, 65, 81]) => {
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9.5);
-    doc.setTextColor(...color);
-    const bx = ML + indent;
-    const bw = CW - indent;
-    const lines = doc.splitTextToSize(text, bw) as string[];
-    for (let i = 0; i < lines.length; i++) {
-      checkPage(13);
-      doc.text(lines[i], bx, y);
-      y += 12;
-    }
-  };
-
-  // ── Name
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(22);
-  doc.setTextColor(15, 23, 42);
-  doc.text(r.name.toUpperCase(), PW / 2, y, { align: "center" });
-  y += 4;
-
-  // ── Role / title line
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
-  doc.setTextColor(15, 15, 16);
-  doc.text(r.degree, PW / 2, y + 10, { align: "center" });
-  y += 22;
-
-  // ── Contact line
-  const contact = [r.email, r.phone, r.city, r.githubUrl, r.linkedinUrl, r.portfolioUrl]
-    .filter(Boolean) as string[];
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(8.5);
-  doc.setTextColor(100, 116, 139);
-  const contactStr = contact.join("  |  ");
-  const contactLines = doc.splitTextToSize(contactStr, CW) as string[];
-  for (const cl of contactLines) {
-    doc.text(cl, PW / 2, y, { align: "center" });
-    y += 11;
-  }
-  y += 2;
-
-  // ── Header rule
-  doc.setDrawColor(203, 213, 225);
-  doc.setLineWidth(0.75);
-  doc.line(ML, y, PW - MR, y);
-  y += 4;
-
-  // ── Summary
-  if (r.summary) {
-    section("Professional Summary");
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9.5);
-    doc.setTextColor(55, 65, 81);
-    const ls = doc.splitTextToSize(r.summary, CW) as string[];
-    for (const l of ls) { checkPage(13); doc.text(l, ML, y); y += 12; }
-  }
-
-  // ── Education
-  section("Education");
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(10);
-  doc.setTextColor(15, 23, 42);
-  const degreeW = doc.getTextWidth(r.degree);
-  doc.text(r.degree, ML, y);
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9.5);
-  doc.setTextColor(100, 116, 139);
-  doc.text(`${r.startYear} – ${r.gradYear}`, PW - MR, y, { align: "right" });
-  y += 13;
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9.5);
-  doc.setTextColor(100, 116, 139);
-  const eduSub = `${r.college}, ${r.city}${r.cgpa ? `  ·  CGPA ${r.cgpa}` : ""}`;
-  doc.text(eduSub, ML, y);
-  if (degreeW) { /* suppress unused warning */ }
-  y += 4;
-
-  // ── Technical Skills
-  if (r.skillSections.length > 0) {
-    section("Technical Skills");
-    for (const s of r.skillSections) {
-      checkPage(15);
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(9.5);
-      doc.setTextColor(15, 23, 42);
-      const lbl = `${s.category}: `;
-      const lw = doc.getTextWidth(lbl);
-      doc.text(lbl, ML, y);
-      doc.setFont("helvetica", "normal");
-      doc.setTextColor(55, 65, 81);
-      const wrapped = doc.splitTextToSize(s.items, CW - lw) as string[];
-      for (let wi = 0; wi < wrapped.length; wi++) {
-        checkPage(13);
-        if (wi === 0) {
-          doc.text(wrapped[wi], ML + lw, y);
-          y += 12;
-        } else {
-          doc.text(wrapped[wi], ML + lw, y);
-          y += 12;
-        }
-      }
-    }
-  }
-
-  // ── Projects
-  if (r.projects.length > 0) {
-    section("Projects");
-    for (const p of r.projects) {
-      checkPage(44);
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(10);
-      doc.setTextColor(15, 23, 42);
-      doc.text(p.title, ML, y);
-      doc.setFont("helvetica", "italic");
-      doc.setFontSize(8.5);
-      doc.setTextColor(15, 15, 16);
-      const techW = doc.getTextWidth(p.tech);
-      if (techW < CW * 0.45) {
-        doc.text(p.tech, PW - MR, y, { align: "right" });
-      }
-      y += 13;
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(9.5);
-      doc.setTextColor(55, 65, 81);
-      for (const b of p.bullets) {
-        const ls = doc.splitTextToSize(`\u2022  ${b}`, CW - 6) as string[];
-        for (let li = 0; li < ls.length; li++) {
-          checkPage(13);
-          doc.text(ls[li], ML + (li > 0 ? 8 : 0), y);
-          y += 12;
-        }
-      }
-      y += 5;
-    }
-  }
-
-  // ── Achievements & Certifications
-  if (r.certifications.length > 0 || r.achievements.length > 0) {
-    section("Achievements & Certifications");
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9.5);
-    doc.setTextColor(55, 65, 81);
-    for (const c of r.certifications) {
-      bullet(`\u2022  ${c.name} — ${c.issuer}${c.date ? ` (${c.date})` : ""}`);
-    }
-    for (const a of r.achievements) {
-      bullet(`\u2022  ${a}`);
-    }
-  }
-
-  openPDF(doc, filename);
-}
-
-// Single-column, no fills/tables/graphics, standard section vocabulary, plain
-// hyphen bullets — built to be read cleanly by ATS parsers, not just humans.
-function downloadAtsPDF(r: ResumeContent, filename: string) {
-  const doc = new jsPDF({ unit: "pt", format: "letter" });
-  const PW = 612, PH = 792, ML = 54, MR = 54, MT = 46, MB = 44;
-  const CW = PW - ML - MR;
-  let y = MT;
-
-  const checkPage = (needed = 20) => {
-    if (y + needed > PH - MB) { doc.addPage(); y = MT; }
-  };
-
-  const section = (title: string) => {
-    checkPage(36);
-    y += 14;
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(10);
-    doc.setTextColor(15, 23, 42);
-    doc.text(title.toUpperCase(), ML, y);
-    y += 4;
-    doc.setDrawColor(15, 23, 42);
-    doc.setLineWidth(0.75);
-    doc.line(ML, y, PW - MR, y);
-    y += 12;
-    doc.setTextColor(15, 23, 42);
-    doc.setFont("helvetica", "normal");
-  };
-
-  // ── Name (left-aligned — plain reading order for parsers)
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(20);
-  doc.setTextColor(15, 23, 42);
-  doc.text(r.name, ML, y);
-  y += 16;
-
-  // ── Contact line
-  const contact = [r.email, r.phone, r.city, r.githubUrl, r.linkedinUrl, r.portfolioUrl]
-    .filter(Boolean) as string[];
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
-  doc.setTextColor(51, 65, 85);
-  const contactLines = doc.splitTextToSize(contact.join("  |  "), CW) as string[];
-  for (const cl of contactLines) { doc.text(cl, ML, y); y += 11; }
-  y += 4;
-
-  doc.setDrawColor(15, 23, 42);
-  doc.setLineWidth(1);
-  doc.line(ML, y, PW - MR, y);
-  y += 2;
-
-  // ── Summary
-  if (r.summary) {
-    section("Summary");
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9.5);
-    doc.setTextColor(30, 41, 59);
-    const ls = doc.splitTextToSize(r.summary, CW) as string[];
-    for (const l of ls) { checkPage(13); doc.text(l, ML, y); y += 12; }
-  }
-
-  // ── Education
-  section("Education");
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(10);
-  doc.setTextColor(15, 23, 42);
-  doc.text(r.degree, ML, y);
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9.5);
-  doc.setTextColor(51, 65, 85);
-  doc.text(`${r.startYear} - ${r.gradYear}`, PW - MR, y, { align: "right" });
-  y += 13;
-  doc.text(`${r.college}, ${r.city}${r.cgpa ? `  |  CGPA ${r.cgpa}` : ""}`, ML, y);
-  y += 4;
-
-  // ── Skills
-  if (r.skillSections.length > 0) {
-    section("Skills");
-    for (const s of r.skillSections) {
-      checkPage(15);
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(9.5);
-      doc.setTextColor(15, 23, 42);
-      const lbl = `${s.category}: `;
-      const lw = doc.getTextWidth(lbl);
-      doc.text(lbl, ML, y);
-      doc.setFont("helvetica", "normal");
-      doc.setTextColor(30, 41, 59);
-      const wrapped = doc.splitTextToSize(s.items, CW - lw) as string[];
-      for (let wi = 0; wi < wrapped.length; wi++) {
-        checkPage(13);
-        doc.text(wrapped[wi], ML + lw, y);
-        y += 12;
-      }
-    }
-  }
-
-  // ── Experience (omitted entirely when empty)
-  if (r.experience && r.experience.length > 0) {
-    section("Experience");
-    for (const e of r.experience) {
-      checkPage(40);
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(10);
-      doc.setTextColor(15, 23, 42);
-      doc.text(`${e.role}, ${e.company}`, ML, y);
-      if (e.period) {
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(8.5);
-        doc.setTextColor(51, 65, 85);
-        doc.text(e.period, PW - MR, y, { align: "right" });
-      }
-      y += 13;
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(9.5);
-      doc.setTextColor(30, 41, 59);
-      for (const b of e.bullets) {
-        const ls = doc.splitTextToSize(`-  ${b}`, CW - 6) as string[];
-        for (let li = 0; li < ls.length; li++) {
-          checkPage(13);
-          doc.text(ls[li], ML + (li > 0 ? 8 : 0), y);
-          y += 12;
-        }
-      }
-      y += 5;
-    }
-  }
-
-  // ── Projects
-  if (r.projects.length > 0) {
-    section("Projects");
-    for (const p of r.projects) {
-      checkPage(40);
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(10);
-      doc.setTextColor(15, 23, 42);
-      doc.text(p.title, ML, y);
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(8.5);
-      doc.setTextColor(51, 65, 85);
-      if (doc.getTextWidth(p.tech) < CW * 0.45) {
-        doc.text(p.tech, PW - MR, y, { align: "right" });
-      }
-      y += 13;
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(9.5);
-      doc.setTextColor(30, 41, 59);
-      for (const b of p.bullets) {
-        const ls = doc.splitTextToSize(`-  ${b}`, CW - 6) as string[];
-        for (let li = 0; li < ls.length; li++) {
-          checkPage(13);
-          doc.text(ls[li], ML + (li > 0 ? 8 : 0), y);
-          y += 12;
-        }
-      }
-      y += 5;
-    }
-  }
-
-  // ── Certifications
-  if (r.certifications.length > 0) {
-    section("Certifications");
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9.5);
-    doc.setTextColor(30, 41, 59);
-    for (const c of r.certifications) {
-      const ls = doc.splitTextToSize(`-  ${c.name} - ${c.issuer}${c.date ? ` (${c.date})` : ""}`, CW) as string[];
-      for (const l of ls) { checkPage(13); doc.text(l, ML, y); y += 12; }
-    }
-  }
-
-  // ── Achievements
-  if (r.achievements.length > 0) {
-    section("Achievements");
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9.5);
-    doc.setTextColor(30, 41, 59);
-    for (const a of r.achievements) {
-      const ls = doc.splitTextToSize(`-  ${a}`, CW) as string[];
-      for (const l of ls) { checkPage(13); doc.text(l, ML, y); y += 12; }
-    }
-  }
-
-  openPDF(doc, filename);
-}
-
-function downloadTechPDF(r: ResumeContent, filename: string) {
-  const doc = new jsPDF({ unit: "pt", format: "letter" });
-  const PW = 612, PH = 792, ML = 45, MR = 45, MB = 44;
-  const CW = PW - ML - MR;
-  let y = 0;
-
-  const checkPage = (needed = 20) => {
-    if (y + needed > PH - MB) { doc.addPage(); y = 44; }
-  };
-
-  // Section header: explicit rect then content — no more y-11 overlap bug
-  const section = (title: string) => {
-    checkPage(44);
-    y += 16;
-    const rectTop = y;
-    const rectH = 20;
-    doc.setFillColor(15, 23, 42);
-    doc.rect(ML, rectTop, CW, rectH, "F");
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(9.5);
-    doc.setTextColor(255, 255, 255);
-    // Baseline at rectTop + 14 (centered in 20pt rect)
-    doc.text(title.toUpperCase(), ML + 8, rectTop + 14);
-    y = rectTop + rectH + 10;
-    doc.setTextColor(15, 23, 42);
-    doc.setFont("helvetica", "normal");
-  };
-
-  // ── Full-width dark header bar
-  const HEADER_H = 66;
-  doc.setFillColor(15, 23, 42);
-  doc.rect(0, 0, PW, HEADER_H, "F");
-
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(21);
-  doc.setTextColor(255, 255, 255);
-  doc.text(r.name.toUpperCase(), ML, 26);
-
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
-  doc.setTextColor(148, 163, 184);
-  const contactParts = [r.email, r.phone, r.city, r.githubUrl, r.linkedinUrl]
-    .filter(Boolean) as string[];
-  const contactLine = contactParts.join("  ·  ");
-  const contactWrapped = doc.splitTextToSize(contactLine, CW) as string[];
-  doc.text(contactWrapped[0] ?? "", ML, 44);
-  if (contactWrapped[1]) {
-    doc.text(contactWrapped[1], ML, 57);
-  }
-
-  // ── Accent stripe
-  doc.setFillColor(16, 185, 129);
-  doc.rect(0, HEADER_H, PW, 3, "F");
-  y = HEADER_H + 3 + 16;
-
-  // ── Summary
-  if (r.summary) {
-    section("About");
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9.5);
-    doc.setTextColor(55, 65, 81);
-    const ls = doc.splitTextToSize(r.summary, CW) as string[];
-    for (const l of ls) { checkPage(13); doc.text(l, ML, y); y += 12; }
-  }
-
-  // ── Education
-  section("Education");
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(10);
-  doc.setTextColor(15, 23, 42);
-  doc.text(r.degree, ML, y);
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9.5);
-  doc.setTextColor(100, 116, 139);
-  doc.text(`${r.startYear} – ${r.gradYear}`, PW - MR, y, { align: "right" });
-  y += 13;
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9.5);
-  doc.setTextColor(100, 116, 139);
-  doc.text(`${r.college}, ${r.city}${r.cgpa ? `  ·  CGPA ${r.cgpa}` : ""}`, ML, y);
-  y += 4;
-
-  // ── Technical Skills
-  if (r.skillSections.length > 0) {
-    section("Technical Skills");
-    for (const s of r.skillSections) {
-      checkPage(15);
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(9.5);
-      doc.setTextColor(15, 23, 42);
-      const lbl = `${s.category}: `;
-      const lw = doc.getTextWidth(lbl);
-      doc.text(lbl, ML, y);
-      doc.setFont("courier", "normal");
-      doc.setFontSize(9);
-      doc.setTextColor(16, 185, 129);
-      const wrapped = doc.splitTextToSize(s.items, CW - lw) as string[];
-      for (let wi = 0; wi < wrapped.length; wi++) {
-        checkPage(13);
-        doc.text(wrapped[wi], ML + lw, y);
-        y += 12;
-      }
-    }
-  }
-
-  // ── Projects
-  if (r.projects.length > 0) {
-    section("Projects");
-    for (const p of r.projects) {
-      checkPage(44);
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(10);
-      doc.setTextColor(15, 23, 42);
-      doc.text(p.title, ML, y);
-      doc.setFont("courier", "normal");
-      doc.setFontSize(8.5);
-      doc.setTextColor(16, 185, 129);
-      const tag = `[ ${p.tech} ]`;
-      if (doc.getTextWidth(tag) < CW * 0.5) {
-        doc.text(tag, PW - MR, y, { align: "right" });
-      }
-      y += 13;
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(9.5);
-      doc.setTextColor(55, 65, 81);
-      for (const b of p.bullets) {
-        const ls = doc.splitTextToSize(`\u25b8  ${b}`, CW - 6) as string[];
-        for (let li = 0; li < ls.length; li++) {
-          checkPage(13);
-          doc.text(ls[li], ML + (li > 0 ? 10 : 0), y);
-          y += 12;
-        }
-      }
-      y += 5;
-    }
-  }
-
-  // ── Achievements
-  if (r.certifications.length > 0 || r.achievements.length > 0) {
-    section("Achievements & Certifications");
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9.5);
-    doc.setTextColor(55, 65, 81);
-    for (const c of r.certifications) {
-      const ls = doc.splitTextToSize(
-        `\u25b8  ${c.name} — ${c.issuer}${c.date ? ` (${c.date})` : ""}`, CW
-      ) as string[];
-      for (const l of ls) { checkPage(13); doc.text(l, ML, y); y += 12; }
-    }
-    for (const a of r.achievements) {
-      const ls = doc.splitTextToSize(`\u25b8  ${a}`, CW) as string[];
-      for (const l of ls) { checkPage(13); doc.text(l, ML, y); y += 12; }
-    }
-  }
-
-  openPDF(doc, filename);
-}
-
-function downloadMinimalPDF(r: ResumeContent, filename: string) {
-  const doc = new jsPDF({ unit: "pt", format: "letter" });
-  const PW = 612, PH = 792, ML = 54, MR = 54, MT = 48, MB = 44;
-  const CW = PW - ML - MR;
-  let y = MT;
-
-  const checkPage = (needed = 20) => {
-    if (y + needed > PH - MB) { doc.addPage(); y = MT; }
-  };
-
-  const section = (title: string) => {
-    checkPage(38);
-    y += 16;
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(7.5);
-    doc.setTextColor(148, 163, 184);
-    doc.text(title.toUpperCase(), ML, y);
-    y += 5;
-    doc.setDrawColor(226, 232, 240);
-    doc.setLineWidth(0.5);
-    doc.line(ML, y, PW - MR, y);
-    y += 11;
-    doc.setTextColor(15, 23, 42);
-    doc.setFont("helvetica", "normal");
-  };
-
-  // ── Name
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(24);
-  doc.setTextColor(15, 23, 42);
-  doc.text(r.name, ML, y);
-  y += 4;
-
-  // ── Degree under name
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
-  doc.setTextColor(100, 116, 139);
-  doc.text(r.degree, ML, y + 11);
-  y += 22;
-
-  // ── Contact
-  const contact = [r.email, r.phone, r.city, r.githubUrl, r.linkedinUrl, r.portfolioUrl]
-    .filter(Boolean) as string[];
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(8.5);
-  doc.setTextColor(100, 116, 139);
-  const contactStr = contact.join("  ·  ");
-  const contactLines = doc.splitTextToSize(contactStr, CW) as string[];
-  for (const cl of contactLines) { doc.text(cl, ML, y); y += 11; }
-  y += 3;
-
-  // ── Bold rule
-  doc.setDrawColor(15, 23, 42);
-  doc.setLineWidth(1.25);
-  doc.line(ML, y, PW - MR, y);
-  y += 6;
-
-  // ── Summary
-  if (r.summary) {
-    doc.setFont("helvetica", "italic");
-    doc.setFontSize(9.5);
-    doc.setTextColor(71, 85, 105);
-    const ls = doc.splitTextToSize(r.summary, CW) as string[];
-    for (const l of ls) { checkPage(13); doc.text(l, ML, y); y += 12; }
-    y += 2;
-  }
-
-  // ── Education
-  section("Education");
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(10.5);
-  doc.setTextColor(15, 23, 42);
-  doc.text(r.degree, ML, y);
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9.5);
-  doc.setTextColor(100, 116, 139);
-  doc.text(`${r.startYear} – ${r.gradYear}`, PW - MR, y, { align: "right" });
-  y += 13;
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9.5);
-  doc.setTextColor(100, 116, 139);
-  doc.text(`${r.college}, ${r.city}${r.cgpa ? `  ·  CGPA ${r.cgpa}` : ""}`, ML, y);
-  y += 4;
-
-  // ── Skills
-  if (r.skillSections.length > 0) {
-    section("Skills");
-    for (const s of r.skillSections) {
-      checkPage(15);
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(9.5);
-      doc.setTextColor(15, 23, 42);
-      const lbl = `${s.category}:  `;
-      const lw = doc.getTextWidth(lbl);
-      doc.text(lbl, ML, y);
-      doc.setFont("helvetica", "normal");
-      doc.setTextColor(71, 85, 105);
-      const wrapped = doc.splitTextToSize(s.items, CW - lw) as string[];
-      for (let wi = 0; wi < wrapped.length; wi++) {
-        checkPage(13);
-        doc.text(wrapped[wi], ML + lw, y);
-        y += 12;
-      }
-    }
-  }
-
-  // ── Projects
-  if (r.projects.length > 0) {
-    section("Projects");
-    for (const p of r.projects) {
-      checkPage(44);
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(10.5);
-      doc.setTextColor(15, 23, 42);
-      doc.text(p.title, ML, y);
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(8.5);
-      doc.setTextColor(100, 116, 139);
-      if (doc.getTextWidth(p.tech) < CW * 0.45) {
-        doc.text(p.tech, PW - MR, y, { align: "right" });
-      }
-      y += 13;
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(9.5);
-      doc.setTextColor(71, 85, 105);
-      for (const b of p.bullets) {
-        const ls = doc.splitTextToSize(`\u2013  ${b}`, CW - 6) as string[];
-        for (let li = 0; li < ls.length; li++) {
-          checkPage(13);
-          doc.text(ls[li], ML + (li > 0 ? 10 : 0), y);
-          y += 12;
-        }
-      }
-      y += 5;
-    }
-  }
-
-  // ── Achievements
-  if (r.certifications.length > 0 || r.achievements.length > 0) {
-    section("Achievements");
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9.5);
-    doc.setTextColor(71, 85, 105);
-    for (const c of r.certifications) {
-      const ls = doc.splitTextToSize(
-        `\u2013  ${c.name} — ${c.issuer}${c.date ? ` (${c.date})` : ""}`, CW
-      ) as string[];
-      for (const l of ls) { checkPage(13); doc.text(l, ML, y); y += 12; }
-    }
-    for (const a of r.achievements) {
-      const ls = doc.splitTextToSize(`\u2013  ${a}`, CW) as string[];
-      for (const l of ls) { checkPage(13); doc.text(l, ML, y); y += 12; }
-    }
-  }
-
-  openPDF(doc, filename);
-}
-
-function downloadResumePDF(resume: SavedResume) {
-  const filename = `${resume.content.name.replace(/\s+/g, "_")}_${resume.name.replace(/\s+/g, "_")}.pdf`;
-  const templateId = resolveTemplate(resume.templateId).id;
-  if (templateId === "tech") {
-    downloadTechPDF(resume.content, filename);
-  } else if (templateId === "minimal") {
-    downloadMinimalPDF(resume.content, filename);
-  } else if (templateId === "ats") {
-    downloadAtsPDF(resume.content, filename);
-  } else {
-    downloadClassicPDF(resume.content, filename);
-  }
 }
 
 // ─── Edit Resume Sheet ────────────────────────────────────────────────────────
@@ -1273,7 +570,7 @@ function ResumeCard({
   onDownload: () => void;
   onEdit: () => void;
 }) {
-  const tmpl = templateBadge(resume.templateId);
+  const tmpl = resolveTemplateConfig(resume.templateId);
   const date = new Date(resume.createdAt).toLocaleDateString("en-IN", {
     day: "numeric", month: "short", year: "numeric",
   });
@@ -1290,7 +587,7 @@ function ResumeCard({
         <div className="min-w-0 flex-1">
           <p className="font-bold text-ink text-[15px] truncate">{resume.name}</p>
           <div className="flex items-center gap-2 mt-1 flex-wrap">
-            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${tmpl.badge}`}>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-brand-soft text-brand">
               {tmpl.label}
             </span>
             {resume.companyName && (
@@ -1437,7 +734,7 @@ function GenerateSheet({
         <div className="space-y-2">
           <label className="text-[11px] font-bold text-ink-muted uppercase tracking-wider">Template</label>
           <div className="grid grid-cols-2 gap-2">
-            {TEMPLATES.map(t => (
+            {TEMPLATE_LIST.map(t => (
               <button
                 key={t.id}
                 onClick={() => setTemplateId(t.id)}
@@ -1448,7 +745,7 @@ function GenerateSheet({
                 }`}
               >
                 <p className="font-bold text-ink text-xs">{t.label}</p>
-                <p className="text-[10px] text-ink-muted mt-0.5 leading-tight">{t.desc}</p>
+                <p className="text-[10px] text-ink-muted mt-0.5 leading-tight">{t.description}</p>
               </button>
             ))}
           </div>
@@ -1685,7 +982,11 @@ export default function Resume() {
                     onDelete={() => {
                       if (deletingId !== resume.id) handleDelete(resume.id);
                     }}
-                    onDownload={() => downloadResumePDF(resume)}
+                    onDownload={() => {
+                      downloadResumePDF(resume).catch((e) => {
+                        toast({ title: "Couldn't generate PDF", description: (e as Error).message, variant: "destructive" });
+                      });
+                    }}
                     onEdit={() => setEditingResume(resume)}
                   />
                 ))}
