@@ -1,10 +1,10 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Download, Plus, Trash2, Sparkles,
   Loader2, Building2, AlignLeft, ChevronRight, X, Pencil,
-  Check, PlusCircle, MinusCircle, Zap
+  Check, PlusCircle, MinusCircle, Zap, Eye
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -13,8 +13,9 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import type jsPDF from "jspdf";
 import { apiFetch } from "@/lib/api/authFetch";
-import { upgradeContent } from "@workspace/resume-core";
-import { renderResumePdf, TEMPLATE_REGISTRY, resolveTemplateConfig } from "@/lib/resume-pdf";
+import { upgradeContent, buildAtsReport } from "@workspace/resume-core";
+import { renderResumePdf, TEMPLATE_REGISTRY, resolveTemplateConfig, preloadFonts } from "@/lib/resume-pdf";
+import { ResumePreview, ResumeThumbnail, preloadPdfjs } from "@/components/resume/ResumePreview";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -307,6 +308,8 @@ function EditResumeSheet({
 }) {
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
+  const [templateId, setTemplateId] = useState(resume.templateId);
+  const [showMobilePreview, setShowMobilePreview] = useState(false);
 
   const [summary, setSummary] = useState(resume.content.summary ?? "");
   const [skillSections, setSkillSections] = useState(
@@ -316,6 +319,21 @@ function EditResumeSheet({
     (resume.content.projects ?? []).map(p => ({ ...p, bullets: [...(p.bullets ?? [])] }))
   );
   const [achievements, setAchievements] = useState([...(resume.content.achievements ?? [])]);
+
+  // Reconstructed on every edit — feeds both the live preview and the live ATS
+  // recompute, so what's shown always matches what Save will persist.
+  const liveDoc = useMemo(() => upgradeContent({
+    ...resume.content,
+    summary,
+    skillSections,
+    projects,
+    achievements,
+  }), [resume.content, summary, skillSections, projects, achievements]);
+
+  const atsReport = useMemo(
+    () => buildAtsReport({ doc: liveDoc, jdText: resume.jdText ?? undefined }),
+    [liveDoc, resume.jdText],
+  );
 
   const updateSkillCategory = (i: number, val: string) => {
     setSkillSections(prev => prev.map((s, idx) => idx === i ? { ...s, category: val } : s));
@@ -365,6 +383,7 @@ function EditResumeSheet({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           content: { summary, skillSections, projects, achievements },
+          ...(templateId !== resume.templateId ? { templateId } : {}),
         }),
       });
       if (!r.ok) {
@@ -382,6 +401,33 @@ function EditResumeSheet({
     }
   };
 
+  const previewPanel = (
+    <>
+      <div className="grid grid-cols-2 gap-1.5">
+        {TEMPLATE_LIST.map(t => (
+          <button
+            key={t.id}
+            onClick={() => setTemplateId(t.id)}
+            className={`rounded-lg px-2 py-1.5 text-[10px] font-bold border transition-colors ${
+              templateId === t.id ? "border-brand bg-brand-soft text-brand" : "border-line text-ink-muted"
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+      <ResumePreview resume={liveDoc} templateId={templateId} />
+      {atsReport && (
+        <div className="bg-brand-soft rounded-xl p-3">
+          <p className="text-[11px] font-bold text-brand">ATS match {atsReport.scorePct}%</p>
+          <p className="text-[10px] text-ink-muted mt-1">
+            {atsReport.mustCoverage.matched}/{atsReport.mustCoverage.total} must-have keywords covered
+          </p>
+        </div>
+      )}
+    </>
+  );
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -395,7 +441,7 @@ function EditResumeSheet({
         animate={{ y: 0 }}
         exit={{ y: "100%" }}
         transition={{ type: "spring", damping: 28, stiffness: 300 }}
-        className="w-full max-w-lg mx-auto bg-paper rounded-t-3xl lg:rounded-3xl flex flex-col max-h-[92vh] lg:max-h-[85dvh]"
+        className="w-full max-w-lg lg:max-w-4xl mx-auto bg-paper rounded-t-3xl lg:rounded-3xl flex flex-col max-h-[92vh] lg:max-h-[85dvh]"
         onClick={e => e.stopPropagation()}
       >
         <div className="pt-3 pb-1 flex justify-center shrink-0 lg:hidden">
@@ -406,12 +452,21 @@ function EditResumeSheet({
             <Pencil className="w-4 h-4 text-ink" />
             Edit Resume
           </h2>
-          <button onClick={onClose} className="w-8 h-8 rounded-full border border-line flex items-center justify-center">
-            <X className="w-4 h-4 text-ink-muted" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowMobilePreview(true)}
+              className="lg:hidden h-8 px-3 rounded-full border border-line flex items-center gap-1.5 text-[11px] font-bold text-brand"
+            >
+              <Eye className="w-3.5 h-3.5" /> Preview
+            </button>
+            <button onClick={onClose} className="w-8 h-8 rounded-full border border-line flex items-center justify-center">
+              <X className="w-4 h-4 text-ink-muted" />
+            </button>
+          </div>
         </div>
 
-        <div className="overflow-y-auto flex-1 px-5 py-4 space-y-6">
+        <div className="flex-1 overflow-hidden lg:flex lg:flex-row">
+        <div className="overflow-y-auto h-full lg:flex-1 px-5 py-4 space-y-6">
 
           {/* Summary */}
           <div className="space-y-2">
@@ -533,6 +588,12 @@ function EditResumeSheet({
           </div>
         </div>
 
+        {/* Desktop split-view preview — same panel content reused in the mobile overlay below */}
+        <div className="hidden lg:flex lg:flex-col lg:w-[320px] lg:shrink-0 lg:border-l lg:border-line lg:overflow-y-auto lg:p-4 lg:space-y-3">
+          {previewPanel}
+        </div>
+        </div>
+
         <div className="px-5 pb-8 pt-3 border-t border-line shrink-0">
           <Button
             onClick={handleSave}
@@ -553,6 +614,34 @@ function EditResumeSheet({
           </Button>
         </div>
       </motion.div>
+
+      <AnimatePresence>
+        {showMobilePreview && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[70] bg-ink/60 flex items-center justify-center p-4 lg:hidden"
+            onClick={() => setShowMobilePreview(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.96, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.96, opacity: 0 }}
+              className="bg-paper rounded-2xl max-w-sm w-full max-h-[90vh] overflow-y-auto p-4 space-y-3"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between">
+                <p className="font-bold text-ink text-sm">Live Preview</p>
+                <button onClick={() => setShowMobilePreview(false)}>
+                  <X className="w-4 h-4 text-ink-muted" />
+                </button>
+              </div>
+              {previewPanel}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
@@ -574,6 +663,7 @@ function ResumeCard({
   const date = new Date(resume.createdAt).toLocaleDateString("en-IN", {
     day: "numeric", month: "short", year: "numeric",
   });
+  const liveDoc = useMemo(() => upgradeContent(resume.content), [resume.content]);
 
   return (
     <motion.div
@@ -584,6 +674,11 @@ function ResumeCard({
       className="bg-paper rounded-2xl shadow-soft p-4"
     >
       <div className="flex items-start justify-between gap-3 mb-3">
+        <ResumeThumbnail
+          resume={liveDoc}
+          templateId={resume.templateId}
+          className="w-14 aspect-[1/1.414] rounded-md overflow-hidden shrink-0 border border-line"
+        />
         <div className="min-w-0 flex-1">
           <p className="font-bold text-ink text-[15px] truncate">{resume.name}</p>
           <div className="flex items-center gap-2 mt-1 flex-wrap">
@@ -674,6 +769,8 @@ function GenerateSheet({
     initialCompany && initialRole ? `${initialCompany} — ${initialRole}` : ""
   );
   const [generating, setGenerating] = useState(false);
+  const [generatedResume, setGeneratedResume] = useState<SavedResume | null>(null);
+  const [finishing, setFinishing] = useState(false);
 
   const generate = async () => {
     setGenerating(true);
@@ -692,13 +789,41 @@ function GenerateSheet({
       }
       const saved = await r.json() as SavedResume;
       toast({ title: "Resume generated!", description: saved.name });
-      onGenerated(saved);
-      onClose();
+      // Show a result step instead of closing immediately — template tiles
+      // below re-render the real PDF instantly with zero further AI calls.
+      setGeneratedResume(saved);
     } catch (e) {
       toast({ title: "Generation failed", description: (e as Error).message, variant: "destructive" });
     } finally {
       setGenerating(false);
     }
+  };
+
+  const previewDoc = useMemo(
+    () => (generatedResume ? upgradeContent(generatedResume.content) : null),
+    [generatedResume],
+  );
+
+  const handleDone = async () => {
+    if (!generatedResume) return;
+    setFinishing(true);
+    let finalResume = generatedResume;
+    if (templateId !== generatedResume.templateId) {
+      try {
+        const r = await apiFetch(`/api/students/${studentId}/resumes/${generatedResume.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ templateId }),
+        });
+        if (r.ok) finalResume = await r.json() as SavedResume;
+      } catch {
+        // Non-fatal — the resume was already generated and saved; keep its
+        // original template rather than blocking the student here.
+      }
+    }
+    setFinishing(false);
+    onGenerated(finalResume);
+    onClose();
   };
 
   return (
@@ -721,102 +846,169 @@ function GenerateSheet({
           <div className="w-10 h-1 rounded-full bg-line" />
         </div>
 
-        <div className="flex items-center justify-between">
-          <h2 className="text-[18px] font-extrabold text-ink flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-brand" />
-            Generate New Resume
-          </h2>
-          <button onClick={onClose} className="w-8 h-8 rounded-full border border-line flex items-center justify-center">
-            <X className="w-4 h-4 text-ink-muted" />
-          </button>
-        </div>
-
-        <div className="space-y-2">
-          <label className="text-[11px] font-bold text-ink-muted uppercase tracking-wider">Template</label>
-          <div className="grid grid-cols-2 gap-2">
-            {TEMPLATE_LIST.map(t => (
-              <button
-                key={t.id}
-                onClick={() => setTemplateId(t.id)}
-                className={`rounded-xl p-3 text-left border transition-colors ${
-                  templateId === t.id
-                    ? "border-brand bg-brand-soft"
-                    : "border-line bg-paper"
-                }`}
-              >
-                <p className="font-bold text-ink text-xs">{t.label}</p>
-                <p className="text-[10px] text-ink-muted mt-0.5 leading-tight">{t.description}</p>
+        {generatedResume && previewDoc ? (
+          <>
+            <div className="flex items-center justify-between">
+              <h2 className="text-[18px] font-extrabold text-ink flex items-center gap-2">
+                <Check className="w-4 h-4 text-brand" />
+                Resume Ready
+              </h2>
+              <button onClick={onClose} className="w-8 h-8 rounded-full border border-line flex items-center justify-center">
+                <X className="w-4 h-4 text-ink-muted" />
               </button>
-            ))}
-          </div>
-        </div>
+            </div>
 
-        <div className="space-y-2">
-          <label className="text-[11px] font-bold text-ink-muted uppercase tracking-wider flex items-center gap-1">
-            <Building2 className="w-3 h-3" /> Company Name
-            <span className="text-ink-muted normal-case font-medium ml-1">(optional)</span>
-          </label>
-          <Input
-            value={companyName}
-            onChange={e => setCompanyName(e.target.value)}
-            placeholder="e.g. Google, Flipkart, Razorpay"
-            className="rounded-xl border border-line focus:border-brand text-ink"
-          />
-        </div>
+            <div className="space-y-2">
+              <label className="text-[11px] font-bold text-ink-muted uppercase tracking-wider">
+                Try a different look
+                <span className="text-ink-muted normal-case font-medium ml-1">(instant — no AI call)</span>
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {TEMPLATE_LIST.map(t => (
+                  <button
+                    key={t.id}
+                    onClick={() => setTemplateId(t.id)}
+                    className={`rounded-xl p-3 text-left border transition-colors ${
+                      templateId === t.id
+                        ? "border-brand bg-brand-soft"
+                        : "border-line bg-paper"
+                    }`}
+                  >
+                    <p className="font-bold text-ink text-xs">{t.label}</p>
+                    <p className="text-[10px] text-ink-muted mt-0.5 leading-tight">{t.description}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
 
-        <div className="space-y-2">
-          <label className="text-[11px] font-bold text-ink-muted uppercase tracking-wider flex items-center gap-1">
-            <AlignLeft className="w-3 h-3" /> Job Description
-            <span className="text-ink-muted normal-case font-medium ml-1">(optional — paste JD for tailored resume)</span>
-          </label>
-          <Textarea
-            value={jdText}
-            onChange={e => setJdText(e.target.value)}
-            placeholder="Paste job description here for an ATS-optimized, targeted resume..."
-            rows={4}
-            className="rounded-xl border border-line focus:border-brand text-ink text-sm resize-none"
-          />
-          {!jdText && (initialCompany || initialTags.length > 0) && (
-            <p className="text-[11px] text-ink-muted">
-              Tip: paste the JD from the posting for the strongest tailoring.
-            </p>
-          )}
-        </div>
+            <ResumePreview resume={previewDoc} templateId={templateId} className="max-w-[280px] mx-auto" />
 
-        <div className="space-y-2">
-          <label className="text-[11px] font-bold text-ink-muted uppercase tracking-wider">
-            Resume Name
-            <span className="text-ink-muted normal-case font-medium ml-1">(optional)</span>
-          </label>
-          <Input
-            value={resumeName}
-            onChange={e => setResumeName(e.target.value)}
-            placeholder="e.g. Google SWE Resume, FAANG Attempt 1"
-            className="rounded-xl border border-line focus:border-brand text-ink"
-          />
-        </div>
+            {generatedResume.content.atsMeta && (
+              <div className="flex justify-center">
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-brand-soft text-brand">
+                  ATS match {generatedResume.content.atsMeta.coveragePct}%
+                </span>
+              </div>
+            )}
 
-        <Button
-          onClick={generate}
-          disabled={generating}
-          className="w-full h-12 rounded-full bg-brand text-white hover:bg-brand/90 font-bold text-[15px]"
-        >
-          {generating ? (
-            <>
-              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-              AI is building your resume…
-            </>
-          ) : (
-            <>
-              <Sparkles className="w-5 h-5 mr-2" />
-              Generate Resume
-            </>
-          )}
-        </Button>
-        {generating && (
-          <p className="text-center text-[12px] text-ink-muted -mt-2">
-            Using your real profile data — this takes 10–20 seconds
-          </p>
+            <Button
+              onClick={handleDone}
+              disabled={finishing}
+              className="w-full h-12 rounded-full bg-brand text-white hover:bg-brand/90 font-bold text-[15px]"
+            >
+              {finishing ? (
+                <>
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  Finishing…
+                </>
+              ) : (
+                <>
+                  <Check className="w-5 h-5 mr-2" />
+                  Done
+                </>
+              )}
+            </Button>
+          </>
+        ) : (
+          <>
+            <div className="flex items-center justify-between">
+              <h2 className="text-[18px] font-extrabold text-ink flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-brand" />
+                Generate New Resume
+              </h2>
+              <button onClick={onClose} className="w-8 h-8 rounded-full border border-line flex items-center justify-center">
+                <X className="w-4 h-4 text-ink-muted" />
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[11px] font-bold text-ink-muted uppercase tracking-wider">Template</label>
+              <div className="grid grid-cols-2 gap-2">
+                {TEMPLATE_LIST.map(t => (
+                  <button
+                    key={t.id}
+                    onClick={() => setTemplateId(t.id)}
+                    className={`rounded-xl p-3 text-left border transition-colors ${
+                      templateId === t.id
+                        ? "border-brand bg-brand-soft"
+                        : "border-line bg-paper"
+                    }`}
+                  >
+                    <p className="font-bold text-ink text-xs">{t.label}</p>
+                    <p className="text-[10px] text-ink-muted mt-0.5 leading-tight">{t.description}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[11px] font-bold text-ink-muted uppercase tracking-wider flex items-center gap-1">
+                <Building2 className="w-3 h-3" /> Company Name
+                <span className="text-ink-muted normal-case font-medium ml-1">(optional)</span>
+              </label>
+              <Input
+                value={companyName}
+                onChange={e => setCompanyName(e.target.value)}
+                placeholder="e.g. Google, Flipkart, Razorpay"
+                className="rounded-xl border border-line focus:border-brand text-ink"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[11px] font-bold text-ink-muted uppercase tracking-wider flex items-center gap-1">
+                <AlignLeft className="w-3 h-3" /> Job Description
+                <span className="text-ink-muted normal-case font-medium ml-1">(optional — paste JD for tailored resume)</span>
+              </label>
+              <Textarea
+                value={jdText}
+                onChange={e => setJdText(e.target.value)}
+                placeholder="Paste job description here for an ATS-optimized, targeted resume..."
+                rows={4}
+                className="rounded-xl border border-line focus:border-brand text-ink text-sm resize-none"
+              />
+              {!jdText && (initialCompany || initialTags.length > 0) && (
+                <p className="text-[11px] text-ink-muted">
+                  Tip: paste the JD from the posting for the strongest tailoring.
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[11px] font-bold text-ink-muted uppercase tracking-wider">
+                Resume Name
+                <span className="text-ink-muted normal-case font-medium ml-1">(optional)</span>
+              </label>
+              <Input
+                value={resumeName}
+                onChange={e => setResumeName(e.target.value)}
+                placeholder="e.g. Google SWE Resume, FAANG Attempt 1"
+                className="rounded-xl border border-line focus:border-brand text-ink"
+              />
+            </div>
+
+            <Button
+              onClick={generate}
+              disabled={generating}
+              className="w-full h-12 rounded-full bg-brand text-white hover:bg-brand/90 font-bold text-[15px]"
+            >
+              {generating ? (
+                <>
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  AI is building your resume…
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-5 h-5 mr-2" />
+                  Generate Resume
+                </>
+              )}
+            </Button>
+            {generating && (
+              <p className="text-center text-[12px] text-ink-muted -mt-2">
+                Using your real profile data — this takes 10–20 seconds
+              </p>
+            )}
+          </>
         )}
       </motion.div>
     </motion.div>
@@ -842,6 +1034,12 @@ export default function Resume() {
     if (!id) { setLocation("/"); return; }
     setStudentId(parseInt(id, 10));
   }, [setLocation]);
+
+  // Warm the font cache and pdf.js worker so the first live preview doesn't eat the delay.
+  useEffect(() => {
+    preloadFonts();
+    preloadPdfjs();
+  }, []);
 
   // Seeded by Opportunities/Pipeline via sessionStorage.resumeContext — consumed
   // once so a refresh or back-nav to /resume never reopens the sheet.

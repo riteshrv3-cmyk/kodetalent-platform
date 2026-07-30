@@ -11,6 +11,9 @@ import { logEvent } from "../lib/events";
 
 const router = Router();
 
+const VALID_TEMPLATES = ["ats", "classic", "tech", "minimal"] as const;
+type TemplateId = typeof VALID_TEMPLATES[number];
+
 const FIELD_DEGREES: Record<string, string> = {
   "Computer Science": "B.Tech Computer Science & Engineering",
   "Electronics": "B.Tech Electronics & Communication Engineering",
@@ -53,9 +56,6 @@ router.get("/students/:id/resumes", requireStudent({ allowGuest: true }), async 
 router.post("/students/:id/resumes", requireStudent({ allowGuest: true }), rlAiHeavy, async (req, res) => {
   const id = Number(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
-
-  const VALID_TEMPLATES = ["ats", "classic", "tech", "minimal"] as const;
-  type TemplateId = typeof VALID_TEMPLATES[number];
 
   const rawBody = req.body as {
     templateId?: unknown;
@@ -331,13 +331,26 @@ router.patch("/students/:id/resumes/:resumeId", requireStudent({ allowGuest: tru
   const resumeId = Number(req.params.resumeId);
   if (isNaN(id) || isNaN(resumeId)) return res.status(400).json({ error: "Invalid id" });
 
-  const rawBody = req.body as { content?: unknown };
+  const rawBody = req.body as { content?: unknown; templateId?: unknown };
 
-  if (!rawBody.content || typeof rawBody.content !== "object" || Array.isArray(rawBody.content)) {
+  const hasContent = rawBody.content !== undefined;
+  if (hasContent && (typeof rawBody.content !== "object" || rawBody.content === null || Array.isArray(rawBody.content))) {
     return res.status(400).json({ error: "content must be an object" });
   }
 
-  const incoming = rawBody.content as Record<string, unknown>;
+  let templateId: TemplateId | undefined;
+  if (rawBody.templateId !== undefined) {
+    if (typeof rawBody.templateId !== "string" || !VALID_TEMPLATES.includes(rawBody.templateId as TemplateId)) {
+      return res.status(400).json({ error: `templateId must be one of: ${VALID_TEMPLATES.join(", ")}` });
+    }
+    templateId = rawBody.templateId as TemplateId;
+  }
+
+  if (!hasContent && !templateId) {
+    return res.status(400).json({ error: "Provide content and/or templateId to update" });
+  }
+
+  const incoming = (rawBody.content ?? {}) as Record<string, unknown>;
 
   if ("summary" in incoming && typeof incoming.summary !== "string") {
     return res.status(400).json({ error: "content.summary must be a string" });
@@ -444,9 +457,12 @@ router.patch("/students/:id/resumes/:resumeId", requireStudent({ allowGuest: tru
 
     const updatedContent = { ...existingContent, ...patchedFields };
 
+    const setFields: { content: Record<string, unknown>; templateId?: TemplateId } = { content: updatedContent };
+    if (templateId) setFields.templateId = templateId;
+
     const [updated] = await db
       .update(studentResumesTable)
-      .set({ content: updatedContent })
+      .set(setFields)
       .where(eq(studentResumesTable.id, resumeId))
       .returning();
 
