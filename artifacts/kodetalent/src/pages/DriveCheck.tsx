@@ -598,7 +598,7 @@ export default function DriveCheck() {
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder={"Paste drive message yahan...\n\nExample:\n\"Sprinklr off campus drive\nBatch: 2025, 2026\nSalary: 8-11 LPA\nNote: Tier 1 / Tier 2 colleges only\nApply: https://...\""}
-          rows={6}
+          rows={8}
           disabled={loading}
           className="w-full resize-none rounded-2xl border border-line bg-paper px-4 py-3 text-[14px] text-ink placeholder:text-ink-muted focus:outline-none focus:border-brand transition-colors disabled:opacity-60"
         />
