@@ -78,8 +78,18 @@ const TEMPLATES = [
   },
 ];
 
+// Single source of truth for "which template config applies to an unknown/invalid
+// templateId" — templateBadge() and downloadResumePDF() used to fall back to two
+// different templates (ats vs classic) for the same bad id. "classic" matches the
+// server's own fallback (routes/resume.ts's VALID_TEMPLATES default).
+const DEFAULT_TEMPLATE_ID = "classic";
+
+function resolveTemplate(templateId: string) {
+  return TEMPLATES.find(t => t.id === templateId) ?? TEMPLATES.find(t => t.id === DEFAULT_TEMPLATE_ID)!;
+}
+
 function templateBadge(templateId: string) {
-  return TEMPLATES.find(t => t.id === templateId) ?? TEMPLATES[0];
+  return resolveTemplate(templateId);
 }
 
 // ─── Recommendation Engine ────────────────────────────────────────────────────
@@ -973,11 +983,12 @@ function downloadMinimalPDF(r: ResumeContent, filename: string) {
 
 function downloadResumePDF(resume: SavedResume) {
   const filename = `${resume.content.name.replace(/\s+/g, "_")}_${resume.name.replace(/\s+/g, "_")}.pdf`;
-  if (resume.templateId === "tech") {
+  const templateId = resolveTemplate(resume.templateId).id;
+  if (templateId === "tech") {
     downloadTechPDF(resume.content, filename);
-  } else if (resume.templateId === "minimal") {
+  } else if (templateId === "minimal") {
     downloadMinimalPDF(resume.content, filename);
-  } else if (resume.templateId === "ats") {
+  } else if (templateId === "ats") {
     downloadAtsPDF(resume.content, filename);
   } else {
     downloadClassicPDF(resume.content, filename);
@@ -1295,13 +1306,10 @@ function ResumeCard({
                 ? `Missing: ${resume.content.atsMeta.jdKeywords.filter(k => !resume.content.atsMeta!.matched.includes(k)).join(", ")} — skill gaps to learn, not padded in`
                 : "All extracted JD keywords are covered by your real profile"
             }>
-              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                resume.content.atsMeta.coveragePct >= 70
-                  ? "bg-green-100 text-green-700"
-                  : resume.content.atsMeta.coveragePct >= 40
-                    ? "bg-amber-100 text-amber-700"
-                    : "bg-red-100 text-red-700"
-              }`}>
+              {/* Single-color brand pill, not a red/amber/green threshold ramp — the
+                  design system reserves that ramp for completed/passing (done) and
+                  error (danger) states only, never for a continuous score. */}
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-brand-soft text-brand">
                 ATS match {resume.content.atsMeta.coveragePct}%
               </span>
             </div>

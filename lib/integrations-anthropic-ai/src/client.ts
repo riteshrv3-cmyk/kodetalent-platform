@@ -16,6 +16,10 @@ if (!process.env.OPENAI_API_KEY) {
 // higher quality, "gpt-4o-mini" for lower cost) to switch in one place.
 export const AI_MODEL = process.env.AI_MODEL ?? "gpt-4o-mini";
 
+// Resume generation runs a multi-stage reasoning pipeline where output quality is the
+// entire product. It gets a stronger model than the rest of the app, independent of AI_MODEL.
+export const AI_MODEL_RESUME = process.env.AI_MODEL_RESUME ?? "gpt-4o";
+
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
   // Optional: point at an OpenAI-compatible gateway if OPENAI_BASE_URL is set.
