@@ -82,6 +82,15 @@ export default function Prep() {
     setTestDrawerOpen(false);
   };
 
+  useEffect(() => {
+    if (!interviewDrawerOpen && !testDrawerOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeDrawers();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [interviewDrawerOpen, testDrawerOpen]);
+
   return (
     <div className="pb-28 min-h-screen bg-canvas">
       <div className="bg-brand px-4 pt-6 pb-10">
