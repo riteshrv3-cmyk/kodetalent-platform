@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Download, Plus, Trash2, Sparkles,
   Loader2, Building2, AlignLeft, ChevronRight, X, Pencil,
-  Check, PlusCircle, MinusCircle, Zap, Eye
+  Check, PlusCircle, MinusCircle, Zap, Eye, FileText, Copy
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -13,8 +13,9 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import type jsPDF from "jspdf";
 import { apiFetch } from "@/lib/api/authFetch";
-import { upgradeContent, buildAtsReport } from "@workspace/resume-core";
+import { upgradeContent, buildAtsReport, renderPlainText } from "@workspace/resume-core";
 import { renderResumePdf, TEMPLATE_REGISTRY, resolveTemplateConfig, preloadFonts } from "@/lib/resume-pdf";
+import { renderResumeDocx } from "@/lib/resume-pdf/resume-docx";
 import { ResumePreview, ResumeThumbnail, preloadPdfjs } from "@/components/resume/ResumePreview";
 import { AtsFixList } from "@/components/resume/AtsFixList";
 
@@ -293,6 +294,19 @@ async function downloadResumePDF(resume: SavedResume): Promise<void> {
     companyName: resume.companyName ?? null,
   });
   openPDF(pdfDoc, filename);
+}
+
+async function downloadResumeDocx(resume: SavedResume): Promise<void> {
+  const doc = upgradeContent(resume.content);
+  const { blob, filename } = await renderResumeDocx(doc, resume.name);
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
 }
 
 // Opens PDF in a new tab instead of direct download — avoids Chrome/Edge
@@ -698,12 +712,16 @@ function ResumeCard({
   resume,
   onDelete,
   onDownload,
+  onDownloadDocx,
+  onCopyText,
   onEdit,
   onRetarget,
 }: {
   resume: SavedResume;
   onDelete: () => void;
   onDownload: () => void;
+  onDownloadDocx: () => void;
+  onCopyText: () => void;
   onEdit: () => void;
   onRetarget: () => void;
 }) {
@@ -788,10 +806,26 @@ function ResumeCard({
         </Button>
         <Button
           onClick={onDownload}
-          className="w-full h-9 rounded-full bg-brand text-white hover:bg-brand/90 font-bold text-xs"
+          className="flex-1 h-9 rounded-full bg-brand text-white hover:bg-brand/90 font-bold text-xs"
         >
           <Download className="w-3.5 h-3.5 mr-1.5" />
-          Download PDF
+          PDF
+        </Button>
+        <Button
+          onClick={onDownloadDocx}
+          variant="outline"
+          className="flex-1 h-9 rounded-full font-bold text-xs border border-line text-ink-muted"
+        >
+          <FileText className="w-3.5 h-3.5 mr-1.5" />
+          DOCX
+        </Button>
+        <Button
+          onClick={onCopyText}
+          variant="outline"
+          className="h-9 w-9 rounded-full border border-line text-ink-muted flex items-center justify-center shrink-0"
+          title="Copy as plain text"
+        >
+          <Copy className="w-3.5 h-3.5" />
         </Button>
       </div>
     </motion.div>
@@ -1016,6 +1050,37 @@ function GenerateSheet({
                 content={{ skillSections: generatedResume.content.skillSections }}
                 onUpdated={updated => setGeneratedResume(updated as SavedResume)}
               />
+            )}
+
+            {generatedResume && (
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => downloadResumePDF(generatedResume).catch(() => toast({ title: "PDF error", variant: "destructive" }))}
+                  className="flex-1 h-10 rounded-full bg-brand text-white hover:bg-brand/90 font-bold text-xs"
+                >
+                  <Download className="w-3.5 h-3.5 mr-1.5" />
+                  PDF
+                </Button>
+                <Button
+                  onClick={() => downloadResumeDocx(generatedResume).catch(() => toast({ title: "DOCX error", variant: "destructive" }))}
+                  variant="outline"
+                  className="flex-1 h-10 rounded-full border border-line text-ink-muted font-bold text-xs"
+                >
+                  <FileText className="w-3.5 h-3.5 mr-1.5" />
+                  DOCX
+                </Button>
+                <Button
+                  onClick={() => {
+                    const d = upgradeContent(generatedResume.content);
+                    navigator.clipboard.writeText(renderPlainText(d)).then(() => toast({ title: "Copied to clipboard" })).catch(() => toast({ title: "Copy failed", variant: "destructive" }));
+                  }}
+                  variant="outline"
+                  className="h-10 w-10 rounded-full border border-line text-ink-muted flex items-center justify-center shrink-0"
+                  title="Copy as plain text"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                </Button>
+              </div>
             )}
 
             <Button
@@ -1339,6 +1404,19 @@ export default function Resume() {
                     onDownload={() => {
                       downloadResumePDF(resume).catch((e) => {
                         toast({ title: "Couldn't generate PDF", description: (e as Error).message, variant: "destructive" });
+                      });
+                    }}
+                    onDownloadDocx={() => {
+                      downloadResumeDocx(resume).catch((e) => {
+                        toast({ title: "Couldn't generate DOCX", description: (e as Error).message, variant: "destructive" });
+                      });
+                    }}
+                    onCopyText={() => {
+                      const doc = upgradeContent(resume.content);
+                      navigator.clipboard.writeText(renderPlainText(doc)).then(() => {
+                        toast({ title: "Copied", description: "Resume text copied to clipboard" });
+                      }).catch(() => {
+                        toast({ title: "Copy failed", description: "Clipboard access denied", variant: "destructive" });
                       });
                     }}
                     onEdit={() => setEditingResume(resume)}
