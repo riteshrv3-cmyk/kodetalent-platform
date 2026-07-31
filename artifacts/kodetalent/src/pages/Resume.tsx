@@ -20,6 +20,7 @@ import { renderResumeDocx } from "@/lib/resume-pdf/resume-docx";
 import { ResumePreview, ResumeThumbnail, preloadPdfjs } from "@/components/resume/ResumePreview";
 import { AtsFixList } from "@/components/resume/AtsFixList";
 import { InlineEditPreview } from "@/components/resume/InlineEditPreview";
+import { ResumeImport } from "@/components/ResumeImport";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -996,6 +997,63 @@ function GenerateSheet({
   const [generatedResume, setGeneratedResume] = useState<SavedResume | null>(null);
   const [finishing, setFinishing] = useState(false);
 
+  // Profile-emptiness gate: check on mount; show a quick-capture step for
+  // users whose ledger has nothing yet (no skills, projects, or experience).
+  type ProfileStep = "loading" | "capture" | "generate";
+  const [profileStep, setProfileStep] = useState<ProfileStep>("loading");
+  const [captureSubmitting, setCaptureSubmitting] = useState(false);
+  const [skillInput, setSkillInput] = useState("");
+  const [skillTags, setSkillTags] = useState<string[]>([]);
+  const [captureResumeText, setCaptureResumeText] = useState<string | null>(null);
+
+  useEffect(() => {
+    apiFetch(`/api/students/${studentId}/full-profile`)
+      .then(r => r.ok ? r.json() : null)
+      .then((data: { skills?: Record<string, number>; projects?: unknown[]; experience?: unknown[] } | null) => {
+        if (!data) { setProfileStep("generate"); return; }
+        const isEmpty =
+          Object.keys(data.skills ?? {}).length === 0 &&
+          (data.projects ?? []).length === 0 &&
+          (data.experience ?? []).length === 0;
+        setProfileStep(isEmpty ? "capture" : "generate");
+      })
+      .catch(() => setProfileStep("generate"));
+  }, [studentId]);
+
+  const handleCaptureContinue = async () => {
+    setCaptureSubmitting(true);
+    try {
+      if (captureResumeText) {
+        await apiFetch(`/api/students/${studentId}/profile/import-resume`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: captureResumeText }),
+        });
+      }
+      if (skillTags.length > 0) {
+        const skillsMap = Object.fromEntries(skillTags.map(s => [s.trim(), 50]));
+        await apiFetch(`/api/students/${studentId}/profile`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ skills: skillsMap }),
+        });
+      }
+    } catch {
+      // Non-fatal — proceed with whatever we already saved
+    } finally {
+      setCaptureSubmitting(false);
+      setProfileStep("generate");
+    }
+  };
+
+  const addSkillFromInput = () => {
+    const trimmed = skillInput.trim();
+    if (!trimmed) return;
+    const newTags = trimmed.split(",").map(s => s.trim()).filter(s => s && !skillTags.includes(s));
+    if (newTags.length) setSkillTags(prev => [...prev, ...newTags]);
+    setSkillInput("");
+  };
+
   // SSE generation state
   type StageStatus = "pending" | "active" | "done";
   const STAGES: { name: string; key: string }[] = [
@@ -1246,6 +1304,94 @@ function GenerateSheet({
               )}
             </Button>
           </>
+        ) : profileStep === "loading" ? (
+          <div className="flex items-center justify-center py-16">
+            <Loader2 className="w-6 h-6 text-brand animate-spin" />
+          </div>
+
+        ) : profileStep === "capture" ? (
+          <>
+            <div className="flex items-center justify-between">
+              <h2 className="text-[18px] font-extrabold text-ink">
+                First, tell us about you
+              </h2>
+              <button onClick={onClose} className="w-8 h-8 rounded-full border border-line flex items-center justify-center">
+                <X className="w-4 h-4 text-ink-muted" />
+              </button>
+            </div>
+
+            <p className="text-[13px] text-ink-muted leading-snug">
+              Upload an existing resume or add a few skills so we have real facts to write from.
+              The more you give, the stronger the output.
+            </p>
+
+            <ResumeImport
+              deferred
+              onTextReady={(text) => setCaptureResumeText(text)}
+              label={captureResumeText ? "Resume uploaded" : "Upload your existing resume (PDF / DOCX)"}
+            />
+
+            <div className="space-y-2">
+              <label className="text-[11px] font-bold text-ink-muted uppercase tracking-wider">
+                Or type your skills
+                <span className="text-ink-muted normal-case font-medium ml-1">(comma separated)</span>
+              </label>
+              <div className="flex gap-2">
+                <Input
+                  value={skillInput}
+                  onChange={e => setSkillInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === "Enter" || e.key === ",") { e.preventDefault(); addSkillFromInput(); } }}
+                  placeholder="React, Node.js, SQL…"
+                  className="rounded-xl border border-line focus:border-brand text-ink flex-1"
+                />
+                <Button
+                  onClick={addSkillFromInput}
+                  variant="outline"
+                  className="rounded-xl border border-line text-ink-muted px-3"
+                >
+                  Add
+                </Button>
+              </div>
+              {skillTags.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {skillTags.map(tag => (
+                    <span
+                      key={tag}
+                      className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-brand-soft text-brand text-[11px] font-medium"
+                    >
+                      {tag}
+                      <button
+                        onClick={() => setSkillTags(prev => prev.filter(t => t !== tag))}
+                        className="hover:text-brand/60"
+                      >
+                        <X className="w-2.5 h-2.5" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <Button
+              onClick={handleCaptureContinue}
+              disabled={captureSubmitting}
+              className="w-full h-12 rounded-full bg-brand text-white hover:bg-brand/90 font-bold text-[15px]"
+            >
+              {captureSubmitting ? (
+                <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Saving…</>
+              ) : (
+                <><Check className="w-5 h-5 mr-2" />Continue</>
+              )}
+            </Button>
+
+            <button
+              onClick={() => setProfileStep("generate")}
+              className="w-full text-center text-[12px] text-ink-muted hover:text-ink underline underline-offset-2"
+            >
+              Skip — generate anyway
+            </button>
+          </>
+
         ) : (
           <>
             <div className="flex items-center justify-between">

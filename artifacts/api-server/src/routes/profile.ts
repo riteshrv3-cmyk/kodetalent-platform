@@ -79,7 +79,7 @@ const ALLOWED_FIELDS = [
   "name", "college", "city", "year", "field", "photoUrl",
   "githubUrl", "linkedinUrl", "portfolioUrl", "phone", "bio",
   "cgpa", "targetPackage", "dreamCompany",
-  "projects", "certifications", "experience", "education",
+  "projects", "certifications", "experience", "education", "skills",
   "openToWork", "workMode", "preferredLocations", "expectedSalary",
   "targetRole", "targetBatch",
 ] as const;
@@ -98,7 +98,10 @@ function validateStringArray(v: unknown, maxItems: number, maxLen: number): stri
   return v.filter((s): s is string => typeof s === "string").slice(0, maxItems).map(s => s.slice(0, maxLen));
 }
 
-const PROFILE_JSON_FIELD_VALIDATORS: Record<string, (raw: unknown) => unknown[] | null> = {
+// Validators return null to mean "wrong shape, reject the write". `skills` is
+// the one non-array member here (a {name: proficiency} map), hence the widened
+// return type.
+const PROFILE_JSON_FIELD_VALIDATORS: Record<string, (raw: unknown) => unknown[] | Record<string, number> | null> = {
   projects: (raw) => {
     if (!Array.isArray(raw)) return null;
     return raw.filter(isRecord).slice(0, 20).map(p => ({
@@ -141,6 +144,20 @@ const PROFILE_JSON_FIELD_VALIDATORS: Record<string, (raw: unknown) => unknown[] 
       end: str(ed.end, 20),
       cgpa: str(ed.cgpa, 20) || undefined,
     })).filter(ed => ed.degree && ed.institution);
+  },
+  // {skillName: proficiency 0-100}. Self-rated, so the number is clamped rather
+  // than trusted; a non-numeric value defaults to a neutral 50 instead of
+  // rejecting the whole write.
+  skills: (raw) => {
+    if (!isRecord(raw)) return null;
+    const out: Record<string, number> = {};
+    for (const [name, value] of Object.entries(raw).slice(0, 40)) {
+      const key = name.trim().slice(0, 40);
+      if (!key) continue;
+      const n = typeof value === "number" && Number.isFinite(value) ? value : 50;
+      out[key] = Math.max(0, Math.min(100, Math.round(n)));
+    }
+    return out;
   },
 };
 
