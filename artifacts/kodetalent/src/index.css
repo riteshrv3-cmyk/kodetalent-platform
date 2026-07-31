@@ -66,6 +66,12 @@
      shadcn hover/muted-tint token used throughout components/ui/*;
      reusing "accent" here would silently recolor every hover state. */
   --color-highlight: #f5a040;
+  /* Toko's colour, taken from the character's face patch. Scoped to surfaces
+     where Toko is present or speaking — deliberately NOT a general accent, or
+     it erodes the same way a second CTA colour would. Fill only: at ~3:1 on
+     white it fails text contrast, so text sitting on it is paper or ink. */
+  --color-toko: #4fb9a0;
+  --color-toko-soft: #e6f5f1;
 }
 
 /* shadcn theme variables, repointed at the "Canopy" indigo palette (design v2).

@@ -38,7 +38,15 @@ export default defineConfig({
       // toast would be the alternative, but the product deliberately has no
       // install/update banners.
       registerType: "autoUpdate",
-      includeAssets: ["favicon.svg", "apple-touch-icon.png"],
+      includeAssets: [
+        "favicon.png",
+        "apple-touch-icon.png",
+        "toko/toko-head.png",
+        "toko/toko-hero.png",
+        "toko/toko-shrug.png",
+        "toko/toko-think.png",
+        "toko/toko-cheer.png",
+      ],
       manifest: {
         name: "KodeTalent",
         short_name: "KodeTalent",

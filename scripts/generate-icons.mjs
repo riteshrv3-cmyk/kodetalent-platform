@@ -3,86 +3,85 @@
  *
  * Run: node scripts/generate-icons.mjs
  *
- * The mark is the KodeTalent lightning bolt in brand indigo. Three different
- * compositions are needed because each platform masks icons differently:
+ * The mark is Toko, the KodeTalent toucan, composited onto brand indigo. The
+ * source is the real 3D render at public/toko/toko-head.png (cropped to the
+ * neckline, alpha recovered by scripts/dechecker.mjs) — the same file the
+ * React <Toko> component renders, so the icon and the in-app avatar can never
+ * drift apart.
+ *
+ * Three compositions, because each platform masks icons differently:
  *
  *   pwa-192 / pwa-512     rounded-rect background, drawn by us. Used where the
  *                         platform shows the icon as-authored.
- *   pwa-maskable-512      full-bleed square with the bolt shrunk into the
- *                         centre. Android crops maskable icons to a shape of
- *                         its choosing (circle, squircle, teardrop) and only
- *                         guarantees the middle 80% survives, so the bolt has
- *                         to clear that margin or it gets its tips sliced off.
+ *   pwa-maskable-512      full-bleed square with Toko shrunk into the centre.
+ *                         Android crops maskable icons to a shape of its
+ *                         choosing (circle, squircle, teardrop) and only
+ *                         guarantees the middle 80% survives, so the beak has
+ *                         to clear that margin or it gets sliced off — and the
+ *                         beak is the entire reason the mark is recognisable.
  *   apple-touch-icon      full-bleed square, square corners, no alpha. iOS
  *                         applies its own squircle mask and renders any
  *                         transparency as black.
+ *   favicon               small rounded plate, same treatment as pwa-192.
  */
 import sharp from "sharp";
 import path from "node:path";
+import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const outDir = path.join(root, "artifacts/kodetalent/public");
+const publicDir = path.join(root, "artifacts/kodetalent/public");
+const markPath = path.join(publicDir, "toko/toko-head.png");
 
 /** Brand indigo — must stay in sync with --color-brand in src/index.css. */
 const BRAND = "#4A55C7";
 
-/** The bolt, in the original 180x180 authoring space. */
-const BOLT = "M101 28 L52 102 H92 L80 152 L132 76 H92 L101 28 Z";
-/** Bounding box of BOLT in that space: x 52..132, y 28..152 -> centre (92, 90). */
-const BOLT_CENTRE = { x: 92, y: 90 };
-const BOLT_HEIGHT = 124;
-
-/** Standard icon: rounded-rect background, bolt at authored scale. */
-function standardSvg(size) {
-  const radius = (40 / 180) * size;
-  return `<svg width="${size}" height="${size}" viewBox="0 0 180 180" xmlns="http://www.w3.org/2000/svg">
-  <rect width="180" height="180" rx="${(radius / size) * 180}" fill="${BRAND}"/>
-  <path d="${BOLT}" fill="#FFFFFF"/>
-</svg>`;
+/** Solid brand background at `size`, with optional corner rounding. */
+function background(size, radius) {
+  const rect =
+    radius > 0
+      ? `<rect width="${size}" height="${size}" rx="${radius}" fill="${BRAND}"/>`
+      : `<rect width="${size}" height="${size}" fill="${BRAND}"/>`;
+  return Buffer.from(
+    `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">${rect}</svg>`,
+  );
 }
 
 /**
- * Maskable icon: flat square, bolt scaled so its full diagonal sits inside the
- * 80%-diameter safe circle. Targeting 58% of the canvas height leaves the
- * diagonal at ~69% — comfortably clear of the 80% guarantee even on the most
- * aggressive circular mask.
+ * Renders Toko at `markSize` and centres him on a brand plate.
+ *
+ * `markRatio` is the fraction of the plate the character occupies. The
+ * maskable variant uses a smaller ratio so the beak stays inside Android's
+ * 80% safe circle; the others can run larger because nothing crops them.
  */
-function maskableSvg(size) {
-  const targetHeight = size * 0.58;
-  const scale = targetHeight / BOLT_HEIGHT;
-  const half = size / 2;
-  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
-  <rect width="${size}" height="${size}" fill="${BRAND}"/>
-  <g transform="translate(${half} ${half}) scale(${scale}) translate(${-BOLT_CENTRE.x} ${-BOLT_CENTRE.y})">
-    <path d="${BOLT}" fill="#FFFFFF"/>
-  </g>
-</svg>`;
-}
+async function compose({ file, size, radius, markRatio, flatten }) {
+  const markSize = Math.round(size * markRatio);
+  const mark = await sharp(readFileSync(markPath))
+    .resize(markSize, markSize, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
+    .png()
+    .toBuffer();
 
-/** Apple touch icon: square corners (iOS masks), bolt at authored scale. */
-function appleSvg(size) {
-  return `<svg width="${size}" height="${size}" viewBox="0 0 180 180" xmlns="http://www.w3.org/2000/svg">
-  <rect width="180" height="180" fill="${BRAND}"/>
-  <path d="${BOLT}" fill="#FFFFFF"/>
-</svg>`;
+  let pipeline = sharp(background(size, radius)).composite([
+    { input: mark, gravity: "centre" },
+  ]);
+  // iOS renders an alpha channel as black, so that one icon must be flattened.
+  // The others keep transparency so the rounded corners we drew survive.
+  if (flatten) pipeline = pipeline.flatten({ background: BRAND });
+
+  const out = path.join(publicDir, file);
+  await pipeline.png().toFile(out);
+  console.log(`wrote ${path.relative(root, out)} (${size}x${size})`);
 }
 
 const targets = [
-  // Transparent corners are kept here on purpose — flattening them onto the
-  // brand colour would silently square off the rounded rect we just drew.
-  { file: "pwa-192x192.png", svg: standardSvg(192), size: 192, flatten: false },
-  { file: "pwa-512x512.png", svg: standardSvg(512), size: 512, flatten: false },
-  // Opaque by construction (full-bleed rect), so nothing to flatten.
-  { file: "pwa-maskable-512x512.png", svg: maskableSvg(512), size: 512, flatten: false },
-  // iOS renders any alpha channel as black, so this one must be flattened.
-  { file: "apple-touch-icon.png", svg: appleSvg(180), size: 180, flatten: true },
+  { file: "pwa-192x192.png", size: 192, radius: 43, markRatio: 0.78, flatten: false },
+  { file: "pwa-512x512.png", size: 512, radius: 114, markRatio: 0.78, flatten: false },
+  // 0.62 keeps the beak tip well inside the 80% safe circle Android guarantees.
+  { file: "pwa-maskable-512x512.png", size: 512, radius: 0, markRatio: 0.62, flatten: false },
+  { file: "apple-touch-icon.png", size: 180, radius: 0, markRatio: 0.78, flatten: true },
+  { file: "favicon.png", size: 64, radius: 14, markRatio: 0.78, flatten: false },
 ];
 
-for (const { file, svg, size, flatten } of targets) {
-  const out = path.join(outDir, file);
-  let pipeline = sharp(Buffer.from(svg)).resize(size, size);
-  if (flatten) pipeline = pipeline.flatten({ background: BRAND });
-  await pipeline.png().toFile(out);
-  console.log(`wrote ${path.relative(root, out)} (${size}x${size})`);
+for (const t of targets) {
+  await compose(t);
 }

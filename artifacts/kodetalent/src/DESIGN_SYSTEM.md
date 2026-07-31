@@ -19,6 +19,8 @@ spec) — v1's non-negotiables (styling only, no logic changes) still apply.
 | `text-highlight` / `bg-highlight` | `#f5a040` | ONLY calendar/date highlights, unread badges, "hot" emphasis |
 | `text-done` / `bg-done` | `#22c55e` | ONLY a completed checkmark or a passing eligibility gate dot |
 | `text-danger` / `bg-danger` | `#dc2626` | ONLY error messages, scam warnings, failing gate dots |
+| `bg-toko` | `#4fb9a0` | ONLY surfaces where Toko is present or speaking — see the Toko section |
+| `bg-toko-soft` | `#e6f5f1` | ONLY the tint behind something Toko is saying |
 | `shadow-soft` | `0 8px 24px rgba(26,29,46,0.08)` | Cards and sheets that need to lift off the canvas |
 
 Shadcn primitives (`Button`, `Badge`, `Switch`, etc.) already read brand indigo
@@ -70,14 +72,18 @@ plain shadcn component defaults is usually correct without extra classes.
 7. **Icons / decorative elements:** functional icons (lucide) use `text-brand`
    when they represent an active/primary state, `text-ink-muted` otherwise.
    Domain tiles / category chips get `bg-brand-soft text-brand` instead of the
-   v1 `border border-line bg-paper`.
+   v1 `border border-line bg-paper`. The one exception is Toko — he carries his
+   own colours and is never tinted to brand (see the Toko section).
 8. **Progress bars / rings / calendars:** track `bg-line`, fill `bg-brand`.
    Calendar "selected range" endpoints use `bg-highlight` (orange), matching
    the kit's date-picker. Score rings stay single-color (brand), not
    red/orange/green thresholds.
 9. **Empty states:** `text-ink` headline, `text-ink-muted` sub-line, one
-   `bg-brand` pill button. Still no illustrations/dashed boxes unless the kit
-   reference actually shows one for that screen type.
+   `bg-brand` pill button. No generic illustrations or dashed boxes. The one
+   exception is Toko (`pose="shrug"` or `pose="think"`) beside the message on
+   the empty/loading states listed in the Toko section — he is not decoration,
+   he is the same character the student is already talking to elsewhere in the
+   app, so his presence there is continuity, not illustration for its own sake.
 10. **Modals / sheets:** `bg-paper rounded-t-3xl shadow-soft`, overlay
     `bg-ink/40`, grabber `bg-line`. Follow the header / scrollable-body /
     pinned-footer structure established in `Prep.tsx`'s interview-setup drawer
@@ -123,6 +129,48 @@ their own internal content to use that width instead of clamping to phone size.
 6. **Sheets/drawers on `lg:`** become centered dialogs, not bottom sheets —
    see rule 10 below; don't touch this per-screen, it's handled once per sheet.
 
+## Toko
+
+The KodeTalent toucan. Named for the toco toucan. Replaces the earlier "Kit"
+persona (a lucide cat glyph plus a cat-pun voice) — Kit's naming and idioms
+were an unrelated borrow with no visual identity behind them; Toko is an
+actual character with a matching voice.
+
+1. **Every render goes through `components/kodetalent/Toko.tsx`.** Never
+   import a pose file directly. This is what lets the artwork improve later
+   (a hand-authored placeholder was replaced by a real 3D-render crop without
+   touching a single call site) without hunting through every usage.
+2. **Poses.** All five are real assets. `head` is the full head+collar bust,
+   alpha-recovered from a flattened JPEG export (`scripts/dechecker.mjs`) —
+   an earlier crop that trimmed the collar cut into the neck itself and read
+   as the character being decapitated, so the crop was dropped in favour of
+   the full bust. `hero`, `shrug`, `think`, `cheer` are the same bust sliced
+   from one generated 2x2 pose sheet (`scripts/dechecker-grid.mjs`). This
+   character has no established body beyond the bust, so gesture is carried
+   only through head tilt, eyes, mouth and a single gloved arm — a prompt
+   asking for a full standing figure with crossed arms just regenerated the
+   familiar head shot instead of inventing new anatomy. The component still
+   falls back to `head` if a pose file is ever missing.
+3. **Colour.** `bg-toko` and `bg-toko-soft` are Toko's own tokens (`#4fb9a0`
+   teal, `#e6f5f1` tint), scoped to surfaces where he is present or speaking —
+   his avatar ring, his chat bubbles, the landing hero panel, the tint behind
+   a "Toko noticed…" card. Never a CTA (indigo stays the only button colour)
+   and never body text (at ~3:1 on white, `--color-toko` fails text contrast —
+   fill only). His beak reuses `--color-highlight`, which is why rule 8 and
+   the non-negotiable both now mention him.
+4. **Voice.** First person, lowercase, short. He reports work the product
+   actually does — reading boards, updating a profile, remembering a chat —
+   never species puns, never "meow"/"purr", no 🐾. The bar: every line should
+   describe something the backend genuinely did or is doing.
+5. **Where he shows up today:** nav (`TokoBubble`, `SideNav`), the AI chat
+   avatar and header, Home's canopy corner and noticing card, the landing
+   page hero, and — per the amendment to rule 9 — the empty/loading states on
+   Opportunities (per-group empty card, feed loading row), the offline banner,
+   and Notebook's empty state.
+6. **Never tint him.** Rule 7's brand-tinting convention for icons explicitly
+   excludes Toko — he keeps his own colours in every context, including on
+   the brand-indigo canopy.
+
 ## Non-negotiable
 
 - Do NOT change any logic, state, data fetching, handler, hook, route, or
@@ -132,7 +180,9 @@ their own internal content to use that width instead of clamping to phone size.
 - `bg-done` (green) is reserved for completed/passing states only — never a
   general accent. `bg-danger` (red) is reserved for errors/scam warnings only
   — never a general accent. `bg-highlight` (orange) is for calendar/badge
-  emphasis only — don't use it as a second CTA color.
+  emphasis or Toko's beak/highlight colouring only — don't use it as a second
+  CTA color. `bg-toko`/`bg-toko-soft` follow the same rule: scoped to Toko, not
+  a general second accent — see the Toko section.
 - Do not regress the sheet-overlay fix: no `willChange`/`backfaceVisibility`
   on the AppLayout page-fade wrapper, and every bottom sheet keeps its
   header/scrollable-body/pinned-footer structure.

@@ -1,5 +1,6 @@
 import { Link, useLocation } from "wouter";
-import { Mail, Cat } from "lucide-react";
+import { Mail } from "lucide-react";
+import { Toko } from "@/components/kodetalent/Toko";
 import { cn } from "@/lib/utils";
 import { NAV_ITEMS } from "./navItems";
 
@@ -12,7 +13,7 @@ interface SideNavProps {
 /**
  * Desktop-only (lg+) left sidebar. Takes over the navigation role BottomNav +
  * TopBar carry on mobile (both are `lg:hidden`): same routes via the shared
- * NAV_ITEMS, plus Inbox and Kit which live in TopBar/KitBubble on mobile.
+ * NAV_ITEMS, plus Inbox and Toko which live in TopBar/TokoBubble on mobile.
  * The bottom avatar chip opens the same ProfileSidebar drawer as the TopBar
  * avatar button does on mobile — it's account/logout, not the /profile page
  * (that's the "Profile" nav item above it).
@@ -68,8 +69,8 @@ export function SideNav({ pendingCount, initials, onProfileClick }: SideNavProps
           onClick={() => setLocation("/chat")}
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[14px] font-semibold text-ink-muted hover:bg-line/60 transition-colors"
         >
-          <Cat className="h-5 w-5" strokeWidth={2} />
-          Chat with Kit
+          <Toko size={20} />
+          Chat with Toko
         </button>
       </nav>
 

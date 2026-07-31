@@ -1,23 +1,12 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
-import { Cat } from "lucide-react";
+import { Toko } from "@/components/kodetalent/Toko";
 import { TaskRow } from "@/components/kodetalent/TaskRow";
 import { useTodayTasks } from "@/hooks/useTodayTasks";
-import { apiFetch } from "@/lib/api/authFetch";
-
-interface StudentProfile {
-  id: number;
-  name: string;
-  field: string;
-  year: number;
-  targetRole: string | null;
-  targetBatch: number | null;
-  skills: Record<string, number>;
-}
+import { useStudentProfile } from "@/hooks/useStudentProfile";
 
 export default function Home() {
   const [, setLocation] = useLocation();
-  const [profile, setProfile] = useState<StudentProfile | null>(null);
   const [studentId, setStudentId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -27,18 +16,9 @@ export default function Home() {
       return;
     }
     setStudentId(id);
-    let alive = true;
-
-    apiFetch(`/api/students/${id}/full-profile`)
-      .then((r) => r.json())
-      .then((prof) => alive && setProfile(prof))
-      .catch(() => null);
-
-    return () => {
-      alive = false;
-    };
   }, [setLocation]);
 
+  const { data: profile } = useStudentProfile(studentId);
   const { tasks, toggleManual, streakCount, noticing } = useTodayTasks({ studentId });
 
   const firstName = profile?.name?.split(" ")[0] ?? "there";
@@ -63,7 +43,7 @@ export default function Home() {
               <h1 className="text-[30px] font-extrabold text-white leading-[1.06] tracking-tight">{firstName}.</h1>
             </div>
             <div className="w-9 h-9 rounded-full bg-white/15 flex items-center justify-center shrink-0 mt-1">
-              <Cat className="w-5 h-5 text-white" strokeWidth={2} />
+              <Toko size={22} />
             </div>
           </div>
 
@@ -93,8 +73,8 @@ export default function Home() {
               onClick={() => setLocation(noticing.href)}
               className="w-full flex items-start gap-3 text-left"
             >
-              <div className="w-8 h-8 rounded-full bg-brand text-white flex items-center justify-center shrink-0">
-                <Cat className="w-4 h-4" strokeWidth={2} />
+              <div className="w-8 h-8 rounded-full bg-toko flex items-center justify-center shrink-0">
+                <Toko size={20} />
               </div>
               <p className="text-[13px] font-medium text-ink leading-snug pt-1">{noticing.text}</p>
             </button>
@@ -103,7 +83,7 @@ export default function Home() {
               onClick={() => setLocation("/notebook")}
               className="text-[11px] font-bold text-brand mt-2 ml-11"
             >
-              See everything Kit has noticed →
+              See everything Toko has noticed →
             </button>
           </div>
         )}

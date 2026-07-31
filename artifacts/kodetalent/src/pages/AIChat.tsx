@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, RefreshCw, CheckCircle, Zap, Mic, Volume2, Cat } from "lucide-react";
+import { Send, RefreshCw, CheckCircle, Zap, Mic, Volume2 } from "lucide-react";
+import { Toko } from "@/components/kodetalent/Toko";
 import { useToast } from "@/hooks/use-toast";
 import { apiFetch } from "@/lib/api/authFetch";
 
@@ -21,7 +22,7 @@ interface Message {
   ts: number;
 }
 
-type KitMood = "normal" | "thinking" | "happy" | "error";
+type TokoMood = "normal" | "thinking" | "happy" | "error";
 
 // ── Speech Recognition types ───────────────────────────────────────────────────
 
@@ -84,7 +85,7 @@ function getSuggestions(text: string): { emoji: string; label: string }[] {
   return shuffled.slice(0, 2);
 }
 
-const REACTIONS = ["🐾", "❤️", "🔥", "😂", "👏", "💯"];
+const REACTIONS = ["❤️", "🔥", "😂", "👏", "💯"];
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -137,15 +138,15 @@ function Confetti() {
   );
 }
 
-// ── Kit avatar ────────────────────────────────────────────────────────────────
+// ── Toko avatar ───────────────────────────────────────────────────────────────
 
-function KitAvatar() {
+function TokoAvatar() {
   return (
     <div
-      aria-label="Kit"
-      className="w-8 h-8 rounded-full bg-brand-soft flex items-center justify-center shrink-0"
+      aria-label="Toko"
+      className="w-8 h-8 rounded-full bg-toko-soft flex items-center justify-center shrink-0"
     >
-      <Cat className="w-4 h-4 text-brand" strokeWidth={2} />
+      <Toko size={22} />
     </div>
   );
 }
@@ -185,7 +186,7 @@ function AIBubble({
       transition={{ type: "spring", stiffness: 400, damping: 30 }}
       className="flex items-end gap-2 max-w-[86%]"
     >
-      <KitAvatar />
+      <TokoAvatar />
 
       <div className="flex flex-col gap-1.5 min-w-0">
         {/* Bubble */}
@@ -193,7 +194,7 @@ function AIBubble({
           <div className="bg-brand text-white rounded-2xl rounded-bl-md px-4 py-3">
             {msg.streaming && !displayText ? (
               <div className="flex items-center gap-2 py-0.5">
-                <span className="text-[12px] text-white/70 italic">Kit is on it</span>
+                <span className="text-[12px] text-white/70 italic">toko is on it</span>
                 <div className="flex gap-0.5">
                   {[0, 1, 2].map((i) => (
                     <motion.div
@@ -314,10 +315,10 @@ function ResumeBanner({ onContinue, onFresh }: { onContinue: () => void; onFresh
       exit={{ opacity: 0, y: -12 }}
       className="mx-4 mt-3 bg-paper shadow-soft rounded-2xl px-4 py-3 flex items-center gap-3"
     >
-      <KitAvatar />
+      <TokoAvatar />
       <div className="flex-1 min-w-0">
         <p className="text-[12px] font-black text-ink">Continue where we left off? 🐾</p>
-        <p className="text-[10px] text-ink-muted">Kit remembers your last chat</p>
+        <p className="text-[10px] text-ink-muted">toko remembers your last chat</p>
       </div>
       <div className="flex gap-2 shrink-0">
         <button onClick={onContinue}
@@ -384,7 +385,7 @@ export default function AIChat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
-  const [kitMood, setKitMood] = useState<KitMood>("normal");
+  const [tokoMood, setTokoMood] = useState<TokoMood>("normal");
   const [listening, setListening] = useState(false);
   const [interimText, setInterimText] = useState("");
   const [showConfetti, setShowConfetti] = useState(false);
@@ -430,7 +431,9 @@ export default function AIChat() {
       id: "welcome",
       role: "ai",
       ts: Date.now(),
-      text: `Heyyy ${name}! 😎 I'm Kit — your career companion and the coolest cat you'll ever meet.\n\nI can update your profile, help you craft a killer bio, add projects, track your progress, or give you the real talk on placements. No corporate nonsense, just straight-up advice.\n\nMeow we're talking — what's on your mind? 🐾`,
+      // Toko's voice: an agent reporting work he actually does, not a mascot
+      // making species puns. Lowercase, first person, short lines.
+      text: `hey ${name}. i'm toko.\n\ni read the job boards every morning, i know what's on your profile, and i'll tell you straight when something is a stretch.\n\ni can fix your bio, add a project, or work out what's missing for a role you want.\n\nwhat are we doing today?`,
       suggestions: [],
     };
     setMessages([welcome]);
@@ -501,7 +504,7 @@ export default function AIChat() {
     setInput("");
     if (inputRef.current) inputRef.current.style.height = "auto";
     setStreaming(true);
-    setKitMood("thinking");
+    setTokoMood("thinking");
 
     try {
       const res = await apiFetch(`/api/students/${studentId}/chat`, {
@@ -544,19 +547,19 @@ export default function AIChat() {
       const suggestions = getSuggestions(displayText).map((s) => `${s.emoji} ${s.label}`);
 
       setMessages((prev) => prev.map((m) => m.id === aiId ? { ...m, streaming: false, profileUpdated, suggestions } : m));
-      setKitMood(profileUpdated ? "happy" : "normal");
+      setTokoMood(profileUpdated ? "happy" : "normal");
 
       if (profileUpdated) {
         setShowConfetti(true);
-        setTimeout(() => { setShowConfetti(false); setKitMood("normal"); }, 2500);
-        toast({ title: "Profile updated!", description: "Kit's got you covered 😎🐾" });
+        setTimeout(() => { setShowConfetti(false); setTokoMood("normal"); }, 2500);
+        toast({ title: "Profile updated!", description: "saved to your profile" });
       }
     } catch {
       setMessages((prev) => prev.map((m) =>
         m.id === aiId ? { ...m, text: "Ugh, something went wrong 😿 Try again in a sec?", streaming: false, suggestions: [] } : m
       ));
-      setKitMood("error");
-      setTimeout(() => setKitMood("normal"), 2000);
+      setTokoMood("error");
+      setTimeout(() => setTokoMood("normal"), 2000);
     } finally {
       setStreaming(false);
       inputRef.current?.focus();
@@ -596,19 +599,19 @@ export default function AIChat() {
       <div className="bg-brand">
         <div className="px-4 py-2.5 flex items-center gap-3 lg:max-w-2xl lg:mx-auto">
           <div
-            aria-label="Kit"
+            aria-label="Toko"
             className="w-8 h-8 rounded-full bg-white/15 flex items-center justify-center shrink-0"
           >
-            <Cat className="w-4 h-4 text-white" strokeWidth={2} />
+            <Toko size={22} />
           </div>
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5">
-              <p className="font-black text-white text-sm">Kit</p>
+              <p className="font-black text-white text-sm">Toko</p>
               <span className="text-[10px] font-bold text-white/80 border border-white/30 px-1.5 py-0.5 rounded-full">AI</span>
             </div>
             <p className="text-[10px] text-white/70 font-semibold">
-              {kitMood === "thinking" ? "Kit is thinking..." : "purrfessional career coach • online"}
+              {tokoMood === "thinking" ? "reading that…" : "online · knows your profile"}
             </p>
           </div>
 
@@ -715,7 +718,7 @@ export default function AIChat() {
                   e.target.style.height = Math.min(e.target.scrollHeight, 96) + "px";
                 }}
                 onKeyDown={handleKeyDown}
-                placeholder={listening ? "Listening... 🎤" : "Ask Kit anything... 🐾"}
+                placeholder={listening ? "Listening... 🎤" : "ask toko anything…"}
                 rows={1}
                 disabled={streaming}
                 className={`w-full resize-none text-[13px] text-ink placeholder:text-ink-muted bg-paper rounded-2xl px-4 py-2.5 outline-none border transition-all max-h-[96px] disabled:opacity-60 ${
@@ -740,7 +743,7 @@ export default function AIChat() {
 
           <p className="text-[9.5px] text-ink-muted text-center mt-2 font-medium flex items-center justify-center gap-1">
             {voiceSupported && <><Volume2 className="w-3 h-3" /> Hold mic to speak •</>}
-            Kit can update your profile • add projects • career advice
+            toko can update your profile · add projects · career advice
           </p>
         </div>
       </div>

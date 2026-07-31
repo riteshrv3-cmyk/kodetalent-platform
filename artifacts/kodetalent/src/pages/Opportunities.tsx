@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { DOMAINS, ROLE_DESTINATIONS, type Domain, type SubDomain } from "@/data/domains";
 import { useCoursePreloader, prefetchCourse } from "@/hooks/useCoursePreloader";
 import { apiFetch } from "@/lib/api/authFetch";
+import { Toko } from "@/components/kodetalent/Toko";
 
 type OpportunityType = "jobs" | "internship" | "freelancing";
 
@@ -520,9 +521,10 @@ export default function Opportunities() {
                   ~1345px above them — a 0.52 CLS, five times the 0.1 budget. */}
               {matchedQuery.isLoading && (
                 <div className="mb-6" data-testid="matched-feed-skeleton">
-                  <div className="flex items-center gap-2 mb-4 px-1">
-                    <Loader2 className="w-4 h-4 animate-spin text-ink-muted" />
-                    <p className="text-[12px] text-ink-muted">Finding work that matches your profile…</p>
+                  <div className="flex items-center gap-2.5 mb-4 px-1">
+                    <Toko pose="think" size={30} className="shrink-0" />
+                    <p className="text-[12px] text-ink-muted">Toko is checking the boards…</p>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-ink-muted" />
                   </div>
                   {[0, 1].map((g) => (
                     <div key={g} className="mb-4">
@@ -599,7 +601,9 @@ export default function Opportunities() {
                              offered as plain links — deliberately not cards
                              with Apply buttons, which is what made a search
                              redirect read as a job. */
-                          <div className="bg-paper rounded-2xl shadow-soft p-4">
+                          <div className="bg-paper rounded-2xl shadow-soft p-4 flex gap-3">
+                            <Toko pose="shrug" size={36} className="shrink-0 mt-0.5" />
+                            <div className="min-w-0">
                             <p className="text-[13px] text-ink font-semibold mb-1">
                               No {group.label.toLowerCase()} for {feed.role} today.
                             </p>
@@ -616,6 +620,7 @@ export default function Opportunities() {
                               ))}
                               {group.searchLinks.length > 0 && "."}
                             </p>
+                            </div>
                           </div>
                         )}
                       </div>

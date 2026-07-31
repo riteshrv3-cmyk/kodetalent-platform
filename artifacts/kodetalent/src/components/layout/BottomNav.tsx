@@ -5,7 +5,7 @@ import { NAV_ITEMS } from "./navItems";
 /**
  * 4-tab shell per the Phase 2 IA plan: every core feature gets one address.
  * Prep = interviews + tests + courses. Jobs = feed + drive-check + resume.
- * Profile = profile + projects + resume builder. Kit's chat becomes a
+ * Profile = profile + projects + resume builder. Toko's chat becomes a
  * floating bubble (tracked separately) rather than a 5th tab.
  * lg+ (desktop) uses SideNav instead — this stays mobile/tablet only.
  */

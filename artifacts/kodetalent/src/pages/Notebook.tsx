@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { ArrowLeft, Share2, Sparkles } from "lucide-react";
 import { apiFetch } from "@/lib/api/authFetch";
+import { Toko } from "@/components/kodetalent/Toko";
 
 interface NotebookEvent {
   action: string;
@@ -27,7 +28,7 @@ function fmtDate(iso: string) {
 }
 
 async function shareWeek(week: NotebookWeek) {
-  const text = `This week on KodeTalent: ${week.summary.tasksDone} tasks done, ${week.summary.practiceSessionsDone} practice sessions, ${week.summary.applicationsAdded} applications added. Kit's been keeping track.`;
+  const text = `This week on KodeTalent: ${week.summary.tasksDone} tasks done, ${week.summary.practiceSessionsDone} practice sessions, ${week.summary.applicationsAdded} applications added. Toko's been keeping track.`;
   if (navigator.share) {
     try {
       await navigator.share({ text });
@@ -69,8 +70,8 @@ export default function Notebook() {
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h1 className="text-[26px] font-extrabold text-ink leading-[1.06] tracking-tight">Kit's Notebook</h1>
-            <p className="text-[12px] text-ink-muted">Everything Kit has noticed about your journey</p>
+            <h1 className="text-[26px] font-extrabold text-ink leading-[1.06] tracking-tight">Toko's Notebook</h1>
+            <p className="text-[12px] text-ink-muted">Everything Toko has noticed about your journey</p>
           </div>
         </div>
       </div>
@@ -90,9 +91,10 @@ export default function Notebook() {
         )}
 
         {weeks && weeks.length === 0 && (
-          <div className="py-12 text-center">
+          <div className="py-12 flex flex-col items-center text-center">
+            <Toko pose="shrug" size={64} className="mb-3" />
             <p className="text-[14px] text-ink">Nothing here yet.</p>
-            <p className="text-[12px] text-ink-muted mt-1">Complete a task or take a mock interview — Kit starts noticing from day one.</p>
+            <p className="text-[12px] text-ink-muted mt-1">Complete a task or take a mock interview — Toko starts noticing from day one.</p>
           </div>
         )}
 

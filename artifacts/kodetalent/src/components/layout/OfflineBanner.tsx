@@ -38,7 +38,7 @@ export function OfflineBanner() {
     >
       <WifiOff className="w-4 h-4 shrink-0" />
       <p className="text-[12px] font-semibold text-paper">
-        You're offline — reconnect to load live opportunities.
+        You're offline — Toko can't reach the boards right now.
       </p>
     </div>
   );

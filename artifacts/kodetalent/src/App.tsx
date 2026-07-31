@@ -70,7 +70,7 @@ const clerkAppearance = {
   options: {
     logoPlacement: "inside" as const,
     logoLinkUrl: basePath || "/",
-    logoImageUrl: `${window.location.origin}${basePath}/favicon.svg`,
+    logoImageUrl: `${window.location.origin}${basePath}/favicon.png`,
     socialButtonsPlacement: "bottom" as const,
     socialButtonsVariant: "blockButton" as const,
   },
