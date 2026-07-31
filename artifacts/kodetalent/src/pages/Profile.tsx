@@ -353,6 +353,7 @@ export default function Profile() {
   const [editSection, setEditSection] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [analyzing, setAnalyzing] = useState<"github" | "linkedin" | null>(null);
+  const [prefillingProjects, setPrefillingProjects] = useState(false);
 
   // ── Edit buffers ──────────────────────────────────────────────────────────
   const [basicForm, setBasicForm] = useState({
@@ -497,6 +498,22 @@ export default function Profile() {
       toast({ title: err instanceof Error ? err.message : "GitHub analysis failed", variant: "destructive" });
     } finally {
       setAnalyzing(null);
+    }
+  };
+
+  const prefillGithubProjects = async () => {
+    if (!studentId) return;
+    setPrefillingProjects(true);
+    try {
+      const r = await apiFetch(`/api/students/${studentId}/profile/github-projects`, { method: "POST" });
+      if (!r.ok) { const e = await r.json(); throw new Error(e.error || "Failed"); }
+      const data = await r.json() as { added: number };
+      await loadProfile(studentId);
+      toast({ title: data.added > 0 ? `Added ${data.added} project${data.added === 1 ? "" : "s"} from GitHub` : "No new repos to add" });
+    } catch (err: unknown) {
+      toast({ title: err instanceof Error ? err.message : "Couldn't fetch GitHub projects", variant: "destructive" });
+    } finally {
+      setPrefillingProjects(false);
     }
   };
 
@@ -964,6 +981,17 @@ export default function Profile() {
                     </div>
                     {linksForm.githubUrl && !showLinkedinForm && (
                       <p className="text-[10px] text-ink-muted pl-1">Tap Analyze to auto-fetch your GitHub stats</p>
+                    )}
+                    {profile.githubUrl && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={prefillGithubProjects}
+                        disabled={prefillingProjects}
+                        className="w-full text-xs rounded-full border border-line text-brand"
+                      >
+                        {prefillingProjects ? <><Loader2 className="w-3 h-3 mr-2 animate-spin" /> Fetching repos...</> : "Prefill projects from GitHub"}
+                      </Button>
                     )}
                   </div>
 
