@@ -371,6 +371,8 @@ export interface GenerateResumeBody {
   resumeName?: string;
   roleTitle?: string;
   jobTags?: string[];
+  /** ID of the resume this was retargeted from. Used for lineage tracking. */
+  parentResumeId?: number;
 }
 
 export type UpdateResumeContentSkillSectionsItem = {

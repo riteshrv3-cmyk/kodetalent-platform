@@ -1631,6 +1631,9 @@ components:
           type: array
           items:
             type: string
+        parentResumeId:
+          type: integer
+          description: ID of the resume this was retargeted from. Used for lineage tracking.
 
     UpdateResumeContent:
       type: object

@@ -699,11 +699,13 @@ function ResumeCard({
   onDelete,
   onDownload,
   onEdit,
+  onRetarget,
 }: {
   resume: SavedResume;
   onDelete: () => void;
   onDownload: () => void;
   onEdit: () => void;
+  onRetarget: () => void;
 }) {
   const tmpl = resolveTemplateConfig(resume.templateId);
   const date = new Date(resume.createdAt).toLocaleDateString("en-IN", {
@@ -767,7 +769,7 @@ function ResumeCard({
         </p>
       )}
 
-      <div className="flex gap-2">
+      <div className="flex gap-2 flex-wrap">
         <Button
           onClick={onEdit}
           variant="outline"
@@ -777,8 +779,16 @@ function ResumeCard({
           Edit
         </Button>
         <Button
+          onClick={onRetarget}
+          variant="outline"
+          className="flex-1 h-9 rounded-full font-bold text-xs border border-line text-ink-muted"
+        >
+          <Zap className="w-3.5 h-3.5 mr-1.5" />
+          Retarget
+        </Button>
+        <Button
           onClick={onDownload}
-          className="flex-1 h-9 rounded-full bg-brand text-white hover:bg-brand/90 font-bold text-xs"
+          className="w-full h-9 rounded-full bg-brand text-white hover:bg-brand/90 font-bold text-xs"
         >
           <Download className="w-3.5 h-3.5 mr-1.5" />
           Download PDF
@@ -798,6 +808,7 @@ function GenerateSheet({
   initialRole = "",
   initialJd = "",
   initialTags = [],
+  initialParentResumeId,
 }: {
   onClose: () => void;
   onGenerated: (r: SavedResume) => void;
@@ -806,6 +817,7 @@ function GenerateSheet({
   initialRole?: string;
   initialJd?: string;
   initialTags?: string[];
+  initialParentResumeId?: number;
 }) {
   const { toast } = useToast();
   const [templateId, setTemplateId] = useState("ats");
@@ -841,6 +853,7 @@ function GenerateSheet({
         body: JSON.stringify({
           templateId, jdText, companyName, resumeName,
           roleTitle: initialRole, jobTags: initialTags,
+          ...(initialParentResumeId ? { parentResumeId: initialParentResumeId } : {}),
         }),
         signal: abortCtrl.signal,
       });
@@ -1156,7 +1169,7 @@ export default function Resume() {
   const [resumes, setResumes] = useState<SavedResume[]>([]);
   const [loading, setLoading] = useState(true);
   const [generateFor, setGenerateFor] = useState<
-    { company: string; role: string; jd?: string; tags?: string[] } | null
+    { company: string; role: string; jd?: string; tags?: string[]; parentResumeId?: number } | null
   >(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [editingResume, setEditingResume] = useState<SavedResume | null>(null);
@@ -1329,6 +1342,13 @@ export default function Resume() {
                       });
                     }}
                     onEdit={() => setEditingResume(resume)}
+                    onRetarget={() => setGenerateFor({
+                      company: resume.companyName ?? "",
+                      role: "",
+                      jd: resume.jdText ?? "",
+                      tags: [],
+                      parentResumeId: resume.id,
+                    })}
                   />
                 ))}
               </AnimatePresence>
@@ -1367,6 +1387,7 @@ export default function Resume() {
             initialRole={generateFor.role}
             initialJd={generateFor.jd}
             initialTags={generateFor.tags}
+            initialParentResumeId={generateFor.parentResumeId}
           />
         )}
       </AnimatePresence>

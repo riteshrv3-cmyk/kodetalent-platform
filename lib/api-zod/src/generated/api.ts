@@ -759,7 +759,8 @@ export const GenerateResumeBody = zod.object({
   "companyName": zod.string().optional(),
   "resumeName": zod.string().optional(),
   "roleTitle": zod.string().optional(),
-  "jobTags": zod.array(zod.string()).optional()
+  "jobTags": zod.array(zod.string()).optional(),
+  "parentResumeId": zod.number().optional().describe('ID of the resume this was retargeted from. Used for lineage tracking.')
 })
 
 export const GenerateResumeResponse = zod.object({

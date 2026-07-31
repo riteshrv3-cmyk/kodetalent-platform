@@ -67,9 +67,19 @@ router.post("/students/:id/resumes", requireStudent({ allowGuest: true }), rlRes
   const resumeName = body.resumeName?.slice(0, 200);
   const roleTitle = (body.roleTitle ?? "").slice(0, 200);
   const jobTags = (body.jobTags ?? []).slice(0, 8).map(t => t.slice(0, 40));
+  const parentResumeId = body.parentResumeId ?? null;
 
   const [student] = await db.select().from(studentsTable).where(eq(studentsTable.id, id)).limit(1);
   if (!student) return res.status(404).json({ error: "Student not found" });
+
+  // Validate parentResumeId belongs to this student (if provided).
+  if (parentResumeId) {
+    const [parent] = await db.select({ id: studentResumesTable.id, studentId: studentResumesTable.studentId })
+      .from(studentResumesTable).where(eq(studentResumesTable.id, parentResumeId)).limit(1);
+    if (!parent || parent.studentId !== id) {
+      return res.status(400).json({ error: "Invalid parentResumeId" });
+    }
+  }
 
   const isSSE = req.headers.accept === "text/event-stream";
   const controller = new AbortController();
@@ -121,6 +131,7 @@ router.post("/students/:id/resumes", requireStudent({ allowGuest: true }), rlRes
         evidenceMap,
         generation,
         schemaVersion: 2,
+        parentResumeId: parentResumeId ?? null,
       })
       .returning();
 
