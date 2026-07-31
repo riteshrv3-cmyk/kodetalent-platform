@@ -24,6 +24,8 @@ tags:
     description: Leaderboard operations
   - name: anthropic
     description: Anthropic AI chat operations
+  - name: resumes
+    description: AI-generated, per-JD tailored resume operations
 paths:
   /healthz:
     get:
@@ -656,6 +658,137 @@ paths:
           description: SSE stream of assistant response chunks
           content:
             text/event-stream: {}
+
+  /students/{id}/resumes:
+    get:
+      operationId: listResumes
+      tags: [resumes]
+      summary: List a student's saved resumes, newest first
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of resumes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Resume"
+    post:
+      operationId: generateResume
+      tags: [resumes]
+      summary: Generate a new AI-tailored resume via the 4-stage pipeline (JD analysis, evidence mapping, drafting, adversarial critique)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateResumeBody"
+      responses:
+        "201":
+          description: Generated resume
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Resume"
+        "400":
+          description: Invalid template or request body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Student not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /students/{id}/resumes/{resumeId}:
+    patch:
+      operationId: updateResume
+      tags: [resumes]
+      summary: Edit a resume's content and/or switch its template — ATS score is recomputed deterministically against the edited content
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: resumeId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateResumeBody"
+      responses:
+        "200":
+          description: Updated resume
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Resume"
+        "400":
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Resume not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      operationId: deleteResume
+      tags: [resumes]
+      summary: Delete a resume
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: resumeId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                required:
+                  - ok
+        "404":
+          description: Resume not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 
 components:
   schemas:
@@ -1427,3 +1560,155 @@ components:
           type: string
       required:
         - error
+
+    Resume:
+      type: object
+      properties:
+        id:
+          type: integer
+        studentId:
+          type: integer
+        name:
+          type: string
+        templateId:
+          type: string
+        jdText:
+          type: string
+          nullable: true
+        companyName:
+          type: string
+          nullable: true
+        roleTitle:
+          type: string
+          nullable: true
+        jobTags:
+          type: array
+          items:
+            type: string
+        content:
+          type: object
+          description: ResumeDocument (see @workspace/resume-core) — a nested, versioned shape not modeled field-by-field here.
+          additionalProperties: true
+        atsScore:
+          type: integer
+          nullable: true
+        atsReport:
+          type: object
+          nullable: true
+          additionalProperties: true
+        schemaVersion:
+          type: integer
+        parentResumeId:
+          type: integer
+          nullable: true
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - studentId
+        - name
+        - templateId
+        - content
+        - createdAt
+
+    GenerateResumeBody:
+      type: object
+      properties:
+        templateId:
+          type: string
+          enum: [ats, classic, tech, minimal]
+        jdText:
+          type: string
+        companyName:
+          type: string
+        resumeName:
+          type: string
+        roleTitle:
+          type: string
+        jobTags:
+          type: array
+          items:
+            type: string
+
+    UpdateResumeContent:
+      type: object
+      description: Fields the current edit surface can change — see EditResumeSheet in Resume.tsx. A future edit-surface expansion will widen this.
+      properties:
+        summary:
+          type: string
+        skillSections:
+          type: array
+          items:
+            type: object
+            properties:
+              category:
+                type: string
+              items:
+                type: string
+            required:
+              - category
+              - items
+        experience:
+          type: array
+          items:
+            type: object
+            properties:
+              company:
+                type: string
+              role:
+                type: string
+              period:
+                type: string
+              bullets:
+                type: array
+                items:
+                  type: string
+            required:
+              - company
+              - role
+        projects:
+          type: array
+          items:
+            type: object
+            properties:
+              title:
+                type: string
+              tech:
+                type: string
+              bullets:
+                type: array
+                items:
+                  type: string
+            required:
+              - title
+              - tech
+        certifications:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              issuer:
+                type: string
+              date:
+                type: string
+            required:
+              - name
+              - issuer
+        achievements:
+          type: array
+          items:
+            type: string
+
+    UpdateResumeBody:
+      type: object
+      description: content and/or templateId — at least one must be provided
+      properties:
+        content:
+          $ref: "#/components/schemas/UpdateResumeContent"
+        templateId:
+          type: string
+          enum: [ats, classic, tech, minimal]

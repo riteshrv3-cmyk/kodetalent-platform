@@ -343,6 +343,15 @@ function EditResumeSheet({
   );
   const [achievements, setAchievements] = useState((resume.content.achievements ?? []).map(toBulletString));
 
+  // Snapshot of the initial values, for the dirty-state guard below — a
+  // backdrop click used to discard edits with no warning.
+  const initialSnapshot = useRef(JSON.stringify({ templateId: resume.templateId, summary, skillSections, projects, achievements })).current;
+  const isDirty = JSON.stringify({ templateId, summary, skillSections, projects, achievements }) !== initialSnapshot;
+  const requestClose = () => {
+    if (isDirty && !window.confirm("Discard unsaved changes to this resume?")) return;
+    onClose();
+  };
+
   // Reconstructed on every edit — feeds both the live preview and the live ATS
   // recompute, so what's shown always matches what Save will persist.
   const liveDoc = useMemo(() => upgradeContent({
@@ -457,7 +466,7 @@ function EditResumeSheet({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="fixed inset-0 z-[60] bg-ink/40 flex items-end lg:items-center"
-      onClick={onClose}
+      onClick={requestClose}
     >
       <motion.div
         initial={{ y: "100%" }}
@@ -482,7 +491,7 @@ function EditResumeSheet({
             >
               <Eye className="w-3.5 h-3.5" /> Preview
             </button>
-            <button onClick={onClose} className="w-8 h-8 rounded-full border border-line flex items-center justify-center">
+            <button onClick={requestClose} className="w-8 h-8 rounded-full border border-line flex items-center justify-center">
               <X className="w-4 h-4 text-ink-muted" />
             </button>
           </div>

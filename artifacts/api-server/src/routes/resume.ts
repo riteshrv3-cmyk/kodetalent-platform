@@ -3,6 +3,7 @@ import { db } from "@workspace/db";
 import { studentsTable, studentResumesTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import { buildAtsReport, upgradeContent, type TemplateDensity } from "@workspace/resume-core";
+import { GenerateResumeBody, UpdateResumeBody } from "@workspace/api-zod";
 import { rlResumeGen } from "../middlewares/rateLimit";
 import { requireStudent } from "../middlewares/studentAuth";
 import { logEvent } from "../lib/events";
@@ -56,27 +57,16 @@ router.post("/students/:id/resumes", requireStudent({ allowGuest: true }), rlRes
   const id = Number(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
 
-  const rawBody = req.body as {
-    templateId?: unknown;
-    jdText?: unknown;
-    companyName?: unknown;
-    resumeName?: unknown;
-    roleTitle?: unknown;
-    jobTags?: unknown;
-  };
+  const parsedBody = GenerateResumeBody.safeParse(req.body);
+  if (!parsedBody.success) return res.status(400).json({ error: parsedBody.error.message });
+  const body = parsedBody.data;
 
-  const rawTemplate = typeof rawBody.templateId === "string" ? rawBody.templateId : "classic";
-  if (!VALID_TEMPLATES.includes(rawTemplate as TemplateId)) {
-    return res.status(400).json({ error: `Invalid templateId. Must be one of: ${VALID_TEMPLATES.join(", ")}` });
-  }
-  const templateId = rawTemplate as TemplateId;
-  const jdText = typeof rawBody.jdText === "string" ? rawBody.jdText.slice(0, 5000) : "";
-  const companyName = typeof rawBody.companyName === "string" ? rawBody.companyName.slice(0, 200) : "";
-  const resumeName = typeof rawBody.resumeName === "string" ? rawBody.resumeName.slice(0, 200) : undefined;
-  const roleTitle = typeof rawBody.roleTitle === "string" ? rawBody.roleTitle.slice(0, 200) : "";
-  const jobTags = Array.isArray(rawBody.jobTags)
-    ? rawBody.jobTags.filter((t): t is string => typeof t === "string").slice(0, 8).map(t => t.slice(0, 40))
-    : [];
+  const templateId = (body.templateId ?? "classic") as TemplateId;
+  const jdText = (body.jdText ?? "").slice(0, 5000);
+  const companyName = (body.companyName ?? "").slice(0, 200);
+  const resumeName = body.resumeName?.slice(0, 200);
+  const roleTitle = (body.roleTitle ?? "").slice(0, 200);
+  const jobTags = (body.jobTags ?? []).slice(0, 8).map(t => t.slice(0, 40));
 
   const [student] = await db.select().from(studentsTable).where(eq(studentsTable.id, id)).limit(1);
   if (!student) return res.status(404).json({ error: "Student not found" });
@@ -167,108 +157,15 @@ router.patch("/students/:id/resumes/:resumeId", requireStudent({ allowGuest: tru
   const resumeId = Number(req.params.resumeId);
   if (isNaN(id) || isNaN(resumeId)) return res.status(400).json({ error: "Invalid id" });
 
-  const rawBody = req.body as { content?: unknown; templateId?: unknown };
+  const parsedBody = UpdateResumeBody.safeParse(req.body);
+  if (!parsedBody.success) return res.status(400).json({ error: parsedBody.error.message });
+  const body = parsedBody.data;
 
-  const hasContent = rawBody.content !== undefined;
-  if (hasContent && (typeof rawBody.content !== "object" || rawBody.content === null || Array.isArray(rawBody.content))) {
-    return res.status(400).json({ error: "content must be an object" });
-  }
-
-  let templateId: TemplateId | undefined;
-  if (rawBody.templateId !== undefined) {
-    if (typeof rawBody.templateId !== "string" || !VALID_TEMPLATES.includes(rawBody.templateId as TemplateId)) {
-      return res.status(400).json({ error: `templateId must be one of: ${VALID_TEMPLATES.join(", ")}` });
-    }
-    templateId = rawBody.templateId as TemplateId;
-  }
-
-  if (!hasContent && !templateId) {
+  if (body.content === undefined && body.templateId === undefined) {
     return res.status(400).json({ error: "Provide content and/or templateId to update" });
   }
-
-  const incoming = (rawBody.content ?? {}) as Record<string, unknown>;
-
-  if ("summary" in incoming && typeof incoming.summary !== "string") {
-    return res.status(400).json({ error: "content.summary must be a string" });
-  }
-
-  if ("skillSections" in incoming) {
-    if (!Array.isArray(incoming.skillSections)) {
-      return res.status(400).json({ error: "content.skillSections must be an array" });
-    }
-    for (const s of incoming.skillSections as unknown[]) {
-      if (typeof s !== "object" || s === null || Array.isArray(s)) {
-        return res.status(400).json({ error: "Each skillSection must be an object" });
-      }
-      const section = s as Record<string, unknown>;
-      if (typeof section.category !== "string" || typeof section.items !== "string") {
-        return res.status(400).json({ error: "Each skillSection must have string category and items" });
-      }
-    }
-  }
-
-  if ("experience" in incoming) {
-    if (!Array.isArray(incoming.experience)) {
-      return res.status(400).json({ error: "content.experience must be an array" });
-    }
-    for (const e of incoming.experience as unknown[]) {
-      if (typeof e !== "object" || e === null || Array.isArray(e)) {
-        return res.status(400).json({ error: "Each experience entry must be an object" });
-      }
-      const exp = e as Record<string, unknown>;
-      if (typeof exp.company !== "string" || typeof exp.role !== "string") {
-        return res.status(400).json({ error: "Each experience entry must have string company and role" });
-      }
-      if ("period" in exp && exp.period !== undefined && typeof exp.period !== "string") {
-        return res.status(400).json({ error: "experience.period must be a string if provided" });
-      }
-      if (!Array.isArray(exp.bullets) || (exp.bullets as unknown[]).some(b => typeof b !== "string")) {
-        return res.status(400).json({ error: "Each experience.bullets must be an array of strings" });
-      }
-    }
-  }
-
-  if ("projects" in incoming) {
-    if (!Array.isArray(incoming.projects)) {
-      return res.status(400).json({ error: "content.projects must be an array" });
-    }
-    for (const p of incoming.projects as unknown[]) {
-      if (typeof p !== "object" || p === null || Array.isArray(p)) {
-        return res.status(400).json({ error: "Each project must be an object" });
-      }
-      const proj = p as Record<string, unknown>;
-      if (typeof proj.title !== "string" || typeof proj.tech !== "string") {
-        return res.status(400).json({ error: "Each project must have string title and tech" });
-      }
-      if (!Array.isArray(proj.bullets) || (proj.bullets as unknown[]).some(b => typeof b !== "string")) {
-        return res.status(400).json({ error: "Each project.bullets must be an array of strings" });
-      }
-    }
-  }
-
-  if ("certifications" in incoming) {
-    if (!Array.isArray(incoming.certifications)) {
-      return res.status(400).json({ error: "content.certifications must be an array" });
-    }
-    for (const c of incoming.certifications as unknown[]) {
-      if (typeof c !== "object" || c === null || Array.isArray(c)) {
-        return res.status(400).json({ error: "Each certification must be an object" });
-      }
-      const cert = c as Record<string, unknown>;
-      if (typeof cert.name !== "string" || typeof cert.issuer !== "string") {
-        return res.status(400).json({ error: "Each certification must have string name and issuer" });
-      }
-      if ("date" in cert && cert.date !== undefined && typeof cert.date !== "string") {
-        return res.status(400).json({ error: "certification.date must be a string if provided" });
-      }
-    }
-  }
-
-  if ("achievements" in incoming) {
-    if (!Array.isArray(incoming.achievements) || (incoming.achievements as unknown[]).some(a => typeof a !== "string")) {
-      return res.status(400).json({ error: "content.achievements must be an array of strings" });
-    }
-  }
+  const templateId = body.templateId as TemplateId | undefined;
+  const incoming = (body.content ?? {}) as Record<string, unknown>;
 
   try {
     const [resume] = await db
