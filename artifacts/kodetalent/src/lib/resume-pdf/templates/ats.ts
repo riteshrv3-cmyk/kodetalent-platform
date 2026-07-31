@@ -5,8 +5,8 @@ import type { TemplateConfig } from "../templateConfig";
 // which to pick.
 export const atsTemplate: TemplateConfig = {
   id: "ats",
-  label: "ATS Pro",
-  description: "Maximum parse safety — recommended",
+  label: "Campus placement (standard format)",
+  description: "Parser-safe layout — recommended for campus drives and bulk applications",
   fontFamily: "sans",
   density: "normal",
   accent: null,

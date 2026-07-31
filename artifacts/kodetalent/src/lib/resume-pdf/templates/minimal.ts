@@ -2,8 +2,8 @@ import type { TemplateConfig } from "../templateConfig";
 
 export const minimalTemplate: TemplateConfig = {
   id: "minimal",
-  label: "Minimal",
-  description: "No rules, generous whitespace — ultra-clean",
+  label: "Research and higher studies",
+  description: "No rules, generous whitespace — clean and academic",
   fontFamily: "sans",
   density: "airy",
   accent: null,

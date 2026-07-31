@@ -2,8 +2,8 @@ import type { TemplateConfig } from "../templateConfig";
 
 export const classicTemplate: TemplateConfig = {
   id: "classic",
-  label: "Classic",
-  description: "Centered header, serif body — timeless",
+  label: "Non-tech and business roles",
+  description: "Centered header, serif body — professional and polished",
   fontFamily: "serif",
   density: "airy",
   accent: null,

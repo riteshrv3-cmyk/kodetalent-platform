@@ -4,7 +4,7 @@ import { apiFetch, setGuestToken } from "@/lib/api/authFetch";
 import { ResumeImport, type ImportSummary } from "@/components/ResumeImport";
 import { ROLE_DESTINATIONS } from "@/data/domains";
 
-type Screen = "goal" | "explore";
+type Screen = "upload" | "goal" | "explore";
 
 const ROLES = ["SDE", "Data/ML", "App Dev", "Cybersecurity", "Not sure"];
 const CURRENT_YEAR = new Date().getFullYear();
@@ -17,7 +17,7 @@ function opportunitiesHref(role: string | null): string {
 
 export default function Onboarding() {
   const [, setLocation] = useLocation();
-  const [screen, setScreen] = useState<Screen>("goal");
+  const [screen, setScreen] = useState<Screen>("upload");
   const [name, setName] = useState("");
   const [targetRole, setTargetRole] = useState<string | null>(null);
   const [targetBatch, setTargetBatch] = useState<number | null>(null);
@@ -50,7 +50,7 @@ export default function Onboarding() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             name: name.trim() || "Student",
-            email: "", // ignored server-side for anonymous creates; CreateStudentBody just requires the field to be present
+            email: "",
             college: "Not set",
             city: "Not set",
             year: 1,
@@ -64,6 +64,7 @@ export default function Onboarding() {
         if (student.guestToken) setGuestToken(student.guestToken);
       }
 
+      // Import happens after the student row exists — import-resume needs the id.
       if (parsedResumeText) {
         try {
           const r = await apiFetch(`/api/students/${studentId}/profile/import-resume`, {
@@ -111,106 +112,153 @@ export default function Onboarding() {
     }
   }
 
+  // ── Screen: explore (success) ───────────────────────────────────────────────
+
   if (screen === "explore") {
     const dest = targetRole ? ROLE_DESTINATIONS[targetRole] : undefined;
     return (
       <div className="min-h-[100dvh] bg-brand flex flex-col items-center justify-center px-6 text-center">
         <p className="text-[13px] font-semibold uppercase tracking-wider text-white/70 mb-3">You're in</p>
         <h1 className="text-[30px] font-extrabold text-white leading-[1.1] mb-3">
-          {dest ? `Here's what's open in ${dest.label}.` : "Let's find your opportunities."}
+          {importSummary && (importSummary.projectsAdded > 0 || importSummary.experienceAdded > 0)
+            ? "Profile pre-filled from your resume."
+            : dest
+              ? `Here's what's open in ${dest.label}.`
+              : "Let's build your resume."}
         </h1>
         <div className="mb-8 max-w-xs">
-          <p className="text-[14px] text-white/70">
-            Live jobs, internships and freelance work
-            {targetRole && targetRole !== "Not sure" ? ` for ${targetRole}` : ""} — updated daily.
-          </p>
-          {importSummary && (importSummary.projectsAdded > 0 || importSummary.certificationsAdded > 0 || importSummary.experienceAdded > 0) && (
-            <p className="text-[13px] text-white/80 mt-2">
-              Your profile is pre-filled from your resume — {importSummary.projectsAdded} project(s), {importSummary.certificationsAdded} certification(s) ready.
+          {importSummary && (importSummary.projectsAdded > 0 || importSummary.experienceAdded > 0) ? (
+            <p className="text-[14px] text-white/70">
+              {importSummary.projectsAdded} project(s), {importSummary.experienceAdded ?? 0} experience(s)
+              {importSummary.certificationsAdded > 0 ? `, ${importSummary.certificationsAdded} cert(s)` : ""} imported.
+              Now tailor it to your first job.
+            </p>
+          ) : (
+            <p className="text-[14px] text-white/70">
+              Paste a job description and get a resume that is tailored to it — in under 3 minutes.
             </p>
           )}
         </div>
         <button
-          onClick={() => setLocation(opportunitiesHref(targetRole))}
+          onClick={() => setLocation("/resume")}
           className="w-full max-w-xs bg-white text-brand text-[15px] font-bold rounded-full py-4"
         >
-          See opportunities
+          Build my resume
         </button>
-        <button onClick={() => setLocation("/home")} className="mt-4 text-[13px] text-white/70 underline">
-          Skip for now
+        <button onClick={() => setLocation(opportunitiesHref(targetRole))} className="mt-4 text-[13px] text-white/70 underline">
+          Browse jobs instead
         </button>
       </div>
     );
   }
 
+  // ── Screen: goal (name / role / batch) ─────────────────────────────────────
+
+  if (screen === "goal") {
+    return (
+      <div className="min-h-[100dvh] bg-canvas">
+        <div className="bg-brand px-6 pt-[calc(4rem+env(safe-area-inset-top))] pb-10">
+          <h1 className="text-[26px] font-extrabold text-white leading-[1.1] mb-1">Tell us a bit more</h1>
+          <p className="text-[13px] text-white/70">This shapes what the app suggests for you.</p>
+        </div>
+
+        <div className="bg-paper rounded-t-3xl -mt-6 px-6 pt-6 pb-10 max-w-md lg:max-w-lg mx-auto shadow-soft">
+          <label className="text-[12px] font-semibold text-ink-muted uppercase tracking-wider mb-2 block">Your name</label>
+          <input
+            autoFocus
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="First name"
+            className="w-full rounded-2xl border border-line bg-paper px-4 py-3 text-[15px] text-ink placeholder:text-ink-muted focus:outline-none focus:border-brand mb-6"
+          />
+
+          <label className="text-[12px] font-semibold text-ink-muted uppercase tracking-wider mb-2 block">Target role</label>
+          <div className="grid grid-cols-2 gap-2 mb-6">
+            {ROLES.map((role) => (
+              <button
+                key={role}
+                onClick={() => setTargetRole(role)}
+                className={`h-12 rounded-xl border-2 font-semibold text-[14px] transition-colors ${
+                  targetRole === role ? "bg-brand text-white border-brand" : "bg-paper text-ink border-line"
+                }`}
+              >
+                {role}
+              </button>
+            ))}
+          </div>
+
+          <label className="text-[12px] font-semibold text-ink-muted uppercase tracking-wider mb-2 block">Target batch</label>
+          <div className="grid grid-cols-4 gap-2 mb-8">
+            {BATCHES.map((batch) => (
+              <button
+                key={batch}
+                onClick={() => setTargetBatch(batch)}
+                className={`h-12 rounded-xl border-2 font-semibold text-[14px] transition-colors ${
+                  targetBatch === batch ? "bg-brand text-white border-brand" : "bg-paper text-ink border-line"
+                }`}
+              >
+                {batch}
+              </button>
+            ))}
+          </div>
+
+          {error && <p className="text-[12px] text-danger mb-4">{error}</p>}
+
+          <button
+            onClick={submitGoal}
+            disabled={submitting}
+            className="w-full bg-brand text-white text-[15px] font-bold rounded-full py-4 disabled:opacity-40"
+          >
+            {submitting ? "Setting up…" : "Continue"}
+          </button>
+          <button onClick={() => setScreen("upload")} className="mt-4 w-full text-[13px] text-ink-muted text-center">
+            Back
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Screen: upload (default first screen) ──────────────────────────────────
+
   return (
     <div className="min-h-[100dvh] bg-canvas">
-      {/* Fullscreen route, no TopBar — clear the status bar ourselves. */}
       <div className="bg-brand px-6 pt-[calc(4rem+env(safe-area-inset-top))] pb-10">
-        <h1 className="text-[26px] font-extrabold text-white leading-[1.1] mb-1">What's your goal?</h1>
-        <p className="text-[13px] text-white/70">This shapes everything the app suggests for you.</p>
+        <h1 className="text-[26px] font-extrabold text-white leading-[1.1] mb-1">Build your resume in 3 minutes</h1>
+        <p className="text-[13px] text-white/70">Upload your old one and we'll do the rest — no forms.</p>
       </div>
 
       <div className="bg-paper rounded-t-3xl -mt-6 px-6 pt-6 pb-10 max-w-md lg:max-w-lg mx-auto shadow-soft">
-        <label className="text-[12px] font-semibold text-ink-muted uppercase tracking-wider mb-2 block">Your name</label>
-        <input
-          autoFocus
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="First name"
-          className="w-full rounded-2xl border border-line bg-paper px-4 py-3 text-[15px] text-ink placeholder:text-ink-muted focus:outline-none focus:border-brand mb-6"
-        />
-
-        <label className="text-[12px] font-semibold text-ink-muted uppercase tracking-wider mb-2 block">Target role</label>
-        <div className="grid grid-cols-2 gap-2 mb-6">
-          {ROLES.map((role) => (
-            <button
-              key={role}
-              onClick={() => setTargetRole(role)}
-              className={`h-12 rounded-xl border-2 font-semibold text-[14px] transition-colors ${
-                targetRole === role ? "bg-brand text-white border-brand" : "bg-paper text-ink border-line"
-              }`}
-            >
-              {role}
-            </button>
-          ))}
-        </div>
-
-        <label className="text-[12px] font-semibold text-ink-muted uppercase tracking-wider mb-2 block">Target batch</label>
-        <div className="grid grid-cols-4 gap-2 mb-8">
-          {BATCHES.map((batch) => (
-            <button
-              key={batch}
-              onClick={() => setTargetBatch(batch)}
-              className={`h-12 rounded-xl border-2 font-semibold text-[14px] transition-colors ${
-                targetBatch === batch ? "bg-brand text-white border-brand" : "bg-paper text-ink border-line"
-              }`}
-            >
-              {batch}
-            </button>
-          ))}
-        </div>
-
-        <div className="mb-8 rounded-2xl border border-line bg-canvas p-4">
-          <p className="text-[13px] font-semibold text-ink mb-1">Have a resume?</p>
-          <p className="text-[12px] text-ink-muted mb-3">
-            Upload it and we'll fill your profile for you. (Optional)
+        <div className="mb-5 rounded-2xl border-2 border-brand/20 bg-brand/5 p-5">
+          <p className="text-[14px] font-semibold text-ink mb-1">Upload your resume or CV</p>
+          <p className="text-[12px] text-ink-muted mb-1">
+            We'll extract your projects, experience, and skills automatically.
+          </p>
+          <p className="text-[11px] text-ink-muted mb-4">
+            LinkedIn tip: Profile &gt; More &gt; Save to PDF — works too.
           </p>
           <ResumeImport
             deferred
             onTextReady={(text) => setParsedResumeText(text)}
           />
+          {parsedResumeText && (
+            <p className="text-[12px] text-green-600 font-medium mt-3">Resume loaded. Continue to finish setup.</p>
+          )}
         </div>
 
-        {error && <p className="text-[12px] text-danger mb-4">{error}</p>}
-
         <button
-          onClick={submitGoal}
-          disabled={submitting}
-          className="w-full bg-brand text-white text-[15px] font-bold rounded-full py-4 disabled:opacity-40"
+          onClick={() => setScreen("goal")}
+          className="w-full bg-brand text-white text-[15px] font-bold rounded-full py-4"
         >
-          {submitting ? "Setting up…" : "Continue"}
+          {parsedResumeText ? "Continue" : "Continue without uploading"}
         </button>
+
+        <p className="text-[12px] text-ink-muted text-center mt-4">
+          No resume yet?{" "}
+          <button onClick={() => setScreen("goal")} className="text-brand underline font-medium">
+            Enter details manually
+          </button>
+        </p>
       </div>
     </div>
   );

@@ -164,7 +164,7 @@ function RoleSelectRedirect() {
           localStorage.setItem("clerkEmail", user.primaryEmailAddress.emailAddress);
         }
         setGuestToken(null); // claimed rows never carry a guest token again
-        setLocation(data.created ? "/onboarding" : "/home");
+        setLocation(data.created ? "/onboarding" : "/resume");
       })
       .catch(() => {
         if (alive) setLocation("/onboarding");
