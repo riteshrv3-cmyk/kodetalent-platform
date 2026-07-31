@@ -8,6 +8,7 @@ import { requireStudent } from "../middlewares/studentAuth";
 import { contextPack } from "../lib/contextPack";
 import { extractJson } from "../lib/extractJson";
 import { logEvent } from "../lib/events";
+import { cacheGetOrSet } from "../lib/aiCache";
 
 const router = Router();
 
@@ -476,6 +477,82 @@ Rules:
   } catch (err) {
     req.log.error({ err }, "Failed to import resume");
     return res.status(500).json({ error: "Failed to import resume" });
+  }
+});
+
+// ─── POST /students/:id/profile/github-projects ─────────────────────────────
+
+interface GithubRepo {
+  name: string;
+  description: string | null;
+  language: string | null;
+  html_url: string;
+  stargazers_count: number;
+  fork: boolean;
+  topics: string[];
+}
+
+router.post("/students/:id/profile/github-projects", requireStudent(), rlAiMedium, async (req, res) => {
+  const id = Number(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
+
+  const [student] = await db.select().from(studentsTable).where(eq(studentsTable.id, id)).limit(1);
+  if (!student) return res.status(404).json({ error: "Student not found" });
+
+  const githubUrl = student.githubUrl as string | null;
+  if (!githubUrl) return res.status(400).json({ error: "No GitHub URL on profile — add one first" });
+
+  const match = githubUrl.match(/github\.com\/([^\/\?\s]+)/);
+  if (!match) return res.status(400).json({ error: "Invalid GitHub URL on profile" });
+  const username = match[1];
+
+  try {
+    const { value: repos } = await cacheGetOrSet<GithubRepo[]>(
+      { namespace: "github-repos-v1", keyParts: [username], ttlSeconds: 86_400 },
+      async () => {
+        const resp = await fetch(
+          `https://api.github.com/users/${username}/repos?sort=pushed&per_page=20`,
+          { headers: { Accept: "application/vnd.github.v3+json", "User-Agent": "KodeTalent-App" } },
+        );
+        if (!resp.ok) throw new Error(`GitHub API ${resp.status}`);
+        return (await resp.json()) as GithubRepo[];
+      },
+    );
+
+    const ownRepos = repos.filter(r => !r.fork).slice(0, 10);
+
+    const existingProjects = Array.isArray(student.projects)
+      ? (student.projects as { id: string; title: string }[])
+      : [];
+    const existingKeys = new Set(existingProjects.map(p => dedupeKey(p.title)));
+
+    const newProjects = ownRepos
+      .filter(r => !existingKeys.has(dedupeKey(r.name)))
+      .map((r, i) => ({
+        id: `gh_${Date.now()}_${i}`,
+        title: r.name,
+        description: r.description ?? "",
+        techStack: r.language ?? "",
+        githubUrl: r.html_url,
+        bullets: [] as string[],
+      }));
+
+    if (newProjects.length === 0) {
+      return res.json({ added: 0, projects: existingProjects });
+    }
+
+    const merged = [...existingProjects, ...newProjects];
+    await db.update(studentsTable).set({ projects: merged }).where(eq(studentsTable.id, id));
+
+    const profileStrength = computeProfileStrength({ ...student, projects: merged });
+    await db.update(studentsTable).set({ profileStrength }).where(eq(studentsTable.id, id));
+
+    logEvent(id, "profile_imported", `${newProjects.length} GitHub project(s) prefilled`);
+
+    return res.json({ added: newProjects.length, projects: merged, profileStrength });
+  } catch (err) {
+    req.log.error({ err }, "GitHub projects prefill failed");
+    return res.status(500).json({ error: "Failed to fetch GitHub projects" });
   }
 });
 
