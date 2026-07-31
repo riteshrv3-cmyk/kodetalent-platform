@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { studentsTable, studentResumesTable } from "@workspace/db";
-import { eq, desc, sql } from "drizzle-orm";
+import { studentsTable, studentResumesTable, applicationsTable } from "@workspace/db";
+import { eq, and, desc, sql, isNull, ilike } from "drizzle-orm";
 import { buildAtsReport, upgradeContent, type TemplateDensity, type ResumeVersion, MAX_RESUME_VERSIONS } from "@workspace/resume-core";
 import { GenerateResumeBody, UpdateResumeBody } from "@workspace/api-zod";
 import { rlResumeGen } from "../middlewares/rateLimit";
@@ -371,6 +371,48 @@ router.post("/students/:id/resumes/:resumeId/bullet-rewrite", requireStudent({ a
     return res.status(500).json({ error: "Server error" });
   }
   return;
+});
+
+// ─── POST /students/:id/resumes/:resumeId/downloaded ──────────────────────────
+// Fired client-side right after a PDF/DOCX download succeeds. The "proof
+// loop": if this resume has a company name and there's a recent unlinked
+// application for the same company, link them automatically — closing the
+// gap between generating a tailored resume and actually knowing it got used.
+
+router.post("/students/:id/resumes/:resumeId/downloaded", requireStudent({ allowGuest: true }), async (req, res) => {
+  const id = Number(req.params.id);
+  const resumeId = Number(req.params.resumeId);
+  if (isNaN(id) || isNaN(resumeId)) return res.status(400).json({ error: "Invalid id" });
+
+  try {
+    const [resume] = await db.select().from(studentResumesTable).where(eq(studentResumesTable.id, resumeId)).limit(1);
+    if (!resume || resume.studentId !== id) return res.status(404).json({ error: "Resume not found" });
+
+    logEvent(id, "resume_downloaded", resume.name, { templateId: resume.templateId });
+
+    let linkedApplicationId: number | null = null;
+    if (resume.companyName?.trim()) {
+      const [match] = await db
+        .select({ id: applicationsTable.id })
+        .from(applicationsTable)
+        .where(and(
+          eq(applicationsTable.studentId, id),
+          isNull(applicationsTable.resumeId),
+          ilike(applicationsTable.company, resume.companyName.trim()),
+        ))
+        .orderBy(desc(applicationsTable.createdAt))
+        .limit(1);
+      if (match) {
+        await db.update(applicationsTable).set({ resumeId }).where(eq(applicationsTable.id, match.id));
+        linkedApplicationId = match.id;
+      }
+    }
+
+    return res.json({ ok: true, linkedApplicationId });
+  } catch (err) {
+    req.log.error({ err }, "Failed to record resume download");
+    return res.status(500).json({ error: "Server error" });
+  }
 });
 
 // ─── DELETE /students/:id/resumes/:resumeId ───────────────────────────────────

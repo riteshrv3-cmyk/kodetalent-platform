@@ -1,11 +1,17 @@
 import { pgTable, serial, integer, text, timestamp, jsonb, index } from "drizzle-orm/pg-core";
 import { studentsTable } from "./students";
+import { studentResumesTable } from "./studentResumes";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
 export const applicationsTable = pgTable("applications", {
   id: serial("id").primaryKey(),
   studentId: integer("student_id").notNull().references(() => studentsTable.id),
+  // Which tailored resume (if any) was used for this application — the "proof
+  // loop" that closes the gap between generating a resume and actually using
+  // it. Set automatically when a downloaded resume's company matches this
+  // application, or by an explicit link action. Null means not yet linked.
+  resumeId: integer("resume_id").references(() => studentResumesTable.id, { onDelete: "set null" }),
   source: text("source").notNull(), // 'pasted' | 'drive_check'
   rawText: text("raw_text").notNull(),
   company: text("company"),

@@ -6,7 +6,7 @@ import {
   applicationsTable,
   dailyTasksTable,
 } from "@workspace/db";
-import { eq, and, desc, gte, inArray } from "drizzle-orm";
+import { eq, and, desc, gte, inArray, isNull } from "drizzle-orm";
 import { istToday, istYesterday, GENERIC_SKILLS } from "./dailyTasks";
 import type { EventAction } from "./events";
 
@@ -24,6 +24,7 @@ const SUPPRESS_DAYS = 3;
 const GAP_FRAME_WINDOW_DAYS = 7;
 const AVOIDANCE_DAYS = 14;
 const STALE_APPLICATION_DAYS = 7;
+const UNLINKED_RESUME_DAYS = 10;
 const AVOIDANCE_ACTIONS: EventAction[] = ["task_completed", "interview_completed", "test_completed"];
 
 function daysBetween(a: string, b: string): number {
@@ -52,9 +53,9 @@ export async function getNoticings(
   const sinceDate = new Date(Date.now() - AVOIDANCE_DAYS * 86_400_000);
   const sevenDaysAgo = new Date(Date.now() - 7 * 86_400_000).toISOString().slice(0, 10);
 
-  // None of these five reads depend on each other or on anything computed from
+  // None of these six reads depend on each other or on anything computed from
   // one another — fire them concurrently instead of one round trip at a time.
-  const [todayTasks, recentSessions, recentEvents, [staleApp], thisWeekTasks] = await Promise.all([
+  const [todayTasks, recentSessions, recentEvents, [staleApp], thisWeekTasks, [unlinkedApp]] = await Promise.all([
     needsStreakCheck
       ? db
           .select({ done: dailyTasksTable.done })
@@ -89,6 +90,12 @@ export async function getNoticings(
       .select({ done: dailyTasksTable.done })
       .from(dailyTasksTable)
       .where(and(eq(dailyTasksTable.studentId, studentId), gte(dailyTasksTable.date, sevenDaysAgo))),
+    db
+      .select({ company: applicationsTable.company, createdAt: applicationsTable.createdAt })
+      .from(applicationsTable)
+      .where(and(eq(applicationsTable.studentId, studentId), isNull(applicationsTable.resumeId)))
+      .orderBy(applicationsTable.createdAt)
+      .limit(1),
   ]);
 
   // comeback — highest weight
@@ -184,6 +191,20 @@ export async function getNoticings(
         text: `${staleApp.company ?? "Your application"} has sat at "${staleApp.status}" for ${staleDays} days — worth a follow-up?`,
         href: "/pipeline",
         weight: 40,
+        gapFramed: true,
+      });
+    }
+  }
+
+  // unlinked_resume — oldest application with no tailored resume linked yet
+  if (unlinkedApp) {
+    const ageDays = Math.round((Date.now() - unlinkedApp.createdAt.getTime()) / 86_400_000);
+    if (ageDays >= UNLINKED_RESUME_DAYS) {
+      candidates.push({
+        type: "unlinked_resume",
+        text: `It's been ${ageDays} days since you added ${unlinkedApp.company ?? "that application"} — send a tailored resume?`,
+        href: "/resume",
+        weight: 42,
         gapFramed: true,
       });
     }

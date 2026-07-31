@@ -291,6 +291,13 @@ function TargetRecommendations({
 // read-time conversion, so this keeps working unchanged once Phase 5 starts
 // persisting v2 content directly.
 
+// Fire-and-forget: logs the download and auto-links this resume to a
+// same-company application if one's waiting unlinked. Never blocks or
+// fails the download itself.
+function notifyResumeDownloaded(resume: SavedResume): void {
+  apiFetch(`/api/students/${resume.studentId}/resumes/${resume.id}/downloaded`, { method: "POST" }).catch(() => {});
+}
+
 async function downloadResumePDF(resume: SavedResume): Promise<void> {
   const doc = upgradeContent(resume.content);
   const { doc: pdfDoc, filename } = await renderResumePdf(doc, resume.templateId, {
@@ -298,6 +305,7 @@ async function downloadResumePDF(resume: SavedResume): Promise<void> {
     companyName: resume.companyName ?? null,
   });
   openPDF(pdfDoc, filename);
+  notifyResumeDownloaded(resume);
 }
 
 async function downloadResumeDocx(resume: SavedResume): Promise<void> {
@@ -311,6 +319,7 @@ async function downloadResumeDocx(resume: SavedResume): Promise<void> {
   a.click();
   document.body.removeChild(a);
   setTimeout(() => URL.revokeObjectURL(url), 5000);
+  notifyResumeDownloaded(resume);
 }
 
 // Opens PDF in a new tab instead of direct download — avoids Chrome/Edge
