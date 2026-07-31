@@ -45,6 +45,7 @@ const RecruiterPortalShortcut = lazy(
   () => import("@/pages/RecruiterPortalShortcut"),
 );
 const Onboarding = lazy(() => import("@/pages/Onboarding"));
+const PublicResume = lazy(() => import("@/pages/PublicResume"));
 
 const clerkPubKey = publishableKeyFromHost(
   window.location.hostname,
@@ -220,6 +221,13 @@ function Router() {
       <Route path="/join/:code">{(p) => <Join code={p.code} />}</Route>
       <Route path="/sign-in/*?" component={SignInPage} />
       <Route path="/sign-up/*?" component={SignUpPage} />
+      <Route path="/r/:slug">
+        {(p) => (
+          <Suspense fallback={<PageSkeleton />}>
+            <PublicResume slug={p.slug} />
+          </Suspense>
+        )}
+      </Route>
       <Route>
         <AppLayout>
           <Suspense fallback={<PageSkeleton />}>

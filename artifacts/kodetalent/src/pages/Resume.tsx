@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Download, Plus, Trash2, Sparkles,
   Loader2, Building2, AlignLeft, ChevronRight, X, Pencil,
-  Check, PlusCircle, MinusCircle, Zap, Eye, FileText, Copy
+  Check, PlusCircle, MinusCircle, Zap, Eye, FileText, Copy, Share2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -69,6 +69,8 @@ interface SavedResume {
   evidenceMap?: { thesis?: string; honestGaps?: { term: string; whyItMatters: string }[]; coverage?: { jdTerm: string; status: string }[] } | null;
   generation?: { degraded?: boolean } | null;
   atsReport?: { scorePct: number; matched: { term: string; where: string }[]; missing: { term: string; importance: string }[] } | null;
+  shareSlug?: string | null;
+  shareViews?: number | null;
 }
 
 // ─── Template definitions ─────────────────────────────────────────────────────
@@ -714,6 +716,7 @@ function ResumeCard({
   onDownload,
   onDownloadDocx,
   onCopyText,
+  onShare,
   onEdit,
   onRetarget,
 }: {
@@ -722,6 +725,7 @@ function ResumeCard({
   onDownload: () => void;
   onDownloadDocx: () => void;
   onCopyText: () => void;
+  onShare: () => void;
   onEdit: () => void;
   onRetarget: () => void;
 }) {
@@ -826,6 +830,14 @@ function ResumeCard({
           title="Copy as plain text"
         >
           <Copy className="w-3.5 h-3.5" />
+        </Button>
+        <Button
+          onClick={onShare}
+          variant="outline"
+          className="h-9 w-9 rounded-full border border-line text-ink-muted flex items-center justify-center shrink-0"
+          title={resume.shareSlug ? "Share link — already active" : "Create public share link"}
+        >
+          <Share2 className={`w-3.5 h-3.5 ${resume.shareSlug ? "text-brand" : ""}`} />
         </Button>
       </div>
     </motion.div>
@@ -1418,6 +1430,25 @@ export default function Resume() {
                       }).catch(() => {
                         toast({ title: "Copy failed", description: "Clipboard access denied", variant: "destructive" });
                       });
+                    }}
+                    onShare={() => {
+                      if (resume.shareSlug) {
+                        const url = `${window.location.origin}/r/${resume.shareSlug}`;
+                        navigator.clipboard.writeText(url).then(() => {
+                          toast({ title: "Link copied", description: url });
+                        }).catch(() => toast({ title: url }));
+                        return;
+                      }
+                      if (!studentId) return;
+                      apiFetch(`/api/students/${studentId}/resumes/${resume.id}/share`, { method: "POST" })
+                        .then(r => r.json())
+                        .then((data: { slug: string }) => {
+                          const url = `${window.location.origin}/r/${data.slug}`;
+                          setResumes(prev => prev.map(r => r.id === resume.id ? { ...r, shareSlug: data.slug } : r));
+                          navigator.clipboard.writeText(url).catch(() => undefined);
+                          toast({ title: "Share link created", description: url });
+                        })
+                        .catch(() => toast({ title: "Couldn't create share link", variant: "destructive" }));
                     }}
                     onEdit={() => setEditingResume(resume)}
                     onRetarget={() => setGenerateFor({

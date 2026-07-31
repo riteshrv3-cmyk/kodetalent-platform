@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { studentsTable, studentResumesTable } from "@workspace/db";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, sql } from "drizzle-orm";
 import { buildAtsReport, upgradeContent, type TemplateDensity } from "@workspace/resume-core";
 import { GenerateResumeBody, UpdateResumeBody } from "@workspace/api-zod";
 import { rlResumeGen } from "../middlewares/rateLimit";
@@ -250,6 +250,87 @@ router.delete("/students/:id/resumes/:resumeId", requireStudent({ allowGuest: tr
   } catch (err) {
     req.log.error({ err }, "Failed to delete resume");
     return res.status(500).json({ error: "Server error" });
+  }
+});
+
+// ─── POST /students/:id/resumes/:resumeId/share ───────────────────────────────
+// Generates a public share slug for a resume (idempotent — re-calling returns
+// the same slug). The slug is 8 random alphanumeric chars, unique index ensures
+// no collision reaches the DB.
+
+function generateSlug(): string {
+  const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+  return Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+}
+
+router.post("/students/:id/resumes/:resumeId/share", requireStudent({ allowGuest: false }), async (req, res) => {
+  const id = Number(req.params.id);
+  const resumeId = Number(req.params.resumeId);
+  if (isNaN(id) || isNaN(resumeId)) return res.status(400).json({ error: "Invalid id" });
+
+  try {
+    const [resume] = await db.select().from(studentResumesTable).where(eq(studentResumesTable.id, resumeId)).limit(1);
+    if (!resume || resume.studentId !== id) return res.status(404).json({ error: "Resume not found" });
+
+    if (resume.shareSlug) return res.json({ slug: resume.shareSlug, views: resume.shareViews });
+
+    // Retry once on the (very unlikely) slug collision.
+    let slug = generateSlug();
+    try {
+      const [updated] = await db.update(studentResumesTable).set({ shareSlug: slug }).where(eq(studentResumesTable.id, resumeId)).returning({ shareSlug: studentResumesTable.shareSlug });
+      slug = updated.shareSlug!;
+    } catch {
+      slug = generateSlug();
+      const [updated] = await db.update(studentResumesTable).set({ shareSlug: slug }).where(eq(studentResumesTable.id, resumeId)).returning({ shareSlug: studentResumesTable.shareSlug });
+      slug = updated.shareSlug!;
+    }
+
+    logEvent(id, "resume_shared", resume.name, {});
+    return res.json({ slug, views: 0 });
+  } catch (err) {
+    req.log.error({ err }, "Failed to create share link");
+    return res.status(500).json({ error: "Server error" });
+  }
+});
+
+// ─── GET /r/:slug ─────────────────────────────────────────────────────────────
+// Public resume view — no auth required. Returns only the fields safe to expose.
+
+router.get("/r/:slug", async (req, res) => {
+  const { slug } = req.params;
+  if (!slug || slug.length > 32) return res.status(404).json({ error: "Not found" });
+
+  try {
+    const [resume] = await db.select().from(studentResumesTable).where(eq(studentResumesTable.shareSlug, slug)).limit(1);
+    if (!resume) return res.status(404).json({ error: "Not found" });
+
+    // Only expose the fields the public page needs.
+    return res.json({
+      id: resume.id,
+      name: resume.name,
+      templateId: resume.templateId,
+      content: resume.content,
+      shareViews: resume.shareViews,
+    });
+  } catch (err) {
+    req.log.error({ err }, "Failed to fetch public resume");
+    return res.status(500).json({ error: "Server error" });
+  }
+});
+
+// ─── POST /r/:slug/view ────────────────────────────────────────────────────────
+// Increments the view counter. Fire-and-forget from the client.
+
+router.post("/r/:slug/view", async (req, res) => {
+  const { slug } = req.params;
+  if (!slug || slug.length > 32) return res.status(404).json({ error: "Not found" });
+  try {
+    await db.update(studentResumesTable)
+      .set({ shareViews: sql`${studentResumesTable.shareViews} + 1` })
+      .where(eq(studentResumesTable.shareSlug, slug));
+    return res.json({ ok: true });
+  } catch {
+    return res.json({ ok: false });
   }
 });
 
