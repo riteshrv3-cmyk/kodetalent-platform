@@ -17,6 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import confetti from "canvas-confetti";
 import { apiFetch } from "@/lib/api/authFetch";
 import { ResumeImport } from "@/components/ResumeImport";
+import { MonthYearPicker } from "@/components/MonthYearPicker";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -34,6 +35,22 @@ interface Certification {
   issuer: string;
   date?: string;
   credentialUrl?: string;
+}
+interface ExperienceEntry {
+  id: string;
+  company: string;
+  role: string;
+  period: string;
+  bullets: string[];
+}
+interface Education {
+  id: string;
+  degree: string;
+  institution: string;
+  field?: string;
+  start?: string;
+  end?: string;
+  cgpa?: string;
 }
 interface GitHubStats {
   username: string;
@@ -70,6 +87,8 @@ interface FullProfile {
   dreamCompany?: string;
   projects: Project[];
   certifications: Certification[];
+  experience: ExperienceEntry[];
+  education: Education[];
   openToWork: boolean;
   workMode?: string;
   preferredLocations: string[];
@@ -347,6 +366,13 @@ export default function Profile() {
   const [techInput, setTechInput] = useState("");
   const [showAddProject, setShowAddProject] = useState(false);
   const [showAddCert, setShowAddCert] = useState(false);
+  const [newEducation, setNewEducation] = useState<Omit<Education, "id">>({ degree: "", institution: "", field: "", start: "", end: "", cgpa: "" });
+  const [showAddEducation, setShowAddEducation] = useState(false);
+  const [newExperience, setNewExperience] = useState<Omit<ExperienceEntry, "id">>({ company: "", role: "", period: "", bullets: [] });
+  const [expStart, setExpStart] = useState("");
+  const [expEnd, setExpEnd] = useState("");
+  const [expBulletInput, setExpBulletInput] = useState("");
+  const [showAddExperience, setShowAddExperience] = useState(false);
   const [linkedinForm, setLinkedinForm] = useState({ headline: "", summary: "", skills: "", experience: "" });
   const [showLinkedinForm, setShowLinkedinForm] = useState(false);
 
@@ -357,6 +383,18 @@ export default function Profile() {
     if (!id) { setLocation("/"); return; }
     setStudentId(parseInt(id, 10));
   }, [setLocation]);
+
+  // Resume-page "add experience" nudge — scrolls straight to the section.
+  useEffect(() => {
+    if (!profile) return;
+    const target = sessionStorage.getItem("profileScrollTo");
+    if (!target) return;
+    sessionStorage.removeItem("profileScrollTo");
+    if (target === "experience-section") setShowAddExperience(true);
+    setTimeout(() => {
+      document.getElementById(target)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 200);
+  }, [profile]);
 
   // Course → Project bridge
   useEffect(() => {
@@ -514,6 +552,48 @@ export default function Profile() {
   const removeCert = async (id: string) => {
     if (!profile || !studentId) return;
     await save({ certifications: profile.certifications.filter(c => c.id !== id) }, "Certification removed");
+  };
+
+  const openAddEducation = () => {
+    if (!profile) return;
+    if (!showAddEducation && profile.education.length === 0) {
+      // Seed from onboarding data already given — nobody should have to retype
+      // their college/branch/CGPA a second time.
+      setNewEducation({
+        degree: "", institution: profile.college === "Not set" ? "" : profile.college,
+        field: profile.field === "Not set" ? "" : profile.field, start: "", end: "",
+        cgpa: profile.cgpa || "",
+      });
+    }
+    setShowAddEducation(v => !v);
+  };
+
+  const addEducation = async () => {
+    if (!profile || !studentId || !newEducation.degree || !newEducation.institution) return;
+    const updated: Education[] = [...profile.education, { ...newEducation, id: `ed_${Date.now()}` }];
+    await save({ education: updated }, "Education added");
+    setNewEducation({ degree: "", institution: "", field: "", start: "", end: "", cgpa: "" });
+    setShowAddEducation(false);
+  };
+
+  const removeEducation = async (id: string) => {
+    if (!profile || !studentId) return;
+    await save({ education: profile.education.filter(e => e.id !== id) }, "Education removed");
+  };
+
+  const addExperienceEntry = async () => {
+    if (!profile || !studentId || !newExperience.company || !newExperience.role) return;
+    const period = expEnd ? `${expStart} – ${expEnd}` : expStart;
+    const updated: ExperienceEntry[] = [...profile.experience, { ...newExperience, period, id: `exp_${Date.now()}` }];
+    await save({ experience: updated }, "Experience added");
+    setNewExperience({ company: "", role: "", period: "", bullets: [] });
+    setExpStart(""); setExpEnd(""); setExpBulletInput("");
+    setShowAddExperience(false);
+  };
+
+  const removeExperienceEntry = async (id: string) => {
+    if (!profile || !studentId) return;
+    await save({ experience: profile.experience.filter(e => e.id !== id) }, "Experience removed");
   };
 
   if (loading || !profile) {
@@ -795,14 +875,14 @@ export default function Profile() {
           )}
         </AnimatePresence>
 
-        {/* ── Kit's Notebook link ── */}
+        {/* ── Toko's Notebook link ── */}
         <button
           onClick={() => setLocation("/notebook")}
           className="w-full bg-brand-soft rounded-2xl p-4 flex items-center justify-between text-left"
         >
           <div>
-            <h3 className="text-[14px] font-bold text-brand">Kit's Notebook</h3>
-            <p className="text-[11px] text-ink-muted mt-0.5">Everything Kit has noticed about your journey</p>
+            <h3 className="text-[14px] font-bold text-brand">Toko's Notebook</h3>
+            <p className="text-[11px] text-ink-muted mt-0.5">Everything Toko has noticed about your journey</p>
           </div>
           <span className="text-brand text-[13px] font-bold">→</span>
         </button>
@@ -1030,6 +1110,158 @@ export default function Profile() {
                 + Write a short bio (helps recruiters remember you)
               </button>
             )}
+          </div>
+        </div>
+
+        {/* ── Education ── */}
+        <div id="education-section" className="bg-paper rounded-2xl shadow-soft scroll-mt-4">
+          <div className="p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-[14px] font-bold text-ink flex items-center gap-2"><BookOpen className="w-4 h-4 text-ink" /> Education</h3>
+              <button onClick={openAddEducation} className="flex items-center gap-1 text-[12px] font-bold text-ink">
+                {showAddEducation ? <X className="w-4 h-4" /> : <><Plus className="w-4 h-4" /> Add</>}
+              </button>
+            </div>
+
+            <AnimatePresence>
+              {showAddEducation && (
+                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="mb-4 space-y-2 overflow-hidden">
+                  <Input placeholder="Degree (e.g. B.Tech Computer Science) *" value={newEducation.degree} onChange={e => setNewEducation(ed => ({ ...ed, degree: e.target.value }))} className="text-sm" />
+                  <Input placeholder="Institution *" value={newEducation.institution} onChange={e => setNewEducation(ed => ({ ...ed, institution: e.target.value }))} className="text-sm" />
+                  <Input placeholder="Field / branch (optional)" value={newEducation.field || ""} onChange={e => setNewEducation(ed => ({ ...ed, field: e.target.value }))} className="text-sm" />
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <p className="text-[10px] font-bold text-ink-muted uppercase tracking-wider mb-1">Start</p>
+                      <MonthYearPicker value={newEducation.start || ""} onChange={v => setNewEducation(ed => ({ ...ed, start: v }))} />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-ink-muted uppercase tracking-wider mb-1">End</p>
+                      <MonthYearPicker value={newEducation.end || ""} onChange={v => setNewEducation(ed => ({ ...ed, end: v }))} allowPresent />
+                    </div>
+                  </div>
+                  <Input placeholder="CGPA (optional)" value={newEducation.cgpa || ""} onChange={e => setNewEducation(ed => ({ ...ed, cgpa: e.target.value }))} className="text-sm" />
+                  <Button onClick={addEducation} disabled={saving || !newEducation.degree || !newEducation.institution} className="w-full bg-brand text-white font-bold rounded-full text-sm">
+                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Add Education"}
+                  </Button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {profile.education.length === 0 && !showAddEducation && (
+              <div className="text-center">
+                <p className="text-[14px] text-ink">No education added yet</p>
+                <p className="text-[12px] text-ink-muted mt-0.5">Your degree, college and CGPA for the resume</p>
+                <button onClick={openAddEducation} className="w-full mt-3 bg-brand text-white text-[13px] font-bold rounded-full px-4 py-3">
+                  Add your education
+                </button>
+              </div>
+            )}
+
+            <div>
+              {profile.education.map(ed => (
+                <div key={ed.id} className="py-4 border-t border-line first:border-t-0 relative group">
+                  <button onClick={() => removeEducation(ed.id)} className="absolute top-4 right-0 opacity-0 group-hover:opacity-100 transition-opacity text-ink-muted">
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                  <h4 className="text-[14px] font-semibold text-ink pr-6">{ed.degree}</h4>
+                  <p className="text-[12px] text-ink-muted mt-0.5">
+                    {ed.institution}{ed.field ? ` · ${ed.field}` : ""}
+                  </p>
+                  <p className="text-[11px] text-ink-muted mt-0.5">
+                    {[ed.start, ed.end].filter(Boolean).join(" – ")}{ed.cgpa ? ` · CGPA ${ed.cgpa}` : ""}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* ── Experience ── */}
+        <div id="experience-section" className="bg-paper rounded-2xl shadow-soft scroll-mt-4">
+          <div className="p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-[14px] font-bold text-ink flex items-center gap-2"><Building2 className="w-4 h-4 text-ink" /> Experience</h3>
+              <button onClick={() => setShowAddExperience(!showAddExperience)} className="flex items-center gap-1 text-[12px] font-bold text-ink">
+                {showAddExperience ? <X className="w-4 h-4" /> : <><Plus className="w-4 h-4" /> Add</>}
+              </button>
+            </div>
+
+            <AnimatePresence>
+              {showAddExperience && (
+                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="mb-4 space-y-2 overflow-hidden">
+                  <Input placeholder="Company *" value={newExperience.company} onChange={e => setNewExperience(x => ({ ...x, company: e.target.value }))} className="text-sm" />
+                  <Input placeholder="Role *" value={newExperience.role} onChange={e => setNewExperience(x => ({ ...x, role: e.target.value }))} className="text-sm" />
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <p className="text-[10px] font-bold text-ink-muted uppercase tracking-wider mb-1">Start</p>
+                      <MonthYearPicker value={expStart} onChange={setExpStart} />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-ink-muted uppercase tracking-wider mb-1">End</p>
+                      <MonthYearPicker value={expEnd} onChange={setExpEnd} allowPresent />
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Add a bullet (press Enter)"
+                      value={expBulletInput}
+                      onChange={e => setExpBulletInput(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === "Enter" && expBulletInput.trim() && newExperience.bullets.length < 6) {
+                          setNewExperience(x => ({ ...x, bullets: [...x.bullets, expBulletInput.trim()] }));
+                          setExpBulletInput("");
+                        }
+                      }}
+                      className="text-sm"
+                    />
+                  </div>
+                  {newExperience.bullets.length > 0 && (
+                    <ul className="space-y-1">
+                      {newExperience.bullets.map((b, i) => (
+                        <li key={i} className="flex items-start gap-2 text-[12px] text-ink-muted">
+                          <span className="flex-1">{b}</span>
+                          <button onClick={() => setNewExperience(x => ({ ...x, bullets: x.bullets.filter((_, j) => j !== i) }))} className="text-danger shrink-0">
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  <Button onClick={addExperienceEntry} disabled={saving || !newExperience.company || !newExperience.role} className="w-full bg-brand text-white font-bold rounded-full text-sm">
+                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Add Experience"}
+                  </Button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {profile.experience.length === 0 && !showAddExperience && (
+              <div className="text-center">
+                <p className="text-[14px] text-ink">No experience yet</p>
+                <p className="text-[12px] text-ink-muted mt-0.5">Internships, part-time work, freelance — anything real</p>
+                <button onClick={() => setShowAddExperience(true)} className="w-full mt-3 bg-brand text-white text-[13px] font-bold rounded-full px-4 py-3">
+                  Add your first experience
+                </button>
+              </div>
+            )}
+
+            <div>
+              {profile.experience.map(exp => (
+                <div key={exp.id} className="py-4 border-t border-line first:border-t-0 relative group">
+                  <button onClick={() => removeExperienceEntry(exp.id)} className="absolute top-4 right-0 opacity-0 group-hover:opacity-100 transition-opacity text-ink-muted">
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                  <h4 className="text-[14px] font-semibold text-ink pr-6">{exp.role}</h4>
+                  <p className="text-[12px] text-ink-muted mt-0.5">{exp.company}{exp.period ? ` · ${exp.period}` : ""}</p>
+                  {exp.bullets.length > 0 && (
+                    <ul className="mt-2 space-y-1">
+                      {exp.bullets.map((b, i) => (
+                        <li key={i} className="text-[12px] text-ink-muted leading-relaxed">– {b}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 

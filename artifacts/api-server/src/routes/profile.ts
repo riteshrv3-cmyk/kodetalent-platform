@@ -25,6 +25,8 @@ function computeProfileStrength(s: typeof studentsTable.$inferSelect): number {
   if (projects.length >= 3) score += 5;
   const certs = Array.isArray(s.certifications) ? s.certifications : [];
   if (certs.length >= 1) score += 10;
+  const experience = Array.isArray(s.experience) ? s.experience : [];
+  if (experience.length >= 1) score += 10;
   const locs = Array.isArray(s.preferredLocations) ? s.preferredLocations : [];
   if (locs.length > 0) score += 5;
   if (s.expectedSalary) score += 5;
@@ -58,6 +60,8 @@ router.get("/students/:id/full-profile", requireStudent({ allowGuest: true }), a
       skills: (student.skills as Record<string, number>) || {},
       projects: Array.isArray(student.projects) ? student.projects : [],
       certifications: Array.isArray(student.certifications) ? student.certifications : [],
+      experience: Array.isArray(student.experience) ? student.experience : [],
+      education: Array.isArray(student.education) ? student.education : [],
       preferredLocations: Array.isArray(student.preferredLocations) ? student.preferredLocations : [],
       profileStrength,
       commitmentScore,
@@ -74,10 +78,79 @@ const ALLOWED_FIELDS = [
   "name", "college", "city", "year", "field", "photoUrl",
   "githubUrl", "linkedinUrl", "portfolioUrl", "phone", "bio",
   "cgpa", "targetPackage", "dreamCompany",
-  "projects", "certifications",
+  "projects", "certifications", "experience", "education",
   "openToWork", "workMode", "preferredLocations", "expectedSalary",
   "targetRole", "targetBatch",
 ] as const;
+
+// ─── Profile JSON field shape validation ──────────────────────────────────────
+// projects/certifications/experience/education previously had zero shape
+// validation on write — a client could PATCH arbitrary JSON into these jsonb
+// columns. Applied to both write paths that share ALLOWED_FIELDS: the PATCH
+// route below and the Kit-chat updater further down.
+
+const str = (v: unknown, cap: number) => typeof v === "string" ? v.slice(0, cap) : "";
+const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
+
+function validateStringArray(v: unknown, maxItems: number, maxLen: number): string[] {
+  if (!Array.isArray(v)) return [];
+  return v.filter((s): s is string => typeof s === "string").slice(0, maxItems).map(s => s.slice(0, maxLen));
+}
+
+const PROFILE_JSON_FIELD_VALIDATORS: Record<string, (raw: unknown) => unknown[] | null> = {
+  projects: (raw) => {
+    if (!Array.isArray(raw)) return null;
+    return raw.filter(isRecord).slice(0, 20).map(p => ({
+      id: str(p.id, 60) || undefined,
+      title: str(p.title, 150),
+      description: str(p.description, 500),
+      techStack: validateStringArray(p.techStack, 12, 40),
+      githubUrl: str(p.githubUrl, 300) || undefined,
+      liveUrl: str(p.liveUrl, 300) || undefined,
+    })).filter(p => p.title);
+  },
+  certifications: (raw) => {
+    if (!Array.isArray(raw)) return null;
+    return raw.filter(isRecord).slice(0, 20).map(c => ({
+      id: str(c.id, 60) || undefined,
+      name: str(c.name, 150),
+      issuer: str(c.issuer, 150),
+      date: str(c.date, 40) || undefined,
+      credentialUrl: str(c.credentialUrl, 300) || undefined,
+    })).filter(c => c.name);
+  },
+  experience: (raw) => {
+    if (!Array.isArray(raw)) return null;
+    return raw.filter(isRecord).slice(0, 20).map(e => ({
+      id: str(e.id, 60) || undefined,
+      company: str(e.company, 150),
+      role: str(e.role, 150),
+      period: str(e.period, 60),
+      bullets: validateStringArray(e.bullets, 6, 300),
+    })).filter(e => e.company && e.role);
+  },
+  education: (raw) => {
+    if (!Array.isArray(raw)) return null;
+    return raw.filter(isRecord).slice(0, 20).map(ed => ({
+      id: str(ed.id, 60) || undefined,
+      degree: str(ed.degree, 150),
+      institution: str(ed.institution, 200),
+      field: str(ed.field, 100) || undefined,
+      start: str(ed.start, 20),
+      end: str(ed.end, 20),
+      cgpa: str(ed.cgpa, 20) || undefined,
+    })).filter(ed => ed.degree && ed.institution);
+  },
+};
+
+/** Validates + sanitizes the JSON-array profile fields; leaves non-JSON fields untouched. */
+function validateProfileJsonField(key: string, value: unknown): { ok: true; value: unknown } | { ok: false; error: string } {
+  const validator = PROFILE_JSON_FIELD_VALIDATORS[key];
+  if (!validator) return { ok: true, value };
+  const result = validator(value);
+  if (result === null) return { ok: false, error: `${key} must be an array` };
+  return { ok: true, value: result };
+}
 
 router.patch("/students/:id/profile", requireStudent({ allowGuest: true }), async (req, res) => {
   const id = Number(req.params.id);
@@ -85,7 +158,11 @@ router.patch("/students/:id/profile", requireStudent({ allowGuest: true }), asyn
   try {
     const updates: Record<string, unknown> = {};
     for (const key of ALLOWED_FIELDS) {
-      if (req.body[key] !== undefined) updates[key] = req.body[key];
+      if (req.body[key] !== undefined) {
+        const validated = validateProfileJsonField(key, req.body[key]);
+        if (!validated.ok) return res.status(400).json({ error: validated.error });
+        updates[key] = validated.value;
+      }
     }
     if (Object.keys(updates).length === 0) {
       return res.status(400).json({ error: "No valid fields to update" });
@@ -108,6 +185,8 @@ router.patch("/students/:id/profile", requireStudent({ allowGuest: true }), asyn
       preferredLocations: Array.isArray(updated.preferredLocations) ? updated.preferredLocations : [],
       projects: Array.isArray(updated.projects) ? updated.projects : [],
       certifications: Array.isArray(updated.certifications) ? updated.certifications : [],
+      experience: Array.isArray(updated.experience) ? updated.experience : [],
+      education: Array.isArray(updated.education) ? updated.education : [],
       skills: (updated.skills as Record<string, number>) || {},
     });
   } catch (err) {
@@ -644,7 +723,9 @@ RULES:
           const updates = JSON.parse(jsonMatch[0]) as Record<string, unknown>;
           const filtered: Record<string, unknown> = {};
           for (const key of ALLOWED_FIELDS) {
-            if (updates[key] !== undefined) filtered[key] = updates[key];
+            if (updates[key] === undefined) continue;
+            const validated = validateProfileJsonField(key, updates[key]);
+            if (validated.ok) filtered[key] = validated.value;
           }
           if (Object.keys(filtered).length > 0) {
             await db.update(studentsTable).set(filtered).where(eq(studentsTable.id, id));

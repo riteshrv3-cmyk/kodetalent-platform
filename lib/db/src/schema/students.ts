@@ -29,6 +29,10 @@ export const studentsTable = pgTable("students", {
   certifications: jsonb("certifications").notNull().default([]),
   // { id, company, role, period, bullets: string[] }[] — feeds the resume EXPERIENCE section
   experience: jsonb("experience").notNull().default([]),
+  // { id, degree, institution, field, start, end, cgpa? }[] — feeds the resume EDUCATION
+  // section; empty until the student fills the Profile card, so resume generation
+  // falls back to the flat degree/college/field/cgpa columns above when this is empty.
+  education: jsonb("education").notNull().default([]),
 
   // ─── Job preferences ──────────────────────────────────────────────────────
   openToWork: boolean("open_to_work").notNull().default(true),

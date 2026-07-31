@@ -1076,6 +1076,17 @@ export default function Resume() {
     if (studentId) fetchResumes(studentId);
   }, [studentId, fetchResumes]);
 
+  // Powers the "add experience" nudge below — the resume pipeline can only
+  // fill an Experience section from what's actually in the student's profile.
+  const [experienceCount, setExperienceCount] = useState<number | null>(null);
+  useEffect(() => {
+    if (!studentId) return;
+    apiFetch(`/api/students/${studentId}/full-profile`)
+      .then(r => r.ok ? r.json() : null)
+      .then((p: { experience?: unknown[] } | null) => setExperienceCount(Array.isArray(p?.experience) ? p.experience.length : 0))
+      .catch(() => setExperienceCount(0));
+  }, [studentId]);
+
   const handleGenerated = (saved: SavedResume) => {
     setResumes(prev => [saved, ...prev]);
   };
@@ -1196,13 +1207,20 @@ export default function Resume() {
         <div className="bg-paper rounded-2xl shadow-soft p-4">
           <p className="text-[14px] font-bold text-ink mb-1">Pro tip</p>
           <p className="text-[12px] text-ink-muted leading-relaxed">
-            Complete your Profile with real projects and certifications — the AI will use them to generate a much stronger, targeted resume for each company.
+            {experienceCount === 0
+              ? "Your Experience section is empty — even an internship or a part-time freelance gig gives the AI real material to write from."
+              : "Complete your Profile with real projects and certifications — the AI will use them to generate a much stronger, targeted resume for each company."}
           </p>
           <button
-            onClick={() => setLocation("/profile")}
+            onClick={() => {
+              if (experienceCount === 0) {
+                sessionStorage.setItem("profileScrollTo", "experience-section");
+              }
+              setLocation("/profile");
+            }}
             className="mt-3 flex items-center gap-1 text-[12px] font-bold text-brand"
           >
-            Update my profile <ChevronRight className="w-3.5 h-3.5" />
+            {experienceCount === 0 ? "Add experience" : "Update my profile"} <ChevronRight className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
