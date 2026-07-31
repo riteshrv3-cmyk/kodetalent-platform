@@ -2,7 +2,7 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import { studentsTable, studentResumesTable } from "@workspace/db";
 import { eq, desc, sql } from "drizzle-orm";
-import { buildAtsReport, upgradeContent, type TemplateDensity } from "@workspace/resume-core";
+import { buildAtsReport, upgradeContent, type TemplateDensity, type ResumeVersion, MAX_RESUME_VERSIONS } from "@workspace/resume-core";
 import { GenerateResumeBody, UpdateResumeBody } from "@workspace/api-zod";
 import { rlResumeGen } from "../middlewares/rateLimit";
 import { requireStudent } from "../middlewares/studentAuth";
@@ -211,12 +211,23 @@ router.patch("/students/:id/resumes/:resumeId", requireStudent({ allowGuest: tru
     const jobTags = Array.isArray(resume.jobTags) ? (resume.jobTags as unknown[]).filter((t): t is string => typeof t === "string") : [];
     const atsReport = buildAtsReport({ doc: upgradedDoc, jdText: resume.jdText ?? undefined, jobTags });
 
-    const setFields: { content: Record<string, unknown>; templateId?: TemplateId; atsScore?: number | null; atsReport?: unknown } = {
+    const setFields: { content: Record<string, unknown>; templateId?: TemplateId; atsScore?: number | null; atsReport?: unknown; versions?: ResumeVersion[] } = {
       content: updatedContent,
       atsScore: atsReport?.scorePct ?? null,
       atsReport: atsReport ?? null,
     };
     if (templateId) setFields.templateId = templateId;
+
+    if (body.snapshot) {
+      const existingVersions = Array.isArray(resume.versions) ? (resume.versions as ResumeVersion[]) : [];
+      const snapshot: ResumeVersion = {
+        content: upgradeContent(existingContent),
+        templateId: resume.templateId,
+        atsScore: resume.atsScore,
+        savedAt: new Date().toISOString(),
+      };
+      setFields.versions = [snapshot, ...existingVersions].slice(0, MAX_RESUME_VERSIONS);
+    }
 
     const [updated] = await db
       .update(studentResumesTable)
@@ -227,6 +238,58 @@ router.patch("/students/:id/resumes/:resumeId", requireStudent({ allowGuest: tru
     return res.json(updated);
   } catch (err) {
     req.log.error({ err }, "Failed to update resume");
+    return res.status(500).json({ error: "Server error" });
+  }
+});
+
+// ─── POST /students/:id/resumes/:resumeId/restore-version ────────────────────
+// Restores a prior snapshot from `versions` as the current content. The state
+// being replaced is itself pushed onto the history first, so restoring is
+// always undoable too — nothing is ever discarded, only reordered.
+
+router.post("/students/:id/resumes/:resumeId/restore-version", requireStudent({ allowGuest: true }), async (req, res) => {
+  const id = Number(req.params.id);
+  const resumeId = Number(req.params.resumeId);
+  if (isNaN(id) || isNaN(resumeId)) return res.status(400).json({ error: "Invalid id" });
+
+  const index = Number(req.body?.index);
+  if (!Number.isInteger(index) || index < 0) return res.status(400).json({ error: "Invalid index" });
+
+  try {
+    const [resume] = await db.select().from(studentResumesTable).where(eq(studentResumesTable.id, resumeId)).limit(1);
+    if (!resume || resume.studentId !== id) return res.status(404).json({ error: "Resume not found" });
+
+    const versions = Array.isArray(resume.versions) ? (resume.versions as ResumeVersion[]) : [];
+    const target = versions[index];
+    if (!target) return res.status(404).json({ error: "Version not found" });
+
+    const currentSnapshot: ResumeVersion = {
+      content: upgradeContent((resume.content ?? {}) as Record<string, unknown>),
+      templateId: resume.templateId,
+      atsScore: resume.atsScore,
+      savedAt: new Date().toISOString(),
+    };
+    const remainingVersions = versions.filter((_, i) => i !== index);
+    const newVersions = [currentSnapshot, ...remainingVersions].slice(0, MAX_RESUME_VERSIONS);
+
+    const jobTags = Array.isArray(resume.jobTags) ? (resume.jobTags as unknown[]).filter((t): t is string => typeof t === "string") : [];
+    const atsReport = buildAtsReport({ doc: target.content, jdText: resume.jdText ?? undefined, jobTags });
+
+    const [updated] = await db
+      .update(studentResumesTable)
+      .set({
+        content: target.content,
+        templateId: target.templateId as TemplateId,
+        atsScore: atsReport?.scorePct ?? null,
+        atsReport: atsReport ?? null,
+        versions: newVersions,
+      })
+      .where(eq(studentResumesTable.id, resumeId))
+      .returning();
+
+    return res.json(updated);
+  } catch (err) {
+    req.log.error({ err }, "Failed to restore resume version");
     return res.status(500).json({ error: "Server error" });
   }
 });

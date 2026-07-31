@@ -227,7 +227,7 @@ export function InlineEditPreview({
       const r = await apiFetch(`/api/students/${studentId}/resumes/${resumeId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: patchContent }),
+        body: JSON.stringify({ content: patchContent, snapshot: true }),
       });
       if (r.ok) {
         const updated = await r.json();

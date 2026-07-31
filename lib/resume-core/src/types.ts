@@ -248,6 +248,18 @@ export interface GenerationMeta {
   fontFallback?: boolean;
 }
 
+// ─── Undo history ─────────────────────────────────────────────────────────────
+
+/** One prior state of a resume's content, pushed by PATCH when snapshot:true. */
+export interface ResumeVersion {
+  content: ResumeDocument;
+  templateId: string;
+  atsScore: number | null;
+  savedAt: string; // ISO timestamp
+}
+
+export const MAX_RESUME_VERSIONS = 5;
+
 // ─── Layout prediction, shared between server-safe estimate and the real engine ─
 
 export interface LayoutEstimate {

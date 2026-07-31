@@ -815,7 +815,8 @@ export const UpdateResumeBody = zod.object({
 })).optional(),
   "achievements": zod.array(zod.string()).optional()
 }).optional().describe('Fields the current edit surface can change — see EditResumeSheet in Resume.tsx. A future edit-surface expansion will widen this.'),
-  "templateId": zod.enum(['ats', 'classic', 'tech', 'minimal']).optional()
+  "templateId": zod.enum(['ats', 'classic', 'tech', 'minimal']).optional(),
+  "snapshot": zod.boolean().optional().describe('If true, the resume\'s pre-edit content is pushed onto its version history (capped at 5, oldest dropped) before this patch is applied.')
 }).describe('content and\/or templateId — at least one must be provided')
 
 export const UpdateResumeResponse = zod.object({

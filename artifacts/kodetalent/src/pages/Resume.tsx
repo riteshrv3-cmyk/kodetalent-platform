@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Download, Plus, Trash2, Sparkles,
   Loader2, Building2, AlignLeft, ChevronRight, X, Pencil,
-  Check, PlusCircle, MinusCircle, Zap, Eye, FileText, Copy, Share2
+  Check, PlusCircle, MinusCircle, Zap, Eye, FileText, Copy, Share2, History, Undo2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -72,6 +72,7 @@ interface SavedResume {
   atsReport?: { scorePct: number; matched: { term: string; where: string }[]; missing: { term: string; importance: string }[] } | null;
   shareSlug?: string | null;
   shareViews?: number | null;
+  versions?: { content: ResumeContent; templateId: string; atsScore: number | null; savedAt: string }[] | null;
 }
 
 // ─── Template definitions ─────────────────────────────────────────────────────
@@ -345,6 +346,8 @@ function EditResumeSheet({
   const [saving, setSaving] = useState(false);
   const [templateId, setTemplateId] = useState(resume.templateId);
   const [showMobilePreview, setShowMobilePreview] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [restoringIndex, setRestoringIndex] = useState<number | null>(null);
 
   const [summary, setSummary] = useState(resume.content.summary ?? "");
   // The AI pipeline persists v2-shaped content (skill items / project tech as
@@ -437,6 +440,7 @@ function EditResumeSheet({
         body: JSON.stringify({
           content: { summary, skillSections, projects, achievements },
           ...(templateId !== resume.templateId ? { templateId } : {}),
+          snapshot: true,
         }),
       });
       if (!r.ok) {
@@ -454,6 +458,28 @@ function EditResumeSheet({
     }
   };
 
+  const handleRestoreVersion = async (index: number) => {
+    setRestoringIndex(index);
+    try {
+      const r = await apiFetch(`/api/students/${studentId}/resumes/${resume.id}/restore-version`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ index }),
+      });
+      if (!r.ok) throw new Error("Failed to restore");
+      const updated = await r.json() as SavedResume;
+      toast({ title: "Version restored" });
+      onSaved(updated);
+      onClose();
+    } catch {
+      toast({ title: "Restore failed", variant: "destructive" });
+    } finally {
+      setRestoringIndex(null);
+    }
+  };
+
+  const versions = resume.versions ?? [];
+
   const previewPanel = (
     <>
       <div className="grid grid-cols-2 gap-1.5">
@@ -470,6 +496,36 @@ function EditResumeSheet({
         ))}
       </div>
       <ResumePreview resume={liveDoc} templateId={templateId} />
+      {versions.length > 0 && (
+        <div>
+          <button
+            onClick={() => setShowHistory(v => !v)}
+            className="text-[10px] font-bold text-ink-muted hover:text-brand flex items-center gap-1"
+          >
+            <History className="w-3 h-3" /> Version history ({versions.length}){showHistory ? " ▲" : " ▼"}
+          </button>
+          {showHistory && (
+            <div className="mt-1.5 space-y-1">
+              {versions.map((v, i) => (
+                <div key={i} className="flex items-center justify-between gap-2 bg-canvas rounded-lg px-2 py-1.5">
+                  <span className="text-[10px] text-ink-muted">
+                    {new Date(v.savedAt).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}
+                    {typeof v.atsScore === "number" && ` · ATS ${v.atsScore}%`}
+                  </span>
+                  <button
+                    onClick={() => handleRestoreVersion(i)}
+                    disabled={restoringIndex !== null}
+                    className="h-6 px-2 rounded-full text-[9px] font-bold text-brand border border-brand/30 hover:bg-brand/10 disabled:opacity-50 flex items-center gap-1 shrink-0"
+                  >
+                    {restoringIndex === i ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <Undo2 className="w-2.5 h-2.5" />}
+                    Restore
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
       {atsReport && (
         <div className="bg-brand-soft rounded-xl p-3">
           <p className="text-[11px] font-bold text-brand">ATS match {atsReport.scorePct}%</p>

@@ -427,6 +427,8 @@ export const UpdateResumeBodyTemplateId = {
 export interface UpdateResumeBody {
   content?: UpdateResumeContent;
   templateId?: UpdateResumeBodyTemplateId;
+  /** If true, the resume's pre-edit content is pushed onto its version history (capped at 5, oldest dropped) before this patch is applied. */
+  snapshot?: boolean;
 }
 
 export type ListQuestsParams = {

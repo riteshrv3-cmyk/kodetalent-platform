@@ -30,6 +30,9 @@ export const studentResumesTable = pgTable("student_resumes", {
   // Public share link. Generated on demand; null means the resume is private.
   shareSlug: text("share_slug"),
   shareViews: integer("share_views").notNull().default(0),
+  // Undo history: up to 5 prior {content, templateId, atsScore, savedAt} snapshots,
+  // newest first. Pushed onto by PATCH when the caller passes snapshot:true.
+  versions: jsonb("versions").notNull().default([]),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 }, t => ({
