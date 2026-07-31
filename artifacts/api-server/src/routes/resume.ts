@@ -8,6 +8,9 @@ import { rlResumeGen } from "../middlewares/rateLimit";
 import { requireStudent } from "../middlewares/studentAuth";
 import { logEvent } from "../lib/events";
 import { runResumePipeline } from "../lib/resume/pipeline";
+import { buildLedger } from "../lib/resume/ledger";
+import { bulletPassesGate } from "../lib/resume/gate";
+import { rewriteBullet, BULLET_REWRITE_ACTIONS, type BulletRewriteAction } from "../lib/resume/bulletRewrite";
 
 const router = Router();
 
@@ -226,6 +229,85 @@ router.patch("/students/:id/resumes/:resumeId", requireStudent({ allowGuest: tru
     req.log.error({ err }, "Failed to update resume");
     return res.status(500).json({ error: "Server error" });
   }
+});
+
+// ─── POST /students/:id/resumes/:resumeId/bullet-rewrite ─────────────────────
+// Rewrites one bullet in place (shorter / add a number / match JD wording /
+// different opening verb). The rewrite is re-run through the same
+// fabrication gate as generation — it may only reuse evidence IDs already
+// attached to the bullet, never claim a new one — so this can never be used
+// to sneak in an unsupported fact.
+
+router.post("/students/:id/resumes/:resumeId/bullet-rewrite", requireStudent({ allowGuest: true }), rlResumeGen, async (req, res) => {
+  const id = Number(req.params.id);
+  const resumeId = Number(req.params.resumeId);
+  if (isNaN(id) || isNaN(resumeId)) return res.status(400).json({ error: "Invalid id" });
+
+  const { section, entryIndex, bulletIndex, action } = req.body ?? {};
+  if (section !== "experience" && section !== "projects") {
+    return res.status(400).json({ error: "section must be 'experience' or 'projects'" });
+  }
+  if (!Number.isInteger(entryIndex) || entryIndex < 0) return res.status(400).json({ error: "Invalid entryIndex" });
+  if (!Number.isInteger(bulletIndex) || bulletIndex < 0) return res.status(400).json({ error: "Invalid bulletIndex" });
+  if (!BULLET_REWRITE_ACTIONS.includes(action)) {
+    return res.status(400).json({ error: `action must be one of: ${BULLET_REWRITE_ACTIONS.join(", ")}` });
+  }
+
+  const controller = new AbortController();
+  req.on("close", () => controller.abort());
+
+  try {
+    const [resume] = await db.select().from(studentResumesTable).where(eq(studentResumesTable.id, resumeId)).limit(1);
+    if (!resume || resume.studentId !== id) return res.status(404).json({ error: "Resume not found" });
+
+    const [student] = await db.select().from(studentsTable).where(eq(studentsTable.id, id)).limit(1);
+    if (!student) return res.status(404).json({ error: "Student not found" });
+
+    if (action === "jd_wording" && !resume.jdText?.trim()) {
+      return res.status(400).json({ error: "This resume has no job description to match wording against" });
+    }
+
+    const doc = upgradeContent((resume.content ?? {}) as Record<string, unknown>);
+    const entryList = section === "experience" ? doc.experience : doc.projects;
+    const entry = entryList[entryIndex];
+    const bullet = entry?.bullets[bulletIndex];
+    if (!entry || !bullet) return res.status(404).json({ error: "Bullet not found" });
+
+    const ledger = buildLedger(student);
+    const evidenceText =
+      bullet.evidence
+        .map((eid) => ledger.rows.find((r) => r.id === eid))
+        .filter((r): r is NonNullable<typeof r> => !!r)
+        .map((r) => `${r.id}. ${r.text}`)
+        .join("\n") || "(no ledger rows resolve for this bullet's evidence — it may be stale)";
+
+    const rewritten = await rewriteBullet({
+      currentText: bullet.text,
+      evidenceText,
+      action: action as BulletRewriteAction,
+      jdText: resume.jdText ?? undefined,
+      signal: controller.signal,
+    });
+
+    // The rewrite may only reuse evidence IDs already on this bullet — never
+    // claim a new one, even if the model returned a technically-valid ledger ID.
+    const candidateEvidence = rewritten.evidence.filter((eid) => bullet.evidence.includes(eid));
+    const passesGate = rewritten.text.length > 0 && candidateEvidence.length > 0 && bulletPassesGate(rewritten.text, candidateEvidence, ledger);
+
+    if (!passesGate) {
+      return res.status(422).json({ error: "Rewrite failed the anti-fabrication check — try a different action" });
+    }
+
+    return res.json({ text: rewritten.text, evidence: candidateEvidence });
+  } catch (err) {
+    if (controller.signal.aborted) {
+      if (!res.writableEnded) res.end();
+      return;
+    }
+    req.log.error({ err }, "Failed to rewrite bullet");
+    return res.status(500).json({ error: "Server error" });
+  }
+  return;
 });
 
 // ─── DELETE /students/:id/resumes/:resumeId ───────────────────────────────────

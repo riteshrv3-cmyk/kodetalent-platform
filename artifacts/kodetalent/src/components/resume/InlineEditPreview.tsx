@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Loader2, Check, X } from "lucide-react";
+import { Loader2, Check, X, Sparkles } from "lucide-react";
 import type { ResumeDocument, SectionKey } from "@workspace/resume-core";
 import { renderResumePdf, type Page } from "@/lib/resume-pdf";
 import { PAGE } from "@/lib/resume-pdf/geometry";
@@ -23,6 +23,15 @@ interface ActiveEdit {
   region: HitRegion;
   draft: string;
 }
+
+type BulletAction = "shorter" | "add_number" | "jd_wording" | "different_verb";
+
+const BULLET_ACTIONS: { key: BulletAction; label: string }[] = [
+  { key: "shorter", label: "Shorter" },
+  { key: "add_number", label: "+ Number" },
+  { key: "jd_wording", label: "JD wording" },
+  { key: "different_verb", label: "New verb" },
+];
 
 interface InlineEditPreviewProps {
   resume: ResumeDocument;
@@ -112,6 +121,8 @@ export function InlineEditPreview({
   const [containerWidth, setContainerWidth] = useState(0);
   const [activeEdit, setActiveEdit] = useState<ActiveEdit | null>(null);
   const [saving, setSaving] = useState(false);
+  const [rewriting, setRewriting] = useState<BulletAction | null>(null);
+  const [rewriteError, setRewriteError] = useState<string | null>(null);
   const tokenRef = useRef(0);
   const renderTaskRef = useRef<import("pdfjs-dist").RenderTask | null>(null);
 
@@ -228,6 +239,30 @@ export function InlineEditPreview({
     }
   }
 
+  async function handleRewrite(action: BulletAction) {
+    if (!activeEdit) return;
+    const { region } = activeEdit;
+    setRewriting(action);
+    setRewriteError(null);
+    try {
+      const r = await apiFetch(`/api/students/${studentId}/resumes/${resumeId}/bullet-rewrite`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ section: region.section, entryIndex: region.entryIndex, bulletIndex: region.bulletIndex, action }),
+      });
+      const data = await r.json().catch(() => null);
+      if (!r.ok) {
+        setRewriteError(data?.error || "Rewrite failed");
+        return;
+      }
+      setActiveEdit(prev => prev ? { ...prev, draft: data.text } : null);
+    } catch {
+      setRewriteError("Rewrite failed");
+    } finally {
+      setRewriting(null);
+    }
+  }
+
   const regions = hitRegions();
 
   return (
@@ -243,7 +278,7 @@ export function InlineEditPreview({
         return (
           <button
             key={r.chunkId}
-            onClick={() => setActiveEdit({ region: r, draft: r.currentText })}
+            onClick={() => { setRewriteError(null); setActiveEdit({ region: r, draft: r.currentText }); }}
             className="absolute group hover:bg-brand/10 hover:outline hover:outline-1 hover:outline-brand/40 rounded-sm transition-colors cursor-text"
             style={{ top, left, width, height }}
             title="Click to edit"
@@ -278,6 +313,22 @@ export function InlineEditPreview({
                 if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); void handleSave(); }
               }}
             />
+            {r.field === "bulletText" && (
+              <div className="flex flex-wrap gap-1">
+                {BULLET_ACTIONS.map(a => (
+                  <button
+                    key={a.key}
+                    onClick={() => void handleRewrite(a.key)}
+                    disabled={rewriting !== null}
+                    className="h-5 px-1.5 rounded-full text-[9px] font-bold text-brand border border-brand/30 hover:bg-brand/10 disabled:opacity-50 inline-flex items-center gap-0.5"
+                  >
+                    {rewriting === a.key ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <Sparkles className="w-2.5 h-2.5" />}
+                    {a.label}
+                  </button>
+                ))}
+              </div>
+            )}
+            {rewriteError && <p className="text-[9px] text-red-500">{rewriteError}</p>}
             <div className="flex gap-1.5 justify-end">
               <button
                 onClick={() => setActiveEdit(null)}

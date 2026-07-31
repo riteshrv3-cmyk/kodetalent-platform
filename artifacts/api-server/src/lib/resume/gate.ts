@@ -1,6 +1,24 @@
 import type { EvidenceLedger, RemovedByGate, ResumeDocument } from "@workspace/resume-core";
 import { normTerm, scanLexicon } from "@workspace/resume-core";
 
+/** True if `text` names a lexicon technology term the ledger never mentions. */
+function suspiciousText(text: string, ledger: EvidenceLedger): boolean {
+  return scanLexicon(text).some((term) => !ledger.allowedTerms.has(normTerm(term)));
+}
+
+/**
+ * Single-item version of the fabrication gate — used for one-off rewrites
+ * (e.g. the per-bullet AI actions) where there's no full document to
+ * re-gate, just one candidate string plus its claimed evidence IDs.
+ */
+export function bulletPassesGate(text: string, evidence: string[], ledger: EvidenceLedger): boolean {
+  const validIds = new Set(ledger.rows.map((r) => r.id));
+  const hasValidEvidence = evidence.some((id) => validIds.has(id));
+  if (!hasValidEvidence) return false;
+  if (suspiciousText(text, ledger)) return false;
+  return true;
+}
+
 /**
  * The fabrication gate: runs after drafting and after every critic patch.
  * Any bullet/skill-item/achievement with an empty (or fully-unresolvable)
@@ -57,15 +75,11 @@ export function fabricationGate(doc: ResumeDocument, ledger: EvidenceLedger): { 
   // slip through. Scan for known tech terms and strip the field back to empty
   // if it names one the ledger never mentions — free text is otherwise
   // impossible to cite word-for-word, so removal is the safe default.
-  const ledgerTerms = ledger.allowedTerms;
-  const suspiciousText = (text: string): boolean =>
-    scanLexicon(text).some((term) => !ledgerTerms.has(normTerm(term)));
-
-  if (gated.summary && suspiciousText(gated.summary)) {
+  if (gated.summary && suspiciousText(gated.summary, ledger)) {
     removed.push({ path: "summary", term: gated.summary.slice(0, 60), reason: "names a technology not present in the evidence ledger" });
     gated = { ...gated, summary: "" };
   }
-  if (gated.headline && suspiciousText(gated.headline)) {
+  if (gated.headline && suspiciousText(gated.headline, ledger)) {
     removed.push({ path: "headline", term: gated.headline.slice(0, 60), reason: "names a technology not present in the evidence ledger" });
     gated = { ...gated, headline: "" };
   }
