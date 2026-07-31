@@ -52,12 +52,28 @@ export async function cacheSet<T>(opts: CacheOptions, value: T): Promise<void> {
   }
 }
 
+// In-process single-flight guard: two requests racing for the same uncached
+// key (e.g. two students applying to the same freshly-posted JD) share one
+// producer call instead of both paying for it. Per-process only — fine at
+// current single-instance scale, same limitation the rate limiter accepts.
+const inFlight = new Map<string, Promise<unknown>>();
+
 export async function cacheGetOrSet<T>(opts: CacheOptions, producer: () => Promise<T>): Promise<{ value: T; cached: boolean }> {
   const cached = await cacheGet<T>(opts);
   if (cached !== null) return { value: cached, cached: true };
-  const fresh = await producer();
-  await cacheSet(opts, fresh);
-  return { value: fresh, cached: false };
+
+  const key = hashKey(opts.namespace, opts.keyParts);
+  const existing = inFlight.get(key) as Promise<T> | undefined;
+  if (existing) return { value: await existing, cached: false };
+
+  const promise = producer()
+    .then(async (fresh) => {
+      await cacheSet(opts, fresh);
+      return fresh;
+    })
+    .finally(() => inFlight.delete(key));
+  inFlight.set(key, promise);
+  return { value: await promise, cached: false };
 }
 
 let lastSweep = 0;

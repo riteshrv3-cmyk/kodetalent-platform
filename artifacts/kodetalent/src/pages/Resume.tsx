@@ -19,6 +19,13 @@ import { ResumePreview, ResumeThumbnail, preloadPdfjs } from "@/components/resum
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+// Raw shape of the `content` jsonb column as read from the API — a union of
+// the legacy v1 flat shape and the pipeline's v2 shape (see upgradeContent()
+// in @workspace/resume-core for the authoritative normalizer). Fields the UI
+// still edits directly (skillSections.items, projects.tech/bullets,
+// achievements) accept either shape; toCommaString()/toBulletString() below
+// coerce whichever one shows up.
+type LooseBullet = string | { text: string };
 interface ResumeContent {
   name: string;
   email: string;
@@ -33,12 +40,19 @@ interface ResumeContent {
   gradYear: number;
   cgpa?: string | null;
   summary: string;
-  skillSections: { category: string; items: string }[];
-  experience?: { company: string; role: string; period: string; bullets: string[] }[];
-  projects: { title: string; tech: string; bullets: string[] }[];
+  skillSections: { category: string; items: string | string[] }[];
+  experience?: { company: string; role: string; period: string; bullets: LooseBullet[] }[];
+  projects: { title: string; tech: string | string[]; bullets: LooseBullet[] }[];
   certifications: { name: string; issuer: string; date?: string }[];
-  achievements: string[];
-  atsMeta?: { jdKeywords: string[]; matched: string[]; coveragePct: number } | null;
+  achievements: LooseBullet[];
+  atsMeta?: unknown;
+}
+
+function toCommaString(v: string | string[] | undefined | null): string {
+  return Array.isArray(v) ? v.join(", ") : v ?? "";
+}
+function toBulletString(b: LooseBullet): string {
+  return typeof b === "string" ? b : b.text;
 }
 
 interface SavedResume {
@@ -312,13 +326,22 @@ function EditResumeSheet({
   const [showMobilePreview, setShowMobilePreview] = useState(false);
 
   const [summary, setSummary] = useState(resume.content.summary ?? "");
+  // The AI pipeline persists v2-shaped content (skill items / project tech as
+  // string[], bullets/achievements as {text,evidence}) while this edit form
+  // still operates on v1's flat strings — normalize on read so an untouched
+  // v2 field round-trips through Save correctly instead of 400ing. Full v2
+  // edit surface is Phase 6 scope.
   const [skillSections, setSkillSections] = useState(
-    (resume.content.skillSections ?? []).map(s => ({ ...s }))
+    (resume.content.skillSections ?? []).map(s => ({ category: s.category, items: toCommaString(s.items) }))
   );
   const [projects, setProjects] = useState(
-    (resume.content.projects ?? []).map(p => ({ ...p, bullets: [...(p.bullets ?? [])] }))
+    (resume.content.projects ?? []).map(p => ({
+      ...p,
+      tech: toCommaString(p.tech),
+      bullets: (p.bullets ?? []).map(toBulletString),
+    }))
   );
-  const [achievements, setAchievements] = useState([...(resume.content.achievements ?? [])]);
+  const [achievements, setAchievements] = useState((resume.content.achievements ?? []).map(toBulletString));
 
   // Reconstructed on every edit — feeds both the live preview and the live ATS
   // recompute, so what's shown always matches what Save will persist.
@@ -692,17 +715,17 @@ function ResumeCard({
             )}
             <span className="text-[11px] text-ink-muted">{date}</span>
           </div>
-          {resume.content.atsMeta && (
+          {liveDoc.atsMeta && (
             <div className="mt-2" title={
-              resume.content.atsMeta.matched.length < resume.content.atsMeta.jdKeywords.length
-                ? `Missing: ${resume.content.atsMeta.jdKeywords.filter(k => !resume.content.atsMeta!.matched.includes(k)).join(", ")} — skill gaps to learn, not padded in`
+              liveDoc.atsMeta.missing.length > 0
+                ? `Missing: ${liveDoc.atsMeta.missing.map(m => m.term).join(", ")} — skill gaps to learn, not padded in`
                 : "All extracted JD keywords are covered by your real profile"
             }>
               {/* Single-color brand pill, not a red/amber/green threshold ramp — the
                   design system reserves that ramp for completed/passing (done) and
                   error (danger) states only, never for a continuous score. */}
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-brand-soft text-brand">
-                ATS match {resume.content.atsMeta.coveragePct}%
+                ATS match {liveDoc.atsMeta.scorePct}%
               </span>
             </div>
           )}
@@ -883,10 +906,10 @@ function GenerateSheet({
 
             <ResumePreview resume={previewDoc} templateId={templateId} className="max-w-[280px] mx-auto" />
 
-            {generatedResume.content.atsMeta && (
+            {previewDoc.atsMeta && (
               <div className="flex justify-center">
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-brand-soft text-brand">
-                  ATS match {generatedResume.content.atsMeta.coveragePct}%
+                  ATS match {previewDoc.atsMeta.scorePct}%
                 </span>
               </div>
             )}

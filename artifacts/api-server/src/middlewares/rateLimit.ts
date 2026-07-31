@@ -78,3 +78,6 @@ export const rlAiMedium = rateLimit({ name: "ai-medium", windowMs: 60 * 60 * 100
 export const rlAiLight = rateLimit({ name: "ai-light", windowMs: 60 * 1000, max: 30 });
 export const rlInterview = rateLimit({ name: "interview", windowMs: 60 * 60 * 1000, max: 20 });
 export const rlDriveCheck = rateLimit({ name: "drivecheck", windowMs: 60 * 60 * 1000, max: 15 });
+// The 4-stage resume pipeline costs 4-5x a single rlAiHeavy call — a dedicated,
+// tighter bucket instead of sharing rlAiHeavy's 30/hr.
+export const rlResumeGen = rateLimit({ name: "resume-gen", windowMs: 60 * 60 * 1000, max: 10 });

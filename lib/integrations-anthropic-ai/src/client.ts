@@ -41,6 +41,10 @@ interface CreateParams {
   // OpenAI-specific: pass { type: "json_object" } to force valid JSON output.
   // Ignored by streaming. Prompts must mention "json" for OpenAI to honor it.
   response_format?: { type: "json_object" | "text" };
+  // Forwarded to the OpenAI SDK's request options so a real client disconnect
+  // (e.g. `req.on("close", ...)`) actually aborts the in-flight call instead
+  // of only stopping the caller from waiting on it.
+  signal?: AbortSignal;
   [key: string]: unknown;
 }
 
@@ -92,13 +96,16 @@ export const anthropic = {
   messages: {
     // Non-streaming: returns an object with `content: [{ type: "text", text }]`.
     async create(params: CreateParams) {
-      const resp = await openai.chat.completions.create({
-        model: params.model,
-        max_tokens: params.max_tokens,
-        temperature: params.temperature,
-        ...(params.response_format ? { response_format: params.response_format } : {}),
-        messages: toOpenAIMessages(params) as never,
-      });
+      const resp = await openai.chat.completions.create(
+        {
+          model: params.model,
+          max_tokens: params.max_tokens,
+          temperature: params.temperature,
+          ...(params.response_format ? { response_format: params.response_format } : {}),
+          messages: toOpenAIMessages(params) as never,
+        },
+        params.signal ? { signal: params.signal } : undefined,
+      );
       const text = resp.choices[0]?.message?.content ?? "";
       return {
         id: resp.id,

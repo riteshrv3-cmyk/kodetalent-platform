@@ -2,36 +2,27 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import { studentsTable, studentResumesTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
-import { anthropic, AI_MODEL } from "@workspace/integrations-anthropic-ai";
-import { rlAiHeavy } from "../middlewares/rateLimit";
-import { contextPack } from "../lib/contextPack";
-import { extractJson } from "../lib/extractJson";
+import { buildAtsReport, upgradeContent, type TemplateDensity } from "@workspace/resume-core";
+import { rlResumeGen } from "../middlewares/rateLimit";
 import { requireStudent } from "../middlewares/studentAuth";
 import { logEvent } from "../lib/events";
+import { runResumePipeline } from "../lib/resume/pipeline";
 
 const router = Router();
 
 const VALID_TEMPLATES = ["ats", "classic", "tech", "minimal"] as const;
 type TemplateId = typeof VALID_TEMPLATES[number];
 
-const FIELD_DEGREES: Record<string, string> = {
-  "Computer Science": "B.Tech Computer Science & Engineering",
-  "Electronics": "B.Tech Electronics & Communication Engineering",
-  "Mechanical": "B.Tech Mechanical Engineering",
-  "Civil": "B.Tech Civil Engineering",
-  "Electrical": "B.Tech Electrical Engineering",
-  "Information Technology": "B.Tech Information Technology",
-  "Data Science": "B.Tech Data Science & AI",
+// Mirrors artifacts/kodetalent/src/lib/resume-pdf/templates/*.ts — the server
+// has no access to those client-only template configs (fonts/colors), but
+// needs the density value for estimateLayout()'s densityFit critic axis.
+// Keep this in sync if a template's density ever changes.
+const TEMPLATE_DENSITY: Record<TemplateId, TemplateDensity> = {
+  ats: "normal",
+  classic: "airy",
+  tech: "compact",
+  minimal: "airy",
 };
-
-function getDegree(field: string) {
-  return FIELD_DEGREES[field] ?? `B.Tech ${field} Engineering`;
-}
-
-function getGradYear(year: number) {
-  const current = new Date().getFullYear();
-  return current + (4 - year);
-}
 
 // ─── GET /students/:id/resumes ────────────────────────────────────────────────
 
@@ -53,7 +44,15 @@ router.get("/students/:id/resumes", requireStudent({ allowGuest: true }), async 
 
 // ─── POST /students/:id/resumes ───────────────────────────────────────────────
 
-router.post("/students/:id/resumes", requireStudent({ allowGuest: true }), rlAiHeavy, async (req, res) => {
+// Stage copy is how the student "feels" the reasoning happening — shown only over SSE.
+const STAGE_COPY: Record<string, string> = {
+  jd: "Reading the job description…",
+  map: "Matching it against your real work…",
+  draft: "Writing your bullets…",
+  critic: "Running it through an ATS screen…",
+};
+
+router.post("/students/:id/resumes", requireStudent({ allowGuest: true }), rlResumeGen, async (req, res) => {
   const id = Number(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
 
@@ -79,221 +78,34 @@ router.post("/students/:id/resumes", requireStudent({ allowGuest: true }), rlAiH
     ? rawBody.jobTags.filter((t): t is string => typeof t === "string").slice(0, 8).map(t => t.slice(0, 40))
     : [];
 
+  const [student] = await db.select().from(studentsTable).where(eq(studentsTable.id, id)).limit(1);
+  if (!student) return res.status(404).json({ error: "Student not found" });
+
+  const isSSE = req.headers.accept === "text/event-stream";
+  const controller = new AbortController();
+  req.on("close", () => controller.abort());
+
+  if (isSSE) {
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+    res.flushHeaders();
+  }
+
   try {
-    const [student] = await db
-      .select()
-      .from(studentsTable)
-      .where(eq(studentsTable.id, id))
-      .limit(1);
-
-    if (!student) return res.status(404).json({ error: "Student not found" });
-
-    const degree = getDegree(student.field);
-    const gradYear = getGradYear(student.year);
-    const startYear = gradYear - 4;
-
-    const projects = Array.isArray(student.projects) ? student.projects : [];
-    const certifications = Array.isArray(student.certifications) ? student.certifications : [];
-    const skills = (student.skills as Record<string, number>) ?? {};
-    const topSkillNames = Object.entries(skills)
-      .sort(([, a], [, b]) => b - a)
-      .slice(0, 8)
-      .map(([name]) => name);
-
-    const githubStats = student.githubStats as {
-      username?: string;
-      topLanguages?: string[];
-      topRepos?: { name: string; stars: number; language: string; description: string }[];
-    } | null;
-
-    const profileCtx = `
-Student Profile:
-- Name: ${student.name}
-- Email: ${student.email}
-- City: ${student.city}
-- Phone: ${student.phone ?? "not provided"}
-- GitHub: ${student.githubUrl ?? "not provided"}
-- LinkedIn: ${student.linkedinUrl ?? "not provided"}
-- Degree: ${degree} (${startYear}–${gradYear})
-- College: ${student.college}, ${student.city}
-- CGPA: ${student.cgpa ?? "not provided"}
-- Field: ${student.field}
-- Bio: ${student.bio ?? "none"}
-- Skills (top): ${topSkillNames.length > 0 ? topSkillNames.join(", ") : "none added yet"}
-- GitHub Languages: ${githubStats?.topLanguages?.join(", ") ?? "not analyzed"}
-- GitHub Repos: ${githubStats?.topRepos?.map(r => `${r.name} (${r.language}, ${r.stars} stars)`).join("; ") ?? "not analyzed"}
-- Projects (${projects.length}): ${projects.length > 0 ? JSON.stringify(projects) : "none added yet"}
-- Certifications (${certifications.length}): ${certifications.length > 0 ? JSON.stringify(certifications) : "none added yet"}
-- Dream Company: ${student.dreamCompany ?? "not set"}
-- Target Package: ${student.targetPackage ?? "not set"}
-`.trim();
-
-    const jdSection = jdText
-      ? `\nJob Description / Target Role (for tailoring wording and emphasis ONLY — not a source of the student's skills):\n${jdText}\nCompany: ${companyName || "not specified"}${roleTitle ? `\nRole: ${roleTitle}` : ""}\n`
-      : roleTitle || companyName || jobTags.length > 0
-        ? `\nTarget Role: ${roleTitle || "not specified"}${companyName ? ` at ${companyName}` : ""}\n${
-            jobTags.length > 0
-              ? `The job posting lists these skills: ${jobTags.join(", ")}. This is context about what the EMPLOYER wants, not a description of the student. Do NOT copy these into skillSections, summary, or anywhere else unless the exact same skill already appears in the student's own Skills or GitHub Languages listed above.\n`
-              : ""
-          }(No full job description available.)\n`
-        : "";
-
-    const pack = await contextPack(id);
-
-    const experience = Array.isArray(student.experience) ? student.experience : [];
-
-    const realSkillsList = [...topSkillNames, ...(githubStats?.topLanguages ?? [])];
-    const whitelistSection = `\nThe student's COMPLETE list of real, verified skills/technologies is: ${
-      realSkillsList.length > 0 ? realSkillsList.join(", ") : "(none on file yet)"
-    }. This is a closed list — every skill or technology name you write anywhere in the resume (summary, skillSections, bullets) MUST come from this list. Do not add any technology name from the job posting/target role that is not in this list, even to describe "interest" or "familiarity".\n`;
-
-    const systemPrompt = `You are an expert ATS-optimized resume writer for Indian engineering students.
-Generate a structured resume JSON based ONLY on the student's actual profile data provided.
-DO NOT invent or fabricate any projects, skills, experience, or achievements that are not mentioned in the profile.
-If the student has no projects, leave the projects array empty.
-If the student has no certifications, leave the certifications array empty.
-If the student has no experience entries, leave the experience array empty — never invent a job.
-Use action verbs and quantify achievements where possible.
-Tailor the content to the job description if one is provided.
-
-ATS RULES (apply whenever a job description, target role, or job-posting skills are given):
-- The job posting / target-role skills describe what the EMPLOYER wants — they are NOT a list of the student's abilities. Never copy a skill from the job posting into skillSections, the summary, a project, or anywhere else unless that exact skill is already present in the student's own Skills or GitHub Languages data above.
-- Where the student's real skills genuinely overlap with the job posting, mirror the job posting's exact terminology and give that overlap emphasis in the summary and bullets.
-- Where the student does NOT have a skill the posting wants, simply omit it — do not add it, do not hedge with "familiar with" or "exposure to" for something absent from the profile.
-- Every project/experience bullet: action verb + what was done + quantified result wherever the profile supports a number.
-- Use plain, standard section vocabulary — no graphics, no tables, nothing a parser can't read.
-Always respond with valid JSON only — no markdown, no explanation.`;
-
-    const userPrompt = `${profileCtx}${jdSection}${whitelistSection}
-Experience (${experience.length}): ${experience.length > 0 ? JSON.stringify(experience) : "none added yet"}
-
-${pack?.text ?? ""}
-
-Generate a resume JSON with this exact structure:
-{
-  "summary": "2–3 sentence professional summary tailored to the role/field",
-  "skillSections": [
-    { "category": "Languages", "items": "comma-separated list" },
-    { "category": "Frameworks & Tools", "items": "comma-separated list" }
-  ],
-  "experience": [
-    {
-      "company": "Company Name",
-      "role": "Role Title",
-      "period": "Month Year – Month Year",
-      "bullets": ["action verb + what + result/impact"]
-    }
-  ],
-  "projects": [
-    {
-      "title": "Project Name",
-      "tech": "Tech Stack",
-      "bullets": ["action verb + what + result/impact", "another bullet"]
-    }
-  ],
-  "certifications": [
-    { "name": "Cert Name", "issuer": "Issuer", "date": "Month Year" }
-  ],
-  "achievements": [
-    "Achievement or award line item"
-  ],
-  "jdKeywords": ["EVERY exact skill/tech/qualification term mentioned in the job description or target-role skill list — including ones the student does NOT have — [] if neither was given"]
-}
-
-Rules:
-- skillSections: derive from actual skills data and GitHub languages only — job-posting/target-role skills are NEVER a valid source for this field, even if it means some categories are empty or thin
-- experience: use ONLY entries from the profile's Experience list above. If none exist, return []
-- projects: use ONLY projects from the profile. If none exist, return []
-- certifications: use ONLY certifications from the profile. If none exist, return []
-- achievements: include things like college rank, certifications completed, GitHub contributions, KodeTalent activity
-- summary: must mention their actual college, field, and real skills only — do not name-drop a job-posting skill the student doesn't have just because it's the target role
-- jdKeywords: list EVERY skill/tech/qualification term the job description or target-role list mentions, required or "nice to have" alike — this powers an honest coverage score, so leaving out a skill the student is missing is as wrong as inventing one they don't have. Do not invent terms the JD never mentions, but do not omit ones it does.
-- Tailor everything to the provided job description / target role if given, using only real, existing skills to do so`;
-
-    const response = await anthropic.messages.create({
-      model: AI_MODEL,
-      max_tokens: 3000,
-      system: systemPrompt,
-      messages: [{ role: "user", content: userPrompt }],
+    const { doc, generation, evidenceMap } = await runResumePipeline({
+      student,
+      jdText,
+      roleTitle,
+      jobTags,
+      templateDensity: TEMPLATE_DENSITY[templateId],
+      signal: controller.signal,
+      onProgress: isSSE
+        ? (stage, status) => {
+            if (status === "start") res.write(`data: ${JSON.stringify({ stage, message: STAGE_COPY[stage] ?? stage })}\n\n`);
+          }
+        : undefined,
     });
-
-    const rawText = response.content[0]?.type === "text" ? response.content[0].text : "";
-    let generatedContent: {
-      summary: string;
-      skillSections: { category: string; items: string }[];
-      experience?: { company: string; role: string; period: string; bullets: string[] }[];
-      projects: { title: string; tech: string; bullets: string[] }[];
-      certifications: { name: string; issuer: string; date?: string }[];
-      achievements: string[];
-      jdKeywords?: string[];
-    };
-    try {
-      generatedContent = extractJson(rawText);
-    } catch {
-      req.log.error({ rawText }, "AI did not return valid JSON");
-      return res.status(500).json({ error: "Failed to generate resume content" });
-    }
-
-    // The model is instructed not to borrow job-posting/target-role skills into
-    // skillSections, but a cheap model does not reliably hold that line — verified
-    // by testing: an empty-skills profile still got the job's tags echoed back as
-    // the student's own skills. Enforce it deterministically instead of trusting
-    // the prompt: keep only items that actually match the student's real skills
-    // or GitHub languages (same fuzzy substring match Resume.tsx's getMatchScore uses).
-    const realSkillPool = [...topSkillNames, ...(githubStats?.topLanguages ?? [])].map(s => s.toLowerCase());
-    if (realSkillPool.length > 0 && Array.isArray(generatedContent.skillSections)) {
-      generatedContent.skillSections = generatedContent.skillSections
-        .map(section => {
-          const items = (section.items ?? "")
-            .split(",")
-            .map(i => i.trim())
-            .filter(Boolean)
-            .filter(item => {
-              const low = item.toLowerCase();
-              return realSkillPool.some(real => real.includes(low) || low.includes(real));
-            });
-          return { ...section, items: items.join(", ") };
-        })
-        .filter(section => section.items.length > 0);
-    } else if (Array.isArray(generatedContent.skillSections)) {
-      // No real skills on file at all — there is nothing genuine to list.
-      generatedContent.skillSections = [];
-    }
-
-    // Deterministic, honest-by-construction ATS coverage: only count a JD keyword
-    // as "matched" if it actually appears in the student's real skills or in the
-    // profile-grounded content we just generated — never trust the model's own claim.
-    const hasJdSignal = Boolean(jdText || roleTitle || jobTags.length > 0);
-    const rawKeywords = Array.isArray(generatedContent.jdKeywords) ? generatedContent.jdKeywords : [];
-    const jdKeywords = rawKeywords.filter((k): k is string => typeof k === "string").slice(0, 25);
-    const { jdKeywords: _omit, ...contentWithoutKeywords } = generatedContent;
-    let atsMeta: { jdKeywords: string[]; matched: string[]; coveragePct: number } | null = null;
-    if (hasJdSignal && jdKeywords.length > 0) {
-      const haystack = (
-        topSkillNames.join(" ") +
-        " " +
-        JSON.stringify(contentWithoutKeywords)
-      ).toLowerCase();
-      const matched = jdKeywords.filter(k => haystack.includes(k.toLowerCase()));
-      atsMeta = { jdKeywords, matched, coveragePct: Math.round((matched.length / jdKeywords.length) * 100) };
-    }
-
-    const fullContent = {
-      name: student.name,
-      email: student.email,
-      phone: student.phone ?? null,
-      city: student.city,
-      githubUrl: student.githubUrl ?? null,
-      linkedinUrl: student.linkedinUrl ?? null,
-      portfolioUrl: student.portfolioUrl ?? null,
-      degree,
-      college: student.college,
-      startYear,
-      gradYear,
-      cgpa: student.cgpa ?? null,
-      ...contentWithoutKeywords,
-      atsMeta,
-    };
 
     const name =
       resumeName?.trim() ||
@@ -311,17 +123,41 @@ Rules:
         templateId,
         jdText: jdText || null,
         companyName: companyName || null,
-        content: fullContent,
+        roleTitle: roleTitle || null,
+        jobTags,
+        content: doc,
+        atsScore: doc.atsMeta?.scorePct ?? null,
+        atsReport: doc.atsMeta ?? null,
+        evidenceMap,
+        generation,
+        schemaVersion: 2,
       })
       .returning();
 
-    logEvent(id, "resume_generated", name, { templateId });
+    logEvent(id, "resume_generated", name, { templateId, degraded: generation.degraded });
 
-    return res.status(201).json(saved);
+    if (isSSE) {
+      res.write(`data: ${JSON.stringify({ done: true, resume: saved })}\n\n`);
+      res.end();
+    } else {
+      res.status(201).json(saved);
+    }
   } catch (err) {
+    if (controller.signal.aborted) {
+      // Client disconnected mid-generation — nothing to send back, and the
+      // aborted OpenAI call means we didn't pay for a response nobody reads.
+      if (!res.writableEnded) res.end();
+      return;
+    }
     req.log.error({ err }, "Failed to generate resume");
-    return res.status(500).json({ error: "Failed to generate resume" });
+    if (isSSE) {
+      res.write(`data: ${JSON.stringify({ done: true, error: true })}\n\n`);
+      res.end();
+    } else if (!res.headersSent) {
+      res.status(500).json({ error: "Failed to generate resume" });
+    }
   }
+  return;
 });
 
 // ─── PATCH /students/:id/resumes/:resumeId ────────────────────────────────────
@@ -457,7 +293,18 @@ router.patch("/students/:id/resumes/:resumeId", requireStudent({ allowGuest: tru
 
     const updatedContent = { ...existingContent, ...patchedFields };
 
-    const setFields: { content: Record<string, unknown>; templateId?: TemplateId } = { content: updatedContent };
+    // Recompute the deterministic ATS score against the edited content —
+    // otherwise the score shown to the student goes stale the moment they
+    // change a bullet or add a skill.
+    const upgradedDoc = upgradeContent(updatedContent);
+    const jobTags = Array.isArray(resume.jobTags) ? (resume.jobTags as unknown[]).filter((t): t is string => typeof t === "string") : [];
+    const atsReport = buildAtsReport({ doc: upgradedDoc, jdText: resume.jdText ?? undefined, jobTags });
+
+    const setFields: { content: Record<string, unknown>; templateId?: TemplateId; atsScore?: number | null; atsReport?: unknown } = {
+      content: updatedContent,
+      atsScore: atsReport?.scorePct ?? null,
+      atsReport: atsReport ?? null,
+    };
     if (templateId) setFields.templateId = templateId;
 
     const [updated] = await db
