@@ -18,6 +18,7 @@ import { renderResumePdf, TEMPLATE_REGISTRY, resolveTemplateConfig, preloadFonts
 import { renderResumeDocx } from "@/lib/resume-pdf/resume-docx";
 import { ResumePreview, ResumeThumbnail, preloadPdfjs } from "@/components/resume/ResumePreview";
 import { AtsFixList } from "@/components/resume/AtsFixList";
+import { InlineEditPreview } from "@/components/resume/InlineEditPreview";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -1031,7 +1032,18 @@ function GenerateSheet({
               </div>
             </div>
 
-            <ResumePreview resume={previewDoc} templateId={templateId} className="max-w-[280px] mx-auto" />
+            {generatedResume ? (
+              <InlineEditPreview
+                resume={previewDoc}
+                templateId={templateId}
+                studentId={studentId}
+                resumeId={generatedResume.id}
+                className="max-w-[280px] mx-auto"
+                onUpdated={updated => setGeneratedResume(updated as SavedResume)}
+              />
+            ) : (
+              <ResumePreview resume={previewDoc} templateId={templateId} className="max-w-[280px] mx-auto" />
+            )}
 
             {previewDoc.atsMeta && (
               <div className="flex justify-center">

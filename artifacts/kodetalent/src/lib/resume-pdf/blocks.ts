@@ -3,7 +3,7 @@ import type { ResumeDocument, SectionKey } from "@workspace/resume-core";
 import { PAGE, CONTENT_WIDTH } from "./geometry";
 import { spacing, TYPE_SCALE, PALETTE, UPPERCASE_NAME_EXTRA_TRACKING, type SpacingRole } from "./tokens";
 import { setStyle, measureText, wrapText, linesHeight, resetTracking } from "./measure";
-import type { Chunk, Atom } from "./typeset";
+import type { Chunk, Atom, ChunkSource } from "./typeset";
 import type { TemplateConfig } from "./templateConfig";
 import { DEFAULT_HEADING_LABELS } from "./templateConfig";
 
@@ -104,9 +104,10 @@ export function buildChunks(doc: jsPDF, resume: ResumeDocument, config: Template
   const headerChunk: Chunk = { id: nextId(), kind: "header", height: headerDy, gapBefore: 0, keepWithNextHeight: 0, atoms: headerAtoms };
 
   // ─── Section content builders — each returns its own chunks, unaware of headings ─
-  const pushBulletsForEntry = (entryId: string, bullets: { text: string }[]): Chunk[] => {
+  const pushBulletsForEntry = (entryId: string, bullets: { text: string }[], sourceSection?: SectionKey, entryIndex?: number): Chunk[] => {
     const out: Chunk[] = [];
-    for (const b of bullets) {
+    for (let bIdx = 0; bIdx < bullets.length; bIdx++) {
+      const b = bullets[bIdx];
       setStyle(doc, "body", family, {});
       const lines = wrapText(doc, b.text, CW - gw);
       const atoms: Atom[] = [];
@@ -115,7 +116,10 @@ export function buildChunks(doc: jsPDF, resume: ResumeDocument, config: Template
         atoms.push({ kind: "text", x: ML + (i === 0 ? 0 : gw), dy, text: i === 0 ? `${config.bullet.glyph} ${line}` : line, role: "body", family, color: PALETTE.body });
         dy += TYPE_SCALE.body.leading;
       });
-      out.push({ id: nextId(), entryId, kind: "bullet", height: dy, gapBefore: 0, keepWithNextHeight: 0, atoms });
+      const source: ChunkSource | undefined = sourceSection !== undefined && entryIndex !== undefined
+        ? { section: sourceSection, entryIndex, bulletIndex: bIdx, field: "bulletText" }
+        : undefined;
+      out.push({ id: nextId(), entryId, kind: "bullet", height: dy, gapBefore: 0, keepWithNextHeight: 0, atoms, source });
     }
     return out;
   };
@@ -130,7 +134,7 @@ export function buildChunks(doc: jsPDF, resume: ResumeDocument, config: Template
       atoms.push({ kind: "text", x: ML, dy, text: line, role: "body", family, color: PALETTE.body });
       dy += TYPE_SCALE.body.leading;
     }
-    return [{ id: nextId(), kind: "line", height: dy, gapBefore: 0, keepWithNextHeight: 0, atoms }];
+    return [{ id: nextId(), kind: "line", height: dy, gapBefore: 0, keepWithNextHeight: 0, atoms, source: { section: "summary", field: "summary" } }];
   };
 
   const buildExperience = (): Chunk[] => {
@@ -153,7 +157,7 @@ export function buildChunks(doc: jsPDF, resume: ResumeDocument, config: Template
         atoms.push({ kind: "text", x: ML + CW, dy: 0, text: right, role: "meta", family, color: PALETTE.muted, align: "right" });
       }
       out.push({ id: nextId(), entryId, kind: "entryHeader", height: headerHeight, gapBefore: idx === 0 ? 0 : sp("lg"), keepWithNextHeight: firstBulletHeight, atoms });
-      out.push(...pushBulletsForEntry(entryId, e.bullets));
+      out.push(...pushBulletsForEntry(entryId, e.bullets, "experience", idx));
     });
     return out;
   };
@@ -179,7 +183,7 @@ export function buildChunks(doc: jsPDF, resume: ResumeDocument, config: Template
         }
       }
       out.push({ id: nextId(), entryId, kind: "entryHeader", height: headerHeight, gapBefore: idx === 0 ? 0 : sp("lg"), keepWithNextHeight: firstBulletHeight, atoms });
-      out.push(...pushBulletsForEntry(entryId, p.bullets));
+      out.push(...pushBulletsForEntry(entryId, p.bullets, "projects", idx));
     });
     return out;
   };
@@ -254,6 +258,23 @@ export function buildChunks(doc: jsPDF, resume: ResumeDocument, config: Template
     return out;
   };
 
+  const buildAchievements = (): Chunk[] => {
+    const out: Chunk[] = [];
+    resume.achievements.forEach((a, idx) => {
+      setStyle(doc, "body", family, {});
+      const full = `${config.bullet.glyph} ${a.text}`;
+      const lines = wrapText(doc, full, CW - gw);
+      const atoms: Atom[] = [];
+      let dy = 0;
+      lines.forEach((line, i) => {
+        atoms.push({ kind: "text", x: ML + (i === 0 ? 0 : gw), dy, text: line, role: "body", family, color: PALETTE.body });
+        dy += TYPE_SCALE.body.leading;
+      });
+      out.push({ id: nextId(), kind: "line", height: dy, gapBefore: idx === 0 ? 0 : sp("xs"), keepWithNextHeight: 0, atoms, source: { section: "achievements", entryIndex: idx, field: "achievementText" } });
+    });
+    return out;
+  };
+
   const SECTION_BUILDERS: Record<SectionKey, () => Chunk[]> = {
     summary: buildSummary,
     experience: buildExperience,
@@ -261,7 +282,7 @@ export function buildChunks(doc: jsPDF, resume: ResumeDocument, config: Template
     skills: buildSkills,
     education: buildEducation,
     certifications: () => buildListLines(resume.certifications.map((c) => `${c.name}, ${c.issuer}${c.date ? ` (${c.date})` : ""}`)),
-    achievements: () => buildListLines(resume.achievements.map((a) => a.text)),
+    achievements: buildAchievements,
   };
 
   const SECTION_HAS_CONTENT: Record<SectionKey, boolean> = {

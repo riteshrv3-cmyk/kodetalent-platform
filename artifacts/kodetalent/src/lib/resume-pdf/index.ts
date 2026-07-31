@@ -1,7 +1,7 @@
 import { jsPDF } from "jspdf";
 import type { ResumeDocument } from "@workspace/resume-core";
 import { buildChunks } from "./blocks";
-import { paginate, predictLayout as predictFromPages, COMPRESSION_LADDER, EXPANSION_STEP, type LayoutPrediction } from "./typeset";
+import { paginate, predictLayout as predictFromPages, COMPRESSION_LADDER, EXPANSION_STEP, type LayoutPrediction, type Page } from "./typeset";
 import { paint, createDocument, applyDocumentMetadata, buildFilename } from "./paint";
 import type { TemplateConfig, TemplateId } from "./templateConfig";
 import { atsTemplate } from "./templates/ats";
@@ -36,7 +36,11 @@ export interface RenderResult {
   filename: string;
   layout: LayoutPrediction;
   fontsLoaded: boolean;
+  pages: Page[];
 }
+
+export type { Page } from "./typeset";
+export type { ChunkSource } from "./typeset";
 
 /**
  * Runs the fit pass: if the content spills onto a near-empty second page,
@@ -80,7 +84,7 @@ export async function renderResumePdf(
   const filename = buildFilename(resume, opts.resumeName || `${config.label} Resume`);
   const layout = predictFromPages(pages);
 
-  return { doc, filename, layout, fontsLoaded };
+  return { doc, filename, layout, fontsLoaded, pages };
 }
 
 /**

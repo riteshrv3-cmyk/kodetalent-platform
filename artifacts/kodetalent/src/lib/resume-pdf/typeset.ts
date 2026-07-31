@@ -2,6 +2,14 @@ import type { RGB } from "./tokens";
 import type { TypeRole } from "./tokens";
 import type { FontFamily } from "./fonts";
 import { PAGE, CONTENT_HEIGHT } from "./geometry";
+import type { SectionKey } from "@workspace/resume-core";
+
+export interface ChunkSource {
+  section: SectionKey;
+  entryIndex?: number;
+  bulletIndex?: number;
+  field: "summary" | "bulletText" | "achievementText";
+}
 
 export type Atom =
   | { kind: "text"; x: number; dy: number; text: string; role: TypeRole; family: FontFamily; styleOverride?: "normal" | "bold" | "italic"; color?: RGB; extraTracking?: number; align?: "left" | "right" | "center" }
@@ -26,6 +34,8 @@ export interface Chunk {
   /** Extra height (of the immediately-following chunk) that must also fit on this page. 0 if none. */
   keepWithNextHeight: number;
   atoms: Atom[];
+  /** Which part of the ResumeDocument this chunk represents — used for inline edit hit-testing. */
+  source?: ChunkSource;
 }
 
 export interface PlacedChunk {
