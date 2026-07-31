@@ -91,8 +91,8 @@ router.post("/students/:id/resumes", requireStudent({ allowGuest: true }), rlRes
       templateDensity: TEMPLATE_DENSITY[templateId],
       signal: controller.signal,
       onProgress: isSSE
-        ? (stage, status) => {
-            if (status === "start") res.write(`data: ${JSON.stringify({ stage, message: STAGE_COPY[stage] ?? stage })}\n\n`);
+        ? (stage, status, payload) => {
+            res.write(`data: ${JSON.stringify({ stage, status, message: STAGE_COPY[stage] ?? stage, ...payload })}\n\n`);
           }
         : undefined,
     });

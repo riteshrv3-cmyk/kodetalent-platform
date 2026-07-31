@@ -13,7 +13,8 @@ import { applyPatches } from "./patch";
 type Student = typeof studentsTable.$inferSelect;
 
 export type PipelineStageName = "jd" | "map" | "draft" | "critic";
-export type PipelineProgress = (stage: PipelineStageName, status: "start" | "done") => void;
+export type PipelineProgressPayload = Record<string, unknown>;
+export type PipelineProgress = (stage: PipelineStageName, status: "start" | "done", payload?: PipelineProgressPayload) => void;
 
 export interface RunPipelineOptions {
   student: Student;
@@ -31,11 +32,15 @@ export interface RunPipelineResult {
   evidenceMap: EvidenceMap;
 }
 
-async function timed<T>(name: PipelineStageName, onProgress: PipelineProgress | undefined, run: () => Promise<{ value: T; cached: boolean; degraded: boolean }>): Promise<{ value: T; telemetry: StageTelemetry }> {
+async function timed<T>(
+  name: PipelineStageName,
+  onProgress: PipelineProgress | undefined,
+  run: () => Promise<{ value: T; cached: boolean; degraded: boolean; payload?: PipelineProgressPayload }>,
+): Promise<{ value: T; telemetry: StageTelemetry }> {
   onProgress?.(name, "start");
   const start = Date.now();
-  const { value, cached, degraded } = await run();
-  onProgress?.(name, "done");
+  const { value, cached, degraded, payload } = await run();
+  onProgress?.(name, "done", payload);
   return { value, telemetry: { name, ms: Date.now() - start, cached, ok: !degraded } };
 }
 
@@ -55,7 +60,7 @@ export async function runResumePipeline(opts: RunPipelineOptions): Promise<RunPi
     Promise.resolve(buildLedger(opts.student)),
     timed("jd", opts.onProgress, async () => {
       const r = await analyzeJd({ jdText: opts.jdText, roleTitle: opts.roleTitle, jobTags: opts.jobTags, signal: opts.signal });
-      return { value: r.analysis, cached: r.cached, degraded: r.degraded };
+      return { value: r.analysis, cached: r.cached, degraded: r.degraded, payload: { keywordCount: r.analysis.hardSkills.length } };
     }),
   ]);
   stages.push(jdStage.telemetry);
@@ -63,7 +68,11 @@ export async function runResumePipeline(opts: RunPipelineOptions): Promise<RunPi
 
   const mapStage = await timed("map", opts.onProgress, async () => {
     const r = await buildEvidenceMap(ledger, jd, opts.signal);
-    return { value: r.map, cached: r.cached, degraded: r.degraded };
+    const { coverage } = r.map;
+    const have = coverage.filter(c => c.status === "strong").length;
+    const partial = coverage.filter(c => c.status === "partial").length;
+    const missing = coverage.filter(c => c.status === "absent").map(c => c.jdTerm).slice(0, 6);
+    return { value: r.map, cached: r.cached, degraded: r.degraded, payload: { have, partial, missing } };
   });
   stages.push(mapStage.telemetry);
   const map = mapStage.value;

@@ -16,6 +16,7 @@ import { apiFetch } from "@/lib/api/authFetch";
 import { upgradeContent, buildAtsReport } from "@workspace/resume-core";
 import { renderResumePdf, TEMPLATE_REGISTRY, resolveTemplateConfig, preloadFonts } from "@/lib/resume-pdf";
 import { ResumePreview, ResumeThumbnail, preloadPdfjs } from "@/components/resume/ResumePreview";
+import { AtsFixList } from "@/components/resume/AtsFixList";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -64,6 +65,9 @@ interface SavedResume {
   companyName?: string | null;
   content: ResumeContent;
   createdAt: string;
+  evidenceMap?: { thesis?: string; honestGaps?: { term: string; whyItMatters: string }[]; coverage?: { jdTerm: string; status: string }[] } | null;
+  generation?: { degraded?: boolean } | null;
+  atsReport?: { scorePct: number; matched: { term: string; where: string }[]; missing: { term: string; importance: string }[] } | null;
 }
 
 // ─── Template definitions ─────────────────────────────────────────────────────
@@ -457,6 +461,16 @@ function EditResumeSheet({
           </p>
         </div>
       )}
+      {atsReport && resume.atsReport && (
+        <AtsFixList
+          studentId={studentId}
+          resumeId={resume.id}
+          atsReport={resume.atsReport}
+          coverage={resume.evidenceMap?.coverage}
+          content={{ skillSections: skillSections.map(s => ({ ...s, items: s.items })) }}
+          onUpdated={saved => onSaved(saved as SavedResume)}
+        />
+      )}
     </>
   );
 
@@ -804,28 +818,73 @@ function GenerateSheet({
   const [generatedResume, setGeneratedResume] = useState<SavedResume | null>(null);
   const [finishing, setFinishing] = useState(false);
 
+  // SSE generation state
+  type StageStatus = "pending" | "active" | "done";
+  const STAGES: { name: string; key: string }[] = [
+    { key: "jd", name: "Reading the job description" },
+    { key: "map", name: "Matching against your real work" },
+    { key: "draft", name: "Writing your bullets" },
+    { key: "critic", name: "Running an ATS screen" },
+  ];
+  const [stageStatuses, setStageStatuses] = useState<Record<string, StageStatus>>({});
+  const [findings, setFindings] = useState<{ have: number; partial: number; missing: string[] } | null>(null);
+
   const generate = async () => {
     setGenerating(true);
+    setStageStatuses({});
+    setFindings(null);
+    const abortCtrl = new AbortController();
     try {
       const r = await apiFetch(`/api/students/${studentId}/resumes`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "Accept": "text/event-stream" },
         body: JSON.stringify({
           templateId, jdText, companyName, resumeName,
           roleTitle: initialRole, jobTags: initialTags,
         }),
+        signal: abortCtrl.signal,
       });
-      if (!r.ok) {
+      if (!r.ok || !r.body) {
         const err = await r.json().catch(() => ({})) as { error?: string };
         throw new Error(err.error ?? "Failed to generate");
       }
-      const saved = await r.json() as SavedResume;
-      toast({ title: "Resume generated!", description: saved.name });
-      // Show a result step instead of closing immediately — template tiles
-      // below re-render the real PDF instantly with zero further AI calls.
-      setGeneratedResume(saved);
+
+      const reader = r.body.getReader();
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        for (const line of chunk.split("\n").filter(l => l.startsWith("data: "))) {
+          try {
+            const data = JSON.parse(line.slice(6)) as {
+              stage?: string; status?: string; message?: string;
+              have?: number; partial?: number; missing?: string[];
+              done?: boolean; resume?: SavedResume; error?: boolean;
+            };
+            if (data.stage && data.status) {
+              setStageStatuses(prev => ({ ...prev, [data.stage!]: data.status === "start" ? "active" : "done" }));
+            }
+            if (data.stage === "map" && data.status === "done" && typeof data.have === "number") {
+              setFindings({ have: data.have, partial: data.partial ?? 0, missing: data.missing ?? [] });
+            }
+            if (data.done) {
+              if (data.error) throw new Error("Generation failed on server");
+              if (data.resume) {
+                toast({ title: "Resume ready!", description: data.resume.name });
+                setGeneratedResume(data.resume as unknown as SavedResume);
+              }
+            }
+          } catch (e) {
+            if ((e as Error).message === "Generation failed on server") throw e;
+          }
+        }
+      }
     } catch (e) {
-      toast({ title: "Generation failed", description: (e as Error).message, variant: "destructive" });
+      if ((e as Error).name !== "AbortError") {
+        toast({ title: "Generation failed", description: (e as Error).message, variant: "destructive" });
+      }
     } finally {
       setGenerating(false);
     }
@@ -918,9 +977,32 @@ function GenerateSheet({
             {previewDoc.atsMeta && (
               <div className="flex justify-center">
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-brand-soft text-brand">
-                  ATS match {previewDoc.atsMeta.scorePct}%
+                  ATS match {(previewDoc.atsMeta as { scorePct?: number }).scorePct}%
                 </span>
               </div>
+            )}
+
+            {generatedResume?.evidenceMap?.thesis && (
+              <div className="rounded-xl bg-canvas border border-line p-3 space-y-1.5 text-[12px]">
+                <p className="font-semibold text-ink">What the AI focused on</p>
+                <p className="text-ink-muted leading-snug">{generatedResume.evidenceMap.thesis}</p>
+                {generatedResume.evidenceMap.honestGaps && generatedResume.evidenceMap.honestGaps.length > 0 && (
+                  <p className="text-ink-muted">
+                    Not matched: <span className="font-medium text-ink">{generatedResume.evidenceMap.honestGaps.map(g => g.term).join(", ")}</span>
+                  </p>
+                )}
+              </div>
+            )}
+
+            {generatedResume?.atsReport && (
+              <AtsFixList
+                studentId={studentId}
+                resumeId={generatedResume.id}
+                atsReport={generatedResume.atsReport}
+                coverage={generatedResume.evidenceMap?.coverage}
+                content={{ skillSections: generatedResume.content.skillSections }}
+                onUpdated={updated => setGeneratedResume(updated as SavedResume)}
+              />
             )}
 
             <Button
@@ -1018,27 +1100,45 @@ function GenerateSheet({
               />
             </div>
 
-            <Button
-              onClick={generate}
-              disabled={generating}
-              className="w-full h-12 rounded-full bg-brand text-white hover:bg-brand/90 font-bold text-[15px]"
-            >
-              {generating ? (
-                <>
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  AI is building your resume…
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-5 h-5 mr-2" />
-                  Generate Resume
-                </>
-              )}
-            </Button>
-            {generating && (
-              <p className="text-center text-[12px] text-ink-muted -mt-2">
-                Using your real profile data — this takes 10–20 seconds
-              </p>
+            {generating ? (
+              <div className="space-y-3 py-1">
+                {STAGES.map(s => {
+                  const status = stageStatuses[s.key] ?? "pending";
+                  return (
+                    <div key={s.key} className="flex items-center gap-3">
+                      {status === "done" ? (
+                        <Check className="w-4 h-4 text-brand flex-shrink-0" />
+                      ) : status === "active" ? (
+                        <Loader2 className="w-4 h-4 text-brand animate-spin flex-shrink-0" />
+                      ) : (
+                        <div className="w-4 h-4 rounded-full border-2 border-line flex-shrink-0" />
+                      )}
+                      <span className={`text-[13px] ${status === "pending" ? "text-ink-muted" : "text-ink font-medium"}`}>
+                        {s.name}
+                      </span>
+                    </div>
+                  );
+                })}
+                {findings && (
+                  <div className="rounded-xl bg-brand-soft border border-brand/20 p-3 mt-2 text-[12px]">
+                    <p className="font-semibold text-ink mb-1">Skills found in this JD:</p>
+                    <p className="text-ink-muted">
+                      {findings.have} matched strongly, {findings.partial} partial
+                      {findings.missing.length > 0 && (
+                        <span> — missing: <span className="font-medium text-ink">{findings.missing.join(", ")}</span></span>
+                      )}
+                    </p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <Button
+                onClick={generate}
+                className="w-full h-12 rounded-full bg-brand text-white hover:bg-brand/90 font-bold text-[15px]"
+              >
+                <Sparkles className="w-5 h-5 mr-2" />
+                Generate Resume
+              </Button>
             )}
           </>
         )}
