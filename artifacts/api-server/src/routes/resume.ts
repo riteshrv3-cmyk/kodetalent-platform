@@ -211,10 +211,11 @@ router.patch("/students/:id/resumes/:resumeId", requireStudent({ allowGuest: tru
     const jobTags = Array.isArray(resume.jobTags) ? (resume.jobTags as unknown[]).filter((t): t is string => typeof t === "string") : [];
     const atsReport = buildAtsReport({ doc: upgradedDoc, jdText: resume.jdText ?? undefined, jobTags });
 
-    const setFields: { content: Record<string, unknown>; templateId?: TemplateId; atsScore?: number | null; atsReport?: unknown; versions?: ResumeVersion[] } = {
+    const setFields: { content: Record<string, unknown>; templateId?: TemplateId; atsScore?: number | null; atsReport?: unknown; versions?: ResumeVersion[]; updatedAt: Date } = {
       content: updatedContent,
       atsScore: atsReport?.scorePct ?? null,
       atsReport: atsReport ?? null,
+      updatedAt: new Date(),
     };
     if (templateId) setFields.templateId = templateId;
 
@@ -283,6 +284,7 @@ router.post("/students/:id/resumes/:resumeId/restore-version", requireStudent({ 
         atsScore: atsReport?.scorePct ?? null,
         atsReport: atsReport ?? null,
         versions: newVersions,
+        updatedAt: new Date(),
       })
       .where(eq(studentResumesTable.id, resumeId))
       .returning();

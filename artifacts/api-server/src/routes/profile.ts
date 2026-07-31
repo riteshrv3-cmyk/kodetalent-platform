@@ -487,9 +487,7 @@ interface GithubRepo {
   description: string | null;
   language: string | null;
   html_url: string;
-  stargazers_count: number;
   fork: boolean;
-  topics: string[];
 }
 
 router.post("/students/:id/profile/github-projects", requireStudent(), rlAiMedium, async (req, res) => {
@@ -532,9 +530,8 @@ router.post("/students/:id/profile/github-projects", requireStudent(), rlAiMediu
         id: `gh_${Date.now()}_${i}`,
         title: r.name,
         description: r.description ?? "",
-        techStack: r.language ?? "",
+        techStack: r.language ? [r.language] : [],
         githubUrl: r.html_url,
-        bullets: [] as string[],
       }));
 
     if (newProjects.length === 0) {
