@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useLocation } from "wouter";
+import { useUser } from "@clerk/react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Download, Plus, Trash2, Sparkles,
@@ -290,6 +291,57 @@ function TargetRecommendations({
 // ResumeContent type) into the engine's ResumeDocument (v2) — a pure,
 // read-time conversion, so this keeps working unchanged once Phase 5 starts
 // persisting v2 content directly.
+
+// ─── Signup gate ────────────────────────────────────────────────────────────
+// Guests can generate resumes freely, but downloading/sharing requires an
+// account — otherwise there's no way to reach them again. The intent survives
+// the sign-up redirect via sessionStorage so the action fires automatically
+// the moment the student lands back on /resume, signed in.
+
+type DownloadIntent = "pdf" | "docx" | "share";
+const DOWNLOAD_INTENT_KEY = "resumeDownloadIntent";
+
+function stashDownloadIntent(resumeId: number, intent: DownloadIntent): void {
+  sessionStorage.setItem(DOWNLOAD_INTENT_KEY, JSON.stringify({ resumeId, intent }));
+}
+
+function consumeDownloadIntent(): { resumeId: number; intent: DownloadIntent } | null {
+  const raw = sessionStorage.getItem(DOWNLOAD_INTENT_KEY);
+  if (!raw) return null;
+  sessionStorage.removeItem(DOWNLOAD_INTENT_KEY);
+  try {
+    const parsed = JSON.parse(raw) as { resumeId?: unknown; intent?: unknown };
+    if (typeof parsed.resumeId === "number" && (parsed.intent === "pdf" || parsed.intent === "docx" || parsed.intent === "share")) {
+      return { resumeId: parsed.resumeId, intent: parsed.intent };
+    }
+  } catch {
+    // malformed — ignore
+  }
+  return null;
+}
+
+/**
+ * If signed in, runs the action now. If confirmed a guest (Clerk has finished
+ * loading and isSignedIn is false), stashes the intent and sends the student
+ * to sign up. While Clerk is still loading, fails open and runs the action —
+ * this is a growth nudge, not a security gate, so never wrongly bounce an
+ * already-signed-in student who clicked before the SDK finished loading.
+ */
+function gateOnSignup(
+  isLoaded: boolean,
+  isSignedIn: boolean | undefined,
+  setLocation: (path: string) => void,
+  resumeId: number,
+  intent: DownloadIntent,
+  run: () => void,
+): void {
+  if (!isLoaded || isSignedIn) {
+    run();
+    return;
+  }
+  stashDownloadIntent(resumeId, intent);
+  setLocation("/sign-up");
+}
 
 // Fire-and-forget: logs the download and auto-links this resume to a
 // same-company application if one's waiting unlinked. Never blocks or
@@ -932,6 +984,8 @@ function GenerateSheet({
   initialParentResumeId?: number;
 }) {
   const { toast } = useToast();
+  const { isSignedIn, isLoaded } = useUser();
+  const [, setLocation] = useLocation();
   const [templateId, setTemplateId] = useState("ats");
   const [jdText, setJdText] = useState(initialJd);
   const [companyName, setCompanyName] = useState(initialCompany);
@@ -1144,14 +1198,16 @@ function GenerateSheet({
             {generatedResume && (
               <div className="flex gap-2">
                 <Button
-                  onClick={() => downloadResumePDF(generatedResume).catch(() => toast({ title: "PDF error", variant: "destructive" }))}
+                  onClick={() => gateOnSignup(isLoaded, isSignedIn, setLocation, generatedResume.id, "pdf", () =>
+                    downloadResumePDF(generatedResume).catch(() => toast({ title: "PDF error", variant: "destructive" })))}
                   className="flex-1 h-10 rounded-full bg-brand text-white hover:bg-brand/90 font-bold text-xs"
                 >
                   <Download className="w-3.5 h-3.5 mr-1.5" />
                   PDF
                 </Button>
                 <Button
-                  onClick={() => downloadResumeDocx(generatedResume).catch(() => toast({ title: "DOCX error", variant: "destructive" }))}
+                  onClick={() => gateOnSignup(isLoaded, isSignedIn, setLocation, generatedResume.id, "docx", () =>
+                    downloadResumeDocx(generatedResume).catch(() => toast({ title: "DOCX error", variant: "destructive" })))}
                   variant="outline"
                   className="flex-1 h-10 rounded-full border border-line text-ink-muted font-bold text-xs"
                 >
@@ -1319,6 +1375,7 @@ function GenerateSheet({
 export default function Resume() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { isSignedIn, isLoaded } = useUser();
   const [studentId, setStudentId] = useState<number | null>(null);
   const [resumes, setResumes] = useState<SavedResume[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1393,6 +1450,53 @@ export default function Resume() {
   const handleResumeUpdated = (updated: SavedResume) => {
     setResumes(prev => prev.map(r => r.id === updated.id ? updated : r));
   };
+
+  const handleDownloadPdf = useCallback((resume: SavedResume) => {
+    downloadResumePDF(resume).catch((e) => {
+      toast({ title: "Couldn't generate PDF", description: (e as Error).message, variant: "destructive" });
+    });
+  }, [toast]);
+
+  const handleDownloadDocx = useCallback((resume: SavedResume) => {
+    downloadResumeDocx(resume).catch((e) => {
+      toast({ title: "Couldn't generate DOCX", description: (e as Error).message, variant: "destructive" });
+    });
+  }, [toast]);
+
+  const handleShare = useCallback((resume: SavedResume) => {
+    if (resume.shareSlug) {
+      const url = `${window.location.origin}/r/${resume.shareSlug}`;
+      navigator.clipboard.writeText(url).then(() => {
+        toast({ title: "Link copied", description: url });
+      }).catch(() => toast({ title: url }));
+      return;
+    }
+    apiFetch(`/api/students/${resume.studentId}/resumes/${resume.id}/share`, { method: "POST" })
+      .then(r => r.json())
+      .then((data: { slug: string }) => {
+        const url = `${window.location.origin}/r/${data.slug}`;
+        setResumes(prev => prev.map(r => r.id === resume.id ? { ...r, shareSlug: data.slug } : r));
+        navigator.clipboard.writeText(url).catch(() => undefined);
+        toast({ title: "Share link created", description: url });
+      })
+      .catch(() => toast({ title: "Couldn't create share link", variant: "destructive" }));
+  }, [toast]);
+
+  // Resumes a download/share intent stashed before a guest was sent to sign
+  // up — fires once the student is back, signed in, and their resumes are
+  // loaded (the intent's resumeId needs to be in the fetched list).
+  const consumedIntentRef = useRef(false);
+  useEffect(() => {
+    if (!isSignedIn || loading || consumedIntentRef.current) return;
+    const intent = consumeDownloadIntent();
+    if (!intent) return;
+    consumedIntentRef.current = true;
+    const resume = resumes.find(r => r.id === intent.resumeId);
+    if (!resume) return;
+    if (intent.intent === "pdf") handleDownloadPdf(resume);
+    else if (intent.intent === "docx") handleDownloadDocx(resume);
+    else if (intent.intent === "share") handleShare(resume);
+  }, [isSignedIn, loading, resumes, handleDownloadPdf, handleDownloadDocx, handleShare]);
 
   const handleDelete = async (resumeId: number) => {
     if (!studentId) return;
@@ -1490,16 +1594,8 @@ export default function Resume() {
                     onDelete={() => {
                       if (deletingId !== resume.id) handleDelete(resume.id);
                     }}
-                    onDownload={() => {
-                      downloadResumePDF(resume).catch((e) => {
-                        toast({ title: "Couldn't generate PDF", description: (e as Error).message, variant: "destructive" });
-                      });
-                    }}
-                    onDownloadDocx={() => {
-                      downloadResumeDocx(resume).catch((e) => {
-                        toast({ title: "Couldn't generate DOCX", description: (e as Error).message, variant: "destructive" });
-                      });
-                    }}
+                    onDownload={() => gateOnSignup(isLoaded, isSignedIn, setLocation, resume.id, "pdf", () => handleDownloadPdf(resume))}
+                    onDownloadDocx={() => gateOnSignup(isLoaded, isSignedIn, setLocation, resume.id, "docx", () => handleDownloadDocx(resume))}
                     onCopyText={() => {
                       const doc = upgradeContent(resume.content);
                       navigator.clipboard.writeText(renderPlainText(doc)).then(() => {
@@ -1508,25 +1604,7 @@ export default function Resume() {
                         toast({ title: "Copy failed", description: "Clipboard access denied", variant: "destructive" });
                       });
                     }}
-                    onShare={() => {
-                      if (resume.shareSlug) {
-                        const url = `${window.location.origin}/r/${resume.shareSlug}`;
-                        navigator.clipboard.writeText(url).then(() => {
-                          toast({ title: "Link copied", description: url });
-                        }).catch(() => toast({ title: url }));
-                        return;
-                      }
-                      if (!studentId) return;
-                      apiFetch(`/api/students/${studentId}/resumes/${resume.id}/share`, { method: "POST" })
-                        .then(r => r.json())
-                        .then((data: { slug: string }) => {
-                          const url = `${window.location.origin}/r/${data.slug}`;
-                          setResumes(prev => prev.map(r => r.id === resume.id ? { ...r, shareSlug: data.slug } : r));
-                          navigator.clipboard.writeText(url).catch(() => undefined);
-                          toast({ title: "Share link created", description: url });
-                        })
-                        .catch(() => toast({ title: "Couldn't create share link", variant: "destructive" }));
-                    }}
+                    onShare={() => gateOnSignup(isLoaded, isSignedIn, setLocation, resume.id, "share", () => handleShare(resume))}
                     onEdit={() => setEditingResume(resume)}
                     onRetarget={() => setGenerateFor({
                       company: resume.companyName ?? "",
