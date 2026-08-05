@@ -84,7 +84,10 @@ function timeAgo(iso?: string): string | null {
  * legitimately contains "Ã" (Portuguese "Ação") is left alone by the guard.
  */
 export function repairMojibake(input: string): string {
-  if (!input || !/[ÃÂâ][-¿ -⁯ -ÿ]/.test(input)) return input;
+  // Widened from the original three-character guard: any UTF-8 2-byte lead
+  // byte (U+00C0-U+00DF) followed by a continuation byte (U+0080-U+00BF)
+  // catches Arabic and other non-Latin mojibake the old fixed list missed.
+  if (!input || !/[\u00C0-\u00DF][\u0080-\u00BF]/.test(input)) return input;
   try {
     const bytes = Uint8Array.from(input, ch => ch.charCodeAt(0) & 0xff);
     const decoded = new TextDecoder("utf-8", { fatal: false }).decode(bytes);
@@ -95,13 +98,27 @@ export function repairMojibake(input: string): string {
 }
 
 /**
+ * Some upstream mojibake is lossy — bytes already dropped before we see them —
+ * and can't be repaired even by the widened guard above; decoding still
+ * yields U+FFFD, or the text stays saturated with Latin-1 Supplement
+ * characters that are never legitimate in a real location string. Rather
+ * than show that raw garbage on a job card, treat it as unknown.
+ */
+function looksCorrupted(s: string): boolean {
+  if (!s) return false;
+  if (s.includes("�")) return true;
+  const suspicious = (s.match(/[\u00A0-\u00FF]/g) || []).length;
+  return suspicious / s.length > 0.2;
+}
+
+/**
  * RemoteOK repeats the city in its location strings ("Toronto, Toronto,
  * Ontario, Canada" — 37% of their feed) and leaves trailing separators
  * ("Brasil, "). Both render as visible junk on the card.
  */
 export function cleanLocation(input: string | null | undefined): string {
   const repaired = repairMojibake(String(input ?? "")).trim();
-  if (!repaired) return "Remote";
+  if (!repaired || looksCorrupted(repaired)) return "Remote";
   const seen = new Set<string>();
   const parts = repaired
     .split(",")
