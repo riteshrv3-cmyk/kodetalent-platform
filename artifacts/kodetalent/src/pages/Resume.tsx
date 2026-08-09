@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import type jsPDF from "jspdf";
 import { apiFetch } from "@/lib/api/authFetch";
+import { isGuestSession } from "@/lib/isGuest";
 import { upgradeContent, buildAtsReport, renderPlainText } from "@workspace/resume-core";
 import { renderResumePdf, TEMPLATE_REGISTRY, resolveTemplateConfig, preloadFonts } from "@/lib/resume-pdf";
 import { renderResumeDocx } from "@/lib/resume-pdf/resume-docx";
@@ -58,6 +59,21 @@ function toCommaString(v: string | string[] | undefined | null): string {
 }
 function toBulletString(b: LooseBullet): string {
   return typeof b === "string" ? b : b.text;
+}
+
+/**
+ * A 0% ATS score backed by an entirely empty document (no skills, projects,
+ * or experience) is the "Not set Engineering" rejection-shaped output that
+ * comes from generating off a still-empty profile — distinct from a real,
+ * populated resume that happens to score 0% against a JD it genuinely
+ * doesn't match, which is legitimate signal and stays as-is.
+ */
+function isHollowResume(content: ResumeContent, scorePct: number | undefined): boolean {
+  if (scorePct !== 0) return false;
+  const hasSkills = (content.skillSections ?? []).some(s => toCommaString(s.items).trim().length > 0);
+  const hasProjects = (content.projects ?? []).length > 0;
+  const hasExperience = (content.experience ?? []).length > 0;
+  return !hasSkills && !hasProjects && !hasExperience;
 }
 
 interface SavedResume {
@@ -181,16 +197,21 @@ function TargetRecommendations({
   studentId: number;
   onGenerate: (company: string, role: string) => void;
 }) {
+  const [, setLocation] = useLocation();
   const [recs, setRecs] = useState<(RoleRec & { matchPct: number })[]>([]);
+  const [hasSkills, setHasSkills] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     apiFetch(`/api/students/${studentId}/full-profile`)
       .then(r => r.ok ? r.json() : null)
-      .then((profile: { skillSections?: { items: string }[] } | null) => {
-        const skills = (profile?.skillSections ?? [])
-          .flatMap(s => s.items.split(",").map(i => i.trim().toLowerCase()))
-          .filter(Boolean);
+      // full-profile returns skills as a Record<string, number>, not
+      // skillSections (that field only exists on a resume *document*) — this
+      // read the wrong field, so every student saw a fixed 0% list regardless
+      // of what skills they actually had.
+      .then((profile: { skills?: Record<string, number> } | null) => {
+        const skills = Object.keys(profile?.skills ?? {}).map(s => s.toLowerCase());
+        setHasSkills(skills.length > 0);
         setRecs(getRecommendations(skills));
       })
       .catch(() => setRecs(getRecommendations([])))
@@ -246,19 +267,30 @@ function TargetRecommendations({
                   <p className="text-[11px] text-ink-muted font-semibold leading-tight mt-0.5">{rec.role}</p>
                 </div>
 
-                {/* Match bar — real skill overlap with this company's known stack */}
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-ink-muted">Skill match</span>
-                    <span className="text-[11px] font-bold text-ink">{rec.matchPct}%</span>
+                {/* Match bar — real skill overlap with this company's known stack.
+                    With zero skills on file the score is always a fake 0%, so
+                    show a path to a real number instead of fake precision. */}
+                {hasSkills ? (
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-ink-muted">Skill match</span>
+                      <span className="text-[11px] font-bold text-ink">{rec.matchPct}%</span>
+                    </div>
+                    <div className="h-1.5 bg-line rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-brand"
+                        style={{ width: `${rec.matchPct}%` }}
+                      />
+                    </div>
                   </div>
-                  <div className="h-1.5 bg-line rounded-full overflow-hidden">
-                    <div
-                      className="h-full rounded-full bg-brand"
-                      style={{ width: `${rec.matchPct}%` }}
-                    />
-                  </div>
-                </div>
+                ) : (
+                  <button
+                    onClick={() => setLocation("/profile")}
+                    className="text-[11px] font-semibold text-brand underline underline-offset-2 text-left"
+                  >
+                    Add skills to see your match
+                  </button>
+                )}
 
                 {/* CTA */}
                 <button
@@ -848,11 +880,13 @@ function ResumeCard({
   onEdit: () => void;
   onRetarget: () => void;
 }) {
+  const [, setLocation] = useLocation();
   const tmpl = resolveTemplateConfig(resume.templateId);
   const date = new Date(resume.createdAt).toLocaleDateString("en-IN", {
     day: "numeric", month: "short", year: "numeric",
   });
   const liveDoc = useMemo(() => upgradeContent(resume.content), [resume.content]);
+  const hollow = isHollowResume(resume.content, liveDoc.atsMeta?.scorePct);
 
   return (
     <motion.div
@@ -882,18 +916,27 @@ function ResumeCard({
             <span className="text-[11px] text-ink-muted">{date}</span>
           </div>
           {liveDoc.atsMeta && (
-            <div className="mt-2" title={
-              liveDoc.atsMeta.missing.length > 0
-                ? `Missing: ${liveDoc.atsMeta.missing.map(m => m.term).join(", ")} — skill gaps to learn, not padded in`
-                : "All extracted JD keywords are covered by your real profile"
-            }>
-              {/* Single-color brand pill, not a red/amber/green threshold ramp — the
-                  design system reserves that ramp for completed/passing (done) and
-                  error (danger) states only, never for a continuous score. */}
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-brand-soft text-brand">
-                ATS match {liveDoc.atsMeta.scorePct}%
-              </span>
-            </div>
+            hollow ? (
+              <button
+                onClick={() => setLocation("/profile")}
+                className="mt-2 text-[11px] font-semibold text-brand underline underline-offset-2 text-left"
+              >
+                Add your real work to make this resume real →
+              </button>
+            ) : (
+              <div className="mt-2" title={
+                liveDoc.atsMeta.missing.length > 0
+                  ? `Missing: ${liveDoc.atsMeta.missing.map(m => m.term).join(", ")} — skill gaps to learn, not padded in`
+                  : "All extracted JD keywords are covered by your real profile"
+              }>
+                {/* Single-color brand pill, not a red/amber/green threshold ramp — the
+                    design system reserves that ramp for completed/passing (done) and
+                    error (danger) states only, never for a continuous score. */}
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-brand-soft text-brand">
+                  ATS match {liveDoc.atsMeta.scorePct}%
+                </span>
+              </div>
+            )
           )}
         </div>
         <button
@@ -1005,6 +1048,10 @@ function GenerateSheet({
   const [skillInput, setSkillInput] = useState("");
   const [skillTags, setSkillTags] = useState<string[]>([]);
   const [captureResumeText, setCaptureResumeText] = useState<string | null>(null);
+  const [githubUrl, setGithubUrl] = useState("");
+  const [githubImporting, setGithubImporting] = useState(false);
+  const [githubImportResult, setGithubImportResult] = useState<{ repos: number; projects: number } | null>(null);
+  const [githubImportError, setGithubImportError] = useState<string | null>(null);
 
   useEffect(() => {
     apiFetch(`/api/students/${studentId}/full-profile`)
@@ -1043,6 +1090,42 @@ function GenerateSheet({
     } finally {
       setCaptureSubmitting(false);
       setProfileStep("generate");
+    }
+  };
+
+  // GitHub is real, verifiable evidence — the two calls must run in sequence
+  // because github-projects reads the githubUrl analyze-github just persisted
+  // (it 400s if the profile has no githubUrl yet).
+  const handleGithubImport = async () => {
+    const trimmed = githubUrl.trim();
+    if (!trimmed) return;
+    setGithubImporting(true);
+    setGithubImportError(null);
+    try {
+      const analyzeRes = await apiFetch(`/api/students/${studentId}/analyze-github`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ githubUrl: trimmed }),
+      });
+      if (!analyzeRes.ok) {
+        const err = await analyzeRes.json().catch(() => ({})) as { error?: string };
+        throw new Error(err.error ?? "Couldn't reach that GitHub profile");
+      }
+      const stats = await analyzeRes.json() as { publicRepos?: number };
+
+      const projectsRes = await apiFetch(`/api/students/${studentId}/profile/github-projects`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      const projectsData = projectsRes.ok
+        ? await projectsRes.json() as { added?: number }
+        : { added: 0 };
+
+      setGithubImportResult({ repos: stats.publicRepos ?? 0, projects: projectsData.added ?? 0 });
+    } catch (e) {
+      setGithubImportError((e as Error).message || "Couldn't import from that GitHub URL — check it and try again.");
+    } finally {
+      setGithubImporting(false);
     }
   };
 
@@ -1223,11 +1306,27 @@ function GenerateSheet({
             )}
 
             {previewDoc.atsMeta && (
-              <div className="flex justify-center">
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-brand-soft text-brand">
-                  ATS match {(previewDoc.atsMeta as { scorePct?: number }).scorePct}%
-                </span>
-              </div>
+              isHollowResume(generatedResume.content, (previewDoc.atsMeta as { scorePct?: number }).scorePct) ? (
+                <div className="rounded-xl bg-canvas border border-line p-3 space-y-2 text-[12px] text-center">
+                  <p className="font-semibold text-ink">This resume has nothing to work with yet</p>
+                  <p className="text-ink-muted leading-snug">
+                    Add your GitHub, projects, or skills and regenerate — a resume can only be as real as what you give it.
+                  </p>
+                  <button
+                    onClick={() => { onClose(); setLocation("/profile"); }}
+                    className="text-brand font-semibold underline underline-offset-2"
+                  >
+                    Add your real work →
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-1">
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-brand-soft text-brand">
+                    ATS match {(previewDoc.atsMeta as { scorePct?: number }).scorePct}%
+                  </span>
+                  <p className="text-[10px] text-ink-muted">Every bullet is backed by your profile — nothing invented</p>
+                </div>
+              )
             )}
 
             {generatedResume?.evidenceMap?.thesis && (
@@ -1321,14 +1420,46 @@ function GenerateSheet({
             </div>
 
             <p className="text-[13px] text-ink-muted leading-snug">
-              Upload an existing resume or add a few skills so we have real facts to write from.
-              The more you give, the stronger the output.
+              Import your GitHub, upload an existing resume, or add a few skills so we have real
+              facts to write from. The more you give, the stronger the output.
             </p>
+
+            <div className="space-y-2">
+              <label className="text-[11px] font-bold text-ink-muted uppercase tracking-wider">
+                Import from GitHub
+                <span className="text-ink-muted normal-case font-medium ml-1">(recommended — real, verifiable work)</span>
+              </label>
+              <div className="flex gap-2">
+                <Input
+                  value={githubUrl}
+                  onChange={e => setGithubUrl(e.target.value)}
+                  placeholder="github.com/yourusername"
+                  className="rounded-xl border border-line focus:border-brand text-ink flex-1"
+                  disabled={githubImporting || !!githubImportResult}
+                />
+                <Button
+                  onClick={handleGithubImport}
+                  disabled={githubImporting || !githubUrl.trim() || !!githubImportResult}
+                  variant="outline"
+                  className="rounded-xl border border-line text-brand px-3"
+                >
+                  {githubImporting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Import"}
+                </Button>
+              </div>
+              {githubImportResult && (
+                <p className="text-[12px] text-brand font-medium">
+                  Imported {githubImportResult.repos} repo{githubImportResult.repos === 1 ? "" : "s"}, {githubImportResult.projects} new project{githubImportResult.projects === 1 ? "" : "s"}
+                </p>
+              )}
+              {githubImportError && (
+                <p className="text-[12px] text-danger">{githubImportError}</p>
+              )}
+            </div>
 
             <ResumeImport
               deferred
               onTextReady={(text) => setCaptureResumeText(text)}
-              label={captureResumeText ? "Resume uploaded" : "Upload your existing resume (PDF / DOCX)"}
+              label={captureResumeText ? "Resume uploaded" : "Or upload your existing resume (PDF / DOCX)"}
             />
 
             <div className="space-y-2">
@@ -1384,12 +1515,17 @@ function GenerateSheet({
               )}
             </Button>
 
-            <button
-              onClick={() => setProfileStep("generate")}
-              className="w-full text-center text-[12px] text-ink-muted hover:text-ink underline underline-offset-2"
-            >
-              Skip — generate anyway
-            </button>
+            <div className="text-center">
+              <button
+                onClick={() => setProfileStep("generate")}
+                className="text-[12px] text-ink-muted hover:text-ink underline underline-offset-2"
+              >
+                Generate a starter template anyway
+              </button>
+              <p className="text-[11px] text-ink-muted mt-1">
+                Without your real work this will be a near-empty template — nothing to show a recruiter yet.
+              </p>
+            </div>
           </>
 
         ) : (
@@ -1701,6 +1837,22 @@ export default function Resume() {
             </Button>
           </motion.div>
         </div>
+
+        {isGuestSession(isLoaded, isSignedIn) && (
+          <div className="bg-paper rounded-2xl shadow-soft p-3.5 flex items-center justify-between gap-3">
+            <div>
+              <p className="text-[13px] font-bold text-ink">Saved on this device only</p>
+              <p className="text-[11px] text-ink-muted mt-0.5">Sign in to keep your resumes if you switch devices or clear your browser.</p>
+            </div>
+            <Button
+              onClick={() => setLocation("/sign-up")}
+              variant="outline"
+              className="rounded-full border border-line text-brand font-bold text-xs px-3.5 h-8 shrink-0"
+            >
+              Sign In
+            </Button>
+          </div>
+        )}
 
         {/* ── Company & Role Recommendations */}
         {studentId && (
