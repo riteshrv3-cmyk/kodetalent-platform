@@ -1,5 +1,6 @@
 // Client-side resume text extraction — keeps the API server dependency-free
 // and ships ~10KB of text to import-resume instead of megabytes of base64.
+import { loadPdfjs } from "./loadPdfjs";
 
 const MAX_FILE_BYTES = 8 * 1024 * 1024; // 8MB
 const MAX_PDF_PAGES = 10;
@@ -7,9 +8,7 @@ const MAX_PDF_PAGES = 10;
 export class ResumeTextError extends Error {}
 
 async function extractPdfText(file: File): Promise<string> {
-  const pdfjsLib = await import("pdfjs-dist");
-  const workerUrl = (await import("pdfjs-dist/build/pdf.worker.min.mjs?url")).default;
-  pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
+  const pdfjsLib = await loadPdfjs();
 
   const buffer = await file.arrayBuffer();
   const doc = await pdfjsLib.getDocument({ data: buffer }).promise;

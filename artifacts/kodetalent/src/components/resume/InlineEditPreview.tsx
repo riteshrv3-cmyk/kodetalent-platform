@@ -4,6 +4,7 @@ import type { ResumeDocument, SectionKey } from "@workspace/resume-core";
 import { renderResumePdf, type Page } from "@/lib/resume-pdf";
 import { PAGE } from "@/lib/resume-pdf/geometry";
 import { apiFetch } from "@/lib/api/authFetch";
+import { loadPdfjs } from "@/lib/loadPdfjs";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -93,18 +94,7 @@ function applyEdit(resume: ResumeDocument, region: HitRegion, newText: string): 
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-let pdfjsPromise: Promise<typeof import("pdfjs-dist")> | null = null;
-function loadPdfjs() {
-  if (!pdfjsPromise) {
-    pdfjsPromise = (async () => {
-      const pdfjsLib = await import("pdfjs-dist");
-      const workerUrl = (await import("pdfjs-dist/build/pdf.worker.min.mjs?url")).default;
-      pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
-      return pdfjsLib;
-    })();
-  }
-  return pdfjsPromise;
-}
+// Shared polyfilled pdf.js loader — see lib/loadPdfjs.ts.
 
 export function InlineEditPreview({
   resume,

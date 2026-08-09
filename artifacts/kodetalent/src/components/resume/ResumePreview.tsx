@@ -2,19 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 import type { ResumeDocument } from "@workspace/resume-core";
 import { renderResumePdf, type RenderResult } from "@/lib/resume-pdf";
-
-let pdfjsPromise: Promise<typeof import("pdfjs-dist")> | null = null;
-function loadPdfjs() {
-  if (!pdfjsPromise) {
-    pdfjsPromise = (async () => {
-      const pdfjsLib = await import("pdfjs-dist");
-      const workerUrl = (await import("pdfjs-dist/build/pdf.worker.min.mjs?url")).default;
-      pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
-      return pdfjsLib;
-    })();
-  }
-  return pdfjsPromise;
-}
+import { loadPdfjs } from "@/lib/loadPdfjs";
 
 /** Warms the pdf.js worker ahead of the first real preview — call alongside preloadFonts() on mount. */
 export function preloadPdfjs(): void {
