@@ -714,7 +714,7 @@ Return ONLY valid JSON with this structure:
 
 // ─── POST /students/:id/chat ─────────────────────────────────────────────────
 
-router.post("/students/:id/chat", requireStudent(), rlAiMedium, async (req, res) => {
+router.post("/students/:id/chat", requireStudent({ allowGuest: true }), rlAiMedium, async (req, res) => {
   const id = Number(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
   const { message } = req.body as { message: string };
