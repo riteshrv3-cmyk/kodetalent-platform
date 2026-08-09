@@ -61,19 +61,22 @@ function toBulletString(b: LooseBullet): string {
   return typeof b === "string" ? b : b.text;
 }
 
-/**
- * A 0% ATS score backed by an entirely empty document (no skills, projects,
- * or experience) is the "Not set Engineering" rejection-shaped output that
- * comes from generating off a still-empty profile — distinct from a real,
- * populated resume that happens to score 0% against a JD it genuinely
- * doesn't match, which is legitimate signal and stays as-is.
- */
-function isHollowResume(content: ResumeContent, scorePct: number | undefined): boolean {
-  if (scorePct !== 0) return false;
+/** No skills, projects, or experience at all — the "Not set Engineering" rejection-shaped output that comes from generating off a still-empty profile. */
+function isContentEmpty(content: ResumeContent): boolean {
   const hasSkills = (content.skillSections ?? []).some(s => toCommaString(s.items).trim().length > 0);
   const hasProjects = (content.projects ?? []).length > 0;
   const hasExperience = (content.experience ?? []).length > 0;
   return !hasSkills && !hasProjects && !hasExperience;
+}
+
+/**
+ * A 0% ATS score backed by an entirely empty document is the hollow case —
+ * distinct from a real, populated resume that happens to score 0% against a
+ * JD it genuinely doesn't match, which is legitimate signal and stays as-is.
+ */
+function isHollowResume(content: ResumeContent, scorePct: number | undefined): boolean {
+  if (scorePct !== 0) return false;
+  return isContentEmpty(content);
 }
 
 interface SavedResume {
@@ -886,7 +889,7 @@ function ResumeCard({
     day: "numeric", month: "short", year: "numeric",
   });
   const liveDoc = useMemo(() => upgradeContent(resume.content), [resume.content]);
-  const hollow = isHollowResume(resume.content, liveDoc.atsMeta?.scorePct);
+  const hollow = isContentEmpty(resume.content);
 
   return (
     <motion.div
@@ -915,28 +918,26 @@ function ResumeCard({
             )}
             <span className="text-[11px] text-ink-muted">{date}</span>
           </div>
-          {liveDoc.atsMeta && (
-            hollow ? (
-              <button
-                onClick={() => setLocation("/profile")}
-                className="mt-2 text-[11px] font-semibold text-brand underline underline-offset-2 text-left"
-              >
-                Add your real work to make this resume real →
-              </button>
-            ) : (
-              <div className="mt-2" title={
-                liveDoc.atsMeta.missing.length > 0
-                  ? `Missing: ${liveDoc.atsMeta.missing.map(m => m.term).join(", ")} — skill gaps to learn, not padded in`
-                  : "All extracted JD keywords are covered by your real profile"
-              }>
-                {/* Single-color brand pill, not a red/amber/green threshold ramp — the
-                    design system reserves that ramp for completed/passing (done) and
-                    error (danger) states only, never for a continuous score. */}
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-brand-soft text-brand">
-                  ATS match {liveDoc.atsMeta.scorePct}%
-                </span>
-              </div>
-            )
+          {hollow ? (
+            <button
+              onClick={() => setLocation("/profile")}
+              className="mt-2 text-[11px] font-semibold text-brand underline underline-offset-2 text-left"
+            >
+              Add your real work to make this resume real →
+            </button>
+          ) : liveDoc.atsMeta && (
+            <div className="mt-2" title={
+              liveDoc.atsMeta.missing.length > 0
+                ? `Missing: ${liveDoc.atsMeta.missing.map(m => m.term).join(", ")} — skill gaps to learn, not padded in`
+                : "All extracted JD keywords are covered by your real profile"
+            }>
+              {/* Single-color brand pill, not a red/amber/green threshold ramp — the
+                  design system reserves that ramp for completed/passing (done) and
+                  error (danger) states only, never for a continuous score. */}
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-brand-soft text-brand">
+                ATS match {liveDoc.atsMeta.scorePct}%
+              </span>
+            </div>
           )}
         </div>
         <button
@@ -1305,28 +1306,34 @@ function GenerateSheet({
               <ResumePreview resume={previewDoc} templateId={templateId} className="max-w-[280px] mx-auto" />
             )}
 
-            {previewDoc.atsMeta && (
-              isHollowResume(generatedResume.content, (previewDoc.atsMeta as { scorePct?: number }).scorePct) ? (
-                <div className="rounded-xl bg-canvas border border-line p-3 space-y-2 text-[12px] text-center">
-                  <p className="font-semibold text-ink">This resume has nothing to work with yet</p>
-                  <p className="text-ink-muted leading-snug">
-                    Add your GitHub, projects, or skills and regenerate — a resume can only be as real as what you give it.
-                  </p>
-                  <button
-                    onClick={() => { onClose(); setLocation("/profile"); }}
-                    className="text-brand font-semibold underline underline-offset-2"
-                  >
-                    Add your real work →
-                  </button>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center gap-1">
+            {isContentEmpty(generatedResume.content) ? (
+              <div className="rounded-xl bg-canvas border border-line p-3 space-y-2 text-[12px] text-center">
+                <p className="font-semibold text-ink">This resume has nothing to work with yet</p>
+                <p className="text-ink-muted leading-snug">
+                  Add your GitHub, projects, or skills and regenerate — a resume can only be as real as what you give it.
+                </p>
+                <button
+                  onClick={() => { onClose(); setLocation("/profile"); }}
+                  className="text-brand font-semibold underline underline-offset-2"
+                >
+                  Add your real work →
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center gap-1">
+                {previewDoc.atsMeta ? (
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-brand-soft text-brand">
                     ATS match {(previewDoc.atsMeta as { scorePct?: number }).scorePct}%
                   </span>
-                  <p className="text-[10px] text-ink-muted">Every bullet is backed by your profile — nothing invented</p>
-                </div>
-              )
+                ) : (
+                  // No JD or target role was given, so there's nothing to score
+                  // keyword coverage against — the trust line still applies.
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-canvas border border-line text-ink-muted">
+                    No target job set — add one to see an ATS match score
+                  </span>
+                )}
+                <p className="text-[10px] text-ink-muted">Every bullet is backed by your profile — nothing invented</p>
+              </div>
             )}
 
             {generatedResume?.evidenceMap?.thesis && (
