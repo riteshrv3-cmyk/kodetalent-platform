@@ -26,6 +26,8 @@ interface LiveOpportunity {
   url: string;
   source: string;
   isSearchLink?: boolean;
+  /** India-located or from an India-specific source — leads the list, badged. */
+  isIndia?: boolean;
 }
 
 interface MatchedFeed {
@@ -103,7 +105,14 @@ function OpportunityCard({
                 {o.isNew && <span className="text-brand font-bold">New · </span>}
                 {o.company} · {o.source}
               </p>
-              <p className="text-[14px] font-bold text-ink leading-tight line-clamp-2">{o.title}</p>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <p className="text-[14px] font-bold text-ink leading-tight line-clamp-2">{o.title}</p>
+                {o.isIndia && !o.isSearchLink && (
+                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-brand-soft text-brand shrink-0">
+                    India
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 
@@ -170,6 +179,11 @@ export default function Opportunities() {
   const [activeTab, setActiveTab] = useState<OpportunityType>("jobs");
   const [searchQuery, setSearchQuery] = useState("");
   const [practicingId, setPracticingId] = useState<string | null>(null);
+  // Global-remote section starts collapsed whenever India listings exist —
+  // reset on every tab/specialisation change so it doesn't carry a stale
+  // expanded state into an unrelated feed.
+  const [showGlobal, setShowGlobal] = useState(false);
+  useEffect(() => { setShowGlobal(false); }, [activeTab, selectedSubDomain]);
 
   const createInterview = useCreateInterviewSession();
 
@@ -244,10 +258,16 @@ export default function Opportunities() {
     }
     setPracticingId(op.id);
     try {
+      // A search-link "card" isn't a real posting — no real company to name,
+      // so it keeps the generic role-based framing. A real posting gets
+      // grounded questions instead of a placebo "Any Tech Company" script.
+      const company = !op.isSearchLink && op.company && op.title
+        ? `${op.company} (${op.title})`
+        : `an employer hiring for the ${roleLabel} role`;
       const session = await createInterview.mutateAsync({
         data: {
           studentId,
-          company: `an employer hiring for the ${roleLabel} role`,
+          company,
           round: "Mixed|Standard",
         },
       });
@@ -361,20 +381,66 @@ export default function Opportunities() {
       );
     }
 
+    // Search-link cards (Naukri/LinkedIn/Upwork "search this platform" cards)
+    // aren't real postings — they never join the India/global split, they
+    // just render last, same as before this change.
+    const realItems = items.filter(o => !o.isSearchLink);
+    const searchLinkItems = items.filter(o => o.isSearchLink);
+    const indiaItems = realItems.filter(o => o.isIndia);
+    const globalItems = realItems.filter(o => !o.isIndia);
+    // Without an India source configured, indiaItems can be empty — never
+    // collapse the whole feed behind a section a student then has to know to
+    // expand just to see anything at all.
+    const globalIsExpanded = showGlobal || indiaItems.length === 0;
+
+    const card = (o: LiveOpportunity & { isNew?: boolean }, i: number) => (
+      <OpportunityCard
+        key={o.id}
+        o={o}
+        index={i}
+        fallbackSkills={skills}
+        practicing={practicingId === o.id}
+        onPractice={() => startPractice(o, selectedSubDomain.name)}
+        onPrepare={() => navigateToCourse()}
+        onApply={() => logApply(o)}
+      />
+    );
+
     return (
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {items.map((o, i) => (
-          <OpportunityCard
-            key={o.id}
-            o={o}
-            index={i}
-            fallbackSkills={skills}
-            practicing={practicingId === o.id}
-            onPractice={() => startPractice(o, selectedSubDomain.name)}
-            onPrepare={() => navigateToCourse()}
-            onApply={() => logApply(o)}
-          />
-        ))}
+      <div className="space-y-4">
+        {indiaItems.length > 0 && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {indiaItems.map((o, i) => card(o, i))}
+          </div>
+        )}
+
+        {globalItems.length > 0 && (
+          <div className="space-y-2">
+            {indiaItems.length > 0 && (
+              <button
+                onClick={() => setShowGlobal(s => !s)}
+                className="w-full flex items-center justify-between text-[12px] font-bold text-ink-muted"
+              >
+                <span>Global remote ({globalItems.length})</span>
+                <ChevronRight className={cn("w-4 h-4 transition-transform", globalIsExpanded && "rotate-90")} />
+              </button>
+            )}
+            {indiaItems.length === 0 && (
+              <p className="text-[12px] text-ink-muted">No India listings right now — showing global remote.</p>
+            )}
+            {globalIsExpanded && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {globalItems.map((o, i) => card(o, i))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {searchLinkItems.length > 0 && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {searchLinkItems.map((o, i) => card(o, i))}
+          </div>
+        )}
       </div>
     );
   };
