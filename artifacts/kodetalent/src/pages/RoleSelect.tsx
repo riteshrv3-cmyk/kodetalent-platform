@@ -7,8 +7,11 @@ import { apiFetch, setGuestToken } from "@/lib/api/authFetch";
 /**
  * Landing screen for logged-out visitors.
  *
- * Primary CTA: paste a JD, click "Build my resume" — creates a guest student
- * and opens Resume page with the JD pre-seeded into GenerateSheet.
+ * Primary CTA: "Build my resume" — creates a guest student and opens the
+ * Resume page, which asks for real evidence (GitHub, resume, or skills)
+ * before generating. The JD box here is optional and only sets the *target*
+ * for that generation — it is never the source of the resume's content,
+ * since a job description carries no facts about the student.
  * Secondary CTAs: onboarding flow (explore jobs) and sign in.
  *
  * Built for Indian engineering students prepping for placements. No pricing,
@@ -53,8 +56,8 @@ const FEATURES = [
 const STEPS = [
   {
     n: "1",
-    title: "Paste a JD or pick a role",
-    body: "Tell us the job you're aiming for. Or just start blank and add it later.",
+    title: "Add your real work",
+    body: "GitHub, an existing resume, or your skills — whatever you've got. This is what the resume is actually built from.",
   },
   {
     n: "2",
@@ -143,10 +146,13 @@ export default function RoleSelect() {
               actually did. No fluff, no guessing.
             </p>
 
+            <label className="block text-[11px] font-bold uppercase tracking-[0.16em] text-white/40 mb-1.5">
+              Optional — target a specific job
+            </label>
             <textarea
               value={jd}
               onChange={(e) => setJd(e.target.value)}
-              placeholder="Paste the job description here… (or leave blank to add it inside)"
+              placeholder="Paste a job description here to tailor toward it… (or leave blank and add it inside)"
               className="w-full rounded-2xl bg-white/10 border border-white/20 text-white placeholder:text-white/40 text-[13px] px-4 py-3 resize-none focus:outline-none focus:border-white/60 mb-3"
               rows={4}
             />
