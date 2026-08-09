@@ -60,3 +60,4 @@ graphify-out/
 docs/
 .gstack/
 dev.log
+api.log
