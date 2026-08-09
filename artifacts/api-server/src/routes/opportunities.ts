@@ -19,6 +19,8 @@ export interface Opportunity {
   source: string;
   /** True for the hand-built "search this platform" cards — not a real posting. */
   isSearchLink?: boolean;
+  /** True when the posting is India-located or from an India-specific source (Adzuna). */
+  isIndia?: boolean;
 }
 
 interface RemoteOkRaw {
@@ -420,6 +422,10 @@ function isIndiaLocation(o: Opportunity): boolean {
   return /india/i.test(o.location) || o.source === "Adzuna";
 }
 
+function byIndiaFirst(a: Opportunity, b: Opportunity): number {
+  return Number(isIndiaLocation(b)) - Number(isIndiaLocation(a));
+}
+
 // Search-link cards never claim a pay band, a posting age, or vetted status —
 // they are a deep link into another site's search results, not a listing.
 function buildFreelancePlatformLinks(skill: string, role: string): Opportunity[] {
@@ -589,7 +595,11 @@ export async function getOpportunities(
   // out the hour-long TTL before any student saw it — which defeats the point
   // of curating by hand.
   const curated = await fetchCurated(kind, role);
-  return { ...aggregated, items: [...curated, ...aggregated.items] };
+  // Tag every item (curated + aggregated, including search-link cards) with
+  // isIndia so the client can visually separate India/fresher-friendly
+  // postings from global-remote ones without re-deriving the heuristic.
+  const items = [...curated, ...aggregated.items].map(o => ({ ...o, isIndia: isIndiaLocation(o) }));
+  return { ...aggregated, items };
 }
 
 async function getAggregated(
@@ -674,10 +684,25 @@ async function getAggregated(
     }
 
     if (kind === "freelancing") {
-      const freelance = real.filter(isFreelanceLike).slice(0, 6);
+      // India-first like the other two kinds — a global freelance board still
+      // has India-based/remote-from-India gigs worth surfacing first.
+      const freelance = real.filter(isFreelanceLike).sort(byIndiaFirst).slice(0, 6);
       items = [...freelance, ...buildFreelancePlatformLinks(primarySkill, role || "Freelancer")];
     } else if (kind === "internship") {
-      const interns = real.filter(isInternshipLike).slice(0, 8);
+      // Same fresher-first reasoning as the jobs branch below: cap seniors
+      // rather than merely sorting them down, so a thin entry-friendly supply
+      // doesn't get buried under senior-titled postings that slipped through
+      // isInternshipLike.
+      const candidates = real.filter(isInternshipLike);
+      const entryLevel = candidates.filter(isEntryFriendly).sort(byIndiaFirst);
+      const seniorLevel = candidates.filter(o => !isEntryFriendly(o)).sort(byIndiaFirst);
+
+      const MIN_SENIOR_FALLBACK = 3;
+      const seniorAllowance = Math.max(MIN_SENIOR_FALLBACK, entryLevel.length);
+      const interns = [
+        ...entryLevel.slice(0, 8),
+        ...seniorLevel.slice(0, Math.max(0, Math.min(seniorAllowance, 8 - entryLevel.length))),
+      ];
       items = [...interns, ...buildInternshipPlatformLinks(primarySkill, role || "Intern")];
     } else {
       // jobs — the primary user is a fresher, so entry-friendly and India-based
@@ -694,8 +719,6 @@ async function getAggregated(
       // are presented as distinct kinds of work, so a contract gig appearing
       // under both "Jobs" and "Freelancing" reads as the feed repeating itself.
       const candidates = real.filter(o => !isInternshipLike(o) && !isFreelanceLike(o));
-      const byIndiaFirst = (a: Opportunity, b: Opportunity) =>
-        Number(isIndiaLocation(b)) - Number(isIndiaLocation(a));
       const entryLevel = candidates.filter(isEntryFriendly).sort(byIndiaFirst);
       const seniorLevel = candidates.filter(o => !isEntryFriendly(o)).sort(byIndiaFirst);
 
