@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode, useState } from "react";
 import { BottomNav } from "./BottomNav";
 import { TopBar } from "./TopBar";
 import { SideNav } from "./SideNav";
@@ -7,7 +7,6 @@ import { OfflineBanner } from "./OfflineBanner";
 import { TokoBubble } from "@/components/kodetalent/TokoBubble";
 import { AnimatePresence, motion } from "framer-motion";
 import { useLocation } from "wouter";
-import { apiFetch } from "@/lib/api/authFetch";
 import { useStudentProfile } from "@/hooks/useStudentProfile";
 
 function initialsFromName(name: string): string {
@@ -19,7 +18,6 @@ function initialsFromName(name: string): string {
 export function AppLayout({ children }: { children: ReactNode }) {
   const [location] = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [pendingCount, setPendingCount] = useState(0);
   const studentId = localStorage.getItem("studentId");
   // Same react-query key as Home's useStudentProfile() call — concurrent mounts
   // share one in-flight request instead of each firing its own full-profile fetch.
@@ -27,29 +25,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const initials = profile?.name ? initialsFromName(profile.name) : "?";
 
   const isFullscreenRoute = location.startsWith("/practice/interview/") || location === "/onboarding";
-
-  useEffect(() => {
-    const id = localStorage.getItem("studentId");
-    if (!id) return;
-
-    const fetchCount = async () => {
-      try {
-        const res = await apiFetch(`/api/students/${id}/invites`);
-        if (!res.ok) return;
-        const data = await res.json() as Array<{ status: string; studentSeen: boolean }>;
-        const count = Array.isArray(data)
-          ? data.filter((inv) => inv.status === "pending" && !inv.studentSeen).length
-          : 0;
-        setPendingCount(count);
-      } catch {
-        // silently ignore
-      }
-    };
-
-    fetchCount();
-    const interval = setInterval(fetchCount, 30_000);
-    return () => clearInterval(interval);
-  }, []);
 
   if (isFullscreenRoute) {
     return <div className="min-h-[100dvh] bg-canvas" style={{ overflowX: "clip" }}>{children}</div>;
@@ -61,12 +36,10 @@ export function AppLayout({ children }: { children: ReactNode }) {
     // over — not within the full viewport minus a padding on main itself.
     <div className="min-h-[100dvh] bg-canvas lg:pl-[240px]" style={{ isolation: "isolate", overflowX: "clip" }}>
       <TopBar
-        pendingCount={pendingCount}
         initials={initials}
         onProfileClick={() => setSidebarOpen(true)}
       />
       <SideNav
-        pendingCount={pendingCount}
         initials={initials}
         onProfileClick={() => setSidebarOpen(true)}
       />

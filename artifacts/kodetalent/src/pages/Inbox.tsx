@@ -263,7 +263,7 @@ export default function Inbox() {
             </p>
             <p className="text-[12px] text-ink-muted mt-1 leading-relaxed">
               {activeFilter === "all"
-                ? "Keep building your profile — recruiters are searching for talent like you every day."
+                ? "Invites will appear here when a recruiter reaches out — nothing yet."
                 : `You don't have any ${activeFilter} invites right now.`}
             </p>
             {activeFilter === "all" && (
@@ -272,7 +272,7 @@ export default function Inbox() {
                 onClick={() => setLocation("/profile")}
                 className="mt-5 flex items-center gap-2 bg-brand text-white font-bold text-[14px] px-4 py-3 rounded-full"
               >
-                Boost your profile <ChevronRight className="w-4 h-4" />
+                Update your profile <ChevronRight className="w-4 h-4" />
               </motion.button>
             )}
           </motion.div>
