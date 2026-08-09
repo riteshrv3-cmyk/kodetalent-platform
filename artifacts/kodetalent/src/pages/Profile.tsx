@@ -647,6 +647,17 @@ export default function Profile() {
   const isEditingBasic = editSection === "basic";
   const isGuest = profile.name === "Guest" || profile.email?.startsWith("guest_");
 
+  // Truly nothing on file — the "wall of zeros" case. Rather than a 0%
+  // strength ring plus four separate empty-section boxes all saying the same
+  // thing, show one checklist and let the ring appear once there's something
+  // real for it to measure.
+  const isProfileEmpty =
+    Object.keys(profile.skills || {}).length === 0 &&
+    profile.projects.length === 0 &&
+    profile.experience.length === 0 &&
+    profile.education.length === 0 &&
+    !profile.githubUrl;
+
   // lg:max-w-none, not 4xl: every other page sits at one of three widths — the
   // shell's full column (Opportunities, the other two-column card grid), 3xl
   // (Resume, DriveCheck, Test) or 2xl (Home, Prep, Pipeline, Notebook, AIChat).
@@ -904,6 +915,38 @@ export default function Profile() {
           <span className="text-brand text-[13px] font-bold">→</span>
         </button>
 
+        {isProfileEmpty && (
+          <div className="mx-4 bg-brand rounded-2xl shadow-soft p-5 space-y-3">
+            <h3 className="text-[15px] font-extrabold text-white">Start here</h3>
+            <p className="text-[12px] text-white/70 -mt-2">
+              Give Toko something real to work from — everything else on this page builds on this.
+            </p>
+            <div className="space-y-2">
+              <button
+                onClick={() => { setEditSection("links"); document.getElementById("links-section")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}
+                className="w-full flex items-center gap-2 bg-white/15 rounded-xl px-3.5 py-2.5 text-left"
+              >
+                <span className="w-5 h-5 rounded-full bg-white/20 text-white text-[11px] font-bold flex items-center justify-center shrink-0">1</span>
+                <span className="text-[13px] font-semibold text-white">Add your GitHub URL</span>
+              </button>
+              <button
+                onClick={() => document.getElementById("import-resume-section")?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                className="w-full flex items-center gap-2 bg-white/15 rounded-xl px-3.5 py-2.5 text-left"
+              >
+                <span className="w-5 h-5 rounded-full bg-white/20 text-white text-[11px] font-bold flex items-center justify-center shrink-0">2</span>
+                <span className="text-[13px] font-semibold text-white">Or upload your resume</span>
+              </button>
+              <button
+                onClick={() => setLocation("/resume")}
+                className="w-full flex items-center gap-2 bg-white rounded-xl px-3.5 py-2.5 text-left"
+              >
+                <span className="w-5 h-5 rounded-full bg-brand-soft text-brand text-[11px] font-bold flex items-center justify-center shrink-0">3</span>
+                <span className="text-[13px] font-bold text-brand">Generate your first resume</span>
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* ── Two-column section grid (desktop only; stacks on mobile) ──
             No lg:items-start: with it, a short card left a hole the height of
             its taller row-mate (Profile Strength is 130px against Links' 300px,
@@ -911,7 +954,10 @@ export default function Profile() {
             to the row height gives clean rows instead. */}
         <div className="space-y-4 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-4">
 
-        {/* ── Profile Strength ── */}
+        {/* ── Profile Strength ── (hidden pre-data — the Start-here checklist
+             above already says this; a 0% ring right under it is the same
+             message twice) */}
+        {!isProfileEmpty && (
         <div className="bg-paper rounded-2xl shadow-soft">
           <div className="p-5">
             <div className="flex items-center gap-4">
@@ -958,9 +1004,10 @@ export default function Profile() {
             )}
           </div>
         </div>
+        )}
 
         {/* ── Links Section ── */}
-        <div className="bg-paper rounded-2xl shadow-soft">
+        <div id="links-section" className="bg-paper rounded-2xl shadow-soft scroll-mt-4">
           <div className="p-5">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-[14px] font-bold text-ink flex items-center gap-2"><Zap className="w-4 h-4 text-ink" /> Links</h3>
@@ -1540,7 +1587,7 @@ export default function Profile() {
         )}
 
         {/* ── Import from resume ── */}
-        <div className="bg-paper rounded-2xl shadow-soft p-5">
+        <div id="import-resume-section" className="bg-paper rounded-2xl shadow-soft p-5 scroll-mt-4">
           <h3 className="text-[14px] font-bold text-ink mb-1 flex items-center gap-2">
             <FileText className="w-4 h-4 text-ink" /> Import from resume
           </h3>
