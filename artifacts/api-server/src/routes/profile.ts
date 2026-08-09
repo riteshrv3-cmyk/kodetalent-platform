@@ -507,7 +507,7 @@ interface GithubRepo {
   fork: boolean;
 }
 
-router.post("/students/:id/profile/github-projects", requireStudent(), rlAiMedium, async (req, res) => {
+router.post("/students/:id/profile/github-projects", requireStudent({ allowGuest: true }), rlAiMedium, async (req, res) => {
   const id = Number(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
 
@@ -572,7 +572,7 @@ router.post("/students/:id/profile/github-projects", requireStudent(), rlAiMediu
 
 // ─── POST /students/:id/analyze-github ───────────────────────────────────────
 
-router.post("/students/:id/analyze-github", requireStudent(), rlAiHeavy, async (req, res) => {
+router.post("/students/:id/analyze-github", requireStudent({ allowGuest: true }), rlAiHeavy, async (req, res) => {
   const id = Number(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
   const { githubUrl } = req.body as { githubUrl: string };
