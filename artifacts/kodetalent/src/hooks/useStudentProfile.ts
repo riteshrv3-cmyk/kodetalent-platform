@@ -9,6 +9,9 @@ export interface StudentProfile {
   targetRole: string | null;
   targetBatch: number | null;
   skills: Record<string, number>;
+  xp?: number;
+  level?: number;
+  streakCount?: number;
 }
 
 /**

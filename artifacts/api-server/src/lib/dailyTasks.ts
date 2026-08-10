@@ -231,6 +231,42 @@ export async function getTodayTasks(studentId: number, student: typeof studentsT
   return { date, tasks: rows };
 }
 
+const XP_PER_TASK = 20;
+const XP_ALL_DONE_BONUS = 50;
+
+/** Same formula as quests.ts's level derivation — keep both in sync if either changes. */
+function levelForXp(xp: number): number {
+  return Math.max(1, Math.floor(xp / 500) + 1);
+}
+
+/**
+ * Awards XP for a task completion (and a same-day bonus for finishing every
+ * task), or revokes it on uncomplete. Called from completeTask so every path
+ * that flips `done` — manual toggle and autoCompleteTaskKind alike — earns
+ * XP consistently. Uncomplete doesn't try to claw back a bonus that may have
+ * come from a different task; simplicity over perfect symmetry on an edge case.
+ */
+async function applyTaskXp(studentId: number, date: string, justCompleted: boolean): Promise<{ xp: number; level: number }> {
+  const [student] = await db.select({ xp: studentsTable.xp }).from(studentsTable).where(eq(studentsTable.id, studentId)).limit(1);
+  let xp = student?.xp ?? 0;
+
+  if (justCompleted) {
+    xp += XP_PER_TASK;
+    const todaysTasks = await db
+      .select({ done: dailyTasksTable.done })
+      .from(dailyTasksTable)
+      .where(and(eq(dailyTasksTable.studentId, studentId), eq(dailyTasksTable.date, date)));
+    const allDone = todaysTasks.length > 0 && todaysTasks.every((t) => t.done);
+    if (allDone) xp += XP_ALL_DONE_BONUS;
+  } else {
+    xp = Math.max(0, xp - XP_PER_TASK);
+  }
+
+  const level = levelForXp(xp);
+  await db.update(studentsTable).set({ xp, level }).where(eq(studentsTable.id, studentId));
+  return { xp, level };
+}
+
 export async function completeTask(studentId: number, taskId: number, done: boolean) {
   const [task] = await db
     .update(dailyTasksTable)
@@ -239,7 +275,8 @@ export async function completeTask(studentId: number, taskId: number, done: bool
     .returning();
   if (!task) return null;
   const streakCount = await recomputeStreak(studentId);
-  return { task, streakCount };
+  const { xp, level } = await applyTaskXp(studentId, task.date, done);
+  return { task, streakCount, xp, level };
 }
 
 /** Consecutive IST days ending today or yesterday with >=1 completed task. Writes the students.streakCount cache and returns it. */
@@ -307,6 +344,17 @@ export async function autoCompleteTaskKind(studentId: number, kind: string): Pro
   }
 }
 
+/** One label per task kind for the hot-task hero CTA (TaskRow only renders it when hot). */
+const CTA_LABEL_BY_KIND: Record<string, string> = {
+  first_mock: "Start",
+  practice: "Start",
+  course: "Learn",
+  jobs: "See jobs",
+  invite: "Invite",
+  drive_check: "Check",
+  followup: "Do it",
+};
+
 export function formatDailyTask(t: typeof dailyTasksTable.$inferSelect) {
   return {
     id: String(t.id),
@@ -314,6 +362,7 @@ export function formatDailyTask(t: typeof dailyTasksTable.$inferSelect) {
     sublabel: t.sublabel ?? undefined,
     done: t.done,
     hot: t.hot,
+    ctaLabel: CTA_LABEL_BY_KIND[t.kind] ?? "Open",
     href: t.href,
     manual: t.manual,
   };

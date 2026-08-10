@@ -30,6 +30,8 @@ router.get("/students/:id/today-tasks", requireStudent({ allowGuest: true }), as
       date,
       tasks: tasks.map(formatDailyTask),
       streakCount: student.streakCount ?? 0,
+      xp: student.xp ?? 0,
+      level: student.level ?? 1,
       noticing: noticing ? { text: noticing.text, href: noticing.href } : null,
     });
   } catch (err) {
@@ -51,7 +53,7 @@ router.post("/students/:id/tasks/:taskId/complete", requireStudent({ allowGuest:
     if (todayTasks.length > 0 && todayTasks.every((t) => t.done)) {
       logEvent(id, "all_tasks_done", "Completed all tasks for the day", { date: result.task.date });
     }
-    return res.json({ task: formatDailyTask(result.task), streakCount: result.streakCount });
+    return res.json({ task: formatDailyTask(result.task), streakCount: result.streakCount, xp: result.xp, level: result.level });
   } catch (err) {
     req.log.error({ err }, "Failed to complete task");
     return res.status(500).json({ error: "Failed to complete task" });
@@ -66,7 +68,7 @@ router.post("/students/:id/tasks/:taskId/uncomplete", requireStudent({ allowGues
   try {
     const result = await completeTask(id, taskId, false);
     if (!result) return res.status(404).json({ error: "Task not found" });
-    return res.json({ task: formatDailyTask(result.task), streakCount: result.streakCount });
+    return res.json({ task: formatDailyTask(result.task), streakCount: result.streakCount, xp: result.xp, level: result.level });
   } catch (err) {
     req.log.error({ err }, "Failed to uncomplete task");
     return res.status(500).json({ error: "Failed to uncomplete task" });

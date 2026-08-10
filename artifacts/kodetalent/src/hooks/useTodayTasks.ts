@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api/authFetch";
 
 export interface TodayTask {
@@ -19,12 +19,9 @@ interface ServerTask {
   sublabel?: string;
   done: boolean;
   hot: boolean;
+  ctaLabel?: string;
   href: string;
   manual: boolean;
-}
-
-interface UseTodayTasksInput {
-  studentId: string | null;
 }
 
 export interface KitNoticing {
@@ -32,57 +29,87 @@ export interface KitNoticing {
   href: string;
 }
 
+interface TodayTasksData {
+  tasks: TodayTask[];
+  streakCount: number;
+  xp: number;
+  level: number;
+  noticing: KitNoticing | null;
+}
+
+interface UseTodayTasksInput {
+  studentId: string | null;
+}
+
 /**
  * Fetches the day's server-generated tasks (rules R1-R7 in lib/dailyTasks.ts on the
- * API server) and the honest, server-computed streak. Replaces the v1 localStorage
- * implementation — completion state and streak are now real, cross-device truth.
+ * API server), the honest server-computed streak, and xp/level. React-query gives
+ * this a shared cache with AppLayout/TopBar's streak chip (same queryKey shape as
+ * useStudentProfile — student-scoped), proper loading/error flags, and automatic
+ * refetch-on-window-focus so the streak stays current across tabs.
  */
 export function useTodayTasks({ studentId }: UseTodayTasksInput) {
-  const [tasks, setTasks] = useState<TodayTask[]>([]);
-  const [streakCount, setStreakCount] = useState(0);
-  const [noticing, setNoticing] = useState<KitNoticing | null>(null);
+  const queryClient = useQueryClient();
+  const queryKey = ["today-tasks", studentId];
 
-  const load = useCallback(async () => {
-    if (!studentId) return;
-    try {
+  const query = useQuery({
+    queryKey,
+    queryFn: async (): Promise<TodayTasksData> => {
       const res = await apiFetch(`/api/students/${studentId}/today-tasks`);
-      if (!res.ok) return;
-      const data: { tasks: ServerTask[]; streakCount: number; noticing: KitNoticing | null } = await res.json();
-      setTasks(data.tasks);
-      setStreakCount(data.streakCount);
-      setNoticing(data.noticing ?? null);
-    } catch {
-      // Keep whatever was last loaded; the Home screen tolerates a stale/empty list.
-    }
-  }, [studentId]);
-
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  const toggleManual = useCallback(
-    async (id: string) => {
-      if (!studentId) return;
-      const current = tasks.find((t) => t.id === id);
-      if (!current) return;
-      const nextDone = !current.done;
-      setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, done: nextDone } : t)));
-      try {
-        const res = await apiFetch(`/api/students/${studentId}/tasks/${id}/${nextDone ? "complete" : "uncomplete"}`, {
-          method: "POST",
-        });
-        if (res.ok) {
-          const data: { streakCount: number } = await res.json();
-          setStreakCount(data.streakCount);
-        } else {
-          setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, done: !nextDone } : t)));
-        }
-      } catch {
-        setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, done: !nextDone } : t)));
-      }
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data: { tasks: ServerTask[]; streakCount: number; xp?: number; level?: number; noticing: KitNoticing | null } =
+        await res.json();
+      return {
+        tasks: data.tasks,
+        streakCount: data.streakCount,
+        xp: data.xp ?? 0,
+        level: data.level ?? 1,
+        noticing: data.noticing ?? null,
+      };
     },
-    [studentId, tasks],
-  );
+    enabled: !!studentId,
+  });
 
-  return { tasks, toggleManual, streakCount, noticing };
+  const toggleMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const current = query.data?.tasks.find((t) => t.id === id);
+      if (!current) throw new Error("Task not found");
+      const nextDone = !current.done;
+      const res = await apiFetch(`/api/students/${studentId}/tasks/${id}/${nextDone ? "complete" : "uncomplete"}`, {
+        method: "POST",
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data: { streakCount: number; xp: number; level: number } = await res.json();
+      return { id, nextDone, ...data };
+    },
+    onMutate: async (id: string) => {
+      await queryClient.cancelQueries({ queryKey });
+      const previous = queryClient.getQueryData<TodayTasksData>(queryKey);
+      if (previous) {
+        queryClient.setQueryData<TodayTasksData>(queryKey, {
+          ...previous,
+          tasks: previous.tasks.map((t) => (t.id === id ? { ...t, done: !t.done } : t)),
+        });
+      }
+      return { previous };
+    },
+    onError: (_err, _id, context) => {
+      if (context?.previous) queryClient.setQueryData(queryKey, context.previous);
+    },
+    onSuccess: ({ streakCount, xp, level }) => {
+      queryClient.setQueryData<TodayTasksData>(queryKey, (prev) => (prev ? { ...prev, streakCount, xp, level } : prev));
+    },
+  });
+
+  return {
+    tasks: query.data?.tasks ?? [],
+    streakCount: query.data?.streakCount ?? 0,
+    xp: query.data?.xp ?? 0,
+    level: query.data?.level ?? 1,
+    noticing: query.data?.noticing ?? null,
+    isLoading: query.isLoading,
+    isError: query.isError,
+    toggleManual: (id: string) => toggleMutation.mutate(id),
+    lastToggle: toggleMutation.data,
+  };
 }

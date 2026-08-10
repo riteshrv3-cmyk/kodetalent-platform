@@ -37,10 +37,12 @@ export function AppLayout({ children }: { children: ReactNode }) {
     <div className="min-h-[100dvh] bg-canvas lg:pl-[240px]" style={{ isolation: "isolate", overflowX: "clip" }}>
       <TopBar
         initials={initials}
+        streakCount={profile?.streakCount ?? 0}
         onProfileClick={() => setSidebarOpen(true)}
       />
       <SideNav
         initials={initials}
+        streakCount={profile?.streakCount ?? 0}
         onProfileClick={() => setSidebarOpen(true)}
       />
 

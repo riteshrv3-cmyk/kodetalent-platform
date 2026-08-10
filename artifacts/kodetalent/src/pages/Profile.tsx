@@ -454,7 +454,7 @@ export default function Profile() {
       await loadProfile(studentId);
       setEditSection(null);
       if (result.profileStrength === 100) {
-        confetti({ particleCount: 120, spread: 70, origin: { y: 0.4 }, colors: ["#0f0f10", "#9a9aa2", "#ececf0"] });
+        confetti({ particleCount: 120, spread: 70, origin: { y: 0.4 }, colors: ["#4a55c7", "#8b93e0", "#eef0fb"] });
       }
       toast({ title: `${section} saved!` });
     } catch {

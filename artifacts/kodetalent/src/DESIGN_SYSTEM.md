@@ -190,3 +190,60 @@ actual character with a matching voice.
   `lg:`-prefixed ADDITION. The rendered result below `lg` (1024px) must be
   pixel-equivalent to before the pass — if you're unsure, diff the classes
   you touched and confirm none of the unprefixed ones changed.
+
+## v3 — Gwava-inspired refresh (display type, motion, momentum)
+
+Adds drama to the marketing surfaces and restores the daily-momentum loop,
+without touching Canopy's palette or Toko. Everything below is additive to
+v2/v2.1 — no rule above is superseded.
+
+1. **Display font.** `--font-display` (Bricolage Grotesque, weights 500-800)
+   carries headings; body copy stays on `--font-sans` (Plus Jakarta). Applied
+   in-app via `style={{ fontFamily: "var(--font-display)" }}` on h1/h2-level
+   headings, wordmarks, and the Today canopy's `{firstName}.` greeting.
+2. **Serif accent — marketing only.** `--font-serif` (Source Serif 4, already
+   vendored under `public/fonts/resume/` for the PDF engine, now also exposed
+   via `@font-face`) sets italic accent words in landing/onboarding headlines
+   only (`.accent-serif` class). Never used in-app or for running text.
+3. **Lowercase voice — marketing only.** The `.marketing` wrapper class
+   (landing `RoleSelect.tsx`, onboarding `WizardShell.tsx`) lowercases `h1`/
+   `h2` and switches them to the display font via a scoped CSS rule in
+   `index.css`. In-app headings (Today, Resume, Profile, etc.) stay sentence
+   case — lowercase is a marketing-voice choice, not a type-system default.
+4. **Motion language.** Entrances: 300-500ms, `ease: "easeOut"`, 60-90ms
+   stagger between siblings (`whileInView` with `viewport={{ once: true }}`
+   for scroll-triggered marketing reveals; mount-based stagger for in-app
+   lists like Today's task rows). Interactive elements get a spring
+   (`type: "spring", stiffness: 380, damping: 32`) for shared-element
+   transitions — see the nav active-pill below. Every new animation checks
+   `useReducedMotion()` and renders the settled state statically when true;
+   this is not optional, it's the same bar as the elevation system's own
+   `prefers-reduced-motion` kill switch in `index.css`.
+5. **Nav active indicator.** BottomNav and SideNav each render a
+   `motion.div layoutId="bottomnav-pill"` / `"sidenav-pill"` behind the
+   active item — framer-motion cross-fades/slides it between tabs on
+   navigation. Two distinct `layoutId`s (mobile vs desktop) because both
+   shells can be mounted in the same tree at different breakpoints; sharing
+   one id would fight over the animation.
+6. **5-item nav, Today first.** `navItems.ts` now leads with `{ href: "/home",
+   icon: Flame, label: "Today" }` ahead of Resume/Jobs/Prep/Profile — the
+   daily-momentum hub (streak, XP, task list) is the app's entry point again,
+   not a hidden route. `App.tsx`'s post-login redirect (`/` → `/resume` for
+   returning users, `/onboarding` for new ones) is unchanged; Today is reached
+   via the nav, not the landing funnel.
+7. **Streak chip.** `Flame` icon in `text-highlight` (the existing "hot
+   emphasis" token, rule 8 above — a streak is exactly that: momentum
+   emphasis, not a new accent) + tabular-nums count, shown in `TopBar`
+   (mobile) and `SideNav` (desktop) whenever `streakCount > 0`, tappable to
+   `/home`. Sourced from `useStudentProfile` (already fetched once by
+   `AppLayout`) rather than a second request.
+8. **XP / level.** Real stored columns (`students.xp`, `students.level`),
+   not client-side math beyond the level formula (`floor(xp / 500) + 1`,
+   duplicated in `lib/dailyTasks.ts` and `routes/quests.ts` — keep both in
+   sync if the curve ever changes). Awarded server-side in `completeTask()`:
+   +20 xp per task, +50 bonus for finishing every task that day, symmetric
+   subtraction on uncomplete (no bonus clawback — accepted asymmetry on an
+   edge case). Today's canopy renders it as a `bg-white/20` track + `bg-white`
+   fill progress bar under the streak line, matching the wizard's
+   `WizardProgress` fill pattern (rule: reuse the same progress-bar idiom
+   everywhere one is needed, don't invent a second visual language for it).

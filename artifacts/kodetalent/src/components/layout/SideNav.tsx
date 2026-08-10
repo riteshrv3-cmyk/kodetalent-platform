@@ -1,10 +1,13 @@
 import { Link, useLocation } from "wouter";
+import { motion, useReducedMotion } from "framer-motion";
+import { Flame } from "lucide-react";
 import { Toko } from "@/components/kodetalent/Toko";
 import { cn } from "@/lib/utils";
 import { NAV_ITEMS } from "./navItems";
 
 interface SideNavProps {
   initials: string;
+  streakCount: number;
   onProfileClick: () => void;
 }
 
@@ -16,13 +19,27 @@ interface SideNavProps {
  * avatar button does on mobile — it's account/logout, not the /profile page
  * (that's the "Profile" nav item above it).
  */
-export function SideNav({ initials, onProfileClick }: SideNavProps) {
+export function SideNav({ initials, streakCount, onProfileClick }: SideNavProps) {
   const [location, setLocation] = useLocation();
+  const reduced = useReducedMotion();
 
   return (
     <div className="hidden lg:flex fixed left-0 top-0 bottom-0 w-[240px] flex-col bg-paper border-r border-line z-40">
-      <div className="px-6 pt-6 pb-4">
-        <span className="font-extrabold text-ink text-lg tracking-tight">KodeTalent</span>
+      <div className="px-6 pt-6 pb-4 flex items-center justify-between">
+        <span className="text-lg tracking-tight text-ink" style={{ fontFamily: "var(--font-display)" }}>
+          kodetalent
+        </span>
+        {streakCount > 0 && (
+          <button
+            type="button"
+            onClick={() => setLocation("/home")}
+            className="inline-flex items-center gap-1 rounded-full bg-highlight/10 px-2 py-1"
+            aria-label={`${streakCount} day streak`}
+          >
+            <Flame className="w-3.5 h-3.5 text-highlight" fill="currentColor" />
+            <span className="text-[11px] font-bold text-highlight tabular-nums">{streakCount}</span>
+          </button>
+        )}
       </div>
 
       <nav className="flex-1 px-3 space-y-1">
@@ -34,10 +51,17 @@ export function SideNav({ initials, onProfileClick }: SideNavProps) {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-xl text-[14px] font-semibold transition-colors",
-                isActive ? "bg-brand-soft text-brand" : "text-ink-muted hover:bg-line/60",
+                "relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-[14px] font-semibold transition-colors",
+                isActive ? "text-brand" : "text-ink-muted hover:bg-line/60",
               )}
             >
+              {isActive && (
+                <motion.div
+                  layoutId="sidenav-pill"
+                  className="absolute inset-0 rounded-xl bg-brand-soft -z-10"
+                  transition={reduced ? { duration: 0 } : { type: "spring", stiffness: 380, damping: 32 }}
+                />
+              )}
               <Icon className="h-5 w-5" strokeWidth={isActive ? 2.4 : 2} />
               {item.label}
             </Link>

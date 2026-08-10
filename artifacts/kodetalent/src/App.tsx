@@ -126,13 +126,20 @@ const clerkAppearance = {
   },
 };
 
+// Shaped after the canopy+sheet pattern nearly every page uses (301 hits
+// across 31 files), so the loading flash reads as "this page" rather than a
+// generic placeholder. Bare `-mx-*` pulls the canopy block out to the edges
+// of whatever container it's rendered in (AppLayout's <main>, or standalone
+// for /r/:slug) since PageSkeleton doesn't know that container's padding.
 function PageSkeleton() {
   return (
-    <div className="p-4 space-y-4" data-testid="page-loading-skeleton">
-      <Skeleton className="h-8 w-1/2" />
-      <Skeleton className="h-32 w-full" />
-      <Skeleton className="h-24 w-full" />
-      <Skeleton className="h-24 w-full" />
+    <div className="-mx-6 lg:mx-0 -mt-8 lg:mt-0" data-testid="page-loading-skeleton">
+      <div className="bg-brand/90 h-28 lg:h-20 lg:rounded-2xl animate-pulse" />
+      <div className="bg-canvas rounded-t-3xl lg:rounded-2xl -mt-6 lg:mt-4 px-6 pt-6 pb-4 space-y-3">
+        <Skeleton className="h-[72px] w-full rounded-2xl" />
+        <Skeleton className="h-[72px] w-full rounded-2xl" />
+        <Skeleton className="h-[72px] w-full rounded-2xl" />
+      </div>
     </div>
   );
 }

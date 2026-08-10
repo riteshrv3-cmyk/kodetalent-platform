@@ -1,13 +1,14 @@
 import { useLocation } from "wouter";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Flame } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface TopBarProps {
   initials: string;
+  streakCount: number;
   onProfileClick: () => void;
 }
 
-export function TopBar({ initials, onProfileClick }: TopBarProps) {
+export function TopBar({ initials, streakCount, onProfileClick }: TopBarProps) {
   const [location, setLocation] = useLocation();
   const showBack = location !== "/home" && location !== "/onboarding";
 
@@ -41,6 +42,17 @@ export function TopBar({ initials, onProfileClick }: TopBarProps) {
         </div>
 
         <div className="flex items-center gap-3">
+          {streakCount > 0 && (
+            <motion.button
+              whileTap={{ scale: 0.92 }}
+              onClick={() => setLocation("/home")}
+              className="inline-flex items-center gap-1 rounded-full bg-highlight/10 px-2.5 py-3.5"
+              aria-label={`${streakCount} day streak`}
+            >
+              <Flame className="w-3.5 h-3.5 text-highlight" fill="currentColor" />
+              <span className="text-[12px] font-bold text-highlight tabular-nums">{streakCount}</span>
+            </motion.button>
+          )}
           <motion.button
             whileTap={{ scale: 0.92 }}
             onClick={onProfileClick}
