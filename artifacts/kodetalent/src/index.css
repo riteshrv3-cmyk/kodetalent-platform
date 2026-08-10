@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Bricolage+Grotesque:opsz,wght@12..96,500..800&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 @plugin "@tailwindcss/typography";
@@ -38,6 +38,13 @@
   --color-achievement: hsl(var(--achievement));
 
   --font-sans: 'Plus Jakarta Sans', sans-serif;
+  /* Display face for headlines (design v3): characterful grotesque for drama,
+     body copy stays on Jakarta. Marketing surfaces may pair it with the serif
+     italic below for accent words only — never for running text. */
+  --font-display: 'Bricolage Grotesque', 'Plus Jakarta Sans', sans-serif;
+  /* Serif italic accent — Source Serif 4 already ships for the PDF engine
+     (public/fonts/resume/); exposed to the UI via @font-face below. */
+  --font-serif: 'Source Serif 4', Georgia, serif;
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -285,4 +292,40 @@ button:active:not(:disabled)::after,
 
 .shadow-soft {
   box-shadow: 0 8px 24px rgba(26, 29, 46, 0.08);
+}
+
+/* ── Serif accent face (design v3) ────────────────────────────────────
+   Source Serif 4 is vendored for the resume PDF engine; these faces let
+   marketing headlines use it for accent words ("really you."). Italic is
+   the only style intended for the UI. */
+@font-face {
+  font-family: 'Source Serif 4';
+  src: url('/fonts/resume/SourceSerif4-Italic.ttf') format('truetype');
+  font-style: italic;
+  font-weight: 400 600;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Source Serif 4';
+  src: url('/fonts/resume/SourceSerif4-Regular.ttf') format('truetype');
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+/* Marketing surfaces (landing, onboarding) set headlines in the display
+   face, lowercase. Scoped by wrapper class so app pages are untouched. */
+.marketing h1,
+.marketing h2,
+.marketing h3 {
+  font-family: var(--font-display);
+}
+.marketing h1,
+.marketing h2 {
+  text-transform: lowercase;
+}
+.marketing .accent-serif {
+  font-family: var(--font-serif);
+  font-style: italic;
+  text-transform: lowercase;
 }
