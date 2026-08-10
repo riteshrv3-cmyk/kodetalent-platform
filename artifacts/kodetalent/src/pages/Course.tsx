@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useLocation } from "wouter";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
   ArrowLeft, BookOpen, CreditCard, HelpCircle, CheckCircle2,
   XCircle, RotateCcw, Star, AlertTriangle, Trophy, ChevronRight,
@@ -143,6 +143,7 @@ const LESSON_TYPE = {
 
 export default function Course() {
   const [, setLocation] = useLocation();
+  const reduced = useReducedMotion();
 
   const [ctx, setCtx] = useState<CourseContext | null>(null);
   const [courseData, setCourseData] = useState<CourseData | null>(null);
@@ -398,7 +399,7 @@ export default function Course() {
         </div>
 
         {/* Title */}
-        <h2 className="text-xl font-extrabold text-ink text-center mb-1">
+        <h2 className="text-display text-xl font-extrabold text-ink text-center mb-1">
           {ctx.subDomainName} Course
         </h2>
         <p className="text-[13px] text-ink-muted text-center mb-8">AI is building your personalised course</p>
@@ -467,7 +468,7 @@ export default function Course() {
   if (error || !courseData) {
     return (
       <div className="min-h-screen bg-paper flex flex-col items-center justify-center px-6 pb-28 lg:max-w-2xl lg:mx-auto">
-        <h2 className="text-lg font-extrabold text-ink mb-2">Something went wrong</h2>
+        <h2 className="text-display text-lg font-extrabold text-ink mb-2">Something went wrong</h2>
         <p className="text-sm text-ink-muted text-center mb-6">{error}</p>
         <Button onClick={() => { setDataReady(false); setAnimReady(false); setMsgIndex(0); hasFetched.current = false; }} className="bg-brand hover:bg-brand/90 text-paper font-bold rounded-xl px-6">
           Try again
@@ -502,7 +503,7 @@ export default function Course() {
           </button>
           <div className="min-w-0 flex-1">
             <p className="text-[11px] font-bold uppercase tracking-wider text-ink-muted truncate">{ctx.domainEmoji} {ctx.domainName}</p>
-            <h1 className="text-[18px] font-extrabold text-ink truncate">{ctx.subDomainName}</h1>
+            <h1 className="text-display text-[18px] font-extrabold text-ink truncate">{ctx.subDomainName}</h1>
           </div>
         </div>
         <div className="flex gap-2 mb-1">
@@ -939,7 +940,7 @@ export default function Course() {
                   {/* Milestone moments are the one place personality is allowed —
                       see the Phase 3 call to keep rare celebrations despite the
                       monochrome palette. */}
-                  <h2 className="text-xl font-extrabold text-ink mb-1">
+                  <h2 className="text-display text-xl font-extrabold text-ink mb-1">
                     {sessionStats.reviewed > 0 ? "Session complete! 🎉" : "All caught up!"}
                   </h2>
                   <p className="text-sm text-ink-muted mb-4">
@@ -1028,7 +1029,7 @@ export default function Course() {
                 <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
                   <div className="rounded-2xl bg-paper shadow-soft p-6 text-center mb-4">
                     <Trophy className="w-12 h-12 mx-auto mb-3 text-ink" />
-                    <h2 className="text-2xl font-extrabold text-ink mb-1">{quizScore} / {courseData.quizQuestions.length}</h2>
+                    <h2 className="text-display text-2xl font-extrabold text-ink mb-1">{quizScore} / {courseData.quizQuestions.length}</h2>
                     <p className="text-sm text-ink-muted mb-4">
                       {quizScore === courseData.quizQuestions.length ? "Perfect! You nailed it 🎉"
                         : quizScore >= Math.ceil(courseData.quizQuestions.length * 0.6) ? "Good job! Review the ones you missed."
@@ -1044,14 +1045,20 @@ export default function Course() {
                     </div>
                   </div>
                   <p className="text-[11px] font-bold text-ink-muted uppercase tracking-wider mb-2 px-1">Breakdown</p>
-                  {courseData.quizQuestions.map(q => (
-                    <div key={q.id} className="flex items-center gap-3 py-4 border-t border-line">
+                  {courseData.quizQuestions.map((q, i) => (
+                    <motion.div
+                      key={q.id}
+                      initial={reduced ? false : { opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.35, delay: i * 0.06, ease: "easeOut" }}
+                      className="flex items-center gap-3 py-4 border-t border-line"
+                    >
                       {quizAnswers[q.id] ? <CheckCircle2 className="w-5 h-5 text-done flex-shrink-0" /> : <XCircle className="w-5 h-5 text-danger flex-shrink-0" />}
                       <p className="text-sm text-ink font-bold flex-1 leading-snug">{q.question}</p>
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border border-line text-ink-muted">
                         {q.difficulty}
                       </span>
-                    </div>
+                    </motion.div>
                   ))}
                 </motion.div>
               ) : (

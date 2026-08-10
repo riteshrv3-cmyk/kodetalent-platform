@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
+import { motion, useReducedMotion } from "framer-motion";
 import { AlertTriangle, ShieldCheck, ShieldAlert, Loader2, ChevronRight, FileText } from "lucide-react";
 import { apiFetch } from "@/lib/api/authFetch";
 import { cn } from "@/lib/utils";
@@ -60,6 +61,7 @@ export default function Pipeline() {
   const [result, setResult] = useState<Application | null>(null);
   const [applications, setApplications] = useState<Application[]>([]);
   const [addedPrep, setAddedPrep] = useState<Set<number>>(new Set());
+  const reduced = useReducedMotion();
 
   useEffect(() => {
     const id = localStorage.getItem("studentId");
@@ -140,39 +142,47 @@ export default function Pipeline() {
             the canopy's own left edge while the card it heads was centred at
             2xl — a 144px gap between a heading and its content on desktop. */}
         <div className="lg:max-w-2xl lg:mx-auto">
-          <h1 className="text-[26px] font-extrabold text-white leading-[1.06] tracking-tight">Pipeline</h1>
+          <h1 className="text-display text-[30px] lg:text-[36px] font-extrabold text-white leading-[1.06] tracking-tight">Pipeline</h1>
           <p className="text-[13px] text-white/70 mt-1">
             Paste any job posting or placement drive — scam check, eligibility, and fit, in one shot.
           </p>
         </div>
       </div>
 
-      <div className="bg-paper rounded-t-3xl -mt-6 px-6 pt-6 pb-6 shadow-soft lg:max-w-2xl lg:mx-auto">
-        <textarea
-          value={rawText}
-          onChange={(e) => setRawText(e.target.value)}
-          placeholder="Paste the job description or drive message here…"
-          rows={6}
-          className="w-full rounded-2xl border border-line bg-paper px-4 py-3 text-[14px] text-ink placeholder:text-ink-muted focus:outline-none focus:border-brand resize-none"
-        />
-        {error && <p className="text-[12px] text-danger mt-2">{error}</p>}
-        <button
-          onClick={analyze}
-          disabled={analyzing || rawText.trim().length < 5}
-          className="mt-3 w-full bg-brand text-white text-[14px] font-bold rounded-full py-3.5 disabled:opacity-40 flex items-center justify-center gap-2"
-        >
-          {analyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-          {analyzing ? "Analyzing…" : "Analyze"}
-        </button>
+      <div className="bg-paper rounded-t-3xl -mt-6 px-6 pt-6 pb-6 shadow-soft">
+        <div className="lg:max-w-2xl lg:mx-auto">
+          <textarea
+            value={rawText}
+            onChange={(e) => setRawText(e.target.value)}
+            placeholder="Paste the job description or drive message here…"
+            rows={6}
+            className="w-full rounded-2xl border border-line bg-paper px-4 py-3 text-[14px] text-ink placeholder:text-ink-muted focus:outline-none focus:border-brand resize-none"
+          />
+          {error && <p className="text-[12px] text-danger mt-2">{error}</p>}
+          <motion.button
+            whileTap={{ scale: 0.97 }}
+            onClick={analyze}
+            disabled={analyzing || rawText.trim().length < 5}
+            className="mt-3 w-full bg-brand text-white text-[14px] font-bold rounded-full py-3.5 disabled:opacity-40 flex items-center justify-center gap-2"
+          >
+            {analyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+            {analyzing ? "Analyzing…" : "Analyze"}
+          </motion.button>
 
-        <button onClick={() => setLocation("/drive-check")} className="mt-2 text-[12px] text-ink-muted underline">
-          Just want a quick scam check? Use Drive Check
-        </button>
+          <button onClick={() => setLocation("/drive-check")} className="mt-2 text-[12px] text-ink-muted underline">
+            Just want a quick scam check? Use Drive Check
+          </button>
+        </div>
       </div>
 
       <div className="px-6">
       {result && (
-        <div className="mt-6 bg-paper rounded-2xl shadow-soft p-5">
+        <motion.div
+          initial={reduced ? false : { opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, ease: "easeOut" }}
+          className="mt-6 bg-paper rounded-2xl shadow-soft p-5"
+        >
           <div className="flex items-center justify-between mb-3">
             <p className="text-[15px] font-bold text-ink">
               {result.company ?? "Unknown company"}{result.role ? ` · ${result.role}` : ""}
@@ -246,15 +256,21 @@ export default function Pipeline() {
               })}
             </div>
           )}
-        </div>
+        </motion.div>
       )}
 
       {applications.length > 0 && (
         <div className="mt-8">
           <p className="text-[11px] font-bold uppercase tracking-wider text-ink-muted mb-3">Tracked ({applications.length})</p>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-4">
-            {applications.map((app) => (
-              <div key={app.id} className="bg-paper rounded-2xl shadow-soft p-4">
+            {applications.map((app, i) => (
+              <motion.div
+                key={app.id}
+                initial={reduced ? false : { opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, delay: i * 0.06, ease: "easeOut" }}
+                className="bg-paper rounded-2xl shadow-soft p-4"
+              >
                 <div className="flex items-center justify-between gap-2 mb-1.5">
                   <p className="text-[14px] font-semibold text-ink truncate">
                     {app.company ?? "Unknown"}{app.role ? ` · ${app.role}` : ""}
@@ -278,7 +294,7 @@ export default function Pipeline() {
                     <FileText className="w-3.5 h-3.5" /> Tailor resume
                   </button>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>

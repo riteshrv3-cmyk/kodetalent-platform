@@ -62,7 +62,7 @@ export default function PublicResume({ slug }: { slug: string }) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-surface text-ink">
         <div className="text-center space-y-2 p-8">
-          <p className="text-2xl font-extrabold">Resume not found</p>
+          <p className="text-display text-2xl font-extrabold">Resume not found</p>
           <p className="text-ink-muted text-sm">This link may have been removed or expired.</p>
         </div>
       </div>

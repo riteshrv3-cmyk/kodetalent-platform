@@ -55,7 +55,7 @@ export default function Join({ code }: { code: string }) {
         <div className="w-20 h-20 rounded-3xl bg-paper shadow-soft flex items-center justify-center mb-5">
           <AlertCircle className="w-10 h-10 text-danger" />
         </div>
-        <h1 className="text-[30px] font-extrabold text-ink mb-2">Invite link invalid</h1>
+        <h1 className="text-display text-[30px] lg:text-[36px] font-extrabold text-ink mb-2">Invite link invalid</h1>
         <p className="text-[13px] text-danger mb-6 max-w-xs">{error}</p>
         <Button onClick={() => nav("/")} className="bg-brand text-white hover:bg-brand/90 font-bold rounded-full px-4 py-3">
           Continue without invite
@@ -89,7 +89,7 @@ export default function Join({ code }: { code: string }) {
 
         <motion.h1
           initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }}
-          className="text-[30px] font-extrabold text-ink mb-2 leading-tight"
+          className="text-display text-[30px] lg:text-[36px] font-extrabold text-ink mb-2 leading-tight"
         >
           Welcome to KodeTalent
         </motion.h1>

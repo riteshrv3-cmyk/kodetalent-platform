@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { ShieldCheck, AlertTriangle, ShieldAlert, Download, ChevronRight, ArrowLeft, Clipboard, TrendingUp, CheckCircle2, XCircle, Award, Phone, Ghost, Megaphone } from "lucide-react";
 import { toPng, toBlob } from "html-to-image";
 import { useToast } from "@/hooks/use-toast";
@@ -145,7 +145,7 @@ function VerdictCard({ row, studentName, college, kodeScore }: {
           <Icon className="w-6 h-6 shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0">
             <p className="text-[11px] font-bold uppercase tracking-wider opacity-80">Verdict</p>
-            <h2 className="text-[18px] font-extrabold leading-tight mt-0.5">{v.label}</h2>
+            <h2 className="text-display text-[18px] font-extrabold leading-tight mt-0.5">{v.label}</h2>
             <p className="text-[12px] mt-0.5 opacity-90 leading-snug">{sub}</p>
           </div>
         </div>
@@ -280,6 +280,7 @@ export default function DriveCheck() {
   const [pendingPings, setPendingPings] = useState<DriveCheckRow[]>([]);
   const [actionLoading, setActionLoading] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
+  const reduced = useReducedMotion();
 
   const refreshPendingPings = (id: string) => {
     apiFetch(`/api/students/${id}/pending-pings`)
@@ -529,7 +530,7 @@ export default function DriveCheck() {
           >
             <ArrowLeft className="w-3.5 h-3.5" /> Home
           </button>
-          <h1 className="text-[26px] font-extrabold text-white leading-[1.06] tracking-tight">Drive Check</h1>
+          <h1 className="text-display text-[30px] lg:text-[36px] font-extrabold text-white leading-[1.06] tracking-tight">Drive Check</h1>
           <p className="text-[13px] text-white/70 mt-1">
             Paste any placement drive from Telegram / WhatsApp / Insta. Tu instantly dekhega: scam hai ya nahi, aur tu eligible bhi hai ya nahi.
           </p>
@@ -544,8 +545,14 @@ export default function DriveCheck() {
             Quick check — kya hua in drives ka?
           </p>
           <div>
-            {pendingPings.slice(0, 3).map((p) => (
-              <div key={p.id} className="py-3 border-t border-line first:border-t-0">
+            {pendingPings.slice(0, 3).map((p, i) => (
+              <motion.div
+                key={p.id}
+                initial={reduced ? false : { opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, delay: i * 0.06, ease: "easeOut" }}
+                className="py-3 border-t border-line first:border-t-0"
+              >
                 <p className="text-[13px] font-semibold text-ink truncate">
                   {p.company ?? "Unknown"} {p.role ? `· ${p.role}` : ""}
                 </p>
@@ -586,7 +593,7 @@ export default function DriveCheck() {
                     Skip
                   </button>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
@@ -779,11 +786,14 @@ export default function DriveCheck() {
         <div className="mt-10 bg-paper rounded-2xl shadow-soft p-4">
           <h3 className="text-[11px] font-bold uppercase tracking-wider text-ink-muted mb-2">Recent checks</h3>
           <div>
-            {recent.slice(0, 5).map((r) => {
+            {recent.slice(0, 5).map((r, i) => {
               const v = VERDICT_STYLE[r.scamVerdict] ?? VERDICT_STYLE.risky;
               return (
-                <button
+                <motion.button
                   key={r.id}
+                  initial={reduced ? false : { opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.35, delay: i * 0.06, ease: "easeOut" }}
                   onClick={() => loadRecent(r)}
                   className="w-full py-3 border-t border-line first:border-t-0 flex items-center gap-3 text-left"
                 >
@@ -796,7 +806,7 @@ export default function DriveCheck() {
                     </p>
                   </div>
                   <ChevronRight className="w-4 h-4 text-ink-muted shrink-0" />
-                </button>
+                </motion.button>
               );
             })}
           </div>

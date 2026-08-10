@@ -90,7 +90,7 @@ export default function Test() {
     return (
       <div className="p-4 pb-24 max-w-md lg:max-w-3xl mx-auto space-y-6 min-h-screen bg-canvas">
         <div className="text-center space-y-2 mt-10 mb-10">
-          <h1 className="text-[26px] font-extrabold text-ink leading-[1.06] tracking-tight">Test Complete</h1>
+          <h1 className="text-display text-[30px] lg:text-[36px] font-extrabold text-ink leading-[1.06] tracking-tight">Test Complete</h1>
           <p className="text-[12px] text-ink-muted">{session.testType}</p>
           <div className="mt-8 flex justify-center">
             <div className="relative w-48 h-48 rounded-full border-[12px] border-line flex flex-col items-center justify-center bg-paper shadow-soft">
@@ -161,7 +161,7 @@ export default function Test() {
               <span className="inline-block px-3 py-1 bg-brand-soft text-brand text-[10px] font-bold rounded-md mb-4 uppercase tracking-wider">
                 {question.topic}
               </span>
-              <h2 className="text-xl font-extrabold text-ink leading-relaxed">{question.question}</h2>
+              <h2 className="text-display text-xl font-extrabold text-ink leading-relaxed">{question.question}</h2>
             </div>
           </div>
 

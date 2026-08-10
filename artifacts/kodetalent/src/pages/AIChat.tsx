@@ -573,7 +573,7 @@ export default function AIChat() {
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5">
-              <p className="font-black text-white text-sm">Toko</p>
+              <p className="text-display font-black text-white text-sm">Toko</p>
               <span className="text-[10px] font-bold text-white/80 border border-white/30 px-1.5 py-0.5 rounded-full">AI</span>
             </div>
             <p className="text-[10px] text-white/70 font-semibold">

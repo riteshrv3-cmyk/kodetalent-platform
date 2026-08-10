@@ -96,7 +96,7 @@ export default function Prep() {
       <div className="bg-brand px-4 pt-6 pb-10">
         <div className="max-w-md lg:max-w-2xl mx-auto flex items-start justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-extrabold flex items-center text-white">
+            <h1 className="text-display text-2xl font-extrabold flex items-center text-white">
               <Target className="mr-2" /> Practice
             </h1>
             <p className="text-sm text-white/70 mt-1">
@@ -192,7 +192,7 @@ export default function Prep() {
                 {interviewDrawerOpen && (
                   <div className="space-y-5">
                     <div>
-                      <h2 className="text-2xl font-bold text-ink mb-1">Set Up Interview</h2>
+                      <h2 className="text-display text-2xl font-bold text-ink mb-1">Set Up Interview</h2>
                       <p className="text-ink-muted text-sm">Configure your practice session</p>
                     </div>
 
@@ -306,7 +306,7 @@ export default function Prep() {
 
                 {testDrawerOpen && (
                   <div className="space-y-4">
-                    <h2 className="text-2xl font-bold text-ink mb-2">Start Mock Test</h2>
+                    <h2 className="text-display text-2xl font-bold text-ink mb-2">Start Mock Test</h2>
                     <p className="text-ink-muted text-[15px]">A 20-minute timed aptitude test — just like your campus placement rounds. You can't pause once it starts.</p>
                   </div>
                 )}

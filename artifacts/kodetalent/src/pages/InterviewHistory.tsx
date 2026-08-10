@@ -75,7 +75,7 @@ export default function InterviewHistory() {
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h1 className="text-[26px] font-extrabold text-ink leading-[1.06] tracking-tight">Interview History</h1>
+            <h1 className="text-display text-[30px] lg:text-[36px] font-extrabold text-ink leading-[1.06] tracking-tight">Interview History</h1>
             <p className="text-[12px] text-ink-muted">Track your improvement over time</p>
           </div>
         </div>

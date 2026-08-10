@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useLocation } from "wouter";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
   Github, Linkedin, Globe, Phone, Edit2, Check, X, Plus, Trash2,
   Briefcase, Award, MapPin, DollarSign, FileText,
@@ -291,12 +291,13 @@ function MyResumesCard({ studentId, onNavigate }: { studentId: number; onNavigat
           <div className="flex flex-col items-center gap-2 text-center">
             <Sparkles className="w-5 h-5 text-ink-muted" />
             <p className="text-[12px] text-ink-muted">AI-tailored to any JD · 4 templates</p>
-            <button
+            <motion.button
+              whileTap={{ scale: 0.97 }}
               onClick={onNavigate}
               className="w-full mt-1 bg-brand text-white text-[13px] font-bold rounded-full px-4 py-3"
             >
               Generate your first resume
-            </button>
+            </motion.button>
           </div>
         ) : (
           <div>
@@ -316,12 +317,13 @@ function MyResumesCard({ studentId, onNavigate }: { studentId: number; onNavigat
               );
             })}
             {resumes.length > 0 && (
-              <button
+              <motion.button
+                whileTap={{ scale: 0.97 }}
                 onClick={onNavigate}
                 className="w-full mt-3 bg-brand text-white text-[13px] font-bold py-3 rounded-full"
               >
                 View all & download →
-              </button>
+              </motion.button>
             )}
           </div>
         )}
@@ -347,6 +349,7 @@ const FIELD_OPTIONS = [
 export default function Profile() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const prefersReduced = useReducedMotion();
   const [studentId, setStudentId] = useState<number | null>(null);
   const [profile, setProfile] = useState<FullProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -658,6 +661,17 @@ export default function Profile() {
     profile.education.length === 0 &&
     !profile.githubUrl;
 
+  // Mount stagger for list rows that would otherwise appear instantly.
+  // Settled (no transform) when the user prefers reduced motion.
+  const entranceProps = (i: number) =>
+    prefersReduced
+      ? {}
+      : {
+          initial: { opacity: 0, y: 12 },
+          animate: { opacity: 1, y: 0 },
+          transition: { duration: 0.35, delay: i * 0.06, ease: "easeOut" as const },
+        };
+
   // lg:max-w-none, not 4xl: every other page sits at one of three widths — the
   // shell's full column (Opportunities, the other two-column card grid), 3xl
   // (Resume, DriveCheck, Test) or 2xl (Home, Prep, Pipeline, Notebook, AIChat).
@@ -713,7 +727,7 @@ export default function Profile() {
           </button>
         </div>
 
-        <h1 className="text-[26px] font-extrabold text-white leading-[1.06] tracking-tight mt-3">{profile.name}</h1>
+        <h1 className="text-display text-[30px] lg:text-[36px] font-extrabold text-white leading-[1.06] tracking-tight mt-3">{profile.name}</h1>
         {profile.college !== "Not set" && <p className="text-[12px] text-white/70 mt-1">{profile.college}</p>}
         {profile.field !== "Not set" && (
           <p className="text-[12px] text-white/70 mt-0.5">
@@ -746,12 +760,13 @@ export default function Profile() {
               <p className="text-[14px] font-bold text-ink">Exploring as Guest</p>
               <p className="text-[12px] text-ink-muted">Sign in to save your real profile</p>
             </div>
-            <button
+            <motion.button
+              whileTap={{ scale: 0.97 }}
               onClick={() => setLocation("/sign-up")}
               className="shrink-0 bg-brand text-white text-[13px] font-bold px-4 py-2.5 rounded-full"
             >
               Sign In →
-            </button>
+            </motion.button>
           </div>
         )}
 
@@ -910,14 +925,14 @@ export default function Profile() {
         >
           <div>
             <h3 className="text-[14px] font-bold text-brand">Toko's Notebook</h3>
-            <p className="text-[11px] text-ink-muted mt-0.5">Everything Toko has noticed about your journey</p>
+            <p className="text-[11px] text-ink/70 mt-0.5">Everything Toko has noticed about your journey</p>
           </div>
           <span className="text-brand text-[13px] font-bold">→</span>
         </button>
 
         {isProfileEmpty && (
           <div className="mx-4 bg-brand rounded-2xl shadow-soft p-5 space-y-3">
-            <h3 className="text-[15px] font-extrabold text-white">Start here</h3>
+            <h3 className="text-display text-[15px] font-extrabold text-white">Start here</h3>
             <p className="text-[12px] text-white/70 -mt-2">
               Give Toko something real to work from — everything else on this page builds on this.
             </p>
@@ -987,13 +1002,13 @@ export default function Profile() {
                 {profile.githubUrl && (
                   <div className="bg-brand-soft rounded-xl p-3 text-center">
                     <p className="text-xl font-extrabold text-brand">{profile.commitmentScore}</p>
-                    <p className="text-[10px] font-bold text-ink-muted uppercase tracking-wider">Commitment</p>
+                    <p className="text-[10px] font-bold text-ink/70 uppercase tracking-wider">Commitment</p>
                   </div>
                 )}
                 {profile.overallScore > 0 && (
                   <div className="bg-brand-soft rounded-xl p-3 text-center">
                     <p className="text-xl font-extrabold text-brand">{Math.round(profile.overallScore)}</p>
-                    <p className="text-[10px] font-bold text-ink-muted uppercase tracking-wider">AI Score</p>
+                    <p className="text-[10px] font-bold text-ink/70 uppercase tracking-wider">AI Score</p>
                   </div>
                 )}
               </div>
@@ -1109,11 +1124,11 @@ export default function Profile() {
                 <div className="grid grid-cols-2 gap-2 mb-3">
                   <div className="bg-brand-soft rounded-xl p-2 text-center">
                     <p className="font-extrabold text-brand">{profile.githubStats.publicRepos}</p>
-                    <p className="text-[10px] text-ink-muted">Repos</p>
+                    <p className="text-[10px] text-ink/70">Repos</p>
                   </div>
                   <div className="bg-brand-soft rounded-xl p-2 text-center">
                     <p className="font-extrabold text-brand">{profile.githubStats.followers}</p>
-                    <p className="text-[10px] text-ink-muted">Followers</p>
+                    <p className="text-[10px] text-ink/70">Followers</p>
                   </div>
                 </div>
                 {profile.githubStats.topLanguages.length > 0 && (
@@ -1181,9 +1196,9 @@ export default function Profile() {
             ) : profile.bio ? (
               <p className="text-[14px] text-ink leading-relaxed">{profile.bio}</p>
             ) : (
-              <button onClick={() => setEditSection("bio")} className="w-full py-3 bg-brand text-white rounded-full text-[13px] font-bold transition-colors">
+              <motion.button whileTap={{ scale: 0.97 }} onClick={() => setEditSection("bio")} className="w-full py-3 bg-brand text-white rounded-full text-[13px] font-bold transition-colors">
                 + Write a short bio (helps recruiters remember you)
-              </button>
+              </motion.button>
             )}
           </div>
         </div>
@@ -1226,15 +1241,15 @@ export default function Profile() {
               <div className="text-center">
                 <p className="text-[14px] text-ink">No education added yet</p>
                 <p className="text-[12px] text-ink-muted mt-0.5">Your degree, college and CGPA for the resume</p>
-                <button onClick={openAddEducation} className="w-full mt-3 bg-brand text-white text-[13px] font-bold rounded-full px-4 py-3">
+                <motion.button whileTap={{ scale: 0.97 }} onClick={openAddEducation} className="w-full mt-3 bg-brand text-white text-[13px] font-bold rounded-full px-4 py-3">
                   Add your education
-                </button>
+                </motion.button>
               </div>
             )}
 
             <div>
-              {profile.education.map(ed => (
-                <div key={ed.id} className="py-4 border-t border-line first:border-t-0 relative group">
+              {profile.education.map((ed, i) => (
+                <motion.div key={ed.id} {...entranceProps(i)} className="py-4 border-t border-line first:border-t-0 relative group">
                   <button onClick={() => removeEducation(ed.id)} className="absolute top-4 right-0 opacity-0 group-hover:opacity-100 transition-opacity text-ink-muted">
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -1245,7 +1260,7 @@ export default function Profile() {
                   <p className="text-[11px] text-ink-muted mt-0.5">
                     {[ed.start, ed.end].filter(Boolean).join(" – ")}{ed.cgpa ? ` · CGPA ${ed.cgpa}` : ""}
                   </p>
-                </div>
+                </motion.div>
               ))}
             </div>
           </div>
@@ -1313,15 +1328,15 @@ export default function Profile() {
               <div className="text-center">
                 <p className="text-[14px] text-ink">No experience yet</p>
                 <p className="text-[12px] text-ink-muted mt-0.5">Internships, part-time work, freelance — anything real</p>
-                <button onClick={() => setShowAddExperience(true)} className="w-full mt-3 bg-brand text-white text-[13px] font-bold rounded-full px-4 py-3">
+                <motion.button whileTap={{ scale: 0.97 }} onClick={() => setShowAddExperience(true)} className="w-full mt-3 bg-brand text-white text-[13px] font-bold rounded-full px-4 py-3">
                   Add your first experience
-                </button>
+                </motion.button>
               </div>
             )}
 
             <div>
-              {profile.experience.map(exp => (
-                <div key={exp.id} className="py-4 border-t border-line first:border-t-0 relative group">
+              {profile.experience.map((exp, i) => (
+                <motion.div key={exp.id} {...entranceProps(i)} className="py-4 border-t border-line first:border-t-0 relative group">
                   <button onClick={() => removeExperienceEntry(exp.id)} className="absolute top-4 right-0 opacity-0 group-hover:opacity-100 transition-opacity text-ink-muted">
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -1334,7 +1349,7 @@ export default function Profile() {
                       ))}
                     </ul>
                   )}
-                </div>
+                </motion.div>
               ))}
             </div>
           </div>
@@ -1389,15 +1404,15 @@ export default function Profile() {
               <div className="text-center">
                 <p className="text-[14px] text-ink">No projects yet</p>
                 <p className="text-[12px] text-ink-muted mt-0.5">Recruiters love seeing real work</p>
-                <button onClick={() => setShowAddProject(true)} className="w-full mt-3 bg-brand text-white text-[13px] font-bold rounded-full px-4 py-3">
+                <motion.button whileTap={{ scale: 0.97 }} onClick={() => setShowAddProject(true)} className="w-full mt-3 bg-brand text-white text-[13px] font-bold rounded-full px-4 py-3">
                   Add your first project
-                </button>
+                </motion.button>
               </div>
             )}
 
             <div>
-              {profile.projects.map(proj => (
-                <div key={proj.id} className="py-4 border-t border-line first:border-t-0 relative group">
+              {profile.projects.map((proj, i) => (
+                <motion.div key={proj.id} {...entranceProps(i)} className="py-4 border-t border-line first:border-t-0 relative group">
                   <button onClick={() => removeProject(proj.id)} className="absolute top-4 right-0 opacity-0 group-hover:opacity-100 transition-opacity text-ink-muted">
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -1412,7 +1427,7 @@ export default function Profile() {
                     {proj.githubUrl && <a href={proj.githubUrl} target="_blank" rel="noopener noreferrer" className="text-[11px] font-bold text-ink flex items-center gap-1"><Github className="w-3 h-3" /> Code</a>}
                     {proj.liveUrl && <a href={proj.liveUrl} target="_blank" rel="noopener noreferrer" className="text-[11px] font-bold text-ink flex items-center gap-1"><ExternalLink className="w-3 h-3" /> Live</a>}
                   </div>
-                </div>
+                </motion.div>
               ))}
             </div>
           </div>
@@ -1446,15 +1461,15 @@ export default function Profile() {
               <div className="text-center">
                 <p className="text-[14px] text-ink">No certifications yet</p>
                 <p className="text-[12px] text-ink-muted mt-0.5">AWS, Google, Coursera, etc.</p>
-                <button onClick={() => setShowAddCert(true)} className="w-full mt-3 bg-brand text-white text-[13px] font-bold rounded-full px-4 py-3">
+                <motion.button whileTap={{ scale: 0.97 }} onClick={() => setShowAddCert(true)} className="w-full mt-3 bg-brand text-white text-[13px] font-bold rounded-full px-4 py-3">
                   Add a certification
-                </button>
+                </motion.button>
               </div>
             )}
 
             <div>
-              {profile.certifications.map(cert => (
-                <div key={cert.id} className="flex items-center gap-3 py-4 border-t border-line first:border-t-0 relative group">
+              {profile.certifications.map((cert, i) => (
+                <motion.div key={cert.id} {...entranceProps(i)} className="flex items-center gap-3 py-4 border-t border-line first:border-t-0 relative group">
                   <div className="w-8 h-8 rounded-full border border-line bg-paper flex items-center justify-center shrink-0">
                     <Award className="w-4 h-4 text-ink" />
                   </div>
@@ -1465,7 +1480,7 @@ export default function Profile() {
                   <button onClick={() => removeCert(cert.id)} className="opacity-0 group-hover:opacity-100 transition-opacity text-ink-muted shrink-0">
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
-                </div>
+                </motion.div>
               ))}
             </div>
           </div>
@@ -1551,9 +1566,9 @@ export default function Profile() {
                   </div>
                 )}
                 {!profile.preferredLocations.length && !profile.expectedSalary && (
-                  <button onClick={() => setEditSection("prefs")} className="w-full mt-3 bg-brand text-white rounded-full py-3 text-[13px] font-bold transition-colors">
+                  <motion.button whileTap={{ scale: 0.97 }} onClick={() => setEditSection("prefs")} className="w-full mt-3 bg-brand text-white rounded-full py-3 text-[13px] font-bold transition-colors">
                     + Add job preferences
-                  </button>
+                  </motion.button>
                 )}
               </div>
             )}

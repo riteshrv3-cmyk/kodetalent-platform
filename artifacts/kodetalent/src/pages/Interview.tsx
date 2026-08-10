@@ -501,7 +501,7 @@ export default function Interview() {
           <ArrowLeft className="w-5 h-5 mr-2" /> Back
         </Button>
         <div className="text-center space-y-1">
-          <h1 className="text-[26px] font-extrabold text-ink leading-[1.06] tracking-tight">Interview Complete</h1>
+          <h1 className="text-display text-[30px] lg:text-[36px] font-extrabold text-ink leading-[1.06] tracking-tight">Interview Complete</h1>
           <p className="text-[12px] text-ink-muted font-bold">{interviewTypeLabel} · {session?.company}</p>
         </div>
 
@@ -714,7 +714,7 @@ export default function Interview() {
             <ArrowLeft className="w-6 h-6" />
           </Button>
           <div className="text-center">
-            <h1 className="font-extrabold text-base text-ink">{interviewType} Interview</h1>
+            <h1 className="text-display font-extrabold text-base text-ink">{interviewType} Interview</h1>
             <p className="text-[11px] text-ink-muted font-medium">{session?.company} · Q{questionCount}/{maxQuestions}</p>
           </div>
           <div className="flex items-center gap-1.5">

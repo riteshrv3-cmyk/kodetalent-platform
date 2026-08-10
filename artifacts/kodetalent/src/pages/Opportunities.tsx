@@ -85,7 +85,8 @@ function OpportunityCard({
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(index, 8) * 0.04 }}>
       <div className="bg-paper rounded-2xl shadow-soft overflow-hidden">
         <div className="p-4 relative">
-          <a
+          <motion.a
+            whileTap={{ scale: 0.97 }}
             href={o.url}
             target="_blank"
             rel="noopener noreferrer"
@@ -93,7 +94,7 @@ function OpportunityCard({
             className="absolute top-4 right-4 h-8 px-3.5 rounded-full font-bold text-[12px] bg-brand text-white flex items-center gap-1"
           >
             {o.isSearchLink ? "Search" : "Apply"} <ExternalLink className="w-3 h-3" />
-          </a>
+          </motion.a>
 
           <div className="flex items-center gap-2 min-w-0 mb-2 pr-20">
             {o.logo
@@ -462,7 +463,7 @@ export default function Opportunities() {
             </button>
           )}
           <div>
-            <h1 className="text-[26px] font-extrabold text-ink leading-[1.06] tracking-tight">
+            <h1 className="text-display text-[30px] lg:text-[36px] font-extrabold text-ink leading-[1.06] tracking-tight">
               {!selectedDomain && "Opportunities"}
               {selectedDomain && !selectedSubDomain && selectedDomain.name}
               {selectedSubDomain && selectedSubDomain.name}
@@ -611,7 +612,7 @@ export default function Opportunities() {
                 return (
                   <div className="mb-6">
                     <div className="flex items-baseline justify-between mb-1 px-1">
-                      <p className="text-[15px] font-extrabold text-ink">
+                      <p className="text-display text-[15px] font-extrabold text-ink">
                         {feed.isGuess ? "A place to start" : "Matched for you"}
                         {feed.newCount > 0 && (
                           <span className="ml-2 text-[11px] font-bold text-brand bg-brand-soft rounded-full px-2 py-0.5 align-middle">

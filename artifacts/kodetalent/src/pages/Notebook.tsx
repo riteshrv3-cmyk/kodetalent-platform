@@ -70,7 +70,7 @@ export default function Notebook() {
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h1 className="text-[26px] font-extrabold text-ink leading-[1.06] tracking-tight">Toko's Notebook</h1>
+            <h1 className="text-display text-[30px] lg:text-[36px] font-extrabold text-ink leading-[1.06] tracking-tight">Toko's Notebook</h1>
             <p className="text-[12px] text-ink-muted">Everything Toko has noticed about your journey</p>
           </div>
         </div>

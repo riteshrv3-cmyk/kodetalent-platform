@@ -313,6 +313,13 @@ button:active:not(:disabled)::after,
   font-display: swap;
 }
 
+/* In-app heading utility (design v3): opt a heading into the display face
+   without the lowercase transform the .marketing wrapper adds. App headings
+   stay sentence case — lowercase is a marketing-voice choice only. */
+.text-display {
+  font-family: var(--font-display);
+}
+
 /* Marketing surfaces (landing, onboarding) set headlines in the display
    face, lowercase. Scoped by wrapper class so app pages are untouched. */
 .marketing h1,

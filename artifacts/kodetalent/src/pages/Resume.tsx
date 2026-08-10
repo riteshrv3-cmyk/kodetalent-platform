@@ -626,7 +626,7 @@ function EditResumeSheet({
       {atsReport && (
         <div className="bg-brand-soft rounded-xl p-3">
           <p className="text-[11px] font-bold text-brand">ATS match {atsReport.scorePct}%</p>
-          <p className="text-[10px] text-ink-muted mt-1">
+          <p className="text-[10px] text-ink/70 mt-1">
             {atsReport.mustCoverage.matched}/{atsReport.mustCoverage.total} must-have keywords covered
           </p>
         </div>
@@ -664,7 +664,7 @@ function EditResumeSheet({
           <div className="w-10 h-1 rounded-full bg-line" />
         </div>
         <div className="flex items-center justify-between px-5 pt-2 pb-3 border-b border-line shrink-0">
-          <h2 className="text-[18px] font-extrabold text-ink flex items-center gap-2">
+          <h2 className="text-display text-[18px] font-extrabold text-ink flex items-center gap-2">
             <Pencil className="w-4 h-4 text-ink" />
             Edit Resume
           </h2>
@@ -1261,7 +1261,7 @@ function GenerateSheet({
         {generatedResume && previewDoc ? (
           <>
             <div className="flex items-center justify-between">
-              <h2 className="text-[18px] font-extrabold text-ink flex items-center gap-2">
+              <h2 className="text-display text-[18px] font-extrabold text-ink flex items-center gap-2">
                 <Check className="w-4 h-4 text-brand" />
                 Resume Ready
               </h2>
@@ -1418,7 +1418,7 @@ function GenerateSheet({
         ) : profileStep === "capture" ? (
           <>
             <div className="flex items-center justify-between">
-              <h2 className="text-[18px] font-extrabold text-ink">
+              <h2 className="text-display text-[18px] font-extrabold text-ink">
                 First, tell us about you
               </h2>
               <button onClick={onClose} className="w-8 h-8 rounded-full border border-line flex items-center justify-center">
@@ -1538,7 +1538,7 @@ function GenerateSheet({
         ) : (
           <>
             <div className="flex items-center justify-between">
-              <h2 className="text-[18px] font-extrabold text-ink flex items-center gap-2">
+              <h2 className="text-display text-[18px] font-extrabold text-ink flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-brand" />
                 Generate New Resume
               </h2>
@@ -1634,7 +1634,7 @@ function GenerateSheet({
                 {findings && (
                   <div className="rounded-xl bg-brand-soft border border-brand/20 p-3 mt-2 text-[12px]">
                     <p className="font-semibold text-ink mb-1">Skills found in this JD:</p>
-                    <p className="text-ink-muted">
+                    <p className="text-ink/70">
                       {findings.have} matched strongly, {findings.partial} partial
                       {findings.missing.length > 0 && (
                         <span> — missing: <span className="font-medium text-ink">{findings.missing.join(", ")}</span></span>
@@ -1827,7 +1827,7 @@ export default function Resume() {
 
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-[26px] font-extrabold text-ink leading-[1.06] tracking-tight">
+            <h1 className="text-display text-[30px] lg:text-[36px] font-extrabold text-ink leading-[1.06] tracking-tight">
               My Resumes
             </h1>
             <p className="text-[13px] text-ink-muted mt-1">
