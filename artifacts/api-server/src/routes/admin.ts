@@ -9,7 +9,6 @@ import {
   jobsTable,
   mentors,
   interviewSessionsTable,
-  testSessionsTable,
   tpoAccountsTable,
   curatedOpportunitiesTable,
 } from "@workspace/db";
@@ -79,7 +78,6 @@ router.get("/admin/overview", async (_req, res) => {
     driveCheckCountRow,
     mentorCountRow,
     interviewCountRow,
-    testCountRow,
     collegeCountRow,
     openToWorkRow,
     proRow,
@@ -89,7 +87,6 @@ router.get("/admin/overview", async (_req, res) => {
     invitesLast24Row,
     driveChecksLast24Row,
     interviewsLast24Row,
-    testsLast24Row,
     avgScoresRow,
   ] = await Promise.all([
     db.select({ c: sql<number>`count(*)::int` }).from(studentsTable),
@@ -99,7 +96,6 @@ router.get("/admin/overview", async (_req, res) => {
     db.select({ c: sql<number>`count(*)::int` }).from(driveChecksTable),
     db.select({ c: sql<number>`count(*)::int` }).from(mentors),
     db.select({ c: sql<number>`count(*)::int` }).from(interviewSessionsTable),
-    db.select({ c: sql<number>`count(*)::int` }).from(testSessionsTable),
     db.select({ c: sql<number>`count(distinct ${studentsTable.college})::int` }).from(studentsTable),
     db.select({ c: sql<number>`count(*)::int` }).from(studentsTable).where(sql`${studentsTable.openToWork} = true`),
     db.select({ c: sql<number>`count(*)::int` }).from(studentsTable).where(sql`${studentsTable.isPro} = true`),
@@ -115,7 +111,6 @@ router.get("/admin/overview", async (_req, res) => {
     db.select({ c: sql<number>`count(*)::int` }).from(recruiterInvites).where(gte(recruiterInvites.createdAt, since)),
     db.select({ c: sql<number>`count(*)::int` }).from(driveChecksTable).where(gte(driveChecksTable.createdAt, since)),
     db.select({ c: sql<number>`count(*)::int` }).from(interviewSessionsTable).where(gte(interviewSessionsTable.createdAt, since)),
-    db.select({ c: sql<number>`count(*)::int` }).from(testSessionsTable).where(gte(testSessionsTable.createdAt, since)),
     db
       .select({
         avgScore: sql<number>`coalesce(round(avg(${studentsTable.overallScore}))::int, 0)`,
@@ -135,7 +130,6 @@ router.get("/admin/overview", async (_req, res) => {
       driveChecks: driveCheckCountRow[0]?.c ?? 0,
       mentors: mentorCountRow[0]?.c ?? 0,
       interviews: interviewCountRow[0]?.c ?? 0,
-      tests: testCountRow[0]?.c ?? 0,
       colleges: collegeCountRow[0]?.c ?? 0,
       openToWork: openToWorkRow[0]?.c ?? 0,
       pro: proRow[0]?.c ?? 0,
@@ -145,7 +139,6 @@ router.get("/admin/overview", async (_req, res) => {
       invites: invitesLast24Row[0]?.c ?? 0,
       driveChecks: driveChecksLast24Row[0]?.c ?? 0,
       interviews: interviewsLast24Row[0]?.c ?? 0,
-      tests: testsLast24Row[0]?.c ?? 0,
     },
     averages: avgScoresRow[0] ?? { avgScore: 0, avgStrength: 0, avgCommitment: 0, totalXp: 0 },
     inviteBreakdown: inviteStatusRows,
@@ -247,7 +240,7 @@ router.get("/admin/job-listings", async (_req, res) => {
 });
 
 router.get("/admin/activity", async (_req, res) => {
-  const [students, invites, drives, interviews, tests] = await Promise.all([
+  const [students, invites, drives, interviews] = await Promise.all([
     db
       .select({ id: studentsTable.id, name: studentsTable.name, college: studentsTable.college, createdAt: studentsTable.createdAt })
       .from(studentsTable)
@@ -293,19 +286,6 @@ router.get("/admin/activity", async (_req, res) => {
       .leftJoin(studentsTable, sql`${interviewSessionsTable.studentId} = ${studentsTable.id}`)
       .orderBy(desc(interviewSessionsTable.createdAt))
       .limit(40),
-    db
-      .select({
-        id: testSessionsTable.id,
-        studentId: testSessionsTable.studentId,
-        studentName: studentsTable.name,
-        testType: testSessionsTable.testType,
-        difficulty: testSessionsTable.difficulty,
-        createdAt: testSessionsTable.createdAt,
-      })
-      .from(testSessionsTable)
-      .leftJoin(studentsTable, sql`${testSessionsTable.studentId} = ${studentsTable.id}`)
-      .orderBy(desc(testSessionsTable.createdAt))
-      .limit(40),
   ]);
 
   type Event = { kind: string; at: string; title: string; subtitle: string; entityId: number };
@@ -347,16 +327,6 @@ router.get("/admin/activity", async (_req, res) => {
       entityId: it.id,
     });
   }
-  for (const t of tests) {
-    events.push({
-      kind: "test",
-      at: t.createdAt.toISOString(),
-      title: `Mock test: ${t.testType} (${t.difficulty})`,
-      subtitle: t.studentName ?? `student #${t.studentId}`,
-      entityId: t.id,
-    });
-  }
-
   events.sort((a, b) => (a.at < b.at ? 1 : -1));
   res.json(events.slice(0, 100));
 });

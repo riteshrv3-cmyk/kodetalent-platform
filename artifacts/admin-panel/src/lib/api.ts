@@ -7,7 +7,6 @@ export type Overview = {
     driveChecks: number;
     mentors: number;
     interviews: number;
-    tests: number;
     colleges: number;
     openToWork: number;
     pro: number;
@@ -17,7 +16,6 @@ export type Overview = {
     invites: number;
     driveChecks: number;
     interviews: number;
-    tests: number;
   };
   averages: {
     avgScore: number;
@@ -113,7 +111,7 @@ export type AdminCollege = {
 };
 
 export type ActivityEvent = {
-  kind: "student_signup" | "recruiter_invite" | "drive_check" | "interview" | "test";
+  kind: "student_signup" | "recruiter_invite" | "drive_check" | "interview";
   at: string;
   title: string;
   subtitle: string;

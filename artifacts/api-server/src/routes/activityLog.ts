@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { studentActivityLogTable, interviewSessionsTable, studentResumesTable, testSessionsTable } from "@workspace/db";
+import { studentActivityLogTable, interviewSessionsTable, studentResumesTable } from "@workspace/db";
 import { eq, desc, and, sql } from "drizzle-orm";
 import { requireStudent } from "../middlewares/studentAuth";
 import { logEvent } from "../lib/events";
@@ -68,15 +68,14 @@ router.get("/students/:id/activity/summary", requireStudent({ allowGuest: true }
   if (isNaN(studentId)) return res.status(400).json({ error: "Invalid id" });
 
   try {
-    const countOf = async (table: typeof interviewSessionsTable | typeof studentResumesTable | typeof testSessionsTable, extra?: ReturnType<typeof eq>) => {
+    const countOf = async (table: typeof interviewSessionsTable | typeof studentResumesTable, extra?: ReturnType<typeof eq>) => {
       const where = extra ? and(eq(table.studentId, studentId), extra) : eq(table.studentId, studentId);
       const [row] = await db.select({ n: sql<number>`count(*)::int` }).from(table).where(where);
       return row?.n ?? 0;
     };
 
-    const [mockInterviews, mockTests, resumesGenerated, applicationsOpenedRow] = await Promise.all([
+    const [mockInterviews, resumesGenerated, applicationsOpenedRow] = await Promise.all([
       countOf(interviewSessionsTable, eq(interviewSessionsTable.completed, true)),
-      countOf(testSessionsTable),
       countOf(studentResumesTable),
       db
         .select({ n: sql<number>`count(*)::int` })
@@ -90,7 +89,6 @@ router.get("/students/:id/activity/summary", requireStudent({ allowGuest: true }
 
     return res.json({
       mockInterviews,
-      mockTests,
       resumesGenerated,
       applicationsOpened: applicationsOpenedRow?.n ?? 0,
     });

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { Target, ChevronRight, MessageSquare, Briefcase, X, Cpu, Users, Shuffle, Building2, Flame, Mic, Camera } from "lucide-react";
-import { useCreateInterviewSession, useCreateTestSession } from "@workspace/api-client-react";
+import { Target, ChevronRight, MessageSquare, X, Cpu, Users, Shuffle, Building2, Flame, Mic, Camera } from "lucide-react";
+import { useCreateInterviewSession } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,7 +22,6 @@ export default function Prep() {
   const [studentId, setStudentId] = useState<number | null>(null);
 
   const [interviewDrawerOpen, setInterviewDrawerOpen] = useState(false);
-  const [testDrawerOpen, setTestDrawerOpen] = useState(false);
 
   const [company, setCompany] = useState("");
   const [interviewType, setInterviewType] = useState<InterviewType>("Technical");
@@ -32,7 +31,6 @@ export default function Prep() {
   const [cameraMode, setCameraMode] = useState(() => localStorage.getItem("cameraMode") !== "false");
 
   const createInterview = useCreateInterviewSession();
-  const createTest = useCreateTestSession();
 
   useEffect(() => {
     const id = localStorage.getItem("studentId");
@@ -65,31 +63,18 @@ export default function Prep() {
     }
   };
 
-  const handleStartTest = async () => {
-    if (!studentId) return;
-    try {
-      const session = await createTest.mutateAsync({
-        data: { studentId, testType: "Aptitude", difficulty: "Medium" }
-      });
-      setLocation(`/practice/test/${session.id}`);
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
   const closeDrawers = () => {
     setInterviewDrawerOpen(false);
-    setTestDrawerOpen(false);
   };
 
   useEffect(() => {
-    if (!interviewDrawerOpen && !testDrawerOpen) return;
+    if (!interviewDrawerOpen) return;
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") closeDrawers();
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [interviewDrawerOpen, testDrawerOpen]);
+  }, [interviewDrawerOpen]);
 
   return (
     <div className="pb-28 min-h-screen bg-canvas">
@@ -136,33 +121,10 @@ export default function Prep() {
             </CardContent>
           </Card>
         </motion.div>
-
-        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
-          <Card
-            className="border-0 shadow-soft rounded-2xl bg-paper cursor-pointer group"
-            onClick={() => setTestDrawerOpen(true)}
-          >
-            <CardContent className="p-5">
-              <div className="flex justify-between items-center mb-3">
-                <div className="text-[10px] font-bold text-ink-muted uppercase tracking-wider">
-                  20-min timed MCQ
-                </div>
-                <div className="w-8 h-8 rounded-full bg-brand-soft flex items-center justify-center text-brand group-hover:bg-brand group-hover:text-white transition-colors">
-                  <ChevronRight className="w-5 h-5" />
-                </div>
-              </div>
-              <h3 className="text-xl font-bold text-ink flex items-center mb-1">
-                <Briefcase className="w-5 h-5 mr-2 text-brand" />
-                Mock Test
-              </h3>
-              <p className="text-sm text-ink-muted">Aptitude and reasoning — just like campus drives.</p>
-            </CardContent>
-          </Card>
-        </motion.div>
       </div>
 
       <AnimatePresence>
-        {(interviewDrawerOpen || testDrawerOpen) && (
+        {interviewDrawerOpen && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -303,13 +265,6 @@ export default function Prep() {
                     </button>
                   </div>
                 )}
-
-                {testDrawerOpen && (
-                  <div className="space-y-4">
-                    <h2 className="text-display text-2xl font-bold text-ink mb-2">Start Mock Test</h2>
-                    <p className="text-ink-muted text-[15px]">A 20-minute timed aptitude test — just like your campus placement rounds. You can't pause once it starts.</p>
-                  </div>
-                )}
               </div>
 
               <div className="flex-shrink-0 border-t border-line px-6 pt-3 pb-[calc(1.25rem+env(safe-area-inset-bottom))]">
@@ -321,17 +276,6 @@ export default function Prep() {
                       className="w-full bg-brand hover:bg-brand/90 text-white font-bold h-14 rounded-full text-lg"
                     >
                       {createInterview.isPending ? "Setting up..." : voiceMode ? "🎤 Start Voice Interview →" : "Start Interview →"}
-                    </Button>
-                  </motion.div>
-                )}
-                {testDrawerOpen && (
-                  <motion.div whileTap={{ scale: 0.97 }}>
-                    <Button
-                      onClick={handleStartTest}
-                      disabled={createTest.isPending}
-                      className="w-full bg-brand hover:bg-brand/90 text-white font-bold h-14 rounded-full text-lg"
-                    >
-                      {createTest.isPending ? "Generating questions..." : "Start Test →"}
                     </Button>
                   </motion.div>
                 )}

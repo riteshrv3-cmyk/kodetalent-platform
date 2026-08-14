@@ -36,7 +36,7 @@ router.get("/students/:id/notebook", requireStudent({ allowGuest: true }), async
       const bucket = weeks.get(key)!;
       bucket.events.push(row);
       if (row.action === "task_completed") bucket.tasksDone++;
-      if (row.action === "interview_completed" || row.action === "test_completed") bucket.interviews++;
+      if (row.action === "interview_completed") bucket.interviews++;
       if (row.action === "application_added") bucket.applications++;
     }
 

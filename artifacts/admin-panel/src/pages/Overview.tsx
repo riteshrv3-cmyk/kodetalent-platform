@@ -73,7 +73,6 @@ const KIND_LABEL: Record<ActivityEvent["kind"], string> = {
   recruiter_invite: "Invite",
   drive_check: "Drive",
   interview: "Interview",
-  test: "Test",
 };
 
 const KIND_COLOR: Record<ActivityEvent["kind"], string> = {
@@ -81,7 +80,6 @@ const KIND_COLOR: Record<ActivityEvent["kind"], string> = {
   recruiter_invite: "bg-primary/15 text-primary",
   drive_check: "bg-destructive/15 text-destructive",
   interview: "bg-secondary/15 text-secondary",
-  test: "bg-accent/15 text-accent",
 };
 
 function timeAgo(iso: string) {
@@ -228,7 +226,6 @@ export default function Overview() {
               ["Invites", ov.last24h.invites],
               ["Drive Checks", ov.last24h.driveChecks],
               ["Interviews", ov.last24h.interviews],
-              ["Tests", ov.last24h.tests],
             ].map(([k, v]) => (
               <div key={k as string} className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">{k}</span>

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { studentsTable, recruiterInvites, mentors, driveChecksTable, recruiterJobsTable, tpoDrivesTable, tpoAccountsTable, interviewSessionsTable, testSessionsTable, studentResumesTable, studentActivityLogTable } from "@workspace/db";
+import { studentsTable, recruiterInvites, mentors, driveChecksTable, recruiterJobsTable, tpoDrivesTable, tpoAccountsTable, interviewSessionsTable, studentResumesTable, studentActivityLogTable } from "@workspace/db";
 import { eq, inArray, desc, and, gte, sql } from "drizzle-orm";
 import { requireTpo, type TpoAuthedRequest } from "../middlewares/tpoAuth";
 
@@ -46,18 +46,14 @@ router.get("/colleges/:college/platform-activity", async (req, res) => {
         college,
         activeStudents: 0,
         mockInterviews: 0,
-        mockTests: 0,
         resumesGenerated: 0,
         applicationsOpened: 0,
       });
     }
 
-    const [interviews, tests, resumes, opened] = await Promise.all([
+    const [interviews, resumes, opened] = await Promise.all([
       db.select({ n: sql<number>`count(*)::int` }).from(interviewSessionsTable)
         .where(and(inArray(interviewSessionsTable.studentId, ids), eq(interviewSessionsTable.completed, true)))
-        .then(r => r[0]?.n ?? 0),
-      db.select({ n: sql<number>`count(*)::int` }).from(testSessionsTable)
-        .where(inArray(testSessionsTable.studentId, ids))
         .then(r => r[0]?.n ?? 0),
       db.select({ n: sql<number>`count(*)::int` }).from(studentResumesTable)
         .where(inArray(studentResumesTable.studentId, ids))
@@ -74,7 +70,6 @@ router.get("/colleges/:college/platform-activity", async (req, res) => {
       college,
       activeStudents: ids.length,
       mockInterviews: interviews,
-      mockTests: tests,
       resumesGenerated: resumes,
       applicationsOpened: opened,
     });

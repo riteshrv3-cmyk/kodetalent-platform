@@ -25,7 +25,7 @@ const GAP_FRAME_WINDOW_DAYS = 7;
 const AVOIDANCE_DAYS = 14;
 const STALE_APPLICATION_DAYS = 7;
 const UNLINKED_RESUME_DAYS = 10;
-const AVOIDANCE_ACTIONS: EventAction[] = ["task_completed", "interview_completed", "test_completed"];
+const AVOIDANCE_ACTIONS: EventAction[] = ["task_completed", "interview_completed"];
 
 function daysBetween(a: string, b: string): number {
   return Math.round((new Date(`${a}T00:00:00Z`).getTime() - new Date(`${b}T00:00:00Z`).getTime()) / 86_400_000);

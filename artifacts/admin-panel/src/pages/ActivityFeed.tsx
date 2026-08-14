@@ -8,7 +8,6 @@ const KIND_LABEL: Record<ActivityEvent["kind"], string> = {
   recruiter_invite: "Invite",
   drive_check: "Drive",
   interview: "Interview",
-  test: "Test",
 };
 
 const KIND_COLOR: Record<ActivityEvent["kind"], string> = {
@@ -16,7 +15,6 @@ const KIND_COLOR: Record<ActivityEvent["kind"], string> = {
   recruiter_invite: "bg-primary/15 text-primary",
   drive_check: "bg-destructive/15 text-destructive",
   interview: "bg-secondary/15 text-secondary",
-  test: "bg-accent/15 text-accent",
 };
 
 const ALL_KINDS: ActivityEvent["kind"][] = [
@@ -24,7 +22,6 @@ const ALL_KINDS: ActivityEvent["kind"][] = [
   "recruiter_invite",
   "drive_check",
   "interview",
-  "test",
 ];
 
 export default function ActivityFeed() {

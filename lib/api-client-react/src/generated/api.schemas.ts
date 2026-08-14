@@ -213,50 +213,6 @@ export interface InterviewEvaluation {
   questionFeedback: QuestionFeedback[];
 }
 
-export interface CreateTestSessionBody {
-  studentId: number;
-  testType: string;
-  difficulty: string;
-}
-
-export interface MCQQuestion {
-  question: string;
-  options: string[];
-  correctIndex: number;
-  topic: string;
-}
-
-export interface TestSession {
-  id: number;
-  studentId: number;
-  testType: string;
-  difficulty: string;
-  questions: MCQQuestion[];
-  score?: number | null;
-  total: number;
-  completed: boolean;
-  createdAt: string;
-}
-
-export interface SubmitTestBody {
-  answers: number[];
-}
-
-export interface SectionScore {
-  topic: string;
-  correct: number;
-  total: number;
-}
-
-export interface TestResult {
-  score: number;
-  total: number;
-  percentage: number;
-  sectionBreakdown: SectionScore[];
-  weakTopics: string[];
-  averageComparison: string;
-}
-
 export interface Job {
   id: number;
   companyName: string;

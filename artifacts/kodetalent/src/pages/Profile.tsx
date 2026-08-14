@@ -163,7 +163,6 @@ const TEMPLATE_BADGES: Record<string, { label: string; badge: string }> = {
 function ActivityCard({ studentId }: { studentId: number }) {
   const [stats, setStats] = useState<{
     mockInterviews: number;
-    mockTests: number;
     resumesGenerated: number;
     applicationsOpened: number;
   } | null>(null);
@@ -189,7 +188,6 @@ function ActivityCard({ studentId }: { studentId: number }) {
 
   const rows: { label: string; value: number }[] = [
     { label: "Mock interviews taken", value: stats.mockInterviews },
-    { label: "Mock tests taken", value: stats.mockTests },
     { label: "Resumes generated", value: stats.resumesGenerated },
     { label: "Applications opened", value: stats.applicationsOpened },
   ];

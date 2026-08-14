@@ -4,7 +4,6 @@ export * from "./studentQuests";
 export * from "./jobs";
 export * from "./matches";
 export * from "./interviewSessions";
-export * from "./testSessions";
 export * from "./conversations";
 export * from "./messages";
 export * from "./recruiterInvites";
