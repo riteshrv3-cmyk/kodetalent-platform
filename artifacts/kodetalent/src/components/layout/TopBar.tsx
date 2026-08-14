@@ -10,13 +10,15 @@ interface TopBarProps {
 
 export function TopBar({ initials, streakCount, onProfileClick }: TopBarProps) {
   const [location, setLocation] = useLocation();
-  const showBack = location !== "/home" && location !== "/onboarding";
+  // Resume is the pipeline's home base now that Today is off-nav, so it (and
+  // onboarding) shows no back button and is the empty-history fallback.
+  const showBack = location !== "/resume" && location !== "/home" && location !== "/onboarding";
 
   const goBack = () => {
     if (window.history.length > 1) {
       window.history.back();
     } else {
-      setLocation("/home");
+      setLocation("/resume");
     }
   };
 

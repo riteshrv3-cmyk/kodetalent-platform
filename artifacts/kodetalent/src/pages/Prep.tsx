@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { Target, ChevronRight, MessageSquare, Briefcase, X, Cpu, Users, Shuffle, Building2, Flame, Mic, Camera } from "lucide-react";
+import { Target, ChevronRight, MessageSquare, Briefcase, X, Cpu, Users, Shuffle, Building2, Flame, Mic, Camera, GraduationCap } from "lucide-react";
 import { useCreateInterviewSession, useCreateTestSession } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { useStudentProfile } from "@/hooks/useStudentProfile";
+import { DOMAINS, ROLE_DESTINATIONS } from "@/data/domains";
 
 type InterviewType = "Technical" | "Behavioral" | "Mixed";
 type Difficulty = "Standard" | "Challenging";
@@ -33,6 +35,32 @@ export default function Prep() {
 
   const createInterview = useCreateInterviewSession();
   const createTest = useCreateTestSession();
+
+  // Surface courses here too: resolve the student's target role to its course
+  // track and deep-link straight into it (reusing the same courseContext
+  // contract Opportunities writes). No role mapping -> fall back to the domain
+  // browse where every course can be picked.
+  const profileId = typeof window !== "undefined" ? localStorage.getItem("studentId") : null;
+  const { data: profile } = useStudentProfile(profileId);
+  const openCourses = () => {
+    const dest = profile?.targetRole ? ROLE_DESTINATIONS[profile.targetRole] : undefined;
+    const domain = dest ? DOMAINS.find((d) => d.id === dest.domain) : undefined;
+    const sub = domain?.subDomains.find((s) => s.id === dest?.sub);
+    if (domain && sub) {
+      sessionStorage.setItem("courseContext", JSON.stringify({
+        subDomainId: sub.id,
+        subDomainName: sub.name,
+        domainName: domain.name,
+        domainColor: domain.color,
+        domainBg: domain.bg,
+        domainEmoji: domain.emoji,
+        skills: sub.skills,
+      }));
+      setLocation("/opportunities/course");
+    } else {
+      setLocation("/opportunities");
+    }
+  };
 
   useEffect(() => {
     const id = localStorage.getItem("studentId");
@@ -156,6 +184,29 @@ export default function Prep() {
                 Mock Test
               </h3>
               <p className="text-sm text-ink-muted">Aptitude and reasoning — just like campus drives.</p>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="lg:col-span-2"
+        >
+          <Card
+            className="border-0 shadow-soft rounded-2xl bg-paper cursor-pointer group"
+            onClick={openCourses}
+          >
+            <CardContent className="p-5 flex items-center gap-4">
+              <div className="w-11 h-11 rounded-xl bg-brand-soft flex items-center justify-center text-brand shrink-0 group-hover:bg-brand group-hover:text-white transition-colors">
+                <GraduationCap className="w-5 h-5" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-lg font-bold text-ink">Courses</h3>
+                <p className="text-sm text-ink-muted">Close the gaps your interviews expose — short tracks for the skills your role needs.</p>
+              </div>
+              <ChevronRight className="w-5 h-5 text-ink-muted shrink-0" />
             </CardContent>
           </Card>
         </motion.div>
