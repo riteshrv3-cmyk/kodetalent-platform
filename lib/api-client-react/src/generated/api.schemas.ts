@@ -387,6 +387,112 @@ export interface UpdateResumeBody {
   snapshot?: boolean;
 }
 
+export type CourseEnrollmentCourseData = { [key: string]: unknown } | null;
+
+export interface CourseEnrollment {
+  id: number;
+  studentId: number;
+  subDomainId: string;
+  subDomainName: string;
+  domainId: string;
+  domainName: string;
+  skills: string[];
+  courseData?: CourseEnrollmentCourseData;
+  completedLessonIds: string[];
+  watchedVideoIds: string[];
+  status: string;
+  startedAt: string;
+  completedAt?: string | null;
+  updatedAt: string;
+  passedModuleIds: string[];
+}
+
+export type EnrollCourseBodyCourseData = { [key: string]: unknown };
+
+export interface EnrollCourseBody {
+  subDomainId: string;
+  subDomainName: string;
+  domainId: string;
+  domainName: string;
+  skills: string[];
+  courseData?: EnrollCourseBodyCourseData;
+}
+
+export interface UpdateCourseProgressBody {
+  completedLessonIds?: string[];
+  watchedVideoIds?: string[];
+}
+
+export interface SubmitQuizBody {
+  answers: string[];
+}
+
+export interface QuizResult {
+  score: number;
+  total: number;
+  passed: boolean;
+}
+
+export interface FinalExamQuestion {
+  id: string;
+  question: string;
+  options: string[];
+  answer: string;
+  explanation: string;
+  difficulty: string;
+}
+
+export interface FinalExam {
+  examId: string;
+  questions: FinalExamQuestion[];
+}
+
+export interface SubmitExamBody {
+  answers: string[];
+}
+
+export interface ExamResult {
+  score: number;
+  total: number;
+  passed: boolean;
+}
+
+export interface CertificateInterviewResult {
+  passed: boolean;
+  overallScore: number;
+}
+
+export interface SetCertificateResumeFlagBody {
+  includeOnResume: boolean;
+}
+
+export interface ConfirmSkillBody {
+  skillName: string;
+  proficiency: number;
+}
+
+export interface CourseCertificate {
+  id: number;
+  certificateCode: string;
+  subDomainName: string;
+  domainName: string;
+  skillsCovered: string[];
+  finalExamScore: number;
+  verifySlug: string;
+  includeOnResume: boolean;
+  issuedAt: string;
+}
+
+export interface PublicCertificate {
+  studentName: string;
+  certificateCode: string;
+  subDomainName: string;
+  domainName: string;
+  skillsCovered: string[];
+  finalExamScore: number;
+  issuedAt: string;
+}
+
 export type ListQuestsParams = {
 field?: string;
 year?: number;

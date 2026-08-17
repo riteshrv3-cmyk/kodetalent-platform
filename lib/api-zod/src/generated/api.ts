@@ -774,3 +774,301 @@ export const DeleteResumeResponse = zod.object({
 })
 
 
+/**
+ * @summary Enroll in (or resume) a course for a subdomain
+ */
+export const EnrollCourseParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const EnrollCourseBody = zod.object({
+  "subDomainId": zod.string(),
+  "subDomainName": zod.string(),
+  "domainId": zod.string(),
+  "domainName": zod.string(),
+  "skills": zod.array(zod.string()),
+  "courseData": zod.record(zod.string(), zod.unknown()).optional()
+})
+
+export const EnrollCourseResponse = zod.object({
+  "id": zod.number(),
+  "studentId": zod.number(),
+  "subDomainId": zod.string(),
+  "subDomainName": zod.string(),
+  "domainId": zod.string(),
+  "domainName": zod.string(),
+  "skills": zod.array(zod.string()),
+  "courseData": zod.record(zod.string(), zod.unknown()).nullish(),
+  "completedLessonIds": zod.array(zod.string()),
+  "watchedVideoIds": zod.array(zod.string()),
+  "status": zod.string(),
+  "startedAt": zod.string(),
+  "completedAt": zod.string().nullish(),
+  "updatedAt": zod.string(),
+  "passedModuleIds": zod.array(zod.string())
+})
+
+
+/**
+ * @summary List a student's course enrollments
+ */
+export const ListCoursesParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ListCoursesResponseItem = zod.object({
+  "id": zod.number(),
+  "studentId": zod.number(),
+  "subDomainId": zod.string(),
+  "subDomainName": zod.string(),
+  "domainId": zod.string(),
+  "domainName": zod.string(),
+  "skills": zod.array(zod.string()),
+  "courseData": zod.record(zod.string(), zod.unknown()).nullish(),
+  "completedLessonIds": zod.array(zod.string()),
+  "watchedVideoIds": zod.array(zod.string()),
+  "status": zod.string(),
+  "startedAt": zod.string(),
+  "completedAt": zod.string().nullish(),
+  "updatedAt": zod.string(),
+  "passedModuleIds": zod.array(zod.string())
+})
+export const ListCoursesResponse = zod.array(ListCoursesResponseItem)
+
+
+/**
+ * @summary Get a single course enrollment with computed module progress
+ */
+export const GetCourseEnrollmentParams = zod.object({
+  "id": zod.coerce.number(),
+  "enrollmentId": zod.coerce.number()
+})
+
+export const GetCourseEnrollmentResponse = zod.object({
+  "id": zod.number(),
+  "studentId": zod.number(),
+  "subDomainId": zod.string(),
+  "subDomainName": zod.string(),
+  "domainId": zod.string(),
+  "domainName": zod.string(),
+  "skills": zod.array(zod.string()),
+  "courseData": zod.record(zod.string(), zod.unknown()).nullish(),
+  "completedLessonIds": zod.array(zod.string()),
+  "watchedVideoIds": zod.array(zod.string()),
+  "status": zod.string(),
+  "startedAt": zod.string(),
+  "completedAt": zod.string().nullish(),
+  "updatedAt": zod.string(),
+  "passedModuleIds": zod.array(zod.string())
+})
+
+
+/**
+ * @summary List a student's issued course certificates
+ */
+export const ListCertificatesParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ListCertificatesResponseItem = zod.object({
+  "id": zod.number(),
+  "certificateCode": zod.string(),
+  "subDomainName": zod.string(),
+  "domainName": zod.string(),
+  "skillsCovered": zod.array(zod.string()),
+  "finalExamScore": zod.number(),
+  "verifySlug": zod.string(),
+  "includeOnResume": zod.boolean(),
+  "issuedAt": zod.string()
+})
+export const ListCertificatesResponse = zod.array(ListCertificatesResponseItem)
+
+
+/**
+ * @summary Update completed lessons and watched videos for an enrollment
+ */
+export const UpdateCourseProgressParams = zod.object({
+  "id": zod.coerce.number(),
+  "enrollmentId": zod.coerce.number()
+})
+
+export const UpdateCourseProgressBody = zod.object({
+  "completedLessonIds": zod.array(zod.string()).optional(),
+  "watchedVideoIds": zod.array(zod.string()).optional()
+})
+
+export const UpdateCourseProgressResponse = zod.object({
+  "id": zod.number(),
+  "studentId": zod.number(),
+  "subDomainId": zod.string(),
+  "subDomainName": zod.string(),
+  "domainId": zod.string(),
+  "domainName": zod.string(),
+  "skills": zod.array(zod.string()),
+  "courseData": zod.record(zod.string(), zod.unknown()).nullish(),
+  "completedLessonIds": zod.array(zod.string()),
+  "watchedVideoIds": zod.array(zod.string()),
+  "status": zod.string(),
+  "startedAt": zod.string(),
+  "completedAt": zod.string().nullish(),
+  "updatedAt": zod.string(),
+  "passedModuleIds": zod.array(zod.string())
+})
+
+
+/**
+ * @summary Submit answers for a module quiz and get the score
+ */
+export const SubmitModuleQuizParams = zod.object({
+  "id": zod.coerce.number(),
+  "enrollmentId": zod.coerce.number(),
+  "moduleId": zod.coerce.string()
+})
+
+export const SubmitModuleQuizBody = zod.object({
+  "answers": zod.array(zod.string())
+})
+
+export const SubmitModuleQuizResponse = zod.object({
+  "score": zod.number(),
+  "total": zod.number(),
+  "passed": zod.boolean()
+})
+
+
+/**
+ * @summary Generate the final exam for a course enrollment
+ */
+export const GenerateFinalExamParams = zod.object({
+  "id": zod.coerce.number(),
+  "enrollmentId": zod.coerce.number()
+})
+
+export const GenerateFinalExamResponse = zod.object({
+  "examId": zod.string(),
+  "questions": zod.array(zod.object({
+  "id": zod.string(),
+  "question": zod.string(),
+  "options": zod.array(zod.string()),
+  "answer": zod.string(),
+  "explanation": zod.string(),
+  "difficulty": zod.string()
+}))
+})
+
+
+/**
+ * @summary Submit answers for the final exam and get the score
+ */
+export const SubmitFinalExamParams = zod.object({
+  "id": zod.coerce.number(),
+  "enrollmentId": zod.coerce.number()
+})
+
+export const SubmitFinalExamBody = zod.object({
+  "answers": zod.array(zod.string())
+})
+
+export const SubmitFinalExamResponse = zod.object({
+  "score": zod.number(),
+  "total": zod.number(),
+  "passed": zod.boolean()
+})
+
+
+/**
+ * @summary Link a completed interview session to a course enrollment for certification
+ */
+export const LinkCertificateInterviewParams = zod.object({
+  "id": zod.coerce.number(),
+  "enrollmentId": zod.coerce.number(),
+  "interviewSessionId": zod.coerce.number()
+})
+
+export const LinkCertificateInterviewResponse = zod.object({
+  "passed": zod.boolean(),
+  "overallScore": zod.number()
+})
+
+
+/**
+ * @summary Issue a course certificate for a completed enrollment
+ */
+export const IssueCertificateParams = zod.object({
+  "id": zod.coerce.number(),
+  "enrollmentId": zod.coerce.number()
+})
+
+export const IssueCertificateResponse = zod.object({
+  "id": zod.number(),
+  "certificateCode": zod.string(),
+  "subDomainName": zod.string(),
+  "domainName": zod.string(),
+  "skillsCovered": zod.array(zod.string()),
+  "finalExamScore": zod.number(),
+  "verifySlug": zod.string(),
+  "includeOnResume": zod.boolean(),
+  "issuedAt": zod.string()
+})
+
+
+/**
+ * @summary Toggle whether a certificate appears on the student's resume
+ */
+export const SetCertificateResumeFlagParams = zod.object({
+  "id": zod.coerce.number(),
+  "enrollmentId": zod.coerce.number()
+})
+
+export const SetCertificateResumeFlagBody = zod.object({
+  "includeOnResume": zod.boolean()
+})
+
+export const SetCertificateResumeFlagResponse = zod.object({
+  "id": zod.number(),
+  "certificateCode": zod.string(),
+  "subDomainName": zod.string(),
+  "domainName": zod.string(),
+  "skillsCovered": zod.array(zod.string()),
+  "finalExamScore": zod.number(),
+  "verifySlug": zod.string(),
+  "includeOnResume": zod.boolean(),
+  "issuedAt": zod.string()
+})
+
+
+/**
+ * @summary Confirm a skill with a self-reported proficiency
+ */
+export const ConfirmSkillParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ConfirmSkillBody = zod.object({
+  "skillName": zod.string(),
+  "proficiency": zod.number()
+})
+
+export const ConfirmSkillResponse = zod.object({
+  "skills": zod.record(zod.string(), zod.number())
+})
+
+
+/**
+ * @summary Public certificate verification page (unauthenticated)
+ */
+export const GetPublicCertificateParams = zod.object({
+  "slug": zod.coerce.string()
+})
+
+export const GetPublicCertificateResponse = zod.object({
+  "studentName": zod.string(),
+  "certificateCode": zod.string(),
+  "subDomainName": zod.string(),
+  "domainName": zod.string(),
+  "skillsCovered": zod.array(zod.string()),
+  "finalExamScore": zod.number(),
+  "issuedAt": zod.string()
+})
+
+

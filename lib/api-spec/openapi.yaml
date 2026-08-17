@@ -24,6 +24,8 @@ tags:
     description: Anthropic AI chat operations
   - name: resumes
     description: AI-generated, per-JD tailored resume operations
+  - name: courses
+    description: Course enrollment, progress, exams, and certificate operations
 paths:
   /healthz:
     get:
@@ -720,6 +722,421 @@ paths:
                   - ok
         "404":
           description: Resume not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /students/{id}/courses/enroll:
+    post:
+      operationId: enrollCourse
+      tags: [courses]
+      summary: Enroll in (or resume) a course for a subdomain
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EnrollCourseBody"
+      responses:
+        "200":
+          description: Course enrollment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CourseEnrollment"
+        "400":
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Student not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /students/{id}/courses:
+    get:
+      operationId: listCourses
+      tags: [courses]
+      summary: List a student's course enrollments
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of course enrollments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CourseEnrollment"
+
+  /students/{id}/courses/{enrollmentId}:
+    get:
+      operationId: getCourseEnrollment
+      tags: [courses]
+      summary: Get a single course enrollment with computed module progress
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: enrollmentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Course enrollment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CourseEnrollment"
+        "404":
+          description: Enrollment not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /students/{id}/certificates:
+    get:
+      operationId: listCertificates
+      tags: [courses]
+      summary: List a student's issued course certificates
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of course certificates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CourseCertificate"
+
+  /students/{id}/courses/{enrollmentId}/progress:
+    patch:
+      operationId: updateCourseProgress
+      tags: [courses]
+      summary: Update completed lessons and watched videos for an enrollment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: enrollmentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCourseProgressBody"
+      responses:
+        "200":
+          description: Updated course enrollment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CourseEnrollment"
+        "404":
+          description: Enrollment not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /students/{id}/courses/{enrollmentId}/modules/{moduleId}/quiz:
+    post:
+      operationId: submitModuleQuiz
+      tags: [courses]
+      summary: Submit answers for a module quiz and get the score
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: enrollmentId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: moduleId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmitQuizBody"
+      responses:
+        "200":
+          description: Quiz result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuizResult"
+        "404":
+          description: Enrollment or module not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /students/{id}/courses/{enrollmentId}/final-exam/generate:
+    post:
+      operationId: generateFinalExam
+      tags: [courses]
+      summary: Generate the final exam for a course enrollment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: enrollmentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Generated final exam
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinalExam"
+        "404":
+          description: Enrollment not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /students/{id}/courses/{enrollmentId}/final-exam/submit:
+    post:
+      operationId: submitFinalExam
+      tags: [courses]
+      summary: Submit answers for the final exam and get the score
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: enrollmentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmitExamBody"
+      responses:
+        "200":
+          description: Final exam result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExamResult"
+        "404":
+          description: Enrollment not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /students/{id}/courses/{enrollmentId}/certificate-interview/{interviewSessionId}/link:
+    post:
+      operationId: linkCertificateInterview
+      tags: [courses]
+      summary: Link a completed interview session to a course enrollment for certification
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: enrollmentId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: interviewSessionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Interview link result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CertificateInterviewResult"
+        "404":
+          description: Enrollment or interview session not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /students/{id}/courses/{enrollmentId}/certificate:
+    post:
+      operationId: issueCertificate
+      tags: [courses]
+      summary: Issue a course certificate for a completed enrollment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: enrollmentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Issued course certificate
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CourseCertificate"
+        "403":
+          description: Not allowed (e.g. guest account)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Enrollment not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /students/{id}/courses/{enrollmentId}/certificate/resume-flag:
+    patch:
+      operationId: setCertificateResumeFlag
+      tags: [courses]
+      summary: Toggle whether a certificate appears on the student's resume
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: enrollmentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SetCertificateResumeFlagBody"
+      responses:
+        "200":
+          description: Updated course certificate
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CourseCertificate"
+        "404":
+          description: Certificate not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /students/{id}/skills/confirm:
+    post:
+      operationId: confirmSkill
+      tags: [courses]
+      summary: Confirm a skill with a self-reported proficiency
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConfirmSkillBody"
+      responses:
+        "200":
+          description: Updated skills
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SkillsResult"
+        "404":
+          description: Student not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /certs/{slug}:
+    get:
+      operationId: getPublicCertificate
+      tags: [courses]
+      summary: Public certificate verification page (unauthenticated)
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Public certificate
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicCertificate"
+        "404":
+          description: Certificate not found
           content:
             application/json:
               schema:
@@ -1535,3 +1952,277 @@ components:
         snapshot:
           type: boolean
           description: If true, the resume's pre-edit content is pushed onto its version history (capped at 5, oldest dropped) before this patch is applied.
+
+    CourseEnrollment:
+      type: object
+      properties:
+        id:
+          type: integer
+        studentId:
+          type: integer
+        subDomainId:
+          type: string
+        subDomainName:
+          type: string
+        domainId:
+          type: string
+        domainName:
+          type: string
+        skills:
+          type: array
+          items:
+            type: string
+        courseData:
+          type: object
+          nullable: true
+          additionalProperties: true
+        completedLessonIds:
+          type: array
+          items:
+            type: string
+        watchedVideoIds:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+        startedAt:
+          type: string
+        completedAt:
+          type: string
+          nullable: true
+        updatedAt:
+          type: string
+        passedModuleIds:
+          type: array
+          items:
+            type: string
+      required:
+        - id
+        - studentId
+        - subDomainId
+        - subDomainName
+        - domainId
+        - domainName
+        - skills
+        - completedLessonIds
+        - watchedVideoIds
+        - status
+        - startedAt
+        - updatedAt
+        - passedModuleIds
+
+    EnrollCourseBody:
+      type: object
+      properties:
+        subDomainId:
+          type: string
+        subDomainName:
+          type: string
+        domainId:
+          type: string
+        domainName:
+          type: string
+        skills:
+          type: array
+          items:
+            type: string
+        courseData:
+          type: object
+          additionalProperties: true
+      required:
+        - subDomainId
+        - subDomainName
+        - domainId
+        - domainName
+        - skills
+
+    UpdateCourseProgressBody:
+      type: object
+      properties:
+        completedLessonIds:
+          type: array
+          items:
+            type: string
+        watchedVideoIds:
+          type: array
+          items:
+            type: string
+
+    SubmitQuizBody:
+      type: object
+      properties:
+        answers:
+          type: array
+          items:
+            type: string
+      required:
+        - answers
+
+    QuizResult:
+      type: object
+      properties:
+        score:
+          type: integer
+        total:
+          type: integer
+        passed:
+          type: boolean
+      required:
+        - score
+        - total
+        - passed
+
+    FinalExamQuestion:
+      type: object
+      properties:
+        id:
+          type: string
+        question:
+          type: string
+        options:
+          type: array
+          items:
+            type: string
+        answer:
+          type: string
+        explanation:
+          type: string
+        difficulty:
+          type: string
+      required:
+        - id
+        - question
+        - options
+        - answer
+        - explanation
+        - difficulty
+
+    FinalExam:
+      type: object
+      properties:
+        examId:
+          type: string
+        questions:
+          type: array
+          items:
+            $ref: "#/components/schemas/FinalExamQuestion"
+      required:
+        - examId
+        - questions
+
+    SubmitExamBody:
+      type: object
+      properties:
+        answers:
+          type: array
+          items:
+            type: string
+      required:
+        - answers
+
+    ExamResult:
+      type: object
+      properties:
+        score:
+          type: integer
+        total:
+          type: integer
+        passed:
+          type: boolean
+      required:
+        - score
+        - total
+        - passed
+
+    CertificateInterviewResult:
+      type: object
+      properties:
+        passed:
+          type: boolean
+        overallScore:
+          type: integer
+      required:
+        - passed
+        - overallScore
+
+    SetCertificateResumeFlagBody:
+      type: object
+      properties:
+        includeOnResume:
+          type: boolean
+      required:
+        - includeOnResume
+
+    ConfirmSkillBody:
+      type: object
+      properties:
+        skillName:
+          type: string
+        proficiency:
+          type: number
+      required:
+        - skillName
+        - proficiency
+
+    CourseCertificate:
+      type: object
+      properties:
+        id:
+          type: integer
+        certificateCode:
+          type: string
+        subDomainName:
+          type: string
+        domainName:
+          type: string
+        skillsCovered:
+          type: array
+          items:
+            type: string
+        finalExamScore:
+          type: integer
+        verifySlug:
+          type: string
+        includeOnResume:
+          type: boolean
+        issuedAt:
+          type: string
+      required:
+        - id
+        - certificateCode
+        - subDomainName
+        - domainName
+        - skillsCovered
+        - finalExamScore
+        - verifySlug
+        - includeOnResume
+        - issuedAt
+
+    PublicCertificate:
+      type: object
+      properties:
+        studentName:
+          type: string
+        certificateCode:
+          type: string
+        subDomainName:
+          type: string
+        domainName:
+          type: string
+        skillsCovered:
+          type: array
+          items:
+            type: string
+        finalExamScore:
+          type: integer
+        issuedAt:
+          type: string
+      required:
+        - studentName
+        - certificateCode
+        - subDomainName
+        - domainName
+        - skillsCovered
+        - finalExamScore
+        - issuedAt
