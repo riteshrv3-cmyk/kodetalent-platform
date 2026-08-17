@@ -16,7 +16,7 @@ Live app: https://kodetalent-production-8b96.up.railway.app
 
 Every year, India produces around 1.5 million engineering graduates. Most of them fail campus placements — not because they lack talent, but because nobody teaches them *how* to get hired: how to interview, what skills companies actually want, how to write a resume that gets shortlisted, or even which "placement drive" messages on WhatsApp are scams.
 
-Coaching institutes charge Rs 50,000+ and only exist in big cities. KodeTalent puts that entire coaching experience into an app: an AI interviewer that talks to you face-to-face, personalized career roadmaps, skill tests, courses, resume building, and a direct line to recruiters — for a fraction of the cost, available to a student in any tier-3 town with a phone.
+Coaching institutes charge Rs 50,000+ and only exist in big cities. KodeTalent puts that entire coaching experience into an app: an AI interviewer that talks to you face-to-face, personalized career roadmaps, courses, verifiable certificates, resume building, and a direct line to recruiters — for a fraction of the cost, available to a student in any tier-3 town with a phone.
 
 ## The problem (3 bullet points)
 
@@ -32,8 +32,9 @@ Coaching institutes charge Rs 50,000+ and only exist in big cities. KodeTalent p
 |---|---|
 | AI Mock Interview (audio + video) | The app *speaks* interview questions in a natural human voice, the student answers *by speaking* into the mic with their camera on — like a real video interview. AI transcribes the answer, asks smart follow-ups, then gives a scored report: communication, technical depth, confidence, weak points, and better sample answers. |
 | Career Roadmap | Enter your branch and year, get a personalized 4-year milestone plan built for Indian campus placements. |
-| Skill Tests (MCQ) | AI-generated aptitude and technical tests with difficulty levels, instant scoring and explanations. |
 | AI Courses | Pick any skill (e.g. React, Kubernetes) — the app generates a 5-module course with lessons, curated video links, flashcards (with spaced-repetition memory science), and quizzes. |
+| Course Library + Certificates | Browse AI-generated courses by domain (20 domains × 5 tracks) without needing a job first. Each module quiz unlocks the next, then a 10-question final exam (70% to pass). Pass the exam plus a certificate mock interview (AI-scored, 60+) to earn a verifiable certificate with a public verify link, QR code, and skills covered. |
+| Interview Library | Ready-made mock interviews for real companies — role-first, filterable, and startable in one tap. |
 | Resume Builder | Templates plus AI suggestions matched to target companies and salary bands. |
 | Drive-Check (scam detector) | Students paste placement messages forwarded on WhatsApp/Telegram; AI flags scams (fake fees, WhatsApp-only applications, unrealistic salaries) and extracts real drive details. This protects students from real fraud. |
 | AI Career Chat | A 24x7 mentor that knows the student's profile and answers career questions. |
@@ -72,7 +73,7 @@ Coaching institutes charge Rs 50,000+ and only exist in big cities. KodeTalent p
 
 ## Architecture in one paragraph (memorize this)
 
-"It's a **TypeScript monorepo**: a **React 19** single-page app served with an **Express 5 (Node.js) API** from a single origin, deployed on **Railway** with CI-style builds. Data lives in **PostgreSQL on Neon** (serverless Postgres) accessed through **Drizzle ORM** — 21 tables covering students, recruiters, colleges, interviews, tests, resumes, jobs, and AI-response caching. The API is **schema-first**: an OpenAPI spec generates our Zod validators and typed React Query client, so frontend and backend can't drift apart. AI is behind a **provider-abstraction layer** — currently OpenAI (gpt-4o-mini for reasoning, tts-1 for the interviewer's voice, Whisper for transcribing spoken answers) — with response caching, rate limiting, and JSON-mode enforcement for reliability. Auth is **Clerk** (managed identity provider). Interview chat streams over **SSE** for real-time feel."
+"It's a **TypeScript monorepo**: a **React 19** single-page app served with an **Express 5 (Node.js) API** from a single origin, deployed on **Railway** with CI-style builds. Data lives in **PostgreSQL on Neon** (serverless Postgres) accessed through **Drizzle ORM** — 20 tables covering students, recruiters, colleges, interviews, courses, resumes, jobs, and AI-response caching. The API is **schema-first**: an OpenAPI spec generates our Zod validators and typed React Query client, so frontend and backend can't drift apart. AI is behind a **provider-abstraction layer** — currently OpenAI (gpt-4o-mini for reasoning, tts-1 for the interviewer's voice, Whisper for transcribing spoken answers) — with response caching, rate limiting, and JSON-mode enforcement for reliability. Auth is **Clerk** (managed identity provider). Interview chat streams over **SSE** for real-time feel."
 
 ## Stack table (exact versions — you can quote these)
 
@@ -104,7 +105,7 @@ artifacts/          <- deployable apps
   api-server/       <- Express 5 API (serves the built frontend too)
   recruiter-portal/ tpo-portal/ admin-panel/
 lib/                <- shared internal packages
-  db/               <- Drizzle schema: 21 tables, one source of truth
+  db/               <- Drizzle schema: 20 tables, one source of truth
   api-spec/         <- OpenAPI YAML (the contract)
   api-zod/          <- generated Zod validators
   api-client-react/ <- generated typed React Query hooks
@@ -113,10 +114,10 @@ lib/                <- shared internal packages
 
 **Talking point:** "The API is contract-first. We write the OpenAPI spec once; codegen produces the backend validators and the typed frontend client. A breaking change fails the build instead of failing in production."
 
-## The 21 database tables (grouped)
+## The 20 database tables (grouped)
 
 - **Students:** students, student_resumes, student_quests, student_activity_log
-- **Assessment:** interview_sessions, test_sessions, quests
+- **Assessment:** interview_sessions, quests
 - **Learning/AI:** conversations, messages, ai_cache
 - **Jobs marketplace:** jobs, matches, recruiter_jobs, recruiter_invites, recruiters
 - **Institutions:** colleges, tpo_accounts, tpo_drives, tpo_sessions
@@ -198,7 +199,7 @@ A: "Structured outputs with JSON-mode validation, domain-scoped prompts (the mod
 A: "Managed authentication through Clerk — we never see or store passwords. Interview video never leaves the student's device; only audio goes up, solely for transcription. Secrets are environment-managed, queries are parameterized, inputs validated. We have a documented hardening checklist we're executing before scale."
 
 **Q: Why will students trust your scores? / What's defensible?**
-A: "The score is earned on-platform — timed tests, recorded interview performance, streak history — not self-reported. Over time that becomes a proprietary dataset: verified employability signals on lakhs of students that no resume database has. That data plus the recruiter network is the moat."
+A: "The score is earned on-platform — course exams, recorded interview performance, streak history — not self-reported. Over time that becomes a proprietary dataset: verified employability signals on lakhs of students that no resume database has. That data plus the recruiter network is the moat."
 
 **Q: Who are competitors?**
 A: "Prep side: Unstop, PrepInsta, coaching institutes. Hiring side: Naukri Campus, LinkedIn, HirePro. Nobody does train-verify-place in one loop for the Indian campus segment. Prep apps have no recruiters; job boards do no verification."

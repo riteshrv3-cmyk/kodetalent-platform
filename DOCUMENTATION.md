@@ -30,7 +30,7 @@
 
 KodeTalent is a **mobile-first AI career platform for Indian engineering students** — from their 1st year all the way to campus placement.
 
-**For students:** It's a personal AI career companion. They build their profile, practice interviews, take skill tests, explore career paths, get AI-generated courses, and receive recruiter invites — all in one app.
+**For students:** It's a personal AI career companion. They build their profile, practice interviews, explore career paths, take AI-generated courses, earn verifiable certificates, and receive recruiter invites — all in one app.
 
 **For recruiters:** It's a verified talent marketplace. They can browse candidates filtered by skill, CGPA, GitHub activity, and commitment score — and shortlist the best fits before a campus drive.
 
@@ -143,11 +143,12 @@ kodetalent/
 | `/` | Onboarding | WhatsApp-style 10-step chatbot. Collects: name, email, college, city, year, field, CGPA, dream company, GitHub/LinkedIn. Creates student in DB and saves ID to localStorage. |
 | `/home` | Home Hub | Central dashboard. Shows AI score, streak, Points, profile strength. Category cards (Opportunities, Leaderboard, Resume, etc). Recruiter activity feed. |
 | `/chat` | AI Chat | Full-screen conversational AI powered by Anthropic. Reads and updates student profile in real-time via SSE streaming. Understands bio, projects, certs, preferences, GitHub/LinkedIn. |
-| `/practice` | Practice Hub | Entry point for mock interviews and MCQ tests. Lists available test/interview types. |
+| `/practice` | Practice Hub | Entry point for mock interviews and the interview library. Lists available interview types. |
 | `/practice/interview/:id` | Mock Interview | AI-driven 5-question interview. Per-question feedback. Overall score at the end. |
-| `/practice/test/:id` | MCQ Test | Timed 10-question MCQ test. Instant result with per-question explanation. |
+| `/practice/courses` | Course Library | Browse AI-generated courses by domain (20 × 5 tracks). Start without a job first. |
 | `/opportunities` | Career Explorer | 3-level drill: Domain grid (12) → Sub-domain list (4 each) → Jobs/Internships/Freelancing cards. "Prepare" button launches AI course. |
 | `/opportunities/course` | Course | Full Coursera-style AI course: 5 modules × 3 lessons, SM-2 flashcards, 5-question quiz. |
+| `/certs/:slug` | Certificate | Public verify page for an earned certificate (QR code + skills covered). |
 | `/profile` | Profile Editor | Strength ring, open-to-work toggle, GitHub/LinkedIn analyzer, bio, projects, certifications, salary & work preferences. |
 | `/leaderboard` | Leaderboard | College tab + India tab. Ranked by overall score. |
 | `/resume` | Resume Builder | AI-generated resume PDF from student profile data. |
@@ -186,11 +187,23 @@ Triggered by "Prepare" button. Sub-domain context passed via `sessionStorage["co
 
 **Background Preloader:** Runs silently 1.5s after Opportunities mounts. Pre-generates all 48 courses in batches of 4. Prevents re-generation delays. (`useCoursePreloader.ts`)
 
+### Course Library (`/practice/courses`)
+
+Students browse AI-generated courses by domain — **20 domains × 5 tracks** — without needing a job or opportunity first. Each course is **5 modules × 3 lessons** with curated free videos/reading and flashcards. Each module ends with a short quiz that unlocks the next module; after all modules, a **10-question final exam** is offered (**70% to pass**, unlimited retakes).
+
+### Certificates (`/certs/:slug`)
+
+Passing the final exam **and** a certificate mock interview (AI-scored, **60+ to pass**) earns a verifiable certificate. Each certificate has a public verify link at `/certs/:slug` with a QR code and the skills it covers, and is issued to **claimed (signed-in) accounts only**. A student may optionally add a certificate to their resume (off by default), and completing a course can add a confirmed skill to the profile once the student explicitly confirms it.
+
+### Interview Library
+
+Ready-made mock interviews for real companies, presented **role-first** and filterable, so a student can pick a target company/role and start in one tap. Lives in the Prep hub next to the AI mock interview launcher.
+
 ### Scoring System
 
 | Score | What it means |
 |---|---|
-| overallScore | Combined AI interview + test scores |
+| overallScore | AI interview score |
 | profileStrength | Completeness of profile (max 100) |
 | commitmentScore | Engagement: `min(xp/25,40) + min(streak×3,30) + overallScore×0.3` |
 | Points (XP) | Earned from completing quests, practice, etc. |
@@ -308,8 +321,6 @@ Triggered by "Prepare" button. Sub-domain context passed via `sessionStorage["co
 | POST | `/api/interview/sessions` | Create a new interview session |
 | POST | `/api/interview/sessions/:id/question` | Get next AI question |
 | PATCH | `/api/interview/sessions/:id/feedback` | Submit answer + get AI feedback |
-| POST | `/api/test/sessions` | Create a new MCQ test session |
-| POST | `/api/test/sessions/:id/submit` | Submit answers, get score + explanations |
 
 ### Jobs & Matches
 
@@ -437,7 +448,7 @@ The course endpoint makes **2 sequential AI calls** to stay within token limits:
 | linkedinData | jsonb | AI-analyzed LinkedIn data |
 | profileStrength | integer | Computed 0-100 completeness score |
 | commitmentScore | integer | Engagement-based score |
-| overallScore | integer | Combined practice/interview score |
+| overallScore | integer | Combined AI interview score |
 | xp | integer | Total Points earned |
 | level | integer | Level based on XP |
 | streakCount | integer | Current daily streak |
@@ -475,7 +486,6 @@ min(xp / 25, 40) + min(streakCount × 3, 30) + overallScore × 0.3
 | `jobs` | Recruiter job listings |
 | `matches` | AI-matched student ↔ job pairs |
 | `interview_sessions` | Mock interview session state |
-| `test_sessions` | MCQ test session state |
 | `conversations` | AI chat conversation threads |
 | `messages` | Individual messages in conversations |
 | `recruiters` | Recruiter accounts |
@@ -502,7 +512,6 @@ min(xp / 25, 40) + min(streakCount × 3, 30) + overallScore × 0.3
 |---|---|
 | AI Chat (`/chat`) | SSE streaming conversation. System prompt contains full student profile context. Can update profile fields in real time through tool calls / structured responses. |
 | Mock Interview | Generates 5 role-specific questions. Evaluates each answer with score + detailed feedback. |
-| MCQ Test | Generates 10 questions (3 easy / 4 medium / 3 hard) for chosen topic. |
 | Course Generation | 2-call strategy: Call 1 = modules + lessons (max_tokens 4000), Call 2 = flashcards + quiz (max_tokens 3000). |
 | GitHub Analyzer | Fetches real GitHub API data. Computes repo count, stars, top languages, contribution activity. |
 | LinkedIn Analyzer | Sends URL to claude-haiku-4-5, extracts skills, experience, education summary. |

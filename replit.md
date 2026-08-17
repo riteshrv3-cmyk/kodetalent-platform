@@ -80,9 +80,10 @@ scripts/               # Shared utility scripts
 | `/dashboard` | — | Redirects to `/home` (backward compat) |
 | `/home` | Home Hub | Score banner (AI score, streak, XP), category cards grid, recruiter activity feed, profile strength CTA |
 | `/chat` | AI Chat | Full-screen conversational AI that reads and updates the student profile via chat (streaming SSE); supports bio, projects, certs, preferences, GitHub/LinkedIn |
-| `/practice` | Practice | Mock interview + timed MCQ test launcher |
+| `/practice` | Prep | Mock interview launcher + interview library |
 | `/practice/interview/:id` | Mock Interview | AI 5-question interview with per-question feedback and overall score |
-| `/practice/test/:id` | Mock Test | Timed 10-question MCQ test with results |
+| `/practice/courses` | Course Library | Browse AI-generated courses by domain (20 domains × 5 tracks); start without a job |
+| `/certs/:slug` | Certificate | Public verify page for an earned certificate (QR + skills covered) |
 | `/opportunities` | Opportunities | 12-domain career explorer (domain grid → sub-domain list → Jobs/Internship/Freelancing cards + Prepare button) |
 | `/opportunities/course` | Course | Full Coursera-style AI course for the selected sub-domain |
 | `/profile` | Profile | Rich profile editor — strength ring, open-to-work, GitHub/LinkedIn AI analyzer, bio, projects, certifications, work preferences |
@@ -154,6 +155,24 @@ Cache key: `course_content_v2_<subDomainId>` in localStorage. Cache is permanent
 
 ---
 
+## Course Library (`/practice/courses`)
+
+A browse-first catalog of AI-generated courses that a student can start without first having a job or opportunity in context. Courses are organized by domain — **20 domains × 5 tracks** — and each course is **5 modules × 3 lessons** with curated free videos/reading and spaced-repetition flashcards. It lives in the Prep hub alongside mock interviews.
+
+### Module quizzes + final exam
+Each module ends with a short quiz that must be passed to unlock the next module. After all modules are complete, a **10-question final exam** is offered — **70% to pass**, with unlimited retakes.
+
+### Certificates
+Passing the final exam **and** a certificate mock interview (AI-scored, **60+ to pass**) earns a verifiable certificate. Each certificate has a public verify page at `/certs/:slug` with a QR code and the skills it covers. Certificates are issued to **claimed (signed-in) accounts only**. Students may optionally add a certificate to their resume (off by default), and completing a course can add a confirmed skill to the profile once the student explicitly confirms it.
+
+---
+
+## Interview Library
+
+Ready-made mock interviews for real companies, presented **role-first** and filterable, so a student can pick a target company/role and start in one tap. Surfaced in the Prep hub next to the AI mock interview launcher.
+
+---
+
 ## Background Course Preloader
 
 `artifacts/kodetalent/src/hooks/useCoursePreloader.ts`
@@ -187,8 +206,6 @@ All routes under `/api`:
 | POST | `/interview/sessions` | Create interview session |
 | POST | `/interview/sessions/:id/question` | Get next AI question |
 | PATCH | `/interview/sessions/:id/feedback` | Submit answer + get AI feedback |
-| POST | `/test/sessions` | Create test session |
-| POST | `/test/sessions/:id/submit` | Submit answers, get score |
 
 ### Profile (new)
 | Method | Route | Description |
@@ -229,7 +246,7 @@ Both results are merged and returned as one JSON object.
 
 ## Database Schema
 
-Tables: `students`, `quests`, `student_quests`, `jobs`, `matches`, `interview_sessions`, `test_sessions`, `conversations`, `messages`
+Tables: `students`, `quests`, `student_quests`, `jobs`, `matches`, `interview_sessions`, `conversations`, `messages`
 
 ### New columns on `students` (added for data-collection / recruiter marketplace)
 `linkedinUrl`, `portfolioUrl`, `phone`, `bio`, `projects` (JSONB), `certifications` (JSONB), `openToWork`, `workMode`, `preferredLocations` (JSONB), `expectedSalary`, `githubStats` (JSONB), `linkedinData` (JSONB), `profileStrength`, `commitmentScore`

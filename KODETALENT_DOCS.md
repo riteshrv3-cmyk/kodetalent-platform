@@ -49,12 +49,27 @@ workspace/
 | `/` | Onboarding | WhatsApp-style chatbot collects name, college, city, year, field. Creates student profile. |
 | `/dashboard` | Dashboard | Streak + XP cards, today's quest, skill progress bars, KodeTalent score, leaderboard rank |
 | `/roadmap` | Roadmap | Vertical year-by-year accordion of quests. Tap to see details and start a quest. |
-| `/prep` | Prep Hub | Cards to launch mock interviews and timed tests |
+| `/prep` | Prep Hub | Cards to launch mock interviews and browse the interview library |
 | `/prep/interview/:id` | Mock Interview | AI-powered 5-question interview. Shows score + feedback on completion. |
-| `/prep/test/:id` | Mock Test | 20-minute timed MCQ test. Detailed result summary on completion. |
+| `/practice/courses` | Course Library | Browse AI-generated courses by domain (20 domains × 5 tracks); start without a job. |
+| `/certs/:slug` | Certificate | Public verify page for an earned certificate (QR code + skills covered). |
 | `/jobs` | Job Matches | Job feed matched to your skills with readiness score. Locked cards for Pro tier. |
 | `/profile` | Profile | Avatar, stats, verified skills, Career Wrapped modal |
 | `/leaderboard` | Leaderboard | College tab + India tab. Ranked by KodeTalent score. |
+
+---
+
+## Course Library & Certificates
+
+The Course Library (`/practice/courses`) lets students browse AI-generated courses by domain — **20 domains × 5 tracks** — without needing a job first. Each course is **5 modules × 3 lessons** with curated free videos/reading and flashcards.
+
+**Module quizzes + final exam.** Each module ends with a short quiz that unlocks the next module. After all modules are done, a **10-question final exam** is offered — **70% to pass**, unlimited retakes.
+
+**Certificates.** Passing the final exam **and** a certificate mock interview (AI-scored, **60+ to pass**) earns a verifiable certificate. Each has a public verify page at `/certs/:slug` with a QR code and the skills covered. Certificates are for **claimed (signed-in) accounts only**. A student may optionally add a certificate to their resume (off by default), and completing a course can add a confirmed skill to the profile once the student explicitly confirms it.
+
+## Interview Library
+
+Ready-made mock interviews for real companies, presented **role-first** and filterable. A student can pick a target company/role and start in one tap. Surfaced in the Prep hub alongside the AI mock interview launcher.
 
 ---
 
@@ -117,26 +132,6 @@ All endpoints are prefixed with `/api`.
 ```
 
 The interview runs for 5 questions. After the 5th, the session is closed and a score + overall feedback is returned.
-
----
-
-### Mock Tests
-
-| Method | Path | Description |
-|---|---|---|
-| `POST` | `/test/sessions` | Create a test session, returns AI-generated MCQ questions |
-| `GET` | `/test/sessions/:id` | Get session (with questions) |
-| `POST` | `/test/sessions/:id/submit` | Submit answers, get results |
-
-**Create session body:**
-```json
-{ "studentId": 1, "topic": "JavaScript", "numQuestions": 10 }
-```
-
-**Submit answers body:**
-```json
-{ "answers": { "0": "B", "1": "A", "2": "C" } }
-```
 
 ---
 
@@ -266,18 +261,6 @@ AI-generated job matches per student.
 | feedback | text |
 | created_at | timestamp |
 
-### `test_sessions`
-| Column | Type |
-|---|---|
-| id | serial PK |
-| student_id | FK |
-| topic | text |
-| questions | jsonb (array of MCQs) |
-| status | text |
-| score | float |
-| total_questions | integer |
-| created_at | timestamp |
-
 ### `conversations` & `messages`
 Used by the Anthropic chat integration.
 
@@ -287,7 +270,7 @@ Used by the Anthropic chat integration.
 
 | Element | How it works |
 |---|---|
-| **XP** | Earned by completing quests, interviews, and tests. Amount varies by difficulty. |
+| **XP** | Earned by completing quests, interviews, and courses. Amount varies by difficulty. |
 | **Level** | Calculated as `floor(xp / 200) + 1`. Displayed on dashboard and profile. |
 | **Streak** | Incremented each day the student completes at least one quest. Resets on miss. |
 | **KodeTalent Score** | Overall percentile score (0–100) used for job matching and leaderboard ranking. |
@@ -365,5 +348,5 @@ Fields must match exactly: `Web Dev`, `AI/ML`, `Data`, `App Dev`, `Cybersecurity
 
 - The frontend stores `studentId` in `localStorage` — this is the session. Clearing it returns to onboarding.
 - The global reverse proxy routes `/api/*` to the API server and everything else to the Vite frontend. Do not add Vite proxy configs.
-- All AI calls (interviews, tests, job matches, roadmap) go through `@workspace/integrations-anthropic-ai` which uses the Replit AI Integrations proxy — no user API key needed.
+- All AI calls (interviews, courses, job matches, roadmap) go through `@workspace/integrations-anthropic-ai` which uses the Replit AI Integrations proxy — no user API key needed.
 - The `conversations` and `messages` Drizzle tables are named without the `Table` suffix (unlike other tables). Import them as `conversations` and `messages` from `@workspace/db`.

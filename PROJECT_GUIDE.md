@@ -22,11 +22,13 @@ today**, and every suggestion should come from something real they did.
 |---|---|
 | **Daily checklist** | 3–5 tasks generated server-side each morning from real signals (no completed mock yet → "take your first mock"; weakest skill → targeted practice). Exactly one task is "hot". Streak is computed from actual completions. |
 | **AI mock interviews** | Voice interviewer (speaks questions, transcribes spoken answers) with camera self-view, then a scored report: communication, technical depth, confidence. |
-| **Mock tests** | 20-minute timed aptitude/reasoning MCQs, like campus placement rounds. |
+| **Interview library** | Ready-made mock interviews for real companies, role-first and filterable, startable in one tap from the Prep hub. |
 | **Pipeline (paste-a-job)** | Paste any job post or placement message → scam verdict, eligibility gates, fit score, and suggested prep. Track each application through 6 statuses. |
 | **Drive-Check** | Paste a forwarded WhatsApp placement message → flags placement scams and extracts the real drive details. Shareable result card. |
 | **Opportunities** | 20 tech domains × 5 specialisations, each with a live feed of jobs / internships / freelance work aggregated from real job boards. |
 | **AI courses** | Any specialisation generates a 5-module course: lessons, curated videos, spaced-repetition flashcards, quizzes. |
+| **Course library** | Browse AI-generated courses by domain (20 domains × 5 tracks) at `/practice/courses` — no job needed first. Each course is 5 modules × 3 lessons; each module quiz unlocks the next, then a 10-question final exam (70% to pass, unlimited retakes). |
+| **Certificates** | Pass the final exam *and* a certificate mock interview (AI-scored, 60+ to pass) to earn a verifiable certificate with a public verify link (`/certs/:slug`), QR code, and skills covered. Claimed accounts only; optional add-to-resume (off by default) and explicit skill-to-profile confirmation. |
 | **Resume builder** | 3 ATS-oriented templates, AI generation tailored to a pasted JD, PDF export. |
 | **Kit (AI chat)** | A career mentor that knows the student's actual profile, streamed live. |
 
@@ -168,9 +170,9 @@ for errors/scams, orange for badges. All 17 screens follow it.
 **Student app routes** (`artifacts/kodetalent/src/App.tsx`)
 
 `/` welcome · `/onboarding` · `/home` daily checklist · `/practice` +
-`/practice/interview/:id` + `/practice/test/:id` + `/practice/history` ·
-`/opportunities` + `/opportunities/course` · `/pipeline` · `/drive-check` ·
-`/resume` · `/profile` · `/chat` · `/inbox` · `/join/:code`
+`/practice/interview/:id` + `/practice/courses` + `/practice/history` ·
+`/opportunities` + `/opportunities/course` · `/certs/:slug` · `/pipeline` ·
+`/drive-check` · `/resume` · `/profile` · `/chat` · `/inbox` · `/join/:code`
 
 Bottom nav is 4 tabs: **Home · Prep · Jobs · Profile**, with Kit as a floating
 bubble rather than a fifth tab.
@@ -180,7 +182,7 @@ bubble rather than a fifth tab.
 `driveCheck.ts`, `opportunities.ts`, `resume.ts`, `course.ts`, `ai.ts`.
 
 **Database** — 23 tables. Core: `students`, `daily_tasks`, `applications`,
-`interview_sessions`, `test_sessions`, `student_resumes`, `drive_checks`,
+`interview_sessions`, `student_resumes`, `drive_checks`,
 `conversations`/`messages`, `ai_cache`. Plus recruiter/TPO/college tables for the
 inactive portals.
 
@@ -214,7 +216,8 @@ API serves the frontend, there is only one service to deploy.
 
 **Working and deployed:** onboarding → goal → live opportunities, daily checklist
 with honest streaks, guest→signed-in account claiming, mock interviews + scoring,
-mock tests, pipeline analyzer + tracking, drive-check, courses, resume builder,
+interview library, course library with module quizzes + final exams and
+certificates, pipeline analyzer + tracking, drive-check, courses, resume builder,
 Kit chat, and the full indigo design system across all 17 screens.
 
 **Known gaps / next up:**
