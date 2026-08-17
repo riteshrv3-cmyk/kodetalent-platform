@@ -7,8 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { useStudentProfile } from "@/hooks/useStudentProfile";
-import { DOMAINS, ROLE_DESTINATIONS } from "@/data/domains";
+import InterviewLibrary from "@/components/prep/InterviewLibrary";
 
 type InterviewType = "Technical" | "Behavioral" | "Mixed";
 type Difficulty = "Standard" | "Challenging";
@@ -33,32 +32,6 @@ export default function Prep() {
   const [cameraMode, setCameraMode] = useState(() => localStorage.getItem("cameraMode") !== "false");
 
   const createInterview = useCreateInterviewSession();
-
-  // Surface courses here too: resolve the student's target role to its course
-  // track and deep-link straight into it (reusing the same courseContext
-  // contract Opportunities writes). No role mapping -> fall back to the domain
-  // browse where every course can be picked.
-  const profileId = typeof window !== "undefined" ? localStorage.getItem("studentId") : null;
-  const { data: profile } = useStudentProfile(profileId);
-  const openCourses = () => {
-    const dest = profile?.targetRole ? ROLE_DESTINATIONS[profile.targetRole] : undefined;
-    const domain = dest ? DOMAINS.find((d) => d.id === dest.domain) : undefined;
-    const sub = domain?.subDomains.find((s) => s.id === dest?.sub);
-    if (domain && sub) {
-      sessionStorage.setItem("courseContext", JSON.stringify({
-        subDomainId: sub.id,
-        subDomainName: sub.name,
-        domainName: domain.name,
-        domainColor: domain.color,
-        domainBg: domain.bg,
-        domainEmoji: domain.emoji,
-        skills: sub.skills,
-      }));
-      setLocation("/opportunities/course");
-    } else {
-      setLocation("/opportunities");
-    }
-  };
 
   useEffect(() => {
     const id = localStorage.getItem("studentId");
@@ -158,7 +131,7 @@ export default function Prep() {
         >
           <Card
             className="border-0 shadow-soft rounded-2xl bg-paper cursor-pointer group"
-            onClick={openCourses}
+            onClick={() => setLocation("/practice/courses")}
           >
             <CardContent className="p-5 flex items-center gap-4">
               <div className="w-11 h-11 rounded-xl bg-brand-soft flex items-center justify-center text-brand shrink-0 group-hover:bg-brand group-hover:text-white transition-colors">
@@ -172,6 +145,10 @@ export default function Prep() {
             </CardContent>
           </Card>
         </motion.div>
+      </div>
+
+      <div className="px-4 pb-4 max-w-md lg:max-w-2xl mx-auto">
+        <InterviewLibrary />
       </div>
 
       <AnimatePresence>
