@@ -21,7 +21,7 @@ router.post("/course/generate", rlAiHeavy, async (req, res) => {
   try {
     const { value, cached } = await cacheGetOrSet(
       {
-        namespace: "course-v1",
+        namespace: "course-v2",
         keyParts: [String(subDomainName).toLowerCase().trim(), String(domainName).toLowerCase().trim(), skillKey.map(s => String(s).toLowerCase().trim())],
         ttlSeconds: COURSE_TTL_SECONDS,
       },
@@ -62,11 +62,11 @@ Rules:
               content: `You are a course creator for Indian engineering students. Generate study material for "${subDomainName}" (${domainName}).
 
 Return ONLY valid compact JSON — no markdown, no whitespace between fields, no trailing commas — exactly:
-{"flashcards":[{"id":"f1","front":"...","back":"...","topic":"..."}],"quizQuestions":[{"id":"q1","question":"...","options":["A. ...","B. ...","C. ...","D. ..."],"answer":"A","explanation":"...","difficulty":"easy"}]}
+{"flashcards":[{"id":"f1","front":"...","back":"...","topic":"..."}],"quizQuestions":[{"id":"q1","moduleId":"m1","question":"...","options":["A. ...","B. ...","C. ...","D. ..."],"answer":"A","explanation":"...","difficulty":"easy"}]}
 
 Rules:
 - Exactly 10 flashcards: mix definitions, how-to, interview Q&A for Indian companies (Flipkart, Razorpay, Swiggy)
-- Exactly 5 quiz questions: 2 easy, 2 medium, 1 hard; "answer" = single letter A/B/C/D only
+- Exactly 5 quiz questions: ONE PER MODULE, tagged with "moduleId" m1 through m5 in order (q1->m1, q2->m2, ... q5->m5); increasing difficulty across the five; "answer" = single letter A/B/C/D only
 - Skills: ${skillList}`,
             },
           ],
