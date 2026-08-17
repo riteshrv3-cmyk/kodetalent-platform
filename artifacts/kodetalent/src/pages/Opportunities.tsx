@@ -708,6 +708,25 @@ export default function Opportunities() {
                   them in the same commit as the feed costs no shift at all. */}
               {!matchedQuery.isLoading && (
               <>
+              {/* Step 2 -> Step 3 bridge: once a matched job looks right, the
+                  next move in the pipeline is rehearsing it. Points at the Prep
+                  page (not a live interview) so it reads as "go to the next
+                  step", matching the per-card instant-Practice power action. */}
+              <button
+                onClick={() => setLocation("/practice")}
+                className="w-full mb-4 flex items-center gap-3 px-4 py-3 rounded-2xl bg-paper shadow-soft text-left transition-colors"
+                data-testid="link-practice-prep"
+              >
+                <div className="w-10 h-10 rounded-xl bg-brand-soft flex items-center justify-center text-lg shrink-0">
+                  🎤
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-ink text-[14px]">Practice for these interviews</p>
+                  <p className="text-[11px] text-ink-muted">Found a fit? Rehearse it with a mock interview in Prep</p>
+                </div>
+                <ChevronRight className="w-4 h-4 text-ink-muted shrink-0" />
+              </button>
+
               <button
                 onClick={() => setLocation("/pipeline")}
                 className="w-full mb-4 flex items-center gap-3 px-4 py-3 rounded-2xl bg-paper shadow-soft text-left transition-colors"
