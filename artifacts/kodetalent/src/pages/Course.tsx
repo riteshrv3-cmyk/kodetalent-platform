@@ -204,7 +204,7 @@ export default function Course() {
   // ── Init ───────────────────────────────────────────────────────────────────
   useEffect(() => {
     const raw = sessionStorage.getItem("courseContext");
-    if (!raw) { setLocation("/opportunities"); return; }
+    if (!raw) { setLocation("/practice/courses"); return; }
     const c: CourseContext = JSON.parse(raw);
     setCtx(c);
 
@@ -222,7 +222,7 @@ export default function Course() {
     if (wv) setWatchedVideos(new Set(JSON.parse(wv)));
 
     // v2 cache key — includes lesson data
-    const cacheKey = `course_content_v2_${c.subDomainId}`;
+    const cacheKey = `course_content_v3_${c.subDomainId}`;
     const cached = localStorage.getItem(cacheKey);
     if (cached) {
       setCourseData(JSON.parse(cached));

@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { ALL_SUBDOMAINS } from "@/data/domains";
 
-const CACHE_VERSION = "v2";
+const CACHE_VERSION = "v3";
 const BATCH_SIZE = 3;
 /**
  * Deliberately far below the server's ai-heavy allowance (30/hour), which this

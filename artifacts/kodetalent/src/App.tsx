@@ -35,6 +35,7 @@ const InterviewHistory = lazy(() => import("@/pages/InterviewHistory"));
 const Notebook = lazy(() => import("@/pages/Notebook"));
 const Opportunities = lazy(() => import("@/pages/Opportunities"));
 const Course = lazy(() => import("@/pages/Course"));
+const CourseLibrary = lazy(() => import("@/pages/CourseLibrary"));
 const Profile = lazy(() => import("@/pages/Profile"));
 const Resume = lazy(() => import("@/pages/Resume"));
 const Inbox = lazy(() => import("@/pages/Inbox"));
@@ -244,6 +245,7 @@ function Router() {
               <Route path="/practice" component={Prep} />
               <Route path="/practice/history" component={InterviewHistory} />
               <Route path="/practice/interview/:id" component={Interview} />
+              <Route path="/practice/courses" component={CourseLibrary} />
               <Route path="/opportunities" component={Opportunities} />
               <Route path="/opportunities/course" component={Course} />
               <Route path="/profile" component={Profile} />
