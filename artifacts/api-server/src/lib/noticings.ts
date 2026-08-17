@@ -8,6 +8,7 @@ import {
 } from "@workspace/db";
 import { eq, and, desc, gte, inArray, isNull } from "drizzle-orm";
 import { istToday, istYesterday, GENERIC_SKILLS } from "./dailyTasks";
+import { getActiveCourseProgress } from "./courseProgress";
 import type { EventAction } from "./events";
 
 export interface Noticing {
@@ -136,14 +137,14 @@ export async function getNoticings(
       gapFramed: false,
     });
   }
-  const lastCourse = student.lastCourse as { subDomainName: string; completed: number; total: number } | null;
+  const lastCourse = await getActiveCourseProgress(student.id);
   if (lastCourse && lastCourse.total > 0) {
     const pct = Math.round((lastCourse.completed / lastCourse.total) * 100);
     if (pct === 100) {
       candidates.push({
         type: "milestone",
         text: `You finished ${lastCourse.subDomainName} — nice work.`,
-        href: "/opportunities/course",
+        href: "/practice/courses",
         weight: 78,
         gapFramed: false,
       });

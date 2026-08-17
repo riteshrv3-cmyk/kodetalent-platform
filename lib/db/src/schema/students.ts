@@ -64,7 +64,8 @@ export const studentsTable = pgTable("students", {
   targetRole: text("target_role"),             // goal picker, e.g. "SDE", "Data/ML"
   targetBatch: integer("target_batch"),        // placement/grad year, e.g. 2027
   baselineScore: integer("baseline_score"),    // first completed mock's score; set once
-  lastCourse: jsonb("last_course"),            // { subDomainId, subDomainName, completed, total, updatedAt }
+  // (lastCourse column removed — active-course signal now derived from
+  //  courseEnrollments via lib/courseProgress.getActiveCourseProgress.)
   noticingHistory: jsonb("noticing_history"),  // { [ruleType]: lastShownDate, lastGapFramedDate }
   // Opportunity ids already surfaced to this student, newest-first and capped.
   // Compared against the live matched feed to mark genuinely-new listings —

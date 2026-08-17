@@ -10,6 +10,13 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { apiFetch } from "@/lib/api/authFetch";
+import { DOMAINS } from "@/data/domains";
+import {
+  useEnrollCourse, useUpdateCourseProgress, useSubmitModuleQuiz,
+} from "@workspace/api-client-react";
+import type {
+  CourseEnrollment, EnrollCourseBodyCourseData, QuizResult,
+} from "@workspace/api-client-react";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -57,6 +64,7 @@ interface QuizQuestion {
   answer: string;
   explanation: string;
   difficulty: "easy" | "medium" | "hard";
+  moduleId?: string;   // present on newly-generated cache; older cache is untagged
 }
 
 interface CourseData {
@@ -174,15 +182,22 @@ export default function Course() {
   const [newCardsToday, setNewCardsToday] = useState(0);
   const DAILY_NEW_LIMIT = 20;
 
-  // ── Quiz state ─────────────────────────────────────────────────────────────
-  const [quizIndex, setQuizIndex] = useState(0);
-  const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
-  const [showExplanation, setShowExplanation] = useState(false);
-  const [quizScore, setQuizScore] = useState(0);
-  const [quizComplete, setQuizComplete] = useState(false);
-  const [quizAnswers, setQuizAnswers] = useState<Record<string, boolean>>({});
+  // ── Backend enrollment + per-module quiz state ─────────────────────────────
+  const [enrollment, setEnrollment] = useState<CourseEnrollment | null>(null);
+  const [passedModules, setPassedModules] = useState<Set<string>>(new Set());
+  const [moduleQuizAnswer, setModuleQuizAnswer] = useState<Record<string, string>>({});    // moduleId -> chosen letter
+  const [moduleQuizResult, setModuleQuizResult] = useState<Record<string, QuizResult>>({}); // moduleId -> server result
+  const [moduleQuizSubmitting, setModuleQuizSubmitting] = useState<string | null>(null);    // moduleId in flight
+  const [examStarted, setExamStarted] = useState(false);
+
+  const enrollCourse = useEnrollCourse();
+  const updateCourseProgress = useUpdateCourseProgress();
+  const submitModuleQuiz = useSubmitModuleQuiz();
 
   const hasFetched = useRef(false);
+  const hasEnrolled = useRef(false);
+  const progressDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const skipNextProgressSync = useRef(false);
 
   const LOAD_MSGS = [
     "Mapping your learning path...",
@@ -252,23 +267,70 @@ export default function Course() {
     })();
   }, [setLocation]);
 
-  // ── Sync course progress to the server — feeds the Home checklist's R3 rule ──
+  // (Progress now syncs to the enrollment via the debounced
+  //  updateCourseProgress PATCH below — the old course-progress POST endpoint
+  //  and students.lastCourse column were removed.)
+
+  // ── Enroll on mount (idempotent server-side) + seed local from server ───────
   useEffect(() => {
-    if (!courseData || !ctx) return;
-    const studentId = localStorage.getItem("studentId");
-    if (!studentId) return;
-    const total = courseData.modules.reduce((s, m) => s + (m.lessons?.length ?? 0), 0);
-    apiFetch(`/api/students/${studentId}/course-progress`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    if (!courseData || !ctx || hasEnrolled.current) return;
+    const sid = Number(localStorage.getItem("studentId"));
+    if (!sid || Number.isNaN(sid)) return;
+    hasEnrolled.current = true;
+
+    // domains.ts carries the domain id; courseContext only has the domain name.
+    const domain = DOMAINS.find(d => d.subDomains.some(s => s.id === ctx.subDomainId));
+    const domainId = domain?.id ?? ctx.domainName.toLowerCase().trim().replace(/\s+/g, "-");
+
+    enrollCourse.mutateAsync({
+      id: sid,
+      data: {
         subDomainId: ctx.subDomainId,
         subDomainName: ctx.subDomainName,
-        completed: completedLessons.size,
-        total,
-      }),
-    }).catch(() => null);
-  }, [courseData, ctx, completedLessons]);
+        domainId,
+        domainName: ctx.domainName,
+        skills: ctx.skills,
+        courseData: courseData as unknown as EnrollCourseBodyCourseData,
+      },
+    }).then(enr => {
+      setEnrollment(enr);
+      setPassedModules(new Set(enr.passedModuleIds));
+
+      // Server is the cross-device source of truth: seed local when it has more.
+      const localLessons: string[] = JSON.parse(localStorage.getItem(`lesson_progress_${ctx.subDomainId}`) || "[]");
+      if (enr.completedLessonIds.length > localLessons.length) {
+        setCompletedLessons(new Set(enr.completedLessonIds));
+        localStorage.setItem(`lesson_progress_${ctx.subDomainId}`, JSON.stringify(enr.completedLessonIds));
+      }
+      const localVideos: string[] = JSON.parse(localStorage.getItem(`watched_videos_${ctx.subDomainId}`) || "[]");
+      if (enr.watchedVideoIds.length > localVideos.length) {
+        setWatchedVideos(new Set(enr.watchedVideoIds));
+        localStorage.setItem(`watched_videos_${ctx.subDomainId}`, JSON.stringify(enr.watchedVideoIds));
+      }
+      // Don't echo the just-seeded arrays straight back to the server.
+      skipNextProgressSync.current = true;
+    }).catch(() => { hasEnrolled.current = false; });
+  }, [courseData, ctx]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Debounced progress persistence — localStorage is instant UI, server durable ─
+  useEffect(() => {
+    if (!enrollment) return;
+    if (skipNextProgressSync.current) { skipNextProgressSync.current = false; return; }
+    const sid = Number(localStorage.getItem("studentId"));
+    if (!sid || Number.isNaN(sid)) return;
+    if (progressDebounce.current) clearTimeout(progressDebounce.current);
+    progressDebounce.current = setTimeout(() => {
+      updateCourseProgress.mutateAsync({
+        id: sid,
+        enrollmentId: enrollment.id,
+        data: {
+          completedLessonIds: [...completedLessons],
+          watchedVideoIds: [...watchedVideos],
+        },
+      }).catch(() => { /* fire-and-forget */ });
+    }, 600);
+    return () => { if (progressDebounce.current) clearTimeout(progressDebounce.current); };
+  }, [completedLessons, watchedVideos, enrollment]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Build flashcard queue ──────────────────────────────────────────────────
   useEffect(() => {
@@ -347,22 +409,37 @@ export default function Course() {
     setTimeout(() => setQueueIndex(i => i + 1), 200);
   }, [ctx, queue, queueIndex, progress, sessionStats, newCardsToday]);
 
-  // ── Quiz ───────────────────────────────────────────────────────────────────
-  const selectAnswer = (opt: string) => {
-    if (selectedAnswer) return;
-    const letter = opt.charAt(0);
-    setSelectedAnswer(letter);
-    setShowExplanation(true);
-    const q = courseData!.quizQuestions[quizIndex];
-    if (letter === q.answer) setQuizScore(s => s + 1);
-    setQuizAnswers(a => ({ ...a, [q.id]: letter === q.answer }));
-  };
-  const nextQuestion = () => {
-    if (!courseData) return;
-    if (quizIndex + 1 >= courseData.quizQuestions.length) setQuizComplete(true);
-    else { setQuizIndex(i => i + 1); setSelectedAnswer(null); setShowExplanation(false); }
-  };
-  const resetQuiz = () => { setQuizIndex(0); setSelectedAnswer(null); setShowExplanation(false); setQuizScore(0); setQuizComplete(false); setQuizAnswers({}); };
+  // ── Per-module quiz ──────────────────────────────────────────────────────────
+  const submitModuleQuizAnswer = useCallback(async (moduleId: string, answer: string) => {
+    if (!enrollment) return;
+    const sid = Number(localStorage.getItem("studentId"));
+    if (!sid || Number.isNaN(sid)) return;
+    setModuleQuizSubmitting(moduleId);
+    try {
+      const res = await submitModuleQuiz.mutateAsync({
+        id: sid,
+        enrollmentId: enrollment.id,
+        moduleId,
+        data: { answers: [answer] },
+      });
+      setModuleQuizResult(r => ({ ...r, [moduleId]: res }));
+      if (res.passed) {
+        setPassedModules(prev => { const n = new Set(prev); n.add(moduleId); return n; });
+        setEnrollment(prev => prev
+          ? { ...prev, passedModuleIds: prev.passedModuleIds.includes(moduleId) ? prev.passedModuleIds : [...prev.passedModuleIds, moduleId] }
+          : prev);
+      }
+    } catch {
+      /* leave the module un-passed; the Retry button re-enables submission */
+    } finally {
+      setModuleQuizSubmitting(null);
+    }
+  }, [enrollment, submitModuleQuiz]);
+
+  const retryModuleQuiz = useCallback((moduleId: string) => {
+    setModuleQuizResult(r => { const n = { ...r }; delete n[moduleId]; return n; });
+    setModuleQuizAnswer(a => { const n = { ...a }; delete n[moduleId]; return n; });
+  }, []);
 
   if (!ctx) return null;
 
@@ -484,12 +561,11 @@ export default function Course() {
   const currentCard = queue[queueIndex];
   const cardsLeft = queue.length - queueIndex;
   const accuracy = sessionStats.reviewed > 0 ? Math.round((sessionStats.correct / sessionStats.reviewed) * 100) : 0;
-  const currentQ = courseData.quizQuestions[quizIndex];
 
   const TABS = [
     { id: "roadmap" as Tab, label: "Course", icon: BookOpen },
     { id: "flashcards" as Tab, label: "Flashcards", icon: CreditCard },
-    { id: "quiz" as Tab, label: "Quiz", icon: HelpCircle },
+    { id: "quiz" as Tab, label: "Final Exam", icon: Trophy },
   ];
 
   return (
@@ -588,15 +664,18 @@ export default function Course() {
                   const modCompleted = lessons.filter(l => completedLessons.has(l.id)).length;
                   const modPct = lessons.length > 0 ? Math.round((modCompleted / lessons.length) * 100) : 0;
                   const isExpanded = expandedModule === mod.id;
-                  const isLocked = modIdx > 0 && courseData.modules[modIdx - 1].lessons?.every(l => !completedLessons.has(l.id));
+                  // Real gate: module N is locked until the previous module's quiz is passed. Module 1 is always open.
+                  const prevMod = modIdx > 0 ? courseData.modules[modIdx - 1] : null;
+                  const isLocked = prevMod ? !passedModules.has(prevMod.id) : false;
 
                   return (
                     <motion.div key={mod.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: modIdx * 0.07 }}
-                      className="border-t border-line first:border-t-0">
+                      className={cn("border-t border-line first:border-t-0", isLocked && "opacity-60")}>
                       {/* Module header */}
                       <button
-                        onClick={() => { setExpandedModule(isExpanded ? null : mod.id); setExpandedLesson(null); }}
-                        className="w-full overflow-hidden text-left"
+                        onClick={() => { if (isLocked) return; setExpandedModule(isExpanded ? null : mod.id); setExpandedLesson(null); }}
+                        disabled={isLocked}
+                        className="w-full overflow-hidden text-left disabled:cursor-not-allowed"
                       >
                         <div className="py-4">
                           <div className="flex items-center gap-3">
@@ -628,6 +707,11 @@ export default function Course() {
                                   {modCompleted}/{lessons.length} · <Clock className="w-2.5 h-2.5 inline" /> {mod.duration}
                                 </span>
                               </div>
+                              {isLocked && (
+                                <p className="flex items-center gap-1 text-[10px] font-bold text-ink-muted mt-1.5">
+                                  <Lock className="w-2.5 h-2.5" /> Pass module {modIdx}'s quiz to unlock
+                                </p>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -866,6 +950,88 @@ export default function Course() {
                                   );
                                 })}
                               </div>
+
+                              {/* ── Per-module quiz — gates the next module ── */}
+                              {(() => {
+                                const moduleQuiz = courseData.quizQuestions.find(q => q.moduleId === mod.id)
+                                  ?? courseData.quizQuestions[modIdx]; // fallback for old untagged cache
+                                if (!moduleQuiz) return null;
+                                const chosen = moduleQuizAnswer[mod.id];
+                                const result = moduleQuizResult[mod.id];
+                                const submitted = !!result;
+                                const submitting = moduleQuizSubmitting === mod.id;
+                                return (
+                                  <div className="pl-3 pb-4 pt-1 border-t border-line" onClick={e => e.stopPropagation()}>
+                                    <div className="rounded-2xl bg-paper shadow-soft p-4">
+                                      <div className="flex items-center gap-1.5 mb-2">
+                                        <HelpCircle className="w-3.5 h-3.5 text-ink-muted" />
+                                        <p className="text-[10px] font-bold uppercase tracking-wider text-ink-muted">Module quiz</p>
+                                        {passedModules.has(mod.id) && (
+                                          <span className="ml-auto flex items-center gap-1 text-[10px] font-bold text-done">
+                                            <CheckCircle2 className="w-3.5 h-3.5" /> Passed
+                                          </span>
+                                        )}
+                                      </div>
+                                      <p className="text-[13px] font-extrabold text-ink leading-snug mb-3">{moduleQuiz.question}</p>
+                                      <div className="space-y-2 mb-3">
+                                        {moduleQuiz.options.map(opt => {
+                                          const letter = opt.charAt(0);
+                                          const isChosen = chosen === letter;
+                                          const isAnswer = letter === moduleQuiz.answer;
+                                          let optBg = "bg-paper", optBorder = "border-line";
+                                          let mark: "correct" | "incorrect" | null = null;
+                                          if (submitted) {
+                                            if (isAnswer) { optBg = "bg-done/10"; optBorder = "border-done"; mark = "correct"; }
+                                            else if (isChosen) { optBg = "bg-danger/10"; optBorder = "border-danger"; mark = "incorrect"; }
+                                          } else if (isChosen) { optBg = "bg-brand-soft"; optBorder = "border-brand"; }
+                                          return (
+                                            <button
+                                              key={opt}
+                                              disabled={submitted || submitting}
+                                              onClick={() => setModuleQuizAnswer(a => ({ ...a, [mod.id]: letter }))}
+                                              className={cn("w-full flex items-center gap-2 text-left p-3 rounded-xl border font-bold text-[13px] text-ink transition-colors disabled:cursor-default", optBg, optBorder)}
+                                            >
+                                              <span className="flex-1">{opt}</span>
+                                              {mark === "correct" && <CheckCircle2 className="w-4 h-4 text-done flex-shrink-0" />}
+                                              {mark === "incorrect" && <XCircle className="w-4 h-4 text-danger flex-shrink-0" />}
+                                            </button>
+                                          );
+                                        })}
+                                      </div>
+                                      {!submitted ? (
+                                        <Button
+                                          disabled={!chosen || submitting || !enrollment}
+                                          onClick={() => { if (chosen) submitModuleQuizAnswer(mod.id, chosen); }}
+                                          className="w-full h-10 rounded-xl font-bold bg-brand hover:bg-brand/90 text-paper text-[13px] disabled:opacity-60"
+                                        >
+                                          {submitting
+                                            ? <><Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> Submitting…</>
+                                            : "Submit answer"}
+                                        </Button>
+                                      ) : (
+                                        <motion.div initial={reduced ? false : { opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}>
+                                          <div className="flex items-center gap-2 mb-1">
+                                            {result.passed ? <CheckCircle2 className="w-4 h-4 text-done" /> : <XCircle className="w-4 h-4 text-danger" />}
+                                            <p className="text-[12px] font-extrabold text-ink">
+                                              {result.passed ? "Passed — next module unlocked!" : `Not quite. Correct answer: ${moduleQuiz.answer}`}
+                                            </p>
+                                          </div>
+                                          <p className="text-xs text-ink-muted leading-relaxed mb-3">{moduleQuiz.explanation}</p>
+                                          {!result.passed && (
+                                            <Button
+                                              variant="outline"
+                                              onClick={() => retryModuleQuiz(mod.id)}
+                                              className="w-full h-10 rounded-xl font-bold border border-line text-brand bg-paper hover:bg-brand-soft text-[13px]"
+                                            >
+                                              <RotateCcw className="w-4 h-4 mr-1.5" /> Retry
+                                            </Button>
+                                          )}
+                                        </motion.div>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })()}
                             </motion.div>
                           )}
                         </AnimatePresence>
@@ -891,7 +1057,7 @@ export default function Course() {
                     <CreditCard className="w-4 h-4 mr-1.5" /> Flashcards
                   </Button>
                   <Button onClick={() => setActiveTab("quiz")} variant="outline" className="flex-1 h-10 rounded-xl font-bold text-[13px] border border-line text-brand bg-paper hover:bg-brand-soft">
-                    <HelpCircle className="w-4 h-4 mr-1.5" /> Quiz
+                    <Trophy className="w-4 h-4 mr-1.5" /> Final Exam
                   </Button>
                 </div>
               </motion.div>
@@ -949,7 +1115,7 @@ export default function Course() {
                       : "No cards due right now. Come back tomorrow!"}
                   </p>
                   <Button onClick={() => setActiveTab("quiz")} className="w-full h-11 rounded-xl font-bold bg-brand hover:bg-brand/90 text-paper">
-                    Try the Quiz <ChevronRight className="w-4 h-4 ml-1" />
+                    Go to Final Exam <ChevronRight className="w-4 h-4 ml-1" />
                   </Button>
                 </motion.div>
               ) : (
@@ -1025,99 +1191,46 @@ export default function Course() {
           ══════════════════════════════════════════════════════ */}
           {activeTab === "quiz" && (
             <motion.div key="quiz" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="lg:max-w-2xl lg:mx-auto">
-              {quizComplete ? (
-                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
-                  <div className="rounded-2xl bg-paper shadow-soft p-6 text-center mb-4">
-                    <Trophy className="w-12 h-12 mx-auto mb-3 text-ink" />
-                    <h2 className="text-display text-2xl font-extrabold text-ink mb-1">{quizScore} / {courseData.quizQuestions.length}</h2>
-                    <p className="text-sm text-ink-muted mb-4">
-                      {quizScore === courseData.quizQuestions.length ? "Perfect! You nailed it 🎉"
-                        : quizScore >= Math.ceil(courseData.quizQuestions.length * 0.6) ? "Good job! Review the ones you missed."
-                        : "Keep studying — try the flashcards first."}
-                    </p>
-                    <div className="flex gap-2">
-                      <Button onClick={resetQuiz} variant="outline" className="flex-1 h-10 rounded-xl font-bold border border-line text-brand bg-paper hover:bg-brand-soft">
-                        <RotateCcw className="w-4 h-4 mr-1.5" /> Retry
-                      </Button>
-                      <Button onClick={() => setActiveTab("flashcards")} className="flex-1 h-10 rounded-xl font-bold bg-brand hover:bg-brand/90 text-paper">
-                        Study Cards
-                      </Button>
+              {(() => {
+                const totalModules = courseData.modules.length;
+                const passedCount = courseData.modules.filter(m => passedModules.has(m.id)).length;
+                const allPassed = totalModules > 0 && passedCount === totalModules;
+                return (
+                  <div className="rounded-2xl bg-paper shadow-soft p-6 text-center">
+                    <div className="w-16 h-16 rounded-3xl flex items-center justify-center mx-auto mb-4 border border-line">
+                      {allPassed ? <Trophy className="w-8 h-8 text-ink" /> : <Lock className="w-7 h-7 text-ink-muted" />}
                     </div>
-                  </div>
-                  <p className="text-[11px] font-bold text-ink-muted uppercase tracking-wider mb-2 px-1">Breakdown</p>
-                  {courseData.quizQuestions.map((q, i) => (
-                    <motion.div
-                      key={q.id}
-                      initial={reduced ? false : { opacity: 0, y: 12 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.35, delay: i * 0.06, ease: "easeOut" }}
-                      className="flex items-center gap-3 py-4 border-t border-line"
-                    >
-                      {quizAnswers[q.id] ? <CheckCircle2 className="w-5 h-5 text-done flex-shrink-0" /> : <XCircle className="w-5 h-5 text-danger flex-shrink-0" />}
-                      <p className="text-sm text-ink font-bold flex-1 leading-snug">{q.question}</p>
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border border-line text-ink-muted">
-                        {q.difficulty}
-                      </span>
-                    </motion.div>
-                  ))}
-                </motion.div>
-              ) : (
-                <AnimatePresence mode="wait">
-                  <motion.div key={quizIndex} initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.2 }}>
-                    <div className="flex items-center justify-between mb-2 px-1">
-                      <p className="text-[11px] font-bold text-ink-muted">Question {quizIndex + 1} of {courseData.quizQuestions.length}</p>
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border border-line text-ink-muted">
-                        {currentQ.difficulty}
-                      </span>
-                    </div>
-                    <div className="h-1.5 bg-line rounded-full mb-4 overflow-hidden">
-                      <div className="h-full rounded-full bg-brand transition-all duration-500" style={{ width: `${(quizIndex / courseData.quizQuestions.length) * 100}%` }} />
-                    </div>
-                    <div className="bg-paper shadow-soft rounded-2xl mb-4 p-5">
-                      <p className="text-base font-extrabold text-ink leading-snug">{currentQ.question}</p>
-                    </div>
-                    <div className="space-y-2 mb-4">
-                      {currentQ.options.map(opt => {
-                        const letter = opt.charAt(0);
-                        const chosen = selectedAnswer === letter;
-                        const isCorrect = letter === currentQ.answer;
-                        let optBg = "bg-paper", optBorder = "border-line";
-                        let mark: "correct" | "incorrect" | null = null;
-                        if (showExplanation) {
-                          if (isCorrect) { optBg = "bg-done/10"; optBorder = "border-done"; mark = "correct"; }
-                          else if (chosen) { optBg = "bg-danger/10"; optBorder = "border-danger"; mark = "incorrect"; }
-                        } else if (chosen) { optBg = "bg-brand-soft"; optBorder = "border-brand"; }
-                        return (
-                          <button key={opt} onClick={() => selectAnswer(opt)} disabled={!!selectedAnswer}
-                            className={cn("w-full flex items-center gap-2 text-left p-3.5 rounded-xl border font-bold text-sm text-ink transition-colors", optBg, optBorder)}>
-                            <span className="flex-1">{opt}</span>
-                            {mark === "correct" && <CheckCircle2 className="w-4 h-4 text-done flex-shrink-0" />}
-                            {mark === "incorrect" && <XCircle className="w-4 h-4 text-danger flex-shrink-0" />}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    <AnimatePresence>
-                      {showExplanation && (
-                        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl bg-paper shadow-soft p-4 mb-4">
-                          <div className="flex items-center gap-2 mb-1">
-                            {selectedAnswer === currentQ.answer ? <CheckCircle2 className="w-4 h-4 text-done" /> : <XCircle className="w-4 h-4 text-danger" />}
-                            <p className="text-[12px] font-extrabold text-ink">
-                              {selectedAnswer === currentQ.answer ? "Correct!" : `Correct answer: ${currentQ.answer}`}
-                            </p>
-                          </div>
-                          <p className="text-xs text-ink-muted leading-relaxed">{currentQ.explanation}</p>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                    {showExplanation && (
-                      <Button onClick={nextQuestion} className="w-full h-11 rounded-xl font-bold bg-brand hover:bg-brand/90 text-paper text-[14px]">
-                        {quizIndex + 1 < courseData.quizQuestions.length ? "Next Question →" : "See Results"}
-                      </Button>
+                    <h2 className="text-display text-xl font-extrabold text-ink mb-1">Final exam</h2>
+                    {allPassed ? (
+                      <>
+                        <p className="text-sm text-ink-muted mb-5">
+                          You passed all {totalModules} module quizzes. You're ready for the final exam.
+                        </p>
+                        <Button onClick={() => setExamStarted(true)} className="w-full h-11 rounded-xl font-bold bg-brand hover:bg-brand/90 text-paper">
+                          Start final exam <ChevronRight className="w-4 h-4 ml-1" />
+                        </Button>
+                        {examStarted && (
+                          <p className="text-[12px] font-bold text-ink-muted mt-3">Coming in the exam step.</p>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-sm text-ink-muted mb-4">
+                          Pass all {totalModules} module quizzes to unlock the final exam.
+                        </p>
+                        <div className="h-1.5 bg-line rounded-full overflow-hidden mb-2">
+                          <div className="h-full rounded-full bg-brand transition-all duration-500"
+                            style={{ width: `${totalModules > 0 ? (passedCount / totalModules) * 100 : 0}%` }} />
+                        </div>
+                        <p className="text-[12px] font-bold text-ink-muted mb-5">{passedCount} / {totalModules} modules passed</p>
+                        <Button disabled className="w-full h-11 rounded-xl font-bold bg-brand text-paper opacity-50 cursor-not-allowed">
+                          <Lock className="w-4 h-4 mr-1.5" /> Locked
+                        </Button>
+                      </>
                     )}
-                  </motion.div>
-                </AnimatePresence>
-              )}
+                  </div>
+                );
+              })()}
             </motion.div>
           )}
 

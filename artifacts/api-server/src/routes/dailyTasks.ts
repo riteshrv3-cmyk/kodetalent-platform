@@ -90,35 +90,8 @@ router.post("/students/:id/tasks", requireStudent(), async (req, res) => {
   }
 });
 
-// POST /students/:id/course-progress
-router.post("/students/:id/course-progress", requireStudent({ allowGuest: true }), async (req, res) => {
-  const id = Number(req.params.id);
-  const { subDomainId, subDomainName, completed, total } = req.body as {
-    subDomainId?: string;
-    subDomainName?: string;
-    completed?: number;
-    total?: number;
-  };
-  if (!subDomainId || !subDomainName || typeof completed !== "number" || typeof total !== "number") {
-    return res.status(400).json({ error: "subDomainId, subDomainName, completed, total are required" });
-  }
-  try {
-    await db
-      .update(studentsTable)
-      .set({ lastCourse: { subDomainId, subDomainName, completed, total, updatedAt: new Date().toISOString() } })
-      .where(eq(studentsTable.id, id));
-    if (completed >= total && total > 0) {
-      await autoCompleteTaskKind(id, "course");
-    }
-    const pct = Math.round((completed / total) * 100);
-    if ([25, 50, 75, 100].includes(pct)) {
-      logEvent(id, "course_progress", `${subDomainName}: ${pct}% complete`, { subDomainName, pct });
-    }
-    return res.json({ ok: true });
-  } catch (err) {
-    req.log.error({ err }, "Failed to save course progress");
-    return res.status(500).json({ error: "Failed to save course progress" });
-  }
-});
+// (Course progress now lives on the enrollment via
+// PATCH /students/:id/courses/:enrollmentId/progress in routes/courses.ts —
+// the old students.lastCourse write endpoint was removed with that column.)
 
 export default router;

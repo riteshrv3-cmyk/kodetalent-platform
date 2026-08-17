@@ -7,6 +7,7 @@ import {
   applicationsTable,
 } from "@workspace/db";
 import { eq, and, desc } from "drizzle-orm";
+import { getActiveCourseProgress } from "./courseProgress";
 
 export const GENERIC_SKILLS = new Set([
   "dsa", "data structures", "algorithms", "problem solving", "communication",
@@ -125,9 +126,7 @@ async function buildCandidates(
   }
 
   // R3 — resume the last-opened course, if progress is fresh and incomplete.
-  const lastCourse = student.lastCourse as
-    | { subDomainId: string; subDomainName: string; completed: number; total: number; updatedAt: string }
-    | null;
+  const lastCourse = await getActiveCourseProgress(student.id);
   if (lastCourse && lastCourse.total > 0 && lastCourse.completed < lastCourse.total) {
     const fresh = Date.now() - new Date(lastCourse.updatedAt).getTime() < COURSE_FRESH_MS;
     if (fresh) {
@@ -136,7 +135,7 @@ async function buildCandidates(
         kind: "course",
         label: `Continue ${lastCourse.subDomainName}`,
         sublabel: `${pct}% complete`,
-        href: "/opportunities/course",
+        href: "/practice/courses",
         hot: false,
         manual: false,
         source: "rule",

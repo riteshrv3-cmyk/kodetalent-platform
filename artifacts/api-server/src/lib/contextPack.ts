@@ -2,6 +2,7 @@ import { db, studentsTable, interviewSessionsTable, applicationsTable, dailyTask
 import { eq, and, desc, gte } from "drizzle-orm";
 import { GENERIC_SKILLS } from "./dailyTasks";
 import { getNoticings } from "./noticings";
+import { getActiveCourseProgress } from "./courseProgress";
 
 export interface StudentContext {
   goal: { role: string | null; batch: number | null; dreamCompany: string | null };
@@ -67,7 +68,7 @@ export async function contextPack(studentId: number): Promise<ContextPack | null
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([date, v]) => ({ date, tasksDone: v.done, tasksTotal: v.total }));
 
-  const lastCourse = student.lastCourse as { subDomainName: string; completed: number; total: number } | null;
+  const lastCourse = await getActiveCourseProgress(studentId);
 
   const recentEvents = await db
     .select({ description: studentActivityLogTable.description, createdAt: studentActivityLogTable.createdAt })
