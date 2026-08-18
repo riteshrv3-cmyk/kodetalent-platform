@@ -1,21 +1,30 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { useUser } from "@clerk/react";
 import {
   ArrowLeft, BookOpen, CreditCard, HelpCircle, CheckCircle2,
   XCircle, RotateCcw, Star, AlertTriangle, Trophy, ChevronRight,
   ChevronDown, PlayCircle, FileText, PenLine, Hammer, ExternalLink,
-  Clock, Lock, X, Loader2, Eye,
+  Clock, Lock, X, Loader2, Eye, Award, Download, Sparkles, Mic,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { apiFetch } from "@/lib/api/authFetch";
 import { DOMAINS } from "@/data/domains";
+import { Confetti } from "@/components/kodetalent/Confetti";
+import { useStudentProfile } from "@/hooks/useStudentProfile";
+import { generateCertificatePdf } from "@/lib/certificate-pdf";
+import type { CertificateData } from "@/lib/certificate-pdf";
 import {
   useEnrollCourse, useUpdateCourseProgress, useSubmitModuleQuiz,
+  useGenerateFinalExam, useSubmitFinalExam, useLinkCertificateInterview,
+  useConfirmSkill, useIssueCertificate, useCreateInterviewSession,
+  getInterviewSession, getCourseEnrollment,
 } from "@workspace/api-client-react";
 import type {
   CourseEnrollment, EnrollCourseBodyCourseData, QuizResult,
+  FinalExam, ExamResult, CertificateInterviewResult, CourseCertificate,
 } from "@workspace/api-client-react";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -188,16 +197,41 @@ export default function Course() {
   const [moduleQuizAnswer, setModuleQuizAnswer] = useState<Record<string, string>>({});    // moduleId -> chosen letter
   const [moduleQuizResult, setModuleQuizResult] = useState<Record<string, QuizResult>>({}); // moduleId -> server result
   const [moduleQuizSubmitting, setModuleQuizSubmitting] = useState<string | null>(null);    // moduleId in flight
-  const [examStarted, setExamStarted] = useState(false);
+
+  // ── Final-exam + certificate state ─────────────────────────────────────────
+  const [exam, setExam] = useState<FinalExam | null>(null);                                 // generated exam
+  const [examAnswers, setExamAnswers] = useState<Record<string, string>>({});               // questionId -> chosen letter
+  const [examResult, setExamResult] = useState<ExamResult | null>(null);                     // last submit result
+  const [examPassedFlag, setExamPassedFlag] = useState(false);                               // sticky pass (survives reload)
+  const [certInterviewResult, setCertInterviewResult] = useState<CertificateInterviewResult | null>(null);
+  const [interviewPassedFlag, setInterviewPassedFlag] = useState(false);                     // sticky interview gate
+  const [linkingInterview, setLinkingInterview] = useState(false);                           // mount-effect link in flight
+  const [certificate, setCertificate] = useState<CourseCertificate | null>(null);            // issued certificate
+  const [confirmedSkills, setConfirmedSkills] = useState<Set<string>>(new Set());
+  const [confirmingSkill, setConfirmingSkill] = useState<string | null>(null);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [certError, setCertError] = useState<string | null>(null);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
+
+  const { isLoaded, isSignedIn } = useUser();
+  const studentProfile = useStudentProfile(localStorage.getItem("studentId"));
 
   const enrollCourse = useEnrollCourse();
   const updateCourseProgress = useUpdateCourseProgress();
   const submitModuleQuiz = useSubmitModuleQuiz();
+  const generateFinalExam = useGenerateFinalExam();
+  const submitFinalExam = useSubmitFinalExam();
+  const linkCertificateInterview = useLinkCertificateInterview();
+  const confirmSkill = useConfirmSkill();
+  const issueCertificate = useIssueCertificate();
+  const createInterview = useCreateInterviewSession();
 
   const hasFetched = useRef(false);
   const hasEnrolled = useRef(false);
   const progressDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const skipNextProgressSync = useRef(false);
+  const certLinkRan = useRef(false);
+  const confettiShown = useRef(false);
 
   const LOAD_MSGS = [
     "Mapping your learning path...",
@@ -441,6 +475,78 @@ export default function Course() {
     setModuleQuizAnswer(a => { const n = { ...a }; delete n[moduleId]; return n; });
   }, []);
 
+  // ── Rehydrate sticky certificate gates + issued cert once the enrollment loads ─
+  // The enrollment payload doesn't carry the exam/interview gate flags, so the
+  // pass state is persisted locally (keyed by enrollment id) to survive reloads.
+  useEffect(() => {
+    if (!enrollment) return;
+    const eid = enrollment.id;
+    if (localStorage.getItem(`cert_exam_passed_${eid}`) === "1") setExamPassedFlag(true);
+    if (localStorage.getItem(`cert_interview_passed_${eid}`) === "1") setInterviewPassedFlag(true);
+    const rawCert = localStorage.getItem(`cert_issued_${eid}`);
+    if (rawCert) { try { setCertificate(JSON.parse(rawCert) as CourseCertificate); } catch {/* corrupt — ignore */} }
+  }, [enrollment?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── On return from a certificate interview: link the completed, scored session ─
+  useEffect(() => {
+    if (!enrollment || certLinkRan.current) return;
+    const forEnrollment = sessionStorage.getItem("certInterviewFor");
+    if (!forEnrollment || forEnrollment !== String(enrollment.id)) return;
+    const sid = Number(localStorage.getItem("studentId"));
+    if (!sid || Number.isNaN(sid)) return;
+    const interviewSessionId = Number(sessionStorage.getItem("certInterviewSession"));
+    if (!interviewSessionId || Number.isNaN(interviewSessionId)) {
+      sessionStorage.removeItem("certInterviewFor"); // stale marker, nothing to link
+      return;
+    }
+    certLinkRan.current = true;
+    setLinkingInterview(true);
+    (async () => {
+      try {
+        const session = await getInterviewSession(interviewSessionId);
+        if (!session.completed || session.overallScore == null) {
+          // Not finished/scored yet — allow a later pass to retry.
+          certLinkRan.current = false;
+          return;
+        }
+        const res = await linkCertificateInterview.mutateAsync({
+          id: sid, enrollmentId: enrollment.id, interviewSessionId,
+        });
+        setCertInterviewResult(res);
+        if (res.passed) {
+          setInterviewPassedFlag(true);
+          localStorage.setItem(`cert_interview_passed_${enrollment.id}`, "1");
+        }
+        sessionStorage.removeItem("certInterviewFor");
+        sessionStorage.removeItem("certInterviewSession");
+        setActiveTab("quiz");
+        // Refetch enrollment so passedModuleIds / status reflect the server.
+        try {
+          const fresh = await getCourseEnrollment(sid, enrollment.id);
+          skipNextProgressSync.current = true;
+          setEnrollment(fresh);
+          setPassedModules(new Set(fresh.passedModuleIds));
+        } catch {/* keep current enrollment */}
+      } catch {
+        certLinkRan.current = false; // transient failure — retry on next mount
+      } finally {
+        setLinkingInterview(false);
+      }
+    })();
+  }, [enrollment]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Fire confetti once both certificate gates are satisfied ──────────────────
+  useEffect(() => {
+    if (!courseData || confettiShown.current || reduced) return;
+    const allPassed = courseData.modules.length > 0 && courseData.modules.every(m => passedModules.has(m.id));
+    const done = allPassed && (examPassedFlag || !!examResult?.passed) && (interviewPassedFlag || !!certInterviewResult?.passed);
+    if (!done) return;
+    confettiShown.current = true;
+    setShowConfetti(true);
+    const t = setTimeout(() => setShowConfetti(false), 2500);
+    return () => clearTimeout(t);
+  }, [courseData, passedModules, examPassedFlag, examResult, interviewPassedFlag, certInterviewResult, reduced]);
+
   if (!ctx) return null;
 
   const isLoading = !dataReady || !animReady;
@@ -561,6 +667,139 @@ export default function Course() {
   const currentCard = queue[queueIndex];
   const cardsLeft = queue.length - queueIndex;
   const accuracy = sessionStats.reviewed > 0 ? Math.round((sessionStats.correct / sessionStats.reviewed) * 100) : 0;
+
+  // ── Certificate gate derivations ─────────────────────────────────────────────
+  const totalModules = courseData.modules.length;
+  const passedModuleCount = courseData.modules.filter(m => passedModules.has(m.id)).length;
+  const allModulesPassed = totalModules > 0 && passedModuleCount === totalModules;
+  const examPassed = examPassedFlag || !!examResult?.passed;
+  const interviewPassed = interviewPassedFlag || !!certInterviewResult?.passed;
+  const bothGatesPassed = allModulesPassed && examPassed && interviewPassed;
+  const examPct = examResult && examResult.total > 0 ? Math.round((examResult.score / examResult.total) * 100) : 0;
+  const isGuest = isLoaded && !isSignedIn;
+
+  // ── Certificate flow handlers ────────────────────────────────────────────────
+  const handleGenerateExam = async () => {
+    if (!enrollment) return;
+    const sid = Number(localStorage.getItem("studentId"));
+    if (!sid || Number.isNaN(sid)) return;
+    setCertError(null);
+    setExamResult(null);
+    setExamAnswers({});
+    try {
+      const generated = await generateFinalExam.mutateAsync({ id: sid, enrollmentId: enrollment.id });
+      setExam(generated);
+    } catch {
+      setCertError("Couldn't generate the exam. Please try again.");
+    }
+  };
+
+  const handleSubmitExam = async () => {
+    if (!enrollment || !exam) return;
+    const sid = Number(localStorage.getItem("studentId"));
+    if (!sid || Number.isNaN(sid)) return;
+    setCertError(null);
+    const answers = exam.questions.map(q => examAnswers[q.id] ?? "");
+    try {
+      const res = await submitFinalExam.mutateAsync({ id: sid, enrollmentId: enrollment.id, data: { answers } });
+      setExamResult(res);
+      if (res.passed) {
+        setExamPassedFlag(true);
+        localStorage.setItem(`cert_exam_passed_${enrollment.id}`, "1");
+      }
+    } catch {
+      setCertError("Couldn't submit the exam. Please try again.");
+    }
+  };
+
+  const handleRetakeExam = () => {
+    setExam(null);
+    setExamResult(null);
+    setExamAnswers({});
+    setCertError(null);
+  };
+
+  const handleStartCertInterview = async () => {
+    if (!enrollment) return;
+    const sid = Number(localStorage.getItem("studentId"));
+    if (!sid || Number.isNaN(sid)) return;
+    setCertError(null);
+    try {
+      const session = await createInterview.mutateAsync({
+        data: { studentId: sid, company: `${ctx.subDomainName} Certificate Interview`, round: "Mixed|Standard" },
+      });
+      sessionStorage.setItem("certInterviewFor", String(enrollment.id));
+      sessionStorage.setItem("certInterviewSession", String(session.id));
+      certLinkRan.current = false;
+      setLocation(`/practice/interview/${session.id}`);
+    } catch {
+      setCertError("Couldn't start the interview. Please try again.");
+    }
+  };
+
+  const handleConfirmSkill = async (skill: string) => {
+    if (confirmedSkills.has(skill)) return;
+    const sid = Number(localStorage.getItem("studentId"));
+    if (!sid || Number.isNaN(sid)) return;
+    setConfirmingSkill(skill);
+    try {
+      // Skills are a 0-100 scale in the UI (rendered as "N%"); a freshly
+      // certified skill reads as proficient, aligned with the 70% exam bar.
+      await confirmSkill.mutateAsync({ id: sid, data: { skillName: skill, proficiency: 70 } });
+      setConfirmedSkills(prev => { const n = new Set(prev); n.add(skill); return n; });
+    } catch {
+      /* leave the chip un-confirmed so it can be retried */
+    } finally {
+      setConfirmingSkill(null);
+    }
+  };
+
+  const handleIssueCertificate = async () => {
+    if (!enrollment) return;
+    // Guests can't be issued a certificate (server returns 401/403) — send them to sign up first.
+    if (isGuest) { setLocation("/sign-up"); return; }
+    const sid = Number(localStorage.getItem("studentId"));
+    if (!sid || Number.isNaN(sid)) return;
+    setCertError(null);
+    try {
+      const cert = await issueCertificate.mutateAsync({ id: sid, enrollmentId: enrollment.id });
+      setCertificate(cert);
+      localStorage.setItem(`cert_issued_${enrollment.id}`, JSON.stringify(cert));
+    } catch {
+      setCertError("Couldn't issue the certificate. Make sure you're signed in and try again.");
+    }
+  };
+
+  const handleDownloadCertificate = async () => {
+    if (!certificate) return;
+    setDownloadingPdf(true);
+    setCertError(null);
+    try {
+      const data: CertificateData = {
+        studentName: studentProfile.data?.name || "Student",
+        certificateCode: certificate.certificateCode,
+        subDomainName: certificate.subDomainName,
+        domainName: certificate.domainName,
+        skillsCovered: certificate.skillsCovered,
+        finalExamScore: certificate.finalExamScore,
+        issuedAt: certificate.issuedAt,
+        verifyUrl: `${window.location.origin}/certs/${certificate.verifySlug}`,
+      };
+      const blob = await generateCertificatePdf(data);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${certificate.certificateCode}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      setCertError("Couldn't generate the PDF. Please try again.");
+    } finally {
+      setDownloadingPdf(false);
+    }
+  };
 
   const TABS = [
     { id: "roadmap" as Tab, label: "Course", icon: BookOpen },
@@ -1191,46 +1430,260 @@ export default function Course() {
           ══════════════════════════════════════════════════════ */}
           {activeTab === "quiz" && (
             <motion.div key="quiz" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="lg:max-w-2xl lg:mx-auto">
-              {(() => {
-                const totalModules = courseData.modules.length;
-                const passedCount = courseData.modules.filter(m => passedModules.has(m.id)).length;
-                const allPassed = totalModules > 0 && passedCount === totalModules;
-                return (
+
+              {/* ── LOCKED: finish the module quizzes first ── */}
+              {!allModulesPassed && (
+                <div className="rounded-2xl bg-paper shadow-soft p-6 text-center">
+                  <div className="w-16 h-16 rounded-3xl flex items-center justify-center mx-auto mb-4 border border-line">
+                    <Lock className="w-7 h-7 text-ink-muted" />
+                  </div>
+                  <h2 className="text-display text-xl font-extrabold text-ink mb-1">Final exam</h2>
+                  <p className="text-sm text-ink-muted mb-4">
+                    Pass all {totalModules} module quizzes to unlock the final exam.
+                  </p>
+                  <div className="h-1.5 bg-line rounded-full overflow-hidden mb-2">
+                    <div className="h-full rounded-full bg-brand transition-all duration-500"
+                      style={{ width: `${totalModules > 0 ? (passedModuleCount / totalModules) * 100 : 0}%` }} />
+                  </div>
+                  <p className="text-[12px] font-bold text-ink-muted mb-5">{passedModuleCount} / {totalModules} modules passed</p>
+                  <Button disabled className="w-full h-11 rounded-xl font-bold bg-brand text-paper opacity-50 cursor-not-allowed">
+                    <Lock className="w-4 h-4 mr-1.5" /> Locked
+                  </Button>
+                </div>
+              )}
+
+              {/* ── COMPLETION: both gates satisfied ── */}
+              {allModulesPassed && bothGatesPassed && (
+                <>
+                  {showConfetti && !reduced && <Confetti />}
+                  {!certificate ? (
+                    <div className="rounded-2xl bg-paper shadow-soft p-6">
+                      <div className="text-center mb-5">
+                        <div className="w-16 h-16 rounded-3xl flex items-center justify-center mx-auto mb-4 bg-brand-soft">
+                          <Award className="w-8 h-8 text-brand" />
+                        </div>
+                        <h2 className="text-display text-xl font-extrabold text-ink mb-1">You did it! 🎉</h2>
+                        <p className="text-sm text-ink-muted">
+                          You've passed every module, the final exam, and your certificate interview.
+                        </p>
+                      </div>
+
+                      {/* Skill confirm chips */}
+                      {ctx.skills.length > 0 && (
+                        <div className="mb-5">
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-ink-muted mb-2">Confirm your skills</p>
+                          <div className="flex flex-wrap gap-2">
+                            {ctx.skills.map(skill => {
+                              const added = confirmedSkills.has(skill);
+                              const busy = confirmingSkill === skill;
+                              return (
+                                <button
+                                  key={skill}
+                                  onClick={() => handleConfirmSkill(skill)}
+                                  disabled={added || busy}
+                                  className={cn(
+                                    "flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[12px] font-bold transition-colors disabled:cursor-default",
+                                    added ? "bg-brand border-brand text-paper" : "bg-paper border-line text-ink hover:bg-brand-soft",
+                                  )}
+                                >
+                                  {busy
+                                    ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                    : added
+                                      ? <CheckCircle2 className="w-3.5 h-3.5" />
+                                      : <Sparkles className="w-3.5 h-3.5" />}
+                                  {skill}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {isGuest && (
+                        <p className="text-[12px] font-bold text-ink-muted text-center mb-3">
+                          Sign in to claim and keep your certificate.
+                        </p>
+                      )}
+
+                      <Button
+                        onClick={handleIssueCertificate}
+                        disabled={issueCertificate.isPending}
+                        className="w-full h-11 rounded-xl font-bold bg-brand hover:bg-brand/90 text-paper disabled:opacity-60"
+                      >
+                        {issueCertificate.isPending
+                          ? <><Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> Issuing…</>
+                          : <><Award className="w-4 h-4 mr-1.5" /> Issue certificate</>}
+                      </Button>
+                      {certError && <p className="text-[12px] font-bold text-danger text-center mt-3">{certError}</p>}
+                    </div>
+                  ) : (
+                    /* ── Issued certificate card ── */
+                    <div className="rounded-2xl bg-paper shadow-soft p-6 text-center">
+                      <div className="w-16 h-16 rounded-3xl flex items-center justify-center mx-auto mb-4 bg-brand-soft">
+                        <Award className="w-8 h-8 text-brand" />
+                      </div>
+                      <h2 className="text-display text-xl font-extrabold text-ink mb-1">Certificate earned</h2>
+                      <p className="text-sm font-bold text-ink">{certificate.subDomainName}</p>
+                      <p className="text-[12px] text-ink-muted mb-1">{certificate.domainName}</p>
+                      <p className="text-[11px] font-bold text-ink-muted mb-5">
+                        {certificate.certificateCode} · Final exam {certificate.finalExamScore}%
+                      </p>
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={handleDownloadCertificate}
+                          disabled={downloadingPdf}
+                          className="flex-1 h-11 rounded-xl font-bold bg-brand hover:bg-brand/90 text-paper text-[13px] disabled:opacity-60"
+                        >
+                          {downloadingPdf
+                            ? <><Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> Preparing…</>
+                            : <><Download className="w-4 h-4 mr-1.5" /> Download PDF</>}
+                        </Button>
+                        <a
+                          href={`/certs/${certificate.verifySlug}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-1 h-11 rounded-xl font-bold text-[13px] border border-line text-brand bg-paper hover:bg-brand-soft flex items-center justify-center gap-1.5"
+                        >
+                          <ExternalLink className="w-4 h-4" /> View public link
+                        </a>
+                      </div>
+                      {certError && <p className="text-[12px] font-bold text-danger mt-3">{certError}</p>}
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* ── EXAM STEP: modules passed, final exam not yet passed ── */}
+              {allModulesPassed && !bothGatesPassed && !examPassed && (
+                examResult && !examResult.passed ? (
+                  /* Fail screen — unlimited retakes */
                   <div className="rounded-2xl bg-paper shadow-soft p-6 text-center">
                     <div className="w-16 h-16 rounded-3xl flex items-center justify-center mx-auto mb-4 border border-line">
-                      {allPassed ? <Trophy className="w-8 h-8 text-ink" /> : <Lock className="w-7 h-7 text-ink-muted" />}
+                      <XCircle className="w-8 h-8 text-danger" />
+                    </div>
+                    <h2 className="text-display text-xl font-extrabold text-ink mb-1">Not quite — {examPct}%</h2>
+                    <p className="text-sm text-ink-muted mb-1">
+                      You scored {examResult.score} / {examResult.total}. You need 70% to earn your certificate.
+                    </p>
+                    <p className="text-[12px] text-ink-muted mb-5">Unlimited retakes — a fresh exam is generated each time.</p>
+                    <Button
+                      onClick={handleRetakeExam}
+                      disabled={generateFinalExam.isPending}
+                      className="w-full h-11 rounded-xl font-bold bg-brand hover:bg-brand/90 text-paper"
+                    >
+                      <RotateCcw className="w-4 h-4 mr-1.5" /> Retake exam
+                    </Button>
+                  </div>
+                ) : exam ? (
+                  /* Questions on one page */
+                  <div className="rounded-2xl bg-paper shadow-soft p-5">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <Trophy className="w-3.5 h-3.5 text-ink-muted" />
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-ink-muted">Final exam</p>
+                      <span className="ml-auto text-[10px] font-bold text-ink-muted">
+                        {exam.questions.filter(q => examAnswers[q.id]).length} / {exam.questions.length} answered
+                      </span>
+                    </div>
+                    <p className="text-[12px] text-ink-muted mb-2">Score 70% or higher to earn your certificate.</p>
+                    {exam.questions.map((q, qi) => (
+                      <div key={q.id} className="border-t border-line py-4">
+                        <p className="text-[13px] font-extrabold text-ink leading-snug mb-3">{qi + 1}. {q.question}</p>
+                        <div className="space-y-2">
+                          {q.options.map(opt => {
+                            const letter = opt.charAt(0);
+                            const chosen = examAnswers[q.id] === letter;
+                            return (
+                              <button
+                                key={opt}
+                                disabled={submitFinalExam.isPending}
+                                onClick={() => setExamAnswers(a => ({ ...a, [q.id]: letter }))}
+                                className={cn(
+                                  "w-full flex items-center gap-2 text-left p-3 rounded-xl border font-bold text-[13px] text-ink transition-colors disabled:cursor-default",
+                                  chosen ? "bg-brand-soft border-brand" : "bg-paper border-line",
+                                )}
+                              >
+                                <span className="flex-1">{opt}</span>
+                                {chosen && <CheckCircle2 className="w-4 h-4 text-brand flex-shrink-0" />}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                    <Button
+                      onClick={handleSubmitExam}
+                      disabled={submitFinalExam.isPending || !exam.questions.every(q => examAnswers[q.id])}
+                      className="w-full h-11 rounded-xl font-bold bg-brand hover:bg-brand/90 text-paper mt-4 disabled:opacity-60"
+                    >
+                      {submitFinalExam.isPending
+                        ? <><Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> Submitting…</>
+                        : "Submit exam"}
+                    </Button>
+                    {!exam.questions.every(q => examAnswers[q.id]) && (
+                      <p className="text-[11px] font-bold text-ink-muted text-center mt-2">Answer all {exam.questions.length} questions to submit.</p>
+                    )}
+                    {certError && <p className="text-[12px] font-bold text-danger text-center mt-3">{certError}</p>}
+                  </div>
+                ) : (
+                  /* Generate state */
+                  <div className="rounded-2xl bg-paper shadow-soft p-6 text-center">
+                    <div className="w-16 h-16 rounded-3xl flex items-center justify-center mx-auto mb-4 border border-line">
+                      <Trophy className="w-8 h-8 text-ink" />
                     </div>
                     <h2 className="text-display text-xl font-extrabold text-ink mb-1">Final exam</h2>
-                    {allPassed ? (
-                      <>
-                        <p className="text-sm text-ink-muted mb-5">
-                          You passed all {totalModules} module quizzes. You're ready for the final exam.
-                        </p>
-                        <Button onClick={() => setExamStarted(true)} className="w-full h-11 rounded-xl font-bold bg-brand hover:bg-brand/90 text-paper">
-                          Start final exam <ChevronRight className="w-4 h-4 ml-1" />
-                        </Button>
-                        {examStarted && (
-                          <p className="text-[12px] font-bold text-ink-muted mt-3">Coming in the exam step.</p>
-                        )}
-                      </>
-                    ) : (
-                      <>
-                        <p className="text-sm text-ink-muted mb-4">
-                          Pass all {totalModules} module quizzes to unlock the final exam.
-                        </p>
-                        <div className="h-1.5 bg-line rounded-full overflow-hidden mb-2">
-                          <div className="h-full rounded-full bg-brand transition-all duration-500"
-                            style={{ width: `${totalModules > 0 ? (passedCount / totalModules) * 100 : 0}%` }} />
-                        </div>
-                        <p className="text-[12px] font-bold text-ink-muted mb-5">{passedCount} / {totalModules} modules passed</p>
-                        <Button disabled className="w-full h-11 rounded-xl font-bold bg-brand text-paper opacity-50 cursor-not-allowed">
-                          <Lock className="w-4 h-4 mr-1.5" /> Locked
-                        </Button>
-                      </>
-                    )}
+                    <p className="text-sm text-ink-muted mb-5">
+                      You passed all {totalModules} module quizzes. Score 70% or higher to earn your certificate. Unlimited retakes.
+                    </p>
+                    <Button
+                      onClick={handleGenerateExam}
+                      disabled={generateFinalExam.isPending}
+                      className="w-full h-11 rounded-xl font-bold bg-brand hover:bg-brand/90 text-paper disabled:opacity-60"
+                    >
+                      {generateFinalExam.isPending
+                        ? <><Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> Generating…</>
+                        : <>Generate exam <ChevronRight className="w-4 h-4 ml-1" /></>}
+                    </Button>
+                    {certError && <p className="text-[12px] font-bold text-danger mt-3">{certError}</p>}
                   </div>
-                );
-              })()}
+                )
+              )}
+
+              {/* ── INTERVIEW STEP: exam passed, certificate interview not yet linked ── */}
+              {allModulesPassed && !bothGatesPassed && examPassed && (
+                <div className="rounded-2xl bg-paper shadow-soft p-6 text-center">
+                  <div className="flex items-center justify-center gap-1.5 mb-4">
+                    <CheckCircle2 className="w-4 h-4 text-done" />
+                    <p className="text-[12px] font-extrabold text-done">Final exam passed</p>
+                  </div>
+                  <div className="w-16 h-16 rounded-3xl flex items-center justify-center mx-auto mb-4 border border-line">
+                    <Mic className="w-7 h-7 text-ink" />
+                  </div>
+                  <h2 className="text-display text-xl font-extrabold text-ink mb-1">Certificate interview</h2>
+                  <p className="text-sm text-ink-muted mb-5">
+                    One last step: pass an AI mock interview with a score of 60 or higher to earn your certificate.
+                  </p>
+                  {linkingInterview && (
+                    <div className="flex items-center justify-center gap-2 text-[12px] font-bold text-ink-muted mb-4">
+                      <Loader2 className="w-4 h-4 animate-spin" /> Checking your interview…
+                    </div>
+                  )}
+                  {certInterviewResult && !certInterviewResult.passed && (
+                    <p className="text-[12px] font-bold text-danger mb-4">
+                      Your interview scored {certInterviewResult.overallScore}. You need 60 or higher — give it another try.
+                    </p>
+                  )}
+                  <Button
+                    onClick={handleStartCertInterview}
+                    disabled={createInterview.isPending || linkingInterview}
+                    className="w-full h-11 rounded-xl font-bold bg-brand hover:bg-brand/90 text-paper disabled:opacity-60"
+                  >
+                    {createInterview.isPending
+                      ? <><Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> Starting…</>
+                      : <><Mic className="w-4 h-4 mr-1.5" /> {certInterviewResult && !certInterviewResult.passed ? "Retry interview" : "Start certificate interview"}</>}
+                  </Button>
+                  {certError && <p className="text-[12px] font-bold text-danger mt-3">{certError}</p>}
+                </div>
+              )}
             </motion.div>
           )}
 

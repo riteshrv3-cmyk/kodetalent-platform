@@ -1,4 +1,6 @@
 import type { studentsTable } from "@workspace/db";
+import { db, courseCertificatesTable } from "@workspace/db";
+import { and, eq, desc } from "drizzle-orm";
 import type {
   Bullet,
   CertificationEntry,
@@ -166,9 +168,36 @@ function buildEducationEntries(student: Student): EducationEntry[] {
   }];
 }
 
-function buildCertificationEntries(student: Student): CertificationEntry[] {
+function buildCertificationEntries(student: Student, courseCerts: CertificationEntry[] = []): CertificationEntry[] {
   const rows = (Array.isArray(student.certifications) ? student.certifications : []) as CertRow[];
-  return rows.map((c) => ({ name: c.name, issuer: c.issuer, date: c.date ?? null, link: c.credentialUrl ?? null }));
+  const manual = rows.map((c) => ({ name: c.name, issuer: c.issuer, date: c.date ?? null, link: c.credentialUrl ?? null }));
+  // Verified course certificates the student opted into (includeOnResume) are
+  // appended after their manually-entered certifications.
+  return [...manual, ...courseCerts];
+}
+
+/**
+ * Course certificates the student chose to show on their resume
+ * (includeOnResume = true), newest first. Empty when none opted in. The link is
+ * the relative public verify path — the app has no server-side origin to build
+ * an absolute URL from, matching how the /certs/:slug route is addressed.
+ */
+async function fetchResumeCourseCertificates(studentId: number): Promise<CertificationEntry[]> {
+  const rows = await db
+    .select({
+      subDomainName: courseCertificatesTable.subDomainName,
+      verifySlug: courseCertificatesTable.verifySlug,
+      issuedAt: courseCertificatesTable.issuedAt,
+    })
+    .from(courseCertificatesTable)
+    .where(and(eq(courseCertificatesTable.studentId, studentId), eq(courseCertificatesTable.includeOnResume, true)))
+    .orderBy(desc(courseCertificatesTable.issuedAt));
+  return rows.map((c) => ({
+    name: `${c.subDomainName} — Verified Certificate`,
+    issuer: "KodeTalent",
+    date: c.issuedAt.toISOString().slice(0, 7), // YYYY-MM
+    link: `/certs/${c.verifySlug}`,
+  }));
 }
 
 function fallbackDraft(student: Student, ledger: EvidenceLedger, experienceRows: ExperienceRow[], projectRows: ProjectRow[]): {
@@ -213,6 +242,10 @@ export async function draftResume(opts: {
   const { student, ledger, jd, map, budget } = opts;
   const validIds = new Set(ledger.rows.map((r) => r.id));
 
+  // Opted-in verified course certificates, fetched once and appended in both
+  // the AI-draft and fallback paths below.
+  const courseCerts = await fetchResumeCourseCertificates(student.id);
+
   const experienceRows = (Array.isArray(student.experience) ? student.experience : []) as ExperienceRow[];
   const projectRows = (Array.isArray(student.projects) ? student.projects : []) as ProjectRow[];
   const exLedgerIds = ledger.rows.filter((r) => r.kind === "EX").map((r) => r.id);
@@ -251,7 +284,7 @@ export async function draftResume(opts: {
         experience: fb.experience,
         projects: fb.projects,
         education: buildEducationEntries(student),
-        certifications: buildCertificationEntries(student),
+        certifications: buildCertificationEntries(student, courseCerts),
         achievements: fb.achievements,
         atsMeta: null,
       },

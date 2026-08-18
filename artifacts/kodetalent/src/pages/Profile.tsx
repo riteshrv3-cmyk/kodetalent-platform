@@ -6,8 +6,13 @@ import {
   Briefcase, Award, MapPin, DollarSign, FileText,
   Loader2, ExternalLink, Star,
   Code2, Building2, TrendingUp, Zap, ChevronRight, Sparkles,
-  Camera, User, BookOpen, Save, Share,
+  Camera, User, BookOpen, Save, Share, ShieldCheck,
 } from "lucide-react";
+import {
+  useListCertificates,
+  useSetCertificateResumeFlag,
+} from "@workspace/api-client-react";
+import type { CourseCertificate } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -323,6 +328,92 @@ function MyResumesCard({ studentId, onNavigate }: { studentId: number; onNavigat
                 View all & download →
               </motion.button>
             )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Verified course certificates the platform issued. Distinct from the manual
+ * "Certifications" card above: these are earned in-app (70% final exam + an
+ * AI-evaluated mock interview) and each carries a public verify page.
+ */
+function CertificatesCard({ studentId }: { studentId: number }) {
+  const { data: certs, isLoading } = useListCertificates(studentId);
+  const setFlag = useSetCertificateResumeFlag();
+  // Optimistic overrides keyed by certificate id — the toggle reflects instantly
+  // and only reverts if the PATCH fails.
+  const [pending, setPending] = useState<Record<number, boolean>>({});
+
+  const toggle = (cert: CourseCertificate) => {
+    const next = !(pending[cert.id] ?? cert.includeOnResume);
+    setPending(p => ({ ...p, [cert.id]: next }));
+    // The resume-flag endpoint is keyed by enrollmentId. The list returns full
+    // rows so enrollmentId is present at runtime even though the generated
+    // CourseCertificate type omits it.
+    const enrollmentId = (cert as CourseCertificate & { enrollmentId: number }).enrollmentId;
+    setFlag.mutate(
+      { id: studentId, enrollmentId, data: { includeOnResume: next } },
+      { onError: () => setPending(p => ({ ...p, [cert.id]: !next })) },
+    );
+  };
+
+  if (isLoading) {
+    return (
+      <div className="bg-paper rounded-2xl shadow-soft p-5">
+        <Skeleton className="h-4 w-40 rounded mb-4" />
+        <Skeleton className="h-14 w-full rounded-xl" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-paper rounded-2xl shadow-soft">
+      <div className="p-5">
+        <h3 className="text-[14px] font-bold text-ink mb-4 flex items-center gap-2">
+          <ShieldCheck className="w-4 h-4 text-ink" /> Certificates
+        </h3>
+
+        {!certs || certs.length === 0 ? (
+          <p className="text-[12px] text-ink-muted">Complete a course to earn a verified certificate.</p>
+        ) : (
+          <div>
+            {certs.map(cert => {
+              const checked = pending[cert.id] ?? cert.includeOnResume;
+              const issued = new Date(cert.issuedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+              return (
+                <div key={cert.id} className="py-4 border-t border-line first:border-t-0">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <a
+                        href={`/certs/${cert.verifySlug}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[14px] font-semibold text-ink hover:text-brand inline-flex items-center gap-1"
+                      >
+                        {cert.subDomainName} <ExternalLink className="w-3 h-3 shrink-0" />
+                      </a>
+                      <p className="text-[12px] text-ink-muted mt-0.5">{cert.domainName} · {issued}</p>
+                      <p className="text-[11px] text-ink-muted mt-0.5 font-mono">{cert.certificateCode}</p>
+                    </div>
+                    <div className="w-8 h-8 rounded-full bg-brand-soft flex items-center justify-center shrink-0">
+                      <Award className="w-4 h-4 text-brand" />
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => toggle(cert)}
+                    className="mt-2.5 flex items-center gap-2 text-[12px] font-semibold text-ink"
+                  >
+                    <span className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${checked ? "bg-brand border-brand" : "border-line bg-paper"}`}>
+                      {checked && <Check className="w-3 h-3 text-white" />}
+                    </span>
+                    Show on resume
+                  </button>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
@@ -1483,6 +1574,9 @@ export default function Profile() {
             </div>
           </div>
         </div>
+
+        {/* ── Verified Certificates ── */}
+        <CertificatesCard studentId={studentId!} />
 
         {/* ── Job Preferences ── */}
         <div className="bg-paper rounded-2xl shadow-soft">

@@ -46,6 +46,7 @@ const RecruiterPortalShortcut = lazy(
 );
 const Onboarding = lazy(() => import("@/pages/Onboarding"));
 const PublicResume = lazy(() => import("@/pages/PublicResume"));
+const PublicCertificate = lazy(() => import("@/pages/PublicCertificate"));
 
 const clerkPubKey = publishableKeyFromHost(
   window.location.hostname,
@@ -232,6 +233,13 @@ function Router() {
         {(p) => (
           <Suspense fallback={<PageSkeleton />}>
             <PublicResume slug={p.slug} />
+          </Suspense>
+        )}
+      </Route>
+      <Route path="/certs/:slug">
+        {(p) => (
+          <Suspense fallback={<PageSkeleton />}>
+            <PublicCertificate slug={p.slug} />
           </Suspense>
         )}
       </Route>
