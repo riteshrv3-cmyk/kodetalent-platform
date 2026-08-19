@@ -1,9 +1,10 @@
-import { useEffect, useRef, lazy, Suspense } from "react";
+import { useEffect, useRef, useState, lazy, Suspense } from "react";
 import {
   ClerkProvider,
   SignIn,
   SignUp,
   useClerk,
+  useUser,
 } from "@clerk/react";
 import { publishableKeyFromHost } from "@clerk/react/internal";
 import { shadcn } from "@clerk/themes";
@@ -23,6 +24,7 @@ import NotFound from "@/pages/not-found";
 import Join from "@/pages/Join";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { AuthBridge } from "@/components/AuthBridge";
+const Landing = lazy(() => import("@/pages/Landing"));
 const ExploreHome = lazy(() => import("@/pages/ExploreHome"));
 const Home = lazy(() => import("@/pages/Home"));
 const AIChat = lazy(() => import("@/pages/AIChat"));
@@ -141,6 +143,46 @@ function PageSkeleton() {
   );
 }
 
+// "/" decides between the first-visit landing and the app's explore home.
+// The landing shows ONCE per device: any prior entry (Explore CTA, a created
+// student row, or a Clerk session) sends "/" straight into the app. Installed
+// PWA users always have a studentId, so start_url "/" never re-shows it.
+function HomeGate() {
+  const { isSignedIn, isLoaded } = useUser();
+  const [entered, setEntered] = useState(
+    () =>
+      Boolean(localStorage.getItem("kt:entered")) ||
+      Boolean(localStorage.getItem("studentId")),
+  );
+
+  const appHome = (
+    <AppLayout>
+      <Suspense fallback={<PageSkeleton />}>
+        <ExploreHome />
+      </Suspense>
+    </AppLayout>
+  );
+
+  if (entered) return appHome;
+  if (!isLoaded) {
+    return (
+      <div className="min-h-[100dvh] flex items-center justify-center bg-paper">
+        <div className="animate-spin w-8 h-8 border-4 border-brand border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+  if (isSignedIn) return appHome;
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-[100dvh] bg-paper" />
+      }
+    >
+      <Landing onEnter={() => setEntered(true)} />
+    </Suspense>
+  );
+}
+
 function SignInPage() {
   return (
     <div className="flex min-h-[100dvh] items-center justify-center bg-canvas px-4">
@@ -170,6 +212,7 @@ function SignUpPage() {
 function Router() {
   return (
     <Switch>
+      <Route path="/" component={HomeGate} />
       <Route path="/join/:code">{(p) => <Join code={p.code} />}</Route>
       <Route path="/sign-in/*?" component={SignInPage} />
       <Route path="/sign-up/*?" component={SignUpPage} />
@@ -191,7 +234,6 @@ function Router() {
         <AppLayout>
           <Suspense fallback={<PageSkeleton />}>
             <Switch>
-              <Route path="/" component={ExploreHome} />
               <Route path="/home" component={Home} />
               <Route path="/notebook" component={Notebook} />
               <Route path="/chat" component={AIChat} />
