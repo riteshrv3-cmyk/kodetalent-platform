@@ -1262,7 +1262,6 @@ export default function Course() {
                                             if (isDemo) {
                                               requireStudent(() => {}, {
                                                 title: "Starting this course",
-                                                subtitle: "What should we call you?",
                                               });
                                               return;
                                             }

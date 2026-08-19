@@ -120,6 +120,12 @@ export default function PublicCertificate({ slug }: { slug: string }) {
       <p className="mt-6 text-[11px] text-ink-muted text-center">
         Verified by KODETALENT — AI-powered career platform for students
       </p>
+      <a
+        href="/"
+        className="mt-2 type-caption font-semibold text-brand text-center"
+      >
+        Made with KodeTalent — build yours free
+      </a>
     </div>
   );
 }

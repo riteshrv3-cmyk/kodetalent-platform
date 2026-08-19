@@ -14,6 +14,7 @@ import { queryClient } from "@/lib/queryClient";
 import { apiFetch, setGuestToken } from "@/lib/api/authFetch";
 import { notifyStudentChanged } from "@/hooks/useStudentId";
 import { Input } from "@/components/ui/input";
+import { Confetti } from "@/components/kodetalent/Confetti";
 
 // The single conversion gate. Anonymous visitors explore freely; the FIRST real
 // action (generate a resume, enroll, start an interview, apply, edit profile)
@@ -138,6 +139,10 @@ export function NameGateProvider({ children }: { children: ReactNode }) {
 
       localStorage.setItem("studentId", String(student.id));
       localStorage.setItem("studentName", trimmed);
+      // One-shot handoff flag: Resume's capture step personalizes its header
+      // ("Nice to meet you, {first} — one quick thing") so the gate and the
+      // capture sheet read as one continuous flow. Consumed there.
+      sessionStorage.setItem("kt:justCreated", "1");
       if (student.guestToken) setGuestToken(student.guestToken);
 
       // Relocated from the old wizard: claim a pending college invite now that
@@ -161,7 +166,8 @@ export function NameGateProvider({ children }: { children: ReactNode }) {
       await queryClient.invalidateQueries();
       notifyStudentChanged();
 
-      // Brief "Nice to meet you" beat, then run the intended action in place.
+      // Brief "Nice to meet you" beat (confetti + avatar), then run the
+      // intended action in place. Reduced motion: 350ms, text only.
       setPhase("welcome");
       const action = pendingAction.current;
       pendingAction.current = null;
@@ -177,7 +183,7 @@ export function NameGateProvider({ children }: { children: ReactNode }) {
           }
           action?.();
         },
-        reduce ? 350 : 850,
+        reduce ? 350 : 1300,
       );
     } catch {
       setError("Could not start your account. Please try again.");
@@ -225,14 +231,11 @@ export function NameGateProvider({ children }: { children: ReactNode }) {
                   </div>
 
                   <div>
-                    <label
-                      htmlFor="name-gate-input"
-                      className="text-xs font-bold text-ink-muted uppercase tracking-wider mb-2 block"
-                    >
-                      What should we call you?
-                    </label>
+                    {/* No field label — the title/subtitle already carry the
+                        ask; a label here repeated the question twice. */}
                     <Input
                       id="name-gate-input"
+                      aria-label="Your name"
                       ref={inputRef}
                       value={name}
                       onChange={(e) => {
@@ -282,13 +285,20 @@ export function NameGateProvider({ children }: { children: ReactNode }) {
                 </div>
               ) : (
                 <div className="px-6 pt-6 pb-6 text-center space-y-2">
-                  <div className="mx-auto w-12 h-12 rounded-full bg-brand-soft flex items-center justify-center text-brand text-xl font-bold">
+                  {/* z-[80] so the burst lands above this z-[70] sheet. */}
+                  {!reduce && <Confetti zClass="z-[80]" />}
+                  <motion.div
+                    initial={reduce ? false : { scale: 0.6, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ type: "spring", damping: 18, stiffness: 300 }}
+                    className="mx-auto w-12 h-12 rounded-full bg-brand-soft flex items-center justify-center text-brand type-title font-bold"
+                  >
                     {firstName[0]?.toUpperCase()}
-                  </div>
-                  <h2 className="text-display text-2xl font-bold text-ink text-balance">
+                  </motion.div>
+                  <h2 className="text-display type-title font-bold text-ink text-balance">
                     Nice to meet you, {firstName}
                   </h2>
-                  <p className="text-ink-muted text-sm">Setting up your workspace…</p>
+                  <p className="type-caption text-ink-muted">Setting up your workspace…</p>
                 </div>
               )}
             </motion.div>

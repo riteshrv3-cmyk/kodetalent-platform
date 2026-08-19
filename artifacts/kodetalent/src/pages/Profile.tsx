@@ -720,10 +720,7 @@ export default function Profile() {
     return (
       <ProfileDemo
         onStart={() =>
-          requireStudent(() => {}, {
-            title: "Start your profile",
-            subtitle: "What should we call you?",
-          })
+          requireStudent(() => {}, { title: "Start your profile" })
         }
       />
     );

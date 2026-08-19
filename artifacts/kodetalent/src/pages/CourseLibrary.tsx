@@ -6,7 +6,7 @@ import { useListCourses } from "@workspace/api-client-react";
 import { DOMAINS, type Domain, type SubDomain } from "@/data/domains";
 import { useStudentId } from "@/hooks/useStudentId";
 import { useNameGate } from "@/components/NameGate";
-import { DemoBanner, SampleChip } from "@/components/DemoBanner";
+import { DemoSurface } from "@/components/DemoBanner";
 import { DEMO_ENROLLMENT, DEMO_STUDENT_NAME } from "@/data/demoStudent";
 
 // Every course in the library is 5 modules x 3 lessons.
@@ -58,7 +58,7 @@ export default function CourseLibrary() {
         );
         setLocation("/opportunities/course");
       },
-      { title: "Starting this course", subtitle: "What should we call you?" },
+      { title: "Starting this course" },
     );
   };
 
@@ -89,14 +89,15 @@ export default function CourseLibrary() {
       <div className="bg-paper rounded-t-3xl -mt-6 min-h-[60vh]">
         <div className="p-4 pt-6 max-w-md lg:max-w-2xl mx-auto">
           {isDemo && (
-            <div className="mb-4 space-y-2">
-              <DemoBanner />
-              <div className="flex items-center gap-2 rounded-xl border border-line bg-paper px-3.5 py-2.5">
-                <SampleChip />
-                <p className="text-[12px] font-semibold text-ink">
-                  {DEMO_STUDENT_NAME} · {DEMO_ENROLLMENT.subDomainName} {DEMO_ENROLLMENT.progressPct}%
+            <div className="mb-4">
+              <DemoSurface className="mb-2">
+                {/* Honest caption, not a pill — this is a state line, not an
+                    affordance. */}
+                <p className="type-caption text-ink-muted px-1">
+                  Sample — {DEMO_STUDENT_NAME.split(" ")[0]}'s progress:{" "}
+                  {DEMO_ENROLLMENT.subDomainName} · {DEMO_ENROLLMENT.progressPct}%
                 </p>
-              </div>
+              </DemoSurface>
             </div>
           )}
           <AnimatePresence mode="wait">

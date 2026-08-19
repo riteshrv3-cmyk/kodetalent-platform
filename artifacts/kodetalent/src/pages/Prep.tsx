@@ -10,7 +10,8 @@ import { cn } from "@/lib/utils";
 import InterviewLibrary from "@/components/prep/InterviewLibrary";
 import { useStudentId } from "@/hooks/useStudentId";
 import { useNameGate } from "@/components/NameGate";
-import { DemoBanner, SampleChip } from "@/components/DemoBanner";
+import { DemoSurface } from "@/components/DemoBanner";
+import { scoreTextClass } from "@/lib/scoreTone";
 import { DEMO_INTERVIEW_REPORT } from "@/data/demoStudent";
 
 type InterviewType = "Technical" | "Behavioral" | "Mixed";
@@ -35,10 +36,9 @@ function SampleReportCard({ open, onToggle }: { open: boolean; onToggle: () => v
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-[10px] font-bold text-ink-muted uppercase tracking-wider">
+              <span className="type-micro font-bold text-ink-muted uppercase tracking-wider">
                 Sample interview report
               </span>
-              <SampleChip />
             </div>
             <h3 className="text-lg font-bold text-ink mt-1">
               {r.company} · {r.role}
@@ -46,9 +46,9 @@ function SampleReportCard({ open, onToggle }: { open: boolean; onToggle: () => v
             <p className="text-[12px] text-ink-muted">{r.round} · {r.dateLabel}</p>
           </div>
           <div className="text-right shrink-0">
-            <p className="text-2xl font-extrabold text-brand leading-none">
+            <p className={cn("text-2xl font-extrabold leading-none", scoreTextClass(r.overallScore * 10))}>
               {r.overallScore}
-              <span className="text-[13px] text-ink-muted font-bold">/10</span>
+              <span className="type-caption text-ink-muted font-bold">/10</span>
             </p>
           </div>
         </div>
@@ -149,10 +149,7 @@ export default function Prep() {
         console.error(e);
       }
     };
-    requireStudent(startAction, {
-      title: "Starting your interview",
-      subtitle: "What should we call you?",
-    });
+    requireStudent(startAction, { title: "Starting your interview" });
   };
 
   const closeDrawers = () => {
@@ -191,11 +188,6 @@ export default function Prep() {
       </div>
 
       <div className="p-4 -mt-6 max-w-md lg:max-w-2xl mx-auto space-y-4 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-4">
-        {isDemo && (
-          <div className="lg:col-span-2">
-            <DemoBanner />
-          </div>
-        )}
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
           <Card
             className="border-0 shadow-soft rounded-2xl bg-paper cursor-pointer group"
@@ -214,7 +206,18 @@ export default function Prep() {
                 <MessageSquare className="w-5 h-5 mr-2 text-brand" />
                 Mock Interview
               </h3>
-              <p className="text-sm text-ink-muted">AI interviewer · Live feedback · Score report</p>
+              <p className="type-body text-ink-muted">AI interviewer · Live feedback · Score report</p>
+              <Button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleStartInterview();
+                }}
+                disabled={createInterview.isPending}
+                className="w-full mt-4 h-11 rounded-xl bg-brand hover:bg-brand/90 text-white type-body font-bold"
+                data-testid="button-start-interview-hero"
+              >
+                {createInterview.isPending ? "Setting up..." : "Start interview"}
+              </Button>
             </CardContent>
           </Card>
         </motion.div>
@@ -223,10 +226,9 @@ export default function Prep() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="lg:col-span-2"
         >
           <Card
-            className="border-0 shadow-soft rounded-2xl bg-paper cursor-pointer group"
+            className="border-0 shadow-soft rounded-2xl bg-paper cursor-pointer group h-full"
             onClick={() => setLocation("/practice/courses")}
           >
             <CardContent className="p-5 flex items-center gap-4">
@@ -243,8 +245,10 @@ export default function Prep() {
         </motion.div>
 
         {isDemo && (
-          <div className="lg:col-span-2">
-            <SampleReportCard open={reportOpen} onToggle={() => setReportOpen((v) => !v)} />
+          <div className="lg:col-span-2 space-y-4">
+            <DemoSurface>
+              <SampleReportCard open={reportOpen} onToggle={() => setReportOpen((v) => !v)} />
+            </DemoSurface>
           </div>
         )}
       </div>

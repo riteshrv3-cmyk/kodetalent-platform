@@ -5,7 +5,7 @@ import { SideNav } from "./SideNav";
 import { ProfileSidebar } from "./ProfileSidebar";
 import { OfflineBanner } from "./OfflineBanner";
 import { TokoBubble } from "@/components/kodetalent/TokoBubble";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
 import { useStudentProfile } from "@/hooks/useStudentProfile";
 import { NameGateProvider } from "@/components/NameGate";
@@ -52,21 +52,11 @@ export function AppLayout({ children }: { children: ReactNode }) {
           absorbs, since the page renders with viewport-fit=cover. */}
       <main className="max-w-md mx-auto w-full pt-[calc(3.5rem+env(safe-area-inset-top))] pb-[calc(4rem+env(safe-area-inset-bottom))] min-h-[100dvh] lg:max-w-5xl lg:px-8 lg:pt-8 lg:pb-8">
         <OfflineBanner />
-        {/* No willChange/backfaceVisibility on this wrapper: a persistent
-            stacking context here traps every in-page fixed overlay
-            (Prep/Resume/Opportunities bottom sheets) beneath BottomNav. */}
-        <AnimatePresence mode="wait" initial={false}>
-          <motion.div
-            key={location}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15, ease: "easeOut" }}
-            className="w-full"
-          >
-            {children}
-          </motion.div>
-        </AnimatePresence>
+        {/* Routes render directly — no fade wrapper. Instant navigation reads
+            faster than any transition, and the removed motion.div also means
+            no persistent stacking context that could trap in-page fixed
+            overlays (Prep/Resume/Opportunities bottom sheets) beneath BottomNav. */}
+        {children}
       </main>
 
       <TokoBubble />

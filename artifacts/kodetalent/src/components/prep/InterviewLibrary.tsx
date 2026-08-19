@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { motion, useReducedMotion } from "framer-motion";
 import { Loader2, ChevronRight } from "lucide-react";
 import { useCreateInterviewSession } from "@workspace/api-client-react";
 import { cn } from "@/lib/utils";
+import { PressableCard } from "@/components/PressableCard";
 import {
   INTERVIEW_PRESETS,
   INTERVIEW_ROLES,
@@ -16,7 +16,6 @@ import {
 // Opportunities.startPractice uses, then routes into the live interview.
 export default function InterviewLibrary() {
   const [, setLocation] = useLocation();
-  const reduced = useReducedMotion();
   const createInterview = useCreateInterviewSession();
 
   const [role, setRole] = useState<"all" | InterviewPreset["roleId"]>("all");
@@ -62,7 +61,9 @@ export default function InterviewLibrary() {
         </p>
       </div>
 
-      <div className="flex flex-wrap gap-2 mb-4">
+      {/* Filter chips stay reachable while scrolling the list: sticky below
+          the mobile TopBar (3.5rem + safe area), flush to the top on lg. */}
+      <div className="sticky top-[calc(3.5rem+env(safe-area-inset-top))] lg:top-0 z-20 bg-paper -mx-1 px-1 py-2 mb-2 flex flex-wrap gap-2">
         {filters.map((f) => (
           <button
             key={f.id}
@@ -79,46 +80,40 @@ export default function InterviewLibrary() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-        {presets.map((preset, i) => {
+      {/* Compact rows, not cards — 14 presets should scan, not scroll. */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
+        {presets.map((preset) => {
           const loading = practicingId === preset.id;
           return (
-            <motion.button
+            <PressableCard
               key={preset.id}
-              type="button"
               onClick={() => start(preset)}
               disabled={loading}
-              initial={reduced ? false : { opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: reduced ? 0 : Math.min(i * 0.03, 0.2) }}
-              whileTap={reduced ? undefined : { scale: 0.98 }}
-              className="text-left bg-paper rounded-2xl shadow-soft border border-line p-4 flex items-start gap-3 disabled:opacity-70"
+              aria-label={`${preset.company} — ${preset.label}`}
+              className="w-full bg-paper rounded-xl shadow-soft border border-line px-3.5 py-2.5 flex items-center gap-3 disabled:opacity-70"
             >
               <div className="flex-1 min-w-0">
-                <div className="text-[10px] font-bold text-ink-muted uppercase tracking-wider mb-0.5">
+                <div className="type-micro font-bold text-ink-muted uppercase tracking-wider truncate">
                   {preset.roleLabel}
                 </div>
-                <div className="text-base font-bold text-ink truncate">
+                <div className="type-body font-bold text-ink truncate">
                   {preset.company}
                 </div>
-                <div className="text-sm text-ink-muted truncate">{preset.label}</div>
-                <div className="flex flex-wrap gap-1.5 mt-2.5">
-                  <span className="px-2 py-0.5 rounded-full bg-brand-soft text-brand text-[11px] font-bold">
-                    {preset.type}
-                  </span>
-                  <span className="px-2 py-0.5 rounded-full bg-brand-soft text-brand text-[11px] font-bold">
-                    {preset.difficulty}
-                  </span>
-                </div>
               </div>
-              <div className="w-8 h-8 rounded-full bg-brand-soft flex items-center justify-center text-brand shrink-0">
-                {loading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <ChevronRight className="w-4 h-4" />
-                )}
+              <div className="flex gap-1.5 shrink-0">
+                <span className="px-2 py-0.5 rounded-full bg-brand-soft text-brand type-micro font-bold">
+                  {preset.type}
+                </span>
+                <span className="px-2 py-0.5 rounded-full bg-brand-soft text-brand type-micro font-bold">
+                  {preset.difficulty}
+                </span>
               </div>
-            </motion.button>
+              {loading ? (
+                <Loader2 className="w-4 h-4 animate-spin text-brand shrink-0" />
+              ) : (
+                <ChevronRight className="w-4 h-4 text-ink-muted shrink-0" />
+              )}
+            </PressableCard>
           );
         })}
       </div>

@@ -1,7 +1,7 @@
 import { motion, useReducedMotion } from "framer-motion";
 import { Sparkles, Github, Target, Code2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { DemoBanner, SampleChip } from "@/components/DemoBanner";
+import { DemoSurface } from "@/components/DemoBanner";
 import { DEMO_PROFILE } from "@/data/demoStudent";
 
 // Read-only explore-mode view of the profile for anonymous visitors (no
@@ -49,20 +49,17 @@ export default function ProfileDemo({ onStart }: { onStart: () => void }) {
         </p>
       </div>
 
-      {/* ── Sheet ── */}
+      {/* ── Sheet ── one demo signal per surface: the canopy SAMPLE PROFILE
+          chip plus the single banner DemoSurface renders here. */}
       <div className="relative bg-canvas -mt-6 rounded-t-3xl pt-6 space-y-4">
-        <div className="px-4">
-          <DemoBanner />
-        </div>
-
+        <DemoSurface className="mx-4">
         <div className="px-4 space-y-4">
           {/* Target role */}
           <div className="bg-paper rounded-2xl shadow-soft p-5">
             <div className="flex items-center justify-between mb-1">
-              <h3 className="text-[14px] font-bold text-ink flex items-center gap-2">
+              <h3 className="type-body font-bold text-ink flex items-center gap-2">
                 <Target className="w-4 h-4 text-ink" /> Target role
               </h3>
-              <SampleChip />
             </div>
             <p className="text-[18px] font-extrabold text-ink">{p.targetRole}</p>
             <p className="text-[12px] text-ink-muted mt-0.5">
@@ -73,10 +70,9 @@ export default function ProfileDemo({ onStart }: { onStart: () => void }) {
           {/* Skills as labeled 0-100 bars, rendered as "N%" */}
           <div className="bg-paper rounded-2xl shadow-soft p-5">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-[14px] font-bold text-ink flex items-center gap-2">
+              <h3 className="type-body font-bold text-ink flex items-center gap-2">
                 <Code2 className="w-4 h-4 text-ink" /> Skills
               </h3>
-              <SampleChip />
             </div>
             <div className="space-y-3">
               {skills.map(([name, value], i) => (
@@ -130,6 +126,7 @@ export default function ProfileDemo({ onStart }: { onStart: () => void }) {
             Add your GitHub or a resume — your profile builds itself.
           </p>
         </div>
+        </DemoSurface>
       </div>
     </div>
   );

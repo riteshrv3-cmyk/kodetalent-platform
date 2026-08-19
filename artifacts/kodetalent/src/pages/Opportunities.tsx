@@ -13,7 +13,9 @@ import { apiFetch } from "@/lib/api/authFetch";
 import { Toko } from "@/components/kodetalent/Toko";
 import { useStudentId } from "@/hooks/useStudentId";
 import { useNameGate } from "@/components/NameGate";
-import { DemoBanner, SampleChip } from "@/components/DemoBanner";
+import { DemoSurface } from "@/components/DemoBanner";
+import { PageHeader } from "@/components/PageHeader";
+import { scoreBadgeClass } from "@/lib/scoreTone";
 import { DEMO_MATCHED_TEASER, DEMO_STUDENT_NAME } from "@/data/demoStudent";
 
 type OpportunityType = "jobs" | "internship" | "freelancing";
@@ -282,10 +284,7 @@ export default function Opportunities() {
         setPracticingId(null);
       }
     };
-    requireStudent(run, {
-      title: "Starting your interview",
-      subtitle: "What should we call you?",
-    });
+    requireStudent(run, { title: "Starting your interview" });
   };
 
   // Apply opens the real posting. For an anonymous visitor the first click
@@ -303,7 +302,7 @@ export default function Opportunities() {
         logApply(o);
         window.open(o.url, "_blank", "noopener,noreferrer");
       },
-      { title: `Applying to ${o.company}`, subtitle: "What should we call you?" },
+      { title: `Applying to ${o.company}` },
     );
   };
 
@@ -480,53 +479,58 @@ export default function Opportunities() {
 
   return (
     <div className="min-h-screen bg-canvas pb-28">
-      {/* Header */}
-      <div className="sticky top-0 z-10 bg-paper px-4 pt-4 pb-2 border-b border-line">
-        <div className="flex items-center gap-2 mb-1">
-          {(selectedDomain || selectedSubDomain) && (
+      {/* Canopy header at the top level; sticky drilldown header once a
+          domain is open (back button + tabs stay page-owned). */}
+      {!selectedDomain ? (
+        <PageHeader
+          title="Opportunities"
+          subtitle="Real jobs, internships and freelance work — updated daily"
+        />
+      ) : (
+        <div className="sticky top-0 z-10 bg-paper px-4 pt-4 pb-2 border-b border-line">
+          <div className="flex items-center gap-2 mb-1">
             <button
               onClick={goBack}
               className="w-9 h-9 rounded-full border border-line bg-paper flex items-center justify-center text-ink flex-shrink-0"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
+            <div>
+              <h1 className="text-display text-[30px] lg:text-[36px] font-extrabold text-ink leading-[1.06] tracking-tight">
+                {!selectedSubDomain ? selectedDomain.name : selectedSubDomain.name}
+              </h1>
+              <p className="type-caption text-ink-muted mt-1">
+                {!selectedSubDomain
+                  ? `${selectedDomain.subDomains.length} roles in this domain`
+                  : "Apply, prepare with a course, or practice an interview"}
+              </p>
+            </div>
+          </div>
+
+          {/* Tabs — shown only at sub-domain level */}
+          {selectedSubDomain && (
+            <div className="flex gap-2 mt-3 pb-1">
+              {TABS.map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={cn(
+                    "flex-1 py-2 rounded-xl text-[13px] font-bold border transition-colors",
+                    activeTab === tab.id
+                      ? "bg-brand text-white border-brand"
+                      : "bg-paper text-ink-muted border-line"
+                  )}
+                >
+                  {tab.emoji} {tab.label}
+                </button>
+              ))}
+            </div>
           )}
-          <div>
-            <h1 className="text-display text-[30px] lg:text-[36px] font-extrabold text-ink leading-[1.06] tracking-tight">
-              {!selectedDomain && "Opportunities"}
-              {selectedDomain && !selectedSubDomain && selectedDomain.name}
-              {selectedSubDomain && selectedSubDomain.name}
-            </h1>
-            <p className="text-[12px] text-ink-muted mt-1">
-              {!selectedDomain && "Real jobs, internships and freelance work — updated daily"}
-              {selectedDomain && !selectedSubDomain && `${selectedDomain.subDomains.length} roles in this domain`}
-              {selectedSubDomain && "Apply, prepare with a course, or practice an interview"}
-            </p>
-          </div>
         </div>
+      )}
 
-        {/* Tabs — shown only at sub-domain level */}
-        {selectedSubDomain && (
-          <div className="flex gap-2 mt-3 pb-1">
-            {TABS.map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={cn(
-                  "flex-1 py-2 rounded-xl text-[13px] font-bold border transition-colors",
-                  activeTab === tab.id
-                    ? "bg-brand text-white border-brand"
-                    : "bg-paper text-ink-muted border-line"
-                )}
-              >
-                {tab.emoji} {tab.label}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div className="px-4 pt-2">
+      {/* Page sheet below the canopy at the top level; plain flow in drilldowns. */}
+      <div className={cn("px-4", !selectedDomain ? "bg-paper rounded-t-3xl -mt-6 pt-5 min-h-[60vh]" : "pt-2")}>
         {/* mode="wait" requires exactly ONE child at a time. Level 0's search bar
             and domain grid are therefore wrapped in a single keyed child — as two
             sibling children they deadlocked the exit queue, leaving the outgoing
@@ -548,8 +552,8 @@ export default function Opportunities() {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search skills or roles… e.g. React, Python, ML"
-                  className="w-full pl-10 pr-10 py-3 rounded-2xl bg-paper border border-line text-[14px] text-ink placeholder:text-ink-muted focus:outline-none focus:border-brand"
+                  placeholder="Search skills or roles"
+                  className="w-full pl-10 pr-10 py-3 rounded-2xl bg-paper border border-line type-body text-ink placeholder:text-ink-muted focus:outline-none focus:border-brand"
                   data-testid="input-opportunity-search"
                 />
                 {searchQuery && (
@@ -606,56 +610,6 @@ export default function Opportunities() {
 
             {!searchQuery.trim() && (
             <div>
-              {/* Explore mode: a believable "matched for you" strip from
-                  fixtures, so an anonymous visitor sees the payoff before the
-                  domain grid. Purely fixture-driven — no authed call. */}
-              {isDemo && (
-                <div className="mb-6">
-                  <DemoBanner className="mb-4" />
-                  <div className="flex items-baseline justify-between mb-3 px-1">
-                    <p className="text-display text-[15px] font-extrabold text-ink">
-                      Sample matches for {DEMO_STUDENT_NAME.split(" ")[0]}
-                    </p>
-                    <SampleChip />
-                  </div>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    {DEMO_MATCHED_TEASER.map((m, i) => (
-                      <motion.button
-                        key={`${m.company}-${i}`}
-                        initial={{ opacity: 0, y: 12 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: Math.min(i, 8) * 0.04 }}
-                        onClick={() =>
-                          requireStudent(() => {}, {
-                            title: `Applying to ${m.company}`,
-                            subtitle: "What should we call you?",
-                          })
-                        }
-                        className="text-left bg-paper rounded-2xl shadow-soft p-4"
-                      >
-                        <div className="flex items-start justify-between gap-2 mb-2">
-                          <div className="min-w-0">
-                            <p className="text-[11px] text-ink-muted truncate">{m.company}</p>
-                            <p className="text-[14px] font-bold text-ink leading-tight line-clamp-2">{m.role}</p>
-                          </div>
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-brand-soft text-brand shrink-0">
-                            {m.matchPct}% match
-                          </span>
-                        </div>
-                        <p className="text-[12px] text-ink-muted mb-3">📍 {m.location}</p>
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          {m.tags.map((t) => (
-                            <span key={t} className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-brand-soft text-brand">
-                              {t}
-                            </span>
-                          ))}
-                          <SampleChip className="ml-auto" />
-                        </div>
-                      </motion.button>
-                    ))}
-                  </div>
-                </div>
-              )}
               {/* Matched for you — the payoff feed. Real work for this
                   student's own role, before any browsing decision is asked
                   of them. Grouped, never scored: the locked spec is
@@ -815,8 +769,8 @@ export default function Opportunities() {
                   🎯
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-bold text-ink text-[14px]">My Pipeline</p>
-                  <p className="text-[11px] text-ink-muted">Paste any job or drive — scam check, eligibility, fit & prep</p>
+                  <p className="font-bold text-ink type-body">My Pipeline</p>
+                  <p className="type-micro text-ink-muted">Paste a job post or drive link — we check scam risk, eligibility and fit</p>
                 </div>
                 <ChevronRight className="w-4 h-4 text-ink-muted shrink-0" />
               </button>
@@ -842,6 +796,47 @@ export default function Opportunities() {
                   </motion.button>
                 ))}
               </div>
+
+              {/* Explore mode: a believable "matched for you" strip from
+                  fixtures. Lives BELOW the live explore grid — real content
+                  wins the fold — compressed to one horizontal-scroll row.
+                  DemoSurface carries the banner + demo signposting here. */}
+              {isDemo && (
+                <div className="mt-8">
+                  <DemoSurface className="mb-4">
+                    <p className="text-display type-body font-extrabold text-ink mb-3 px-1">
+                      Sample matches for {DEMO_STUDENT_NAME.split(" ")[0]}
+                    </p>
+                    <div className="-mx-4 px-4 flex gap-3 overflow-x-auto snap-x pb-2">
+                      {DEMO_MATCHED_TEASER.map((m, i) => (
+                        <motion.button
+                          key={`${m.company}-${i}`}
+                          initial={{ opacity: 0, y: 12 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: Math.min(i, 8) * 0.04 }}
+                          onClick={() =>
+                            requireStudent(() => {}, {
+                              title: `Applying to ${m.company}`,
+                            })
+                          }
+                          className="snap-start shrink-0 w-[240px] text-left bg-paper rounded-2xl shadow-soft border border-line p-4"
+                        >
+                          <div className="flex items-start justify-between gap-2 mb-1.5">
+                            <div className="min-w-0">
+                              <p className="type-micro text-ink-muted truncate">{m.company}</p>
+                              <p className="type-caption font-bold text-ink leading-tight line-clamp-2">{m.role}</p>
+                            </div>
+                            <span className={cn("type-micro font-bold px-2 py-0.5 rounded-full shrink-0", scoreBadgeClass(m.matchPct))}>
+                              {m.matchPct}% match
+                            </span>
+                          </div>
+                          <p className="type-micro text-ink-muted">📍 {m.location}</p>
+                        </motion.button>
+                      ))}
+                    </div>
+                  </DemoSurface>
+                </div>
+              )}
               </>
               )}
             </div>

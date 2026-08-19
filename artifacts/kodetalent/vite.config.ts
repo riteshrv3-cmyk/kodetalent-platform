@@ -76,6 +76,18 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ["**/*.{js,css,html,svg,png,ico,woff2}"],
+        // First-load budget: the precache was 8.6MB, and 5.6MB of it was the
+        // Toko mascot art (~3.9MB of PNGs) plus pdf.js worker/renderer chunks
+        // that only matter when a user uploads or downloads a resume. Exclude
+        // them from install-time precache — they load on demand (mascot gets a
+        // runtime CacheFirst rule below), cutting install weight to ~3MB on a
+        // budget Android.
+        globIgnores: [
+          "**/toko/*.png",
+          "**/assets/pdfWorker-*.js",
+          "**/assets/pdf-*.js",
+          "**/assets/html2canvas*.js",
+        ],
         navigateFallback: "/index.html",
         // Without this an offline navigation to /api/* would be answered with
         // the app shell instead of failing, so fetches would parse HTML as JSON.
@@ -88,6 +100,16 @@ export default defineConfig({
               cacheName: "google-fonts",
               expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 365 },
               cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
+            // Mascot art: cached after first sight instead of forced into the
+            // install precache (it was 45% of the precache by weight).
+            urlPattern: /\/toko\/.*\.png$/i,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "toko-art",
+              expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 90 },
             },
           },
           // Deliberately no /api rule. Workbox defaults unmatched requests to

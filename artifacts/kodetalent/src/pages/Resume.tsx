@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { useUser } from "@clerk/react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  ArrowLeft, Download, Plus, Trash2, Sparkles,
+  Download, Plus, Trash2, Sparkles,
   Loader2, Building2, AlignLeft, ChevronRight, X, Pencil,
   Check, PlusCircle, MinusCircle, Zap, Eye, FileText, Copy, Share2, History, Undo2
 } from "lucide-react";
@@ -24,6 +24,8 @@ import { InlineEditPreview } from "@/components/resume/InlineEditPreview";
 import { ResumeImport } from "@/components/ResumeImport";
 import { useStudentId } from "@/hooks/useStudentId";
 import { useNameGate } from "@/components/NameGate";
+import { PageHeader } from "@/components/PageHeader";
+import { scoreBadgeClass, scoreTextClass } from "@/lib/scoreTone";
 import ResumeDemo from "@/components/demo/ResumeDemo";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -627,9 +629,9 @@ function EditResumeSheet({
         </div>
       )}
       {atsReport && (
-        <div className="bg-brand-soft rounded-xl p-3">
-          <p className="text-[11px] font-bold text-brand">ATS match {atsReport.scorePct}%</p>
-          <p className="text-[10px] text-ink/70 mt-1">
+        <div className="bg-canvas border border-line rounded-xl p-3">
+          <p className={`type-micro font-bold ${scoreTextClass(atsReport.scorePct)}`}>ATS match {atsReport.scorePct}%</p>
+          <p className="type-micro text-ink/70 mt-1">
             {atsReport.mustCoverage.matched}/{atsReport.mustCoverage.total} must-have keywords covered
           </p>
         </div>
@@ -934,10 +936,9 @@ function ResumeCard({
                 ? `Missing: ${liveDoc.atsMeta.missing.map(m => m.term).join(", ")} — skill gaps to learn, not padded in`
                 : "All extracted JD keywords are covered by your real profile"
             }>
-              {/* Single-color brand pill, not a red/amber/green threshold ramp — the
-                  design system reserves that ramp for completed/passing (done) and
-                  error (danger) states only, never for a continuous score. */}
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-brand-soft text-brand">
+              {/* Semantic done/amber/danger tone — a score is a judgement, so
+                  it must never render in brand indigo (scoreTone.ts). */}
+              <span className={`type-micro font-bold px-2 py-0.5 rounded-full ${scoreBadgeClass(liveDoc.atsMeta.scorePct)}`}>
                 ATS match {liveDoc.atsMeta.scorePct}%
               </span>
             </div>
@@ -1048,6 +1049,15 @@ function GenerateSheet({
   // users whose ledger has nothing yet (no skills, projects, or experience).
   type ProfileStep = "loading" | "capture" | "generate";
   const [profileStep, setProfileStep] = useState<ProfileStep>("loading");
+  // One-shot handoff from the NameGate: if the guest row was created moments
+  // ago, the capture step greets them by name so gate → capture reads as one
+  // continuous flow instead of two separate asks.
+  const [justCreated] = useState(() => {
+    if (sessionStorage.getItem("kt:justCreated") !== "1") return false;
+    sessionStorage.removeItem("kt:justCreated");
+    return true;
+  });
+  const captureFirstName = (localStorage.getItem("studentName") ?? "").trim().split(/\s+/)[0] || "";
   const [captureSubmitting, setCaptureSubmitting] = useState(false);
   const [skillInput, setSkillInput] = useState("");
   const [skillTags, setSkillTags] = useState<string[]>([]);
@@ -1325,7 +1335,7 @@ function GenerateSheet({
             ) : (
               <div className="flex flex-col items-center gap-1">
                 {previewDoc.atsMeta ? (
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-brand-soft text-brand">
+                  <span className={`type-micro font-bold px-2 py-0.5 rounded-full ${scoreBadgeClass((previewDoc.atsMeta as { scorePct?: number }).scorePct ?? 0)}`}>
                     ATS match {(previewDoc.atsMeta as { scorePct?: number }).scorePct}%
                   </span>
                 ) : (
@@ -1421,15 +1431,17 @@ function GenerateSheet({
         ) : profileStep === "capture" ? (
           <>
             <div className="flex items-center justify-between">
-              <h2 className="text-display text-[18px] font-extrabold text-ink">
-                First, tell us about you
+              <h2 className="text-display type-title font-extrabold text-ink">
+                {justCreated && captureFirstName
+                  ? `Nice to meet you, ${captureFirstName} — one quick thing`
+                  : "First, tell us about you"}
               </h2>
-              <button onClick={onClose} className="w-8 h-8 rounded-full border border-line flex items-center justify-center">
+              <button onClick={onClose} className="w-8 h-8 rounded-full border border-line flex items-center justify-center shrink-0">
                 <X className="w-4 h-4 text-ink-muted" />
               </button>
             </div>
 
-            <p className="text-[13px] text-ink-muted leading-snug">
+            <p className="type-caption text-ink-muted">
               Import your GitHub, upload an existing resume, or add a few skills so we have real
               facts to write from. The more you give, the stronger the output.
             </p>
@@ -1689,10 +1701,9 @@ export default function Resume() {
   // tapped "build" action continues across the demo→real transition (fix 9).
   const handleStartOwn = useCallback(() => {
     sessionStorage.setItem("kt:autoOpenGenerate", "1");
-    requireStudent(() => {}, {
-      title: "Let's build your resume",
-      subtitle: "What should we call you?",
-    });
+    // Title only — the gate's default subtitle carries the ask; passing
+    // "What should we call you?" here duplicated the field's question.
+    requireStudent(() => {}, { title: "Let's build your resume" });
   }, [requireStudent]);
 
   // Once a studentId exists (including right after the gate creates a guest
@@ -1836,50 +1847,51 @@ export default function Resume() {
 
   if (loading) {
     return (
-      <div className="p-4 pb-28 max-w-md lg:max-w-3xl mx-auto space-y-4 min-h-screen bg-canvas">
-        <Skeleton className="h-8 w-32 rounded-xl" />
-        <Skeleton className="h-32 w-full rounded-2xl" />
-        <Skeleton className="h-32 w-full rounded-2xl" />
+      <div className="min-h-screen bg-canvas">
+        <PageHeader
+          title="My Resumes"
+          subtitle="AI-generated from your real profile · ATS-friendly"
+        />
+        <div className="bg-canvas rounded-t-3xl -mt-6 min-h-[60vh] pb-28">
+          <div className="p-4 pt-6 max-w-md lg:max-w-2xl mx-auto space-y-4">
+            <Skeleton className="h-32 w-full rounded-2xl" />
+            <Skeleton className="h-32 w-full rounded-2xl" />
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
     <>
-      <div className="p-4 pb-28 max-w-md lg:max-w-3xl mx-auto space-y-5 min-h-screen bg-canvas">
-        <Button
-          variant="ghost"
-          onClick={() => setLocation("/profile")}
-          className="-ml-2 text-ink-muted font-bold"
-        >
-          <ArrowLeft className="w-5 h-5 mr-2" /> Back
-        </Button>
+      <div className="min-h-screen bg-canvas">
+        {/* Resume is a bottom-nav tab destination — canopy, no back button
+            (TopBar owns the rare non-tab back affordance). */}
+        <PageHeader
+          title="My Resumes"
+          subtitle="AI-generated from your real profile · ATS-friendly"
+          right={
+            <motion.div whileTap={{ scale: 0.96 }}>
+              <Button
+                onClick={() => setGenerateFor({ company: "", role: "" })}
+                className="rounded-full bg-white/15 text-white hover:bg-white/25 font-bold px-4 h-10"
+              >
+                <Plus className="w-4 h-4 mr-1.5" />
+                New
+              </Button>
+            </motion.div>
+          }
+        />
 
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-display text-[30px] lg:text-[36px] font-extrabold text-ink leading-[1.06] tracking-tight">
-              My Resumes
-            </h1>
-            <p className="text-[13px] text-ink-muted mt-1">
-              AI-generated from your real profile · ATS-friendly
-            </p>
-          </div>
-          <motion.div whileTap={{ scale: 0.96 }}>
-            <Button
-              onClick={() => setGenerateFor({ company: "", role: "" })}
-              className="rounded-full bg-brand text-white hover:bg-brand/90 font-bold px-4 h-10"
-            >
-              <Plus className="w-4 h-4 mr-1.5" />
-              New
-            </Button>
-          </motion.div>
-        </div>
+        {/* Sheet */}
+        <div className="bg-canvas rounded-t-3xl -mt-6 min-h-[60vh] pb-28">
+          <div className="p-4 pt-6 max-w-md lg:max-w-2xl mx-auto space-y-5">
 
         {isGuestSession(isLoaded, isSignedIn) && (
           <div className="bg-paper rounded-2xl shadow-soft p-3.5 flex items-center justify-between gap-3">
             <div>
-              <p className="text-[13px] font-bold text-ink">Saved on this device only</p>
-              <p className="text-[11px] text-ink-muted mt-0.5">Sign in to keep your resumes if you switch devices or clear your browser.</p>
+              <p className="type-caption font-bold text-ink">Saved on this device only</p>
+              <p className="type-micro text-ink-muted mt-0.5">Sign in to keep your resumes if you switch devices or clear your browser.</p>
             </div>
             <Button
               onClick={() => setLocation("/sign-up")}
@@ -1908,7 +1920,7 @@ export default function Resume() {
             <div className="w-14 h-14 rounded-2xl bg-brand-soft flex items-center justify-center">
               <FileText className="w-7 h-7 text-brand" />
             </div>
-            <p className="text-[14px] text-ink-muted leading-relaxed max-w-[17rem]">
+            <p className="type-body text-ink-muted max-w-[17rem]">
               Turn your GitHub and a job post into an ATS-ready resume in minutes.
             </p>
             <Button
@@ -1975,6 +1987,8 @@ export default function Resume() {
           >
             {experienceCount === 0 ? "Add experience" : "Update my profile"} <ChevronRight className="w-3.5 h-3.5" />
           </button>
+        </div>
+          </div>
         </div>
       </div>
 

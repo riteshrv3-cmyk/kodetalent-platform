@@ -2,6 +2,7 @@ import { useLocation } from "wouter";
 import { ChevronLeft, Flame } from "lucide-react";
 import { motion } from "framer-motion";
 import { useStudentId } from "@/hooks/useStudentId";
+import { NAV_ITEMS } from "./navItems";
 
 interface TopBarProps {
   initials: string;
@@ -9,15 +10,19 @@ interface TopBarProps {
   onProfileClick: () => void;
 }
 
+// Tab-level destinations never show a back arrow: every bottom-nav route,
+// the "/home" momentum hub, and the course library (a peer tab surface).
+// Genuinely nested routes (e.g. /practice/history) keep back.
+const NO_BACK_ROUTES = new Set<string>([
+  ...NAV_ITEMS.map((item) => item.href),
+  "/home",
+  "/practice/courses",
+]);
+
 export function TopBar({ initials, streakCount, onProfileClick }: TopBarProps) {
   const [location, setLocation] = useLocation();
   const { isDemo } = useStudentId();
-  // Home ("/") is the explore-first landing surface, so it (like Resume) shows
-  // no back button and is the empty-history fallback.
-  const showBack =
-    location !== "/" &&
-    location !== "/resume" &&
-    location !== "/home";
+  const showBack = !NO_BACK_ROUTES.has(location);
 
   // First name, when we have it, so a returning guest sees themselves rather
   // than a bare avatar. studentName is written by the NameGate on guest create.
@@ -61,7 +66,7 @@ export function TopBar({ initials, streakCount, onProfileClick }: TopBarProps) {
             <motion.button
               whileTap={{ scale: 0.94 }}
               onClick={() => setLocation("/sign-in")}
-              className="h-8 px-3.5 rounded-full bg-brand text-white text-[13px] font-bold"
+              className="h-8 px-3.5 rounded-full bg-brand text-white type-caption font-bold"
             >
               Sign in
             </motion.button>

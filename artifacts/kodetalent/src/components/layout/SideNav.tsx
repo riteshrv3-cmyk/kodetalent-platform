@@ -4,6 +4,7 @@ import { Flame } from "lucide-react";
 import { Toko } from "@/components/kodetalent/Toko";
 import { cn } from "@/lib/utils";
 import { NAV_ITEMS } from "./navItems";
+import { useStudentId } from "@/hooks/useStudentId";
 
 interface SideNavProps {
   initials: string;
@@ -22,6 +23,7 @@ interface SideNavProps {
 export function SideNav({ initials, streakCount, onProfileClick }: SideNavProps) {
   const [location, setLocation] = useLocation();
   const reduced = useReducedMotion();
+  const { isDemo } = useStudentId();
 
   return (
     <div className="hidden lg:flex fixed left-0 top-0 bottom-0 w-[240px] flex-col bg-paper border-r border-line z-40">
@@ -85,16 +87,28 @@ export function SideNav({ initials, streakCount, onProfileClick }: SideNavProps)
       </nav>
 
       <div className="px-3 pb-6">
-        <button
-          type="button"
-          onClick={onProfileClick}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-line/60 transition-colors"
-        >
-          <span className="w-8 h-8 rounded-full bg-brand-soft flex items-center justify-center text-brand font-bold text-[12px] shrink-0">
-            {initials}
-          </span>
-          <span className="text-[13px] font-semibold text-ink">Account</span>
-        </button>
+        {isDemo ? (
+          // Anonymous explore-mode visitor: no account to open — offer a
+          // prominent sign-in instead (mirrors the TopBar's mobile treatment).
+          <button
+            type="button"
+            onClick={() => setLocation("/sign-in")}
+            className="w-full flex items-center justify-center px-3 py-2.5 rounded-xl bg-brand text-white type-body font-bold hover:bg-brand/90 transition-colors"
+          >
+            Sign in
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={onProfileClick}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-line/60 transition-colors"
+          >
+            <span className="w-8 h-8 rounded-full bg-brand-soft flex items-center justify-center text-brand font-bold text-[12px] shrink-0">
+              {initials}
+            </span>
+            <span className="type-caption font-semibold text-ink">Account</span>
+          </button>
+        )}
       </div>
     </div>
   );

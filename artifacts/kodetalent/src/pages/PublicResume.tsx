@@ -106,6 +106,12 @@ export default function PublicResume({ slug }: { slug: string }) {
         <p className="mt-6 text-[11px] text-ink-muted text-center">
           Built with KodeTalent — AI resume builder for students
         </p>
+        <a
+          href="/"
+          className="mt-2 type-caption font-semibold text-brand text-center"
+        >
+          Made with KodeTalent — build yours free
+        </a>
       </main>
     </div>
   );

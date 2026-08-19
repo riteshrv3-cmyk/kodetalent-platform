@@ -39,7 +39,7 @@ export function BottomNav() {
                 />
               )}
               <Icon className={cn("h-[22px] w-[22px]", isActive ? "text-brand" : "text-ink-muted")} strokeWidth={isActive ? 2.4 : 2} />
-              <span className={cn("text-[9.5px] font-semibold", isActive ? "text-brand" : "text-ink-muted")}>
+              <span className={cn("type-micro font-semibold whitespace-nowrap", isActive ? "text-brand" : "text-ink-muted")}>
                 {item.label}
               </span>
             </Link>
