@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, type MouseEvent } from "react";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
@@ -11,6 +11,10 @@ import { DOMAINS, ROLE_DESTINATIONS, type Domain, type SubDomain } from "@/data/
 import { useCoursePreloader, prefetchCourse } from "@/hooks/useCoursePreloader";
 import { apiFetch } from "@/lib/api/authFetch";
 import { Toko } from "@/components/kodetalent/Toko";
+import { useStudentId } from "@/hooks/useStudentId";
+import { useNameGate } from "@/components/NameGate";
+import { DemoBanner, SampleChip } from "@/components/DemoBanner";
+import { DEMO_MATCHED_TEASER, DEMO_STUDENT_NAME } from "@/data/demoStudent";
 
 type OpportunityType = "jobs" | "internship" | "freelancing";
 
@@ -79,7 +83,7 @@ function OpportunityCard({
   practicing: boolean;
   onPractice: () => void;
   onPrepare: (() => void) | null;
-  onApply: () => void;
+  onApply: (e: MouseEvent<HTMLAnchorElement>) => void;
 }) {
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(index, 8) * 0.04 }}>
@@ -174,6 +178,8 @@ function deepLinkSelection(): { domain: Domain | null; sub: SubDomain | null } {
 
 export default function Opportunities() {
   const [, setLocation] = useLocation();
+  const { isDemo } = useStudentId();
+  const { requireStudent } = useNameGate();
   const initialSelection = useState(deepLinkSelection)[0];
   const [selectedDomain, setSelectedDomain] = useState<Domain | null>(initialSelection.domain);
   const [selectedSubDomain, setSelectedSubDomain] = useState<SubDomain | null>(initialSelection.sub);
@@ -251,31 +257,54 @@ export default function Opportunities() {
   // context — no company/JD form, per the locked card spec. contextPack
   // (server-side) layers the student's own projects/skills on top of every
   // question, so this reads as "knows me", not a generic question bank.
-  const startPractice = async (op: LiveOpportunity, roleLabel: string) => {
-    const studentId = Number(localStorage.getItem("studentId") || "0");
-    if (!studentId) {
-      setLocation("/");
+  const startPractice = (op: LiveOpportunity, roleLabel: string) => {
+    const run = async () => {
+      // Fresh id — after the NameGate creates a guest row it isn't closed over.
+      const studentId = Number(localStorage.getItem("studentId") || "0");
+      if (!studentId) return;
+      setPracticingId(op.id);
+      try {
+        // A search-link "card" isn't a real posting — no real company to name,
+        // so it keeps the generic role-based framing. A real posting gets
+        // grounded questions instead of a placebo "Any Tech Company" script.
+        const company = !op.isSearchLink && op.company && op.title
+          ? `${op.company} (${op.title})`
+          : `an employer hiring for the ${roleLabel} role`;
+        const session = await createInterview.mutateAsync({
+          data: {
+            studentId,
+            company,
+            round: "Mixed|Standard",
+          },
+        });
+        setLocation(`/practice/interview/${session.id}`);
+      } catch {
+        setPracticingId(null);
+      }
+    };
+    requireStudent(run, {
+      title: "Starting your interview",
+      subtitle: "What should we call you?",
+    });
+  };
+
+  // Apply opens the real posting. For an anonymous visitor the first click
+  // routes through the NameGate: create a guest row, then open the posting and
+  // log the activity. An existing student's click keeps the native new-tab
+  // open (no async gap that a popup blocker would eat).
+  const handleApply = (o: LiveOpportunity, e: MouseEvent<HTMLAnchorElement>) => {
+    if (o.isSearchLink || localStorage.getItem("studentId")) {
+      logApply(o);
       return;
     }
-    setPracticingId(op.id);
-    try {
-      // A search-link "card" isn't a real posting — no real company to name,
-      // so it keeps the generic role-based framing. A real posting gets
-      // grounded questions instead of a placebo "Any Tech Company" script.
-      const company = !op.isSearchLink && op.company && op.title
-        ? `${op.company} (${op.title})`
-        : `an employer hiring for the ${roleLabel} role`;
-      const session = await createInterview.mutateAsync({
-        data: {
-          studentId,
-          company,
-          round: "Mixed|Standard",
-        },
-      });
-      setLocation(`/practice/interview/${session.id}`);
-    } catch {
-      setPracticingId(null);
-    }
+    e.preventDefault();
+    requireStudent(
+      () => {
+        logApply(o);
+        window.open(o.url, "_blank", "noopener,noreferrer");
+      },
+      { title: `Applying to ${o.company}`, subtitle: "What should we call you?" },
+    );
   };
 
   const searchResults = useMemo(() => {
@@ -403,7 +432,7 @@ export default function Opportunities() {
         practicing={practicingId === o.id}
         onPractice={() => startPractice(o, selectedSubDomain.name)}
         onPrepare={() => navigateToCourse()}
-        onApply={() => logApply(o)}
+        onApply={(e) => handleApply(o, e)}
       />
     );
 
@@ -577,6 +606,56 @@ export default function Opportunities() {
 
             {!searchQuery.trim() && (
             <div>
+              {/* Explore mode: a believable "matched for you" strip from
+                  fixtures, so an anonymous visitor sees the payoff before the
+                  domain grid. Purely fixture-driven — no authed call. */}
+              {isDemo && (
+                <div className="mb-6">
+                  <DemoBanner className="mb-4" />
+                  <div className="flex items-baseline justify-between mb-3 px-1">
+                    <p className="text-display text-[15px] font-extrabold text-ink">
+                      Sample matches for {DEMO_STUDENT_NAME.split(" ")[0]}
+                    </p>
+                    <SampleChip />
+                  </div>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    {DEMO_MATCHED_TEASER.map((m, i) => (
+                      <motion.button
+                        key={`${m.company}-${i}`}
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: Math.min(i, 8) * 0.04 }}
+                        onClick={() =>
+                          requireStudent(() => {}, {
+                            title: `Applying to ${m.company}`,
+                            subtitle: "What should we call you?",
+                          })
+                        }
+                        className="text-left bg-paper rounded-2xl shadow-soft p-4"
+                      >
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <div className="min-w-0">
+                            <p className="text-[11px] text-ink-muted truncate">{m.company}</p>
+                            <p className="text-[14px] font-bold text-ink leading-tight line-clamp-2">{m.role}</p>
+                          </div>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-brand-soft text-brand shrink-0">
+                            {m.matchPct}% match
+                          </span>
+                        </div>
+                        <p className="text-[12px] text-ink-muted mb-3">📍 {m.location}</p>
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          {m.tags.map((t) => (
+                            <span key={t} className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-brand-soft text-brand">
+                              {t}
+                            </span>
+                          ))}
+                          <SampleChip className="ml-auto" />
+                        </div>
+                      </motion.button>
+                    ))}
+                  </div>
+                </div>
+              )}
               {/* Matched for you — the payoff feed. Real work for this
                   student's own role, before any browsing decision is asked
                   of them. Grouped, never scored: the locked spec is
@@ -659,7 +738,7 @@ export default function Opportunities() {
                                 practicing={practicingId === o.id}
                                 onPractice={() => startPractice(o, dest?.sub.name ?? feed.role)}
                                 onPrepare={dest ? () => navigateToCourse(dest.domain, dest.sub) : null}
-                                onApply={() => logApply(o)}
+                                onApply={(e) => handleApply(o, e)}
                               />
                             ))}
                           </div>

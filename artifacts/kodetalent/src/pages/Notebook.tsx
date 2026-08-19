@@ -52,7 +52,7 @@ export default function Notebook() {
 
   useEffect(() => {
     const sid = localStorage.getItem("studentId");
-    if (!sid) { setLocation("/onboarding"); return; }
+    if (!sid) { setLocation("/"); return; }
     apiFetch(`/api/students/${sid}/notebook`)
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
       .then((d) => setWeeks(d.weeks as NotebookWeek[]))

@@ -36,7 +36,7 @@ export default function InterviewHistory() {
 
   useEffect(() => {
     const sid = localStorage.getItem("studentId");
-    if (!sid) { setLocation("/onboarding"); return; }
+    if (!sid) { setLocation("/"); return; }
     apiFetch(`/api/interview/students/${sid}/sessions`)
       .then(r => r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`)))
       .then(d => setItems(d.items as HistoryItem[]))

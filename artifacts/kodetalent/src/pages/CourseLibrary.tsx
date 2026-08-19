@@ -4,6 +4,10 @@ import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { ChevronRight, ArrowLeft } from "lucide-react";
 import { useListCourses } from "@workspace/api-client-react";
 import { DOMAINS, type Domain, type SubDomain } from "@/data/domains";
+import { useStudentId } from "@/hooks/useStudentId";
+import { useNameGate } from "@/components/NameGate";
+import { DemoBanner, SampleChip } from "@/components/DemoBanner";
+import { DEMO_ENROLLMENT, DEMO_STUDENT_NAME } from "@/data/demoStudent";
 
 // Every course in the library is 5 modules x 3 lessons.
 const LESSONS_PER_COURSE = 15;
@@ -11,6 +15,8 @@ const LESSONS_PER_COURSE = 15;
 export default function CourseLibrary() {
   const [, setLocation] = useLocation();
   const reduce = useReducedMotion();
+  const { isDemo } = useStudentId();
+  const { requireStudent } = useNameGate();
   const [selectedDomain, setSelectedDomain] = useState<Domain | null>(null);
 
   // Continue chips: match in_progress enrollments to subdomain cards by
@@ -33,20 +39,27 @@ export default function CourseLibrary() {
   }, [enrollments]);
 
   const openCourse = (domain: Domain, sub: SubDomain) => {
-    // EXACT 7-field shape written by Opportunities.navigateToCourse.
-    sessionStorage.setItem(
-      "courseContext",
-      JSON.stringify({
-        subDomainId: sub.id,
-        subDomainName: sub.name,
-        domainName: domain.name,
-        domainColor: domain.color,
-        domainBg: domain.bg,
-        domainEmoji: domain.emoji,
-        skills: sub.skills,
-      }),
+    // Starting a course is the first real action for an anonymous visitor —
+    // route it through the NameGate, which creates a guest row then runs this.
+    requireStudent(
+      () => {
+        // EXACT 7-field shape written by Opportunities.navigateToCourse.
+        sessionStorage.setItem(
+          "courseContext",
+          JSON.stringify({
+            subDomainId: sub.id,
+            subDomainName: sub.name,
+            domainName: domain.name,
+            domainColor: domain.color,
+            domainBg: domain.bg,
+            domainEmoji: domain.emoji,
+            skills: sub.skills,
+          }),
+        );
+        setLocation("/opportunities/course");
+      },
+      { title: "Starting this course", subtitle: "What should we call you?" },
     );
-    setLocation("/opportunities/course");
   };
 
   return (
@@ -75,6 +88,17 @@ export default function CourseLibrary() {
       {/* Sheet */}
       <div className="bg-paper rounded-t-3xl -mt-6 min-h-[60vh]">
         <div className="p-4 pt-6 max-w-md lg:max-w-2xl mx-auto">
+          {isDemo && (
+            <div className="mb-4 space-y-2">
+              <DemoBanner />
+              <div className="flex items-center gap-2 rounded-xl border border-line bg-paper px-3.5 py-2.5">
+                <SampleChip />
+                <p className="text-[12px] font-semibold text-ink">
+                  {DEMO_STUDENT_NAME} · {DEMO_ENROLLMENT.subDomainName} {DEMO_ENROLLMENT.progressPct}%
+                </p>
+              </div>
+            </div>
+          )}
           <AnimatePresence mode="wait">
             {!selectedDomain ? (
               <motion.div

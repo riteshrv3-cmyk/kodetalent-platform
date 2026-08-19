@@ -44,7 +44,13 @@ export function SideNav({ initials, streakCount, onProfileClick }: SideNavProps)
 
       <nav className="flex-1 px-3 space-y-1">
         {NAV_ITEMS.map((item) => {
-          const isActive = location === item.href || location.startsWith(item.href + "/");
+          // "/" is Home and must match EXACTLY — startsWith("/") is every
+          // route, which would light Home up everywhere. Other tabs keep the
+          // exact-or-nested match so /opportunities/course still marks Jobs.
+          const isActive =
+            item.href === "/"
+              ? location === "/"
+              : location === item.href || location.startsWith(item.href + "/");
           const Icon = item.icon;
           return (
             <Link

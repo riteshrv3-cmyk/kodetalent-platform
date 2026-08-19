@@ -18,7 +18,7 @@ export default function Home() {
   useEffect(() => {
     const id = localStorage.getItem("studentId");
     if (!id) {
-      setLocation("/onboarding");
+      setLocation("/");
       return;
     }
     setStudentId(id);

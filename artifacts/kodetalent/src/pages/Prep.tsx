@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { Target, ChevronRight, MessageSquare, X, Cpu, Users, Shuffle, Building2, Flame, Mic, Camera, GraduationCap } from "lucide-react";
+import { Target, ChevronRight, ChevronDown, MessageSquare, X, Cpu, Users, Shuffle, Building2, Flame, Mic, Camera, GraduationCap } from "lucide-react";
 import { useCreateInterviewSession } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import InterviewLibrary from "@/components/prep/InterviewLibrary";
+import { useStudentId } from "@/hooks/useStudentId";
+import { useNameGate } from "@/components/NameGate";
+import { DemoBanner, SampleChip } from "@/components/DemoBanner";
+import { DEMO_INTERVIEW_REPORT } from "@/data/demoStudent";
 
 type InterviewType = "Technical" | "Behavioral" | "Mixed";
 type Difficulty = "Standard" | "Challenging";
@@ -18,11 +22,96 @@ const INTERVIEW_TYPES: { type: InterviewType; icon: React.ElementType; label: st
   { type: "Mixed", icon: Shuffle, label: "Mixed", desc: "Both technical + HR questions" },
 ];
 
+/**
+ * Explore-mode teaser: a read-only sample interview report built purely from
+ * DEMO_INTERVIEW_REPORT (no authed call). Collapsed by default; expands inline
+ * to teaser depth so a visitor sees what a real score report looks like.
+ */
+function SampleReportCard({ open, onToggle }: { open: boolean; onToggle: () => void }) {
+  const r = DEMO_INTERVIEW_REPORT;
+  return (
+    <Card className="border-0 shadow-soft rounded-2xl bg-paper overflow-hidden">
+      <CardContent className="p-5">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[10px] font-bold text-ink-muted uppercase tracking-wider">
+                Sample interview report
+              </span>
+              <SampleChip />
+            </div>
+            <h3 className="text-lg font-bold text-ink mt-1">
+              {r.company} · {r.role}
+            </h3>
+            <p className="text-[12px] text-ink-muted">{r.round} · {r.dateLabel}</p>
+          </div>
+          <div className="text-right shrink-0">
+            <p className="text-2xl font-extrabold text-brand leading-none">
+              {r.overallScore}
+              <span className="text-[13px] text-ink-muted font-bold">/10</span>
+            </p>
+          </div>
+        </div>
+
+        <p className="text-[11px] text-ink-muted italic leading-snug mt-2">{r.howCaption}</p>
+
+        <button
+          onClick={onToggle}
+          className="w-full mt-3 flex items-center justify-between rounded-xl border border-line px-3.5 py-2.5 text-left"
+        >
+          <span className="text-[13px] font-bold text-ink">
+            {open ? "Hide the breakdown" : "See the breakdown"}
+          </span>
+          <ChevronDown className={cn("w-4 h-4 text-ink-muted transition-transform", open && "rotate-180")} />
+        </button>
+
+        <AnimatePresence initial={false}>
+          {open && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden"
+            >
+              <div className="pt-4 space-y-3">
+                <div className="space-y-1.5">
+                  {r.questionScores.map((q) => (
+                    <div key={q.area}>
+                      <div className="flex items-baseline justify-between mb-1">
+                        <span className="text-[12px] font-semibold text-ink">{q.area}</span>
+                        <span className="text-[11px] font-bold text-ink-muted tabular-nums">{q.score}/10</span>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-line overflow-hidden">
+                        <div className="h-full rounded-full bg-brand" style={{ width: `${q.score * 10}%` }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="rounded-xl bg-brand-soft p-3">
+                  <p className="text-[11px] font-bold text-brand uppercase tracking-wider mb-0.5">Strongest</p>
+                  <p className="text-[12px] text-ink leading-snug">{r.strongPoint}</p>
+                </div>
+                <div className="rounded-xl border border-line p-3">
+                  <p className="text-[11px] font-bold text-ink-muted uppercase tracking-wider mb-0.5">To work on</p>
+                  <p className="text-[12px] text-ink leading-snug">{r.weakPoint}</p>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function Prep() {
   const [, setLocation] = useLocation();
-  const [studentId, setStudentId] = useState<number | null>(null);
+  const { isDemo } = useStudentId();
+  const { requireStudent } = useNameGate();
 
   const [interviewDrawerOpen, setInterviewDrawerOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
 
   const [company, setCompany] = useState("");
   const [interviewType, setInterviewType] = useState<InterviewType>("Technical");
@@ -33,35 +122,37 @@ export default function Prep() {
 
   const createInterview = useCreateInterviewSession();
 
-  useEffect(() => {
-    const id = localStorage.getItem("studentId");
-    if (!id) {
-      setLocation("/");
-    } else {
-      setStudentId(parseInt(id, 10));
-    }
-  }, [setLocation]);
-
+  // No studentId → explore mode; the page renders for everyone and the first
+  // real action (Start Interview) routes through the NameGate below.
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get("start") === "1") {
       setInterviewDrawerOpen(true);
     }
   }, []);
 
-  const handleStartInterview = async () => {
-    if (!studentId) return;
-    const targetCompany = company.trim() || "Any Tech Company";
-    const round = `${interviewType}|${difficulty}`;
-    localStorage.setItem("voiceMode", voiceMode ? "true" : "false");
-    localStorage.setItem("cameraMode", cameraMode ? "true" : "false");
-    try {
-      const session = await createInterview.mutateAsync({
-        data: { studentId, company: targetCompany, round }
-      });
-      setLocation(`/practice/interview/${session.id}`);
-    } catch (e) {
-      console.error(e);
-    }
+  const handleStartInterview = () => {
+    const startAction = async () => {
+      // Read the fresh studentId inside the action — after the NameGate creates
+      // a guest row it isn't closed over here.
+      const sid = Number(localStorage.getItem("studentId") || "0");
+      if (!sid) return;
+      const targetCompany = company.trim() || "Any Tech Company";
+      const round = `${interviewType}|${difficulty}`;
+      localStorage.setItem("voiceMode", voiceMode ? "true" : "false");
+      localStorage.setItem("cameraMode", cameraMode ? "true" : "false");
+      try {
+        const session = await createInterview.mutateAsync({
+          data: { studentId: sid, company: targetCompany, round },
+        });
+        setLocation(`/practice/interview/${session.id}`);
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    requireStudent(startAction, {
+      title: "Starting your interview",
+      subtitle: "What should we call you?",
+    });
   };
 
   const closeDrawers = () => {
@@ -100,6 +191,11 @@ export default function Prep() {
       </div>
 
       <div className="p-4 -mt-6 max-w-md lg:max-w-2xl mx-auto space-y-4 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-4">
+        {isDemo && (
+          <div className="lg:col-span-2">
+            <DemoBanner />
+          </div>
+        )}
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
           <Card
             className="border-0 shadow-soft rounded-2xl bg-paper cursor-pointer group"
@@ -145,6 +241,12 @@ export default function Prep() {
             </CardContent>
           </Card>
         </motion.div>
+
+        {isDemo && (
+          <div className="lg:col-span-2">
+            <SampleReportCard open={reportOpen} onToggle={() => setReportOpen((v) => !v)} />
+          </div>
+        )}
       </div>
 
       <div className="px-4 pb-4 max-w-md lg:max-w-2xl mx-auto">

@@ -23,6 +23,10 @@ import confetti from "canvas-confetti";
 import { apiFetch } from "@/lib/api/authFetch";
 import { ResumeImport } from "@/components/ResumeImport";
 import { MonthYearPicker } from "@/components/MonthYearPicker";
+import { useStudentId } from "@/hooks/useStudentId";
+import { useNameGate } from "@/components/NameGate";
+import { useIsGuest, GuestSavedChip } from "@/components/GuestSavedChip";
+import ProfileDemo from "@/components/demo/ProfileDemo";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -439,6 +443,9 @@ export default function Profile() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const prefersReduced = useReducedMotion();
+  const { isDemo } = useStudentId();
+  const { requireStudent } = useNameGate();
+  const isGuestAccount = useIsGuest();
   const [studentId, setStudentId] = useState<number | null>(null);
   const [profile, setProfile] = useState<FullProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -472,10 +479,12 @@ export default function Profile() {
   const [photoPreview, setPhotoPreview] = useState<string>("");
 
   useEffect(() => {
+    // No studentId → explore mode; ProfileDemo renders below instead of a
+    // redirect. When present, load the real profile.
     const id = localStorage.getItem("studentId");
-    if (!id) { setLocation("/"); return; }
+    if (!id) return;
     setStudentId(parseInt(id, 10));
-  }, [setLocation]);
+  }, []);
 
   // Resume-page "add experience" nudge — scrolls straight to the section.
   useEffect(() => {
@@ -705,6 +714,21 @@ export default function Profile() {
     await save({ experience: profile.experience.filter(e => e.id !== id) }, "Experience removed");
   };
 
+  // Anonymous visitor — read-only Priya profile. The first real action routes
+  // through the NameGate, which creates a guest row and flips isDemo off.
+  if (isDemo) {
+    return (
+      <ProfileDemo
+        onStart={() =>
+          requireStudent(() => {}, {
+            title: "Start your profile",
+            subtitle: "What should we call you?",
+          })
+        }
+      />
+    );
+  }
+
   if (loading || !profile) {
     return (
       <div className="p-4 space-y-4 bg-canvas min-h-screen">
@@ -841,6 +865,13 @@ export default function Profile() {
           margin and the rounded top never showed — Profile was the one canopy
           in the app that ended in a hard square-cornered edge. */}
       <div className="relative bg-canvas -mt-6 rounded-t-3xl pt-6 space-y-4">
+
+        {/* Guest (NameGate-created, unclaimed) — work lives on this device only. */}
+        {isGuestAccount && (
+          <div className="mx-4">
+            <GuestSavedChip />
+          </div>
+        )}
 
         {/* Guest banner */}
         {isGuest && (

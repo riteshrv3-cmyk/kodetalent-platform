@@ -14,6 +14,10 @@ import { apiFetch } from "@/lib/api/authFetch";
 import { DOMAINS } from "@/data/domains";
 import { Confetti } from "@/components/kodetalent/Confetti";
 import { useStudentProfile } from "@/hooks/useStudentProfile";
+import { useStudentId } from "@/hooks/useStudentId";
+import { useNameGate } from "@/components/NameGate";
+import { DemoBanner, SampleChip } from "@/components/DemoBanner";
+import { DEMO_ENROLLMENT, DEMO_STUDENT_NAME } from "@/data/demoStudent";
 import { generateCertificatePdf } from "@/lib/certificate-pdf";
 import type { CertificateData } from "@/lib/certificate-pdf";
 import {
@@ -161,6 +165,8 @@ const LESSON_TYPE = {
 export default function Course() {
   const [, setLocation] = useLocation();
   const reduced = useReducedMotion();
+  const { isDemo } = useStudentId();
+  const { requireStudent } = useNameGate();
 
   const [ctx, setCtx] = useState<CourseContext | null>(null);
   const [courseData, setCourseData] = useState<CourseData | null>(null);
@@ -845,6 +851,18 @@ export default function Course() {
           {activeTab === "roadmap" && (
             <motion.div key="roadmap" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="lg:max-w-3xl lg:mx-auto">
 
+              {isDemo && (
+                <div className="mb-4 space-y-2">
+                  <DemoBanner />
+                  <div className="flex items-center gap-2 rounded-xl border border-line bg-paper px-3.5 py-2.5">
+                    <SampleChip />
+                    <p className="text-[12px] font-semibold text-ink">
+                      {DEMO_STUDENT_NAME} · {DEMO_ENROLLMENT.subDomainName} {DEMO_ENROLLMENT.progressPct}%
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {/* Hero progress banner */}
               <div className="rounded-2xl bg-paper shadow-soft p-4 mb-4">
                 <div className="flex items-center gap-4">
@@ -1239,8 +1257,17 @@ export default function Course() {
                                       </div>
                                       {!submitted ? (
                                         <Button
-                                          disabled={!chosen || submitting || !enrollment}
-                                          onClick={() => { if (chosen) submitModuleQuizAnswer(mod.id, chosen); }}
+                                          disabled={submitting || (!isDemo && (!chosen || !enrollment))}
+                                          onClick={() => {
+                                            if (isDemo) {
+                                              requireStudent(() => {}, {
+                                                title: "Starting this course",
+                                                subtitle: "What should we call you?",
+                                              });
+                                              return;
+                                            }
+                                            if (chosen) submitModuleQuizAnswer(mod.id, chosen);
+                                          }}
                                           className="w-full h-10 rounded-xl font-bold bg-brand hover:bg-brand/90 text-paper text-[13px] disabled:opacity-60"
                                         >
                                           {submitting

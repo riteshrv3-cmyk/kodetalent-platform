@@ -17,7 +17,13 @@ export function BottomNav() {
     <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-paper border-t border-line pb-safe">
       <div className="flex justify-around items-center h-16 max-w-md mx-auto px-2">
         {NAV_ITEMS.map((item) => {
-          const isActive = location === item.href || location.startsWith(item.href + "/");
+          // "/" is Home and must match EXACTLY — startsWith("/") is every
+          // route, which would light Home up everywhere. Other tabs keep the
+          // exact-or-nested match so /opportunities/course still marks Jobs.
+          const isActive =
+            item.href === "/"
+              ? location === "/"
+              : location === item.href || location.startsWith(item.href + "/");
           const Icon = item.icon;
           return (
             <Link

@@ -4,6 +4,9 @@ import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { useClerk } from "@clerk/react";
 import { apiFetch, setGuestToken } from "@/lib/api/authFetch";
+import { useStudentId } from "@/hooks/useStudentId";
+import { useIsGuest, GuestSavedChip } from "@/components/GuestSavedChip";
+import { useNameGate } from "@/components/NameGate";
 
 interface StudentProfile {
   id: number;
@@ -47,6 +50,9 @@ function StrengthArc({ value }: { value: number }) {
 export function ProfileSidebar({ onClose }: { onClose: () => void }) {
   const [, setLocation] = useLocation();
   const { signOut } = useClerk();
+  const { isDemo } = useStudentId();
+  const isGuest = useIsGuest();
+  const { requireStudent } = useNameGate();
   const [profile, setProfile] = useState<StudentProfile | null>(null);
 
   useEffect(() => {
@@ -57,6 +63,11 @@ export function ProfileSidebar({ onClose }: { onClose: () => void }) {
       .then((d) => setProfile(d))
       .catch(() => null);
   }, []);
+
+  const startProfile = () => {
+    onClose();
+    requireStudent(() => setLocation("/profile"), { title: "Start your profile" });
+  };
 
   const goToProfile = () => {
     onClose();
@@ -120,7 +131,7 @@ export function ProfileSidebar({ onClose }: { onClose: () => void }) {
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <h2 className="text-[20px] font-extrabold text-white leading-tight truncate">{profile?.name || "Loading..."}</h2>
+              <h2 className="text-[20px] font-extrabold text-white leading-tight truncate">{profile?.name || (isDemo ? "Explore mode" : "Loading...")}</h2>
               <p className="text-[12px] text-white/70 mt-0.5 truncate">{profile?.college}</p>
               <p className="text-[11px] text-white/70">{profile?.field} · Year {profile?.year}</p>
             </div>
@@ -136,6 +147,38 @@ export function ProfileSidebar({ onClose }: { onClose: () => void }) {
 
         {/* Scrollable content */}
         <div className="flex-1 overflow-y-auto bg-canvas -mt-4 rounded-t-3xl pt-2">
+
+          {isDemo ? (
+            /* Anonymous explore-mode visitor — no row yet. One clear CTA that
+               opens the NameGate, rather than a wall of empty score cards. */
+            <div className="px-4 pt-4 pb-6">
+              <div className="bg-paper rounded-2xl shadow-soft p-5 text-center">
+                <h3 className="text-[15px] font-extrabold text-ink mb-1">Start your profile</h3>
+                <p className="text-[13px] text-ink-muted mb-4">
+                  Create your space to save resumes, mock scores, and matched jobs — no signup needed.
+                </p>
+                <button
+                  onClick={startProfile}
+                  className="w-full bg-brand text-white font-bold py-3 rounded-full active:scale-95 transition-transform"
+                >
+                  Get started
+                </button>
+                <button
+                  onClick={() => { onClose(); setLocation("/sign-in"); }}
+                  className="w-full mt-2 text-[13px] font-semibold text-brand py-2"
+                >
+                  Already have an account? Sign in
+                </button>
+              </div>
+            </div>
+          ) : (
+          <>
+          {/* Guest (row exists but not claimed) — device-only save + upgrade. */}
+          {isGuest && (
+            <div className="px-4 pt-4">
+              <GuestSavedChip />
+            </div>
+          )}
 
           {/* Score + Strength */}
           <div className="px-4 pt-4">
@@ -264,6 +307,8 @@ export function ProfileSidebar({ onClose }: { onClose: () => void }) {
               Log out
             </button>
           </div>
+          </>
+          )}
         </div>
       </motion.div>
     </>

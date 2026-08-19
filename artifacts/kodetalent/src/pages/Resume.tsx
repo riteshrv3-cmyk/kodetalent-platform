@@ -22,6 +22,9 @@ import { ResumePreview, ResumeThumbnail, preloadPdfjs } from "@/components/resum
 import { AtsFixList } from "@/components/resume/AtsFixList";
 import { InlineEditPreview } from "@/components/resume/InlineEditPreview";
 import { ResumeImport } from "@/components/ResumeImport";
+import { useStudentId } from "@/hooks/useStudentId";
+import { useNameGate } from "@/components/NameGate";
+import ResumeDemo from "@/components/demo/ResumeDemo";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -1665,7 +1668,12 @@ export default function Resume() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { isSignedIn, isLoaded } = useUser();
-  const [studentId, setStudentId] = useState<number | null>(null);
+  // Explore-first: anonymous visitors (no studentId) get a rich sample resume
+  // via <ResumeDemo/> instead of a redirect. `studentId` here is the single
+  // source of truth from localStorage, kept in sync across the demo→real flip
+  // by useStudentId's external store.
+  const { studentId, isDemo } = useStudentId();
+  const { requireStudent } = useNameGate();
   const [resumes, setResumes] = useState<SavedResume[]>([]);
   const [loading, setLoading] = useState(true);
   const [generateFor, setGenerateFor] = useState<
@@ -1674,11 +1682,28 @@ export default function Resume() {
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [editingResume, setEditingResume] = useState<SavedResume | null>(null);
 
+  // Explore-mode "start my own" flow. Stash the intent BEFORE the gate — same
+  // idiom as gateOnSignup's stashDownloadIntent — then route through the
+  // NameGate, which creates the guest row and flips studentId. The studentId
+  // effect below then consumes the flag and opens the generation sheet, so the
+  // tapped "build" action continues across the demo→real transition (fix 9).
+  const handleStartOwn = useCallback(() => {
+    sessionStorage.setItem("kt:autoOpenGenerate", "1");
+    requireStudent(() => {}, {
+      title: "Let's build your resume",
+      subtitle: "What should we call you?",
+    });
+  }, [requireStudent]);
+
+  // Once a studentId exists (including right after the gate creates a guest
+  // row), auto-open the generation sheet if the "build" intent was stashed.
   useEffect(() => {
-    const id = localStorage.getItem("studentId");
-    if (!id) { setLocation("/"); return; }
-    setStudentId(parseInt(id, 10));
-  }, [setLocation]);
+    if (!studentId) return;
+    if (sessionStorage.getItem("kt:autoOpenGenerate") === "1") {
+      sessionStorage.removeItem("kt:autoOpenGenerate");
+      setGenerateFor({ company: "", role: "" });
+    }
+  }, [studentId]);
 
   // Warm the font cache and pdf.js worker so the first live preview doesn't eat the delay.
   useEffect(() => {
@@ -1804,6 +1829,11 @@ export default function Resume() {
     }
   };
 
+  // Anonymous visitor: render the read-only sample resume purely from fixtures.
+  // Never fall through to the authed page (its /students/:id queries would 401
+  // and wipe localStorage). Every action funnels to handleStartOwn → NameGate.
+  if (isDemo) return <ResumeDemo onStart={handleStartOwn} />;
+
   if (loading) {
     return (
       <div className="p-4 pb-28 max-w-md lg:max-w-3xl mx-auto space-y-4 min-h-screen bg-canvas">
@@ -1873,18 +1903,20 @@ export default function Resume() {
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            className="py-8 space-y-3"
+            className="bg-paper rounded-2xl shadow-soft p-6 flex flex-col items-center text-center gap-3"
           >
-            <p className="text-[15px] font-bold text-ink">No resumes yet</p>
-            <p className="text-[13px] text-ink-muted leading-relaxed">
-              Pick a company above or generate a blank resume to get started.
+            <div className="w-14 h-14 rounded-2xl bg-brand-soft flex items-center justify-center">
+              <FileText className="w-7 h-7 text-brand" />
+            </div>
+            <p className="text-[14px] text-ink-muted leading-relaxed max-w-[17rem]">
+              Turn your GitHub and a job post into an ATS-ready resume in minutes.
             </p>
             <Button
               onClick={() => setGenerateFor({ company: "", role: "" })}
-              className="rounded-full bg-brand text-white hover:bg-brand/90 font-bold px-4 h-11"
+              className="rounded-full bg-brand text-white hover:bg-brand/90 font-bold px-5 h-11"
             >
               <Sparkles className="w-4 h-4 mr-2" />
-              Generate First Resume
+              Build my resume
             </Button>
           </motion.div>
         ) : (

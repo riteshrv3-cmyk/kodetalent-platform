@@ -66,7 +66,7 @@ export default function Pipeline() {
   useEffect(() => {
     const id = localStorage.getItem("studentId");
     if (!id) {
-      setLocation("/onboarding");
+      setLocation("/");
       return;
     }
     setStudentId(id);

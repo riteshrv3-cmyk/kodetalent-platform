@@ -1,6 +1,7 @@
 import { useLocation } from "wouter";
 import { ChevronLeft, Flame } from "lucide-react";
 import { motion } from "framer-motion";
+import { useStudentId } from "@/hooks/useStudentId";
 
 interface TopBarProps {
   initials: string;
@@ -10,15 +11,27 @@ interface TopBarProps {
 
 export function TopBar({ initials, streakCount, onProfileClick }: TopBarProps) {
   const [location, setLocation] = useLocation();
-  // Resume is the pipeline's home base now that Today is off-nav, so it (and
+  const { isDemo } = useStudentId();
+  // Home ("/") is the explore-first landing surface, so it (like Resume and
   // onboarding) shows no back button and is the empty-history fallback.
-  const showBack = location !== "/resume" && location !== "/home" && location !== "/onboarding";
+  const showBack =
+    location !== "/" &&
+    location !== "/resume" &&
+    location !== "/home" &&
+    location !== "/onboarding";
+
+  // First name, when we have it, so a returning guest sees themselves rather
+  // than a bare avatar. studentName is written by the NameGate on guest create.
+  const firstName =
+    typeof window !== "undefined"
+      ? (localStorage.getItem("studentName") ?? "").trim().split(/\s+/)[0]
+      : "";
 
   const goBack = () => {
     if (window.history.length > 1) {
       window.history.back();
     } else {
-      setLocation("/resume");
+      setLocation("/");
     }
   };
 
@@ -44,24 +57,43 @@ export function TopBar({ initials, streakCount, onProfileClick }: TopBarProps) {
         </div>
 
         <div className="flex items-center gap-3">
-          {streakCount > 0 && (
+          {isDemo ? (
+            // Anonymous explore-mode visitor: no avatar to open, offer sign-in.
             <motion.button
-              whileTap={{ scale: 0.92 }}
-              onClick={() => setLocation("/home")}
-              className="inline-flex items-center gap-1 rounded-full bg-highlight/10 px-2.5 py-3.5"
-              aria-label={`${streakCount} day streak`}
+              whileTap={{ scale: 0.94 }}
+              onClick={() => setLocation("/sign-in")}
+              className="h-8 px-3.5 rounded-full bg-brand text-white text-[13px] font-bold"
             >
-              <Flame className="w-3.5 h-3.5 text-highlight" fill="currentColor" />
-              <span className="text-[12px] font-bold text-highlight tabular-nums">{streakCount}</span>
+              Sign in
             </motion.button>
+          ) : (
+            <>
+              {streakCount > 0 && (
+                <motion.button
+                  whileTap={{ scale: 0.92 }}
+                  onClick={() => setLocation("/home")}
+                  className="inline-flex items-center gap-1 rounded-full bg-highlight/10 px-2.5 py-3.5"
+                  aria-label={`${streakCount} day streak`}
+                >
+                  <Flame className="w-3.5 h-3.5 text-highlight" fill="currentColor" />
+                  <span className="text-[12px] font-bold text-highlight tabular-nums">{streakCount}</span>
+                </motion.button>
+              )}
+              <motion.button
+                whileTap={{ scale: 0.92 }}
+                onClick={onProfileClick}
+                className="flex items-center gap-2"
+                aria-label="Open account"
+              >
+                {firstName && (
+                  <span className="text-[13px] font-bold text-ink max-w-[80px] truncate">{firstName}</span>
+                )}
+                <span className="w-9 h-9 rounded-full bg-brand-soft flex items-center justify-center text-brand font-bold text-[12px]">
+                  {initials}
+                </span>
+              </motion.button>
+            </>
           )}
-          <motion.button
-            whileTap={{ scale: 0.92 }}
-            onClick={onProfileClick}
-            className="w-9 h-9 rounded-full bg-brand-soft flex items-center justify-center text-brand font-bold text-[12px]"
-          >
-            {initials}
-          </motion.button>
         </div>
       </div>
     </div>
