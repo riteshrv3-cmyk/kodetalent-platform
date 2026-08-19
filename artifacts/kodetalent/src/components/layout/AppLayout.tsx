@@ -8,6 +8,7 @@ import { TokoBubble } from "@/components/kodetalent/TokoBubble";
 import { AnimatePresence, motion } from "framer-motion";
 import { useLocation } from "wouter";
 import { useStudentProfile } from "@/hooks/useStudentProfile";
+import { NameGateProvider } from "@/components/NameGate";
 
 function initialsFromName(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -24,7 +25,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const { data: profile } = useStudentProfile(studentId);
   const initials = profile?.name ? initialsFromName(profile.name) : "?";
 
-  const isFullscreenRoute = location.startsWith("/practice/interview/") || location === "/onboarding";
+  const isFullscreenRoute = location.startsWith("/practice/interview/");
 
   if (isFullscreenRoute) {
     return <div className="min-h-[100dvh] bg-canvas" style={{ overflowX: "clip" }}>{children}</div>;
@@ -34,6 +35,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
     // lg:pl-[240px] on the OUTER container reserves the fixed SideNav's width,
     // so <main>'s own max-w + mx-auto center within the space actually left
     // over — not within the full viewport minus a padding on main itself.
+    <NameGateProvider>
     <div className="min-h-[100dvh] bg-canvas lg:pl-[240px]" style={{ isolation: "isolate", overflowX: "clip" }}>
       <TopBar
         initials={initials}
@@ -76,5 +78,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
         )}
       </AnimatePresence>
     </div>
+    </NameGateProvider>
   );
 }

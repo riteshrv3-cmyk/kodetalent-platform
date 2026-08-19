@@ -4,7 +4,6 @@ import {
   SignIn,
   SignUp,
   useClerk,
-  useUser,
 } from "@clerk/react";
 import { publishableKeyFromHost } from "@clerk/react/internal";
 import { shadcn } from "@clerk/themes";
@@ -24,9 +23,7 @@ import NotFound from "@/pages/not-found";
 import Join from "@/pages/Join";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { AuthBridge } from "@/components/AuthBridge";
-import { apiFetch, setGuestToken } from "@/lib/api/authFetch";
-import RoleSelect from "@/pages/RoleSelect";
-
+const ExploreHome = lazy(() => import("@/pages/ExploreHome"));
 const Home = lazy(() => import("@/pages/Home"));
 const AIChat = lazy(() => import("@/pages/AIChat"));
 const Prep = lazy(() => import("@/pages/Prep"));
@@ -44,7 +41,6 @@ const Pipeline = lazy(() => import("@/pages/Pipeline"));
 const RecruiterPortalShortcut = lazy(
   () => import("@/pages/RecruiterPortalShortcut"),
 );
-const Onboarding = lazy(() => import("@/pages/Onboarding"));
 const PublicResume = lazy(() => import("@/pages/PublicResume"));
 const PublicCertificate = lazy(() => import("@/pages/PublicCertificate"));
 
@@ -145,57 +141,6 @@ function PageSkeleton() {
   );
 }
 
-function RoleSelectRedirect() {
-  const [, setLocation] = useLocation();
-  const { isSignedIn, user, isLoaded } = useUser();
-
-  useEffect(() => {
-    if (!isLoaded || !isSignedIn || !user) return;
-    let alive = true;
-
-    const studentId = localStorage.getItem("studentId");
-    const guestToken = localStorage.getItem("guestToken");
-
-    apiFetch("/api/auth/claim", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        studentId: studentId ? Number(studentId) : undefined,
-        guestToken: guestToken ?? undefined,
-      }),
-    })
-      .then((r) => r.json())
-      .then((data: { student: { id: number }; claimed: boolean; created: boolean }) => {
-        if (!alive) return;
-        localStorage.setItem("studentId", String(data.student.id));
-        localStorage.setItem("clerkUserId", user.id);
-        if (user.primaryEmailAddress?.emailAddress) {
-          localStorage.setItem("clerkEmail", user.primaryEmailAddress.emailAddress);
-        }
-        setGuestToken(null); // claimed rows never carry a guest token again
-        setLocation(data.created ? "/onboarding" : "/resume");
-      })
-      .catch(() => {
-        if (alive) setLocation("/onboarding");
-      });
-
-    return () => {
-      alive = false;
-    };
-  }, [isLoaded, isSignedIn, user, setLocation]);
-
-  if (!isLoaded) {
-    return (
-      <div className="min-h-[100dvh] flex items-center justify-center bg-canvas">
-        <div className="animate-spin w-8 h-8 border-4 border-brand border-t-transparent rounded-full" />
-      </div>
-    );
-  }
-
-  if (isSignedIn) return null;
-  return <RoleSelect />;
-}
-
 function SignInPage() {
   return (
     <div className="flex min-h-[100dvh] items-center justify-center bg-canvas px-4">
@@ -225,7 +170,6 @@ function SignUpPage() {
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={RoleSelectRedirect} />
       <Route path="/join/:code">{(p) => <Join code={p.code} />}</Route>
       <Route path="/sign-in/*?" component={SignInPage} />
       <Route path="/sign-up/*?" component={SignUpPage} />
@@ -247,6 +191,7 @@ function Router() {
         <AppLayout>
           <Suspense fallback={<PageSkeleton />}>
             <Switch>
+              <Route path="/" component={ExploreHome} />
               <Route path="/home" component={Home} />
               <Route path="/notebook" component={Notebook} />
               <Route path="/chat" component={AIChat} />
@@ -259,7 +204,6 @@ function Router() {
               <Route path="/profile" component={Profile} />
               <Route path="/resume" component={Resume} />
               <Route path="/inbox" component={Inbox} />
-              <Route path="/onboarding" component={Onboarding} />
               <Route path="/drive-check" component={DriveCheck} />
               <Route path="/pipeline" component={Pipeline} />
               <Route path="/recruiter" component={RecruiterPortalShortcut} />
