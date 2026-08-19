@@ -124,23 +124,27 @@ export default function ExploreHome() {
       <div className="px-4 -mt-6 max-w-md lg:max-w-2xl mx-auto space-y-3">
         <DemoSurface>
           {/* Jobs — the visual anchor. Real content with zero input, so it's
-              the obvious first tap: full-width, brand-tinted, larger. */}
+              the obvious first tap. Paper, not brand: against the indigo
+              canopy a white card pops MORE than brand-on-brand did, and it
+              breaks the "indigo wall" that made the top of the page read as
+              an official portal. Hierarchy is carried by size (full-width,
+              larger icon and title), not by hue. */}
           <PressableCard
             onClick={() => setLocation(jobs.href)}
-            className="w-full bg-brand text-white rounded-3xl p-5 lg:p-6 shadow-soft flex items-center gap-4"
+            className="w-full bg-paper rounded-3xl p-5 lg:p-6 shadow-soft flex items-center gap-4"
             data-testid="explore-card-jobs"
           >
-            <span className="w-14 h-14 rounded-2xl bg-white/15 flex items-center justify-center shrink-0">
-              <jobs.icon className="w-7 h-7 text-white" />
+            <span className="w-14 h-14 rounded-2xl bg-brand-soft flex items-center justify-center shrink-0">
+              <jobs.icon className="w-7 h-7 text-brand" />
             </span>
             <span className="flex-1 min-w-0">
-              <span className="block type-title font-extrabold">{jobs.title}</span>
-              <span className="block type-caption text-white/80 mt-0.5">{jobs.valueProp}</span>
-              <span className="block type-caption font-semibold text-white/90 mt-1.5">
+              <span className="block type-title font-extrabold text-ink">{jobs.title}</span>
+              <span className="block type-caption text-ink-muted mt-0.5">{jobs.valueProp}</span>
+              <span className="block type-caption font-semibold text-brand mt-1.5">
                 {jobs.state}
               </span>
             </span>
-            <ChevronRight className="w-6 h-6 text-white/80 shrink-0" />
+            <ChevronRight className="w-6 h-6 text-ink-muted shrink-0" />
           </PressableCard>
 
           {/* Remaining features — secondary weight, 2-up on desktop. */}
