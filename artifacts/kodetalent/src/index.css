@@ -58,7 +58,10 @@
      compiling) but retuned values, plus new brand/canvas/accent
      tokens for the canopy-and-sheet layout pattern. */
   --color-ink: #1a1d2e;
-  --color-ink-muted: #9aa0ae;
+  /* WCAG-fixed 2026-08: was #9aa0ae (2.6:1 on white — failed everywhere it was
+     used as text, including nav labels). #5d6474 keeps the cool-gray family and
+     passes 4.5:1 on paper, canvas and brand-soft. */
+  --color-ink-muted: #5d6474;
   --color-paper: #ffffff;
   --color-line: #ecedf3;
   --color-done: #22c55e;
@@ -66,6 +69,11 @@
   /* Mid-band semantic tone for scores in the 40-69 range (done above, danger
      below). Amber, not brand — scores must read as judgement, not decoration. */
   --color-amber: #d97706;
+  /* TEXT variants of the semantic tones. The fill colors above are too light
+     for small text on white (done = 2.3:1); these pass 4.5:1. Use *-ink for
+     any text/number, the plain tokens for bars and fills. */
+  --color-done-ink: #15803d;
+  --color-amber-ink: #b45309;
 
   --color-brand: #4a55c7;
   --color-brand-foreground: #ffffff;

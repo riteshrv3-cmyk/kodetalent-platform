@@ -42,7 +42,9 @@ export function DemoBanner({ className = "" }: { className?: string }) {
       role="note"
     >
       <Eye className="w-4 h-4 flex-shrink-0" />
-      <p className="type-caption font-semibold leading-tight">
+      {/* Explicit text-brand: a base element style would otherwise beat the
+          inherited container color and render this ink-muted (audit-caught). */}
+      <p className="type-caption font-semibold leading-tight text-brand">
         You're viewing a sample student — tap any action to start your own.
       </p>
     </div>

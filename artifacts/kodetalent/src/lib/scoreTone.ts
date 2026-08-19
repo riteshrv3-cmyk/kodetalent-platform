@@ -13,16 +13,17 @@ export function scoreTone(pct: number): ScoreTone {
   return "danger";
 }
 
-/** Text color class for a 0-100 score. */
+/** Text color class for a 0-100 score. Uses the *-ink text variants — the
+ *  fill tones (done/amber) are too light for small text on white (WCAG). */
 export function scoreTextClass(pct: number): string {
-  return { done: "text-done", amber: "text-amber", danger: "text-danger" }[scoreTone(pct)];
+  return { done: "text-done-ink", amber: "text-amber-ink", danger: "text-danger" }[scoreTone(pct)];
 }
 
 /** Soft badge (bg + text) classes for a 0-100 score. */
 export function scoreBadgeClass(pct: number): string {
   return {
-    done: "bg-done/10 text-done",
-    amber: "bg-amber/10 text-amber",
+    done: "bg-done/10 text-done-ink",
+    amber: "bg-amber/10 text-amber-ink",
     danger: "bg-danger/10 text-danger",
   }[scoreTone(pct)];
 }
