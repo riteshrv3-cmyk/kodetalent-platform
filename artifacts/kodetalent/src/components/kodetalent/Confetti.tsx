@@ -9,7 +9,7 @@ import { motion } from "framer-motion";
  */
 const CONFETTI_COLORS = ["#4a55c7", "#8b93e0", "#eef0fb"];
 
-export function Confetti() {
+export function Confetti({ zClass = "z-50" }: { zClass?: string } = {}) {
   const particles = Array.from({ length: 18 }, (_, i) => ({
     id: i,
     x: 20 + Math.random() * 60, // % from left
@@ -20,7 +20,7 @@ export function Confetti() {
   }));
 
   return (
-    <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
+    <div className={`fixed inset-0 pointer-events-none ${zClass} overflow-hidden`}>
       {particles.map((p) => (
         <motion.div
           key={p.id}
