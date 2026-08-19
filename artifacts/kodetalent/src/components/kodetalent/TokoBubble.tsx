@@ -1,7 +1,7 @@
 import { useLocation } from "wouter";
 import { Toko } from "./Toko";
 
-const HIDDEN_ON = ["/chat", "/onboarding"];
+const HIDDEN_ON = ["/chat"];
 const HIDDEN_PREFIXES = ["/practice/interview/"];
 
 /** Floating action button that opens Toko chat. Hidden on /chat itself and fullscreen routes. */

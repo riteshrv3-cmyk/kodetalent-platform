@@ -12,13 +12,12 @@ interface TopBarProps {
 export function TopBar({ initials, streakCount, onProfileClick }: TopBarProps) {
   const [location, setLocation] = useLocation();
   const { isDemo } = useStudentId();
-  // Home ("/") is the explore-first landing surface, so it (like Resume and
-  // onboarding) shows no back button and is the empty-history fallback.
+  // Home ("/") is the explore-first landing surface, so it (like Resume) shows
+  // no back button and is the empty-history fallback.
   const showBack =
     location !== "/" &&
     location !== "/resume" &&
-    location !== "/home" &&
-    location !== "/onboarding";
+    location !== "/home";
 
   // First name, when we have it, so a returning guest sees themselves rather
   // than a bare avatar. studentName is written by the NameGate on guest create.
