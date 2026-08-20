@@ -1,10 +1,26 @@
+import { useState, type KeyboardEvent, type MouseEvent } from "react";
 import { useLocation } from "wouter";
-import { Briefcase, FileText, Target, GraduationCap, User, ChevronRight } from "lucide-react";
+import {
+  Briefcase,
+  FileText,
+  Target,
+  GraduationCap,
+  User,
+  ChevronRight,
+  ArrowRight,
+} from "lucide-react";
 import type { ElementType, ReactNode } from "react";
 import { ClaimOnSignIn } from "@/components/ClaimOnSignIn";
 import { PageHeader } from "@/components/PageHeader";
 import { DemoSurface } from "@/components/DemoBanner";
 import { PressableCard } from "@/components/PressableCard";
+import { PeekSheet } from "@/components/PeekSheet";
+import {
+  HomePeekContent,
+  PEEK_FEATURE_LABEL,
+  type PeekFeature,
+} from "@/components/demo/HomePeeks";
+import { hapticTap } from "@/lib/haptics";
 import { scoreTextClass } from "@/lib/scoreTone";
 import { useStudentId } from "@/hooks/useStudentId";
 import {
@@ -20,9 +36,16 @@ import {
 // action routes through the NameGate. This is a feature-cards launcher, NOT a
 // momentum hub: no daily strip, no streak, no tasks, and NO load animation —
 // perceived speed matters, so nothing animates on first paint.
+//
+// Interaction model:
+//  - DEMO mode: tapping a card opens a PeekSheet preview of that feature
+//    (Priya's fixtures) instead of navigating cold; the sheet's CTA navigates.
+//  - REAL mode: cards navigate directly, and a "Continue" chip (last activity,
+//    written by the feature pages to localStorage) sits above the cards.
+//  - The Priya state line on each card is its OWN deep-link tap target.
 
 interface FeatureCard {
-  key: string;
+  key: PeekFeature;
   title: string;
   valueProp: string;
   icon: ElementType;
@@ -31,16 +54,81 @@ interface FeatureCard {
   state: ReactNode | null;
 }
 
+/**
+ * The card's state line as its own tap target (deep link straight into the
+ * feature). Rendered INSIDE the PressableCard button, so it must not be a
+ * <button> (nested buttons are invalid HTML) — a span with role="link",
+ * keyboard handling and stopPropagation keeps the card's own onClick out of
+ * the way while staying tsc- and a11y-clean.
+ */
+function TeaserLink({
+  href,
+  className = "",
+  testid,
+  children,
+}: {
+  href: string;
+  className?: string;
+  testid?: string;
+  children: ReactNode;
+}) {
+  const [, setLocation] = useLocation();
+  const go = (e: MouseEvent | KeyboardEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    hapticTap();
+    setLocation(href);
+  };
+  return (
+    <span
+      role="link"
+      tabIndex={0}
+      onClick={go}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") go(e);
+      }}
+      data-testid={testid}
+      className={`text-brand underline-offset-2 hover:underline active:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-sm ${className}`}
+    >
+      {children}
+    </span>
+  );
+}
+
+/** `kt:lastActivity` is written by Resume/Prep/Course pages. */
+function readLastActivity(): { label: string; href: string } | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem("kt:lastActivity");
+    if (!raw) return null;
+    const parsed: unknown = JSON.parse(raw);
+    if (
+      parsed !== null &&
+      typeof parsed === "object" &&
+      typeof (parsed as { label?: unknown }).label === "string" &&
+      typeof (parsed as { href?: unknown }).href === "string"
+    ) {
+      return parsed as { label: string; href: string };
+    }
+  } catch {
+    /* malformed JSON — treat as absent */
+  }
+  return null;
+}
+
 export default function ExploreHome() {
   const [, setLocation] = useLocation();
   const { isDemo } = useStudentId();
+  const [peek, setPeek] = useState<PeekFeature | null>(null);
 
   // Real mode stays cheap: no new API calls on the home surface. The only
-  // dynamic bit is the guest's own name, already in localStorage (no fetch).
+  // dynamic bits are the guest's own name and the last-activity chip, both
+  // already in localStorage (no fetch).
   const firstName =
     typeof window !== "undefined"
       ? (localStorage.getItem("studentName") ?? "").trim().split(/\s+/)[0]
       : "";
+  const lastActivity = !isDemo ? readLastActivity() : null;
 
   const jobs: FeatureCard = {
     key: "jobs",
@@ -108,6 +196,21 @@ export default function ExploreHome() {
     },
   ];
 
+  const allCards = [jobs, ...rest];
+
+  // DEMO: peek first (never navigate cold, never call authed endpoints).
+  // REAL: navigate directly, like any launcher.
+  const onCardTap = (card: FeatureCard) => {
+    if (isDemo) {
+      hapticTap();
+      setPeek(card.key);
+    } else {
+      setLocation(card.href);
+    }
+  };
+
+  const peekCard = peek ? allCards.find((c) => c.key === peek) : undefined;
+
   return (
     <div className="min-h-screen bg-canvas pb-28">
       <ClaimOnSignIn />
@@ -122,6 +225,23 @@ export default function ExploreHome() {
           edge. DemoSurface also suppresses per-card SampleChips — one demo
           signal per surface; Priya's state lines stay in text-brand instead. */}
       <div className="px-4 -mt-6 max-w-md lg:max-w-2xl mx-auto space-y-3">
+        {/* Continue chip — real mode only, from the last feature page visited. */}
+        {lastActivity && (
+          <PressableCard
+            onClick={() => {
+              hapticTap();
+              setLocation(lastActivity.href);
+            }}
+            className="w-full bg-brand-soft rounded-xl px-3.5 py-2.5 flex items-center gap-2"
+            data-testid="continue-chip"
+          >
+            <span className="flex-1 min-w-0 type-caption font-semibold text-brand truncate">
+              Continue — {lastActivity.label}
+            </span>
+            <ArrowRight className="w-4 h-4 text-brand shrink-0" aria-hidden />
+          </PressableCard>
+        )}
+
         <DemoSurface>
           {/* Jobs — the visual anchor. Real content with zero input, so it's
               the obvious first tap. Paper, not brand: against the indigo
@@ -130,7 +250,7 @@ export default function ExploreHome() {
               an official portal. Hierarchy is carried by size (full-width,
               larger icon and title), not by hue. */}
           <PressableCard
-            onClick={() => setLocation(jobs.href)}
+            onClick={() => onCardTap(jobs)}
             className="w-full bg-paper rounded-3xl p-5 lg:p-6 shadow-soft flex items-center gap-4"
             data-testid="explore-card-jobs"
           >
@@ -140,8 +260,14 @@ export default function ExploreHome() {
             <span className="flex-1 min-w-0">
               <span className="block type-title font-extrabold text-ink">{jobs.title}</span>
               <span className="block type-caption text-ink-muted mt-0.5">{jobs.valueProp}</span>
-              <span className="block type-caption font-semibold text-brand mt-1.5">
-                {jobs.state}
+              <span className="block type-caption mt-1.5">
+                <TeaserLink
+                  href={jobs.href}
+                  className="font-semibold"
+                  testid="explore-teaser-jobs"
+                >
+                  {jobs.state}
+                </TeaserLink>
               </span>
             </span>
             <ChevronRight className="w-6 h-6 text-ink-muted shrink-0" />
@@ -154,7 +280,7 @@ export default function ExploreHome() {
               return (
                 <PressableCard
                   key={card.key}
-                  onClick={() => setLocation(card.href)}
+                  onClick={() => onCardTap(card)}
                   className="w-full bg-paper rounded-2xl p-4 lg:p-5 shadow-soft flex items-center gap-3.5"
                   data-testid={`explore-card-${card.key}`}
                 >
@@ -165,8 +291,14 @@ export default function ExploreHome() {
                     <span className="block type-body font-bold text-ink leading-tight">{card.title}</span>
                     <span className="block type-caption text-ink-muted mt-0.5">{card.valueProp}</span>
                     {card.state && (
-                      <span className="block type-micro font-semibold text-brand mt-1">
-                        {card.state}
+                      <span className="block type-micro mt-1">
+                        <TeaserLink
+                          href={card.href}
+                          className="font-semibold"
+                          testid={`explore-teaser-${card.key}`}
+                        >
+                          {card.state}
+                        </TeaserLink>
                       </span>
                     )}
                   </span>
@@ -177,6 +309,23 @@ export default function ExploreHome() {
           </div>
         </DemoSurface>
       </div>
+
+      {/* Demo-mode card peeks: preview the feature before entering it. */}
+      <PeekSheet
+        open={peek !== null}
+        onClose={() => setPeek(null)}
+        ariaLabel={peek ? `${PEEK_FEATURE_LABEL[peek]} preview` : "Feature preview"}
+      >
+        {peek && peekCard && (
+          <HomePeekContent
+            feature={peek}
+            onOpen={() => {
+              setPeek(null);
+              setLocation(peekCard.href);
+            }}
+          />
+        )}
+      </PeekSheet>
     </div>
   );
 }

@@ -335,6 +335,8 @@ export default function Course() {
     }).then(enr => {
       setEnrollment(enr);
       setPassedModules(new Set(enr.passedModuleIds));
+      // Breadcrumb for Home's Continue chip. href is /practice/courses (not /opportunities/course) because Course redirects there without sessionStorage.courseContext, which won't survive a new session.
+      try { localStorage.setItem("kt:lastActivity", JSON.stringify({ label: "your course — " + ctx.subDomainName, href: "/practice/courses" })); } catch { /* quota — non-fatal */ }
 
       // Server is the cross-device source of truth: seed local when it has more.
       const localLessons: string[] = JSON.parse(localStorage.getItem(`lesson_progress_${ctx.subDomainId}`) || "[]");

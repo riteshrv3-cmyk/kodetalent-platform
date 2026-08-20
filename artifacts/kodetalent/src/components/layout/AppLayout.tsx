@@ -1,4 +1,4 @@
-import { ReactNode, useState } from "react";
+import { ReactNode, useRef, useState } from "react";
 import { BottomNav } from "./BottomNav";
 import { TopBar } from "./TopBar";
 import { SideNav } from "./SideNav";
@@ -9,6 +9,7 @@ import { AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
 import { useStudentProfile } from "@/hooks/useStudentProfile";
 import { NameGateProvider } from "@/components/NameGate";
+import { useTabSwipe } from "@/hooks/useTabSwipe";
 
 function initialsFromName(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -24,6 +25,14 @@ export function AppLayout({ children }: { children: ReactNode }) {
   // share one in-flight request instead of each firing its own full-profile fetch.
   const { data: profile } = useStudentProfile(studentId);
   const initials = profile?.name ? initialsFromName(profile.name) : "?";
+
+  // Horizontal swipe in the content area moves between the 5 bottom-nav tabs
+  // (touch-only; guarded against edge/back gestures, horizontal scrollers, and
+  // open dialogs — see the hook). Must be called before the fullscreen early
+  // return so the hook order is stable; on fullscreen routes the ref is never
+  // attached, so the hook no-ops.
+  const mainRef = useRef<HTMLElement>(null);
+  useTabSwipe(mainRef);
 
   const isFullscreenRoute = location.startsWith("/practice/interview/");
 
@@ -50,7 +59,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
       {/* pt clears the TopBar (h-14) plus the status-bar inset the TopBar now
           absorbs, since the page renders with viewport-fit=cover. */}
-      <main className="max-w-md mx-auto w-full pt-[calc(3.5rem+env(safe-area-inset-top))] pb-[calc(4rem+env(safe-area-inset-bottom))] min-h-[100dvh] lg:max-w-5xl lg:px-8 lg:pt-8 lg:pb-8">
+      <main ref={mainRef} className="max-w-md mx-auto w-full pt-[calc(3.5rem+env(safe-area-inset-top))] pb-[calc(4rem+env(safe-area-inset-bottom))] min-h-[100dvh] lg:max-w-5xl lg:px-8 lg:pt-8 lg:pb-8">
         <OfflineBanner />
         {/* Routes render directly — no fade wrapper. Instant navigation reads
             faster than any transition, and the removed motion.div also means

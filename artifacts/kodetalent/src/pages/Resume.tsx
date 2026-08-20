@@ -1716,6 +1716,9 @@ export default function Resume() {
     }
   }, [studentId]);
 
+  // Breadcrumb for Home's Continue chip — every generation-sheet open (button, post-gate auto-open, resumeContext seed) counts as resume activity. Real students only.
+  useEffect(() => { if (generateFor !== null && studentId) { try { localStorage.setItem("kt:lastActivity", JSON.stringify({ label: "your resume", href: "/resume" })); } catch { /* quota — non-fatal */ } } }, [generateFor, studentId]);
+
   // Warm the font cache and pdf.js worker so the first live preview doesn't eat the delay.
   useEffect(() => {
     preloadFonts();

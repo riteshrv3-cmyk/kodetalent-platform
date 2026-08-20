@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { Target, ChevronRight, ChevronDown, MessageSquare, X, Cpu, Users, Shuffle, Building2, Flame, Mic, Camera, GraduationCap } from "lucide-react";
 import { useCreateInterviewSession } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -109,6 +109,7 @@ export default function Prep() {
   const [, setLocation] = useLocation();
   const { isDemo } = useStudentId();
   const { requireStudent } = useNameGate();
+  const reduce = useReducedMotion();
 
   const [interviewDrawerOpen, setInterviewDrawerOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
@@ -144,6 +145,7 @@ export default function Prep() {
         const session = await createInterview.mutateAsync({
           data: { studentId: sid, company: targetCompany, round },
         });
+        try { localStorage.setItem("kt:lastActivity", JSON.stringify({ label: "mock interviews", href: "/practice" })); } catch { /* quota — non-fatal */ }
         setLocation(`/practice/interview/${session.id}`);
       } catch (e) {
         console.error(e);
@@ -271,8 +273,19 @@ export default function Prep() {
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              // Drag-to-close: pull the sheet down past the threshold (or
+              // flick) to dismiss. Disabled under reduced motion.
+              drag={reduce ? false : "y"}
+              dragConstraints={{ top: 0, bottom: 0 }}
+              dragElastic={{ top: 0, bottom: 0.6 }}
+              onDragEnd={(_, info) => {
+                if (info.offset.y > 90 || info.velocity.y > 600) closeDrawers();
+              }}
               className="w-full bg-paper rounded-t-3xl lg:rounded-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.12)] max-w-md lg:max-w-lg mx-auto flex flex-col max-h-[90dvh] lg:max-h-[85dvh]"
               onClick={(e) => e.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Set up interview"
             >
               {/* Header stays put; only the form body scrolls, and the CTA
                   lives in a pinned footer below so it can never scroll out

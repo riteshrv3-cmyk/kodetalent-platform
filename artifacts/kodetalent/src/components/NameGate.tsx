@@ -211,6 +211,15 @@ export function NameGateProvider({ children }: { children: ReactNode }) {
               animate={{ y: 0 }}
               exit={reduce ? undefined : { y: "100%" }}
               transition={{ type: "spring", damping: 26, stiffness: 220 }}
+              // Drag-to-close: pull the sheet down past the threshold (or
+              // flick) to dismiss. Disabled under reduced motion, during the
+              // welcome beat, and while the guest row is being created.
+              drag={reduce || phase === "welcome" || createStudent.isPending ? false : "y"}
+              dragConstraints={{ top: 0, bottom: 0 }}
+              dragElastic={{ top: 0, bottom: 0.6 }}
+              onDragEnd={(_, info) => {
+                if (info.offset.y > 90 || info.velocity.y > 600) closeGate();
+              }}
               className="w-full bg-paper rounded-t-3xl lg:rounded-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.12)] max-w-md lg:max-w-md mx-auto flex flex-col pb-[calc(1.25rem+env(safe-area-inset-bottom))]"
               onClick={(e) => e.stopPropagation()}
               role="dialog"
